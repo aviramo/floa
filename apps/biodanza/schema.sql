@@ -682,3 +682,29 @@ begin
   if not found then raise exception 'no_such_account'; end if;
 end $$;
 grant execute on function biodanza.set_member_role(text, text) to authenticated;
+-- SONGS A FACILITATOR UPLOADS BY HAND (2026-11-18), with no connection to the catalog.
+-- The file goes into the bucket through the Worker (PUT /biodanza/audio/upload), this function records it as a song of the
+-- uploader's own (owner_id = them, in_catalog = false). The uploader can rename it and change the performer (music_write already
+-- lets an owner change their own rows). Everyone who can see a vivencia that uses the song can read the song's row, so a shared
+-- vivencia plays for all of its members.
+drop policy if exists music_read on biodanza.music;
+create policy music_read on biodanza.music for select to authenticated
+  using (biodanza.is_allowed() and (owner_id is null or owner_id = auth.uid()
+    or exists (select 1 from biodanza.vivencia_items i where i.music_id = music.id and biodanza.can_view(i.vivencia_id))));
+
+create or replace function biodanza.add_upload(p_object text, p_format text, p_size bigint, p_title text, p_artist text) returns uuid
+language plpgsql security definer set search_path = biodanza, public as $$
+declare t text := nullif(btrim(coalesce(p_title, '')), '');
+  a text := btrim(coalesce(p_artist, ''));
+  id uuid;
+begin
+  if not biodanza.is_allowed() then raise exception 'not allowed' using errcode = '42501'; end if;
+  if p_object !~ '^[a-f0-9]{32}\.(mp3|flac|wav|aiff|aif|m4a)$' then raise exception 'bad object'; end if;
+  if t is null then t := 'ללא שם'; end if;
+  insert into biodanza.music_files (object, code, collection, format, size_bytes) values (p_object, '', '', p_format, coalesce(p_size, 0)) on conflict (object) do nothing;
+  insert into biodanza.music (owner_id, name, title, artist, in_catalog, audio_object)
+    values (auth.uid(), t || case when a <> '' then ', ' || a else '' end, t, a, false, p_object) returning biodanza.music.id into id;
+  return id;
+end $$;
+revoke all on function biodanza.add_upload(text, text, bigint, text, text) from public, anon;
+grant execute on function biodanza.add_upload(text, text, bigint, text, text) to authenticated;
