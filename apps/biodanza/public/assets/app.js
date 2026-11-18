@@ -1705,10 +1705,22 @@
       if (wide()) show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); else stack().pop(); back();
     }, fail);
   }
+  /* An exercise placed in a vivencia is cut loose from the catalog: the item keeps its own copy of the name, the poetics and the guidance as they are
+     at that moment, so a later change to the catalog exercise never reaches a session that was already planned (the item fields: null follows the catalog). */
+  function detached(exId) {
+    return api("/rest/v1/exercises?id=eq." + exId + "&select=title_he,title_en,poetics,guidance,exercise_texts(lang,poetics,guidance,source)").then(function (r) {
+      var row = r && r[0]; if (!row) return {};
+      var it = { exercises: row }, o = {}, t = name(row);
+      if (t) o.title = t;
+      ["poetics", "guidance"].forEach(function (k) { var v = baseTxt(it, k); if (v) o[k] = v; });
+      return o;
+    }, function () { return {}; });
+  }
   function addEx(e, swapIt, sheet, mid) {
     if (swapIt) {   /* the same place in the curve, another exercise: its first song, and none of the old exercise's own wording */
-      return firstMusic(e.id, mid).then(function (m) {
-        return api("/rest/v1/vivencia_items?id=eq." + swapIt.id, { method: "PATCH", prefer: "return=minimal", json: { exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, title: null, poetics: null, guidance: null } });
+      return Promise.all([firstMusic(e.id, mid), detached(e.id)]).then(function (r) {
+        var m = r[0], d = r[1];
+        return api("/rest/v1/vivencia_items?id=eq." + swapIt.id, { method: "PATCH", prefer: "return=minimal", json: { exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, title: d.title || null, poetics: d.poetics || null, guidance: d.guidance || null } });
       }).then(function () { toast("התרגיל הוחלף");
         if (sheet) {   /* the popups slide out and the same place opens again with the new exercise: no new address, so no entry */
           closeSheets();
@@ -1719,8 +1731,9 @@
         stack().pop(); if (!wide()) { stack().pop(); stack().pop(); } var f = stack()[stack().length - 1]; if (f) f(); }, fail);   /* narrow: also the exercise screen and the one just seen */
     }
     var pos = state.items.reduce(function (m, i) { return Math.max(m, i.position); }, 0) + 1;
-    firstMusic(e.id, mid).then(function (m) {
-      return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=minimal", json: { vivencia_id: state.viv.id, position: pos, exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null } });
+    Promise.all([firstMusic(e.id, mid), detached(e.id)]).then(function (r) {
+      var m = r[0], d = r[1];
+      return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=minimal", json: { vivencia_id: state.viv.id, position: pos, exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, title: d.title || null, poetics: d.poetics || null, guidance: d.guidance || null } });
     }).then(function () { toast("התרגיל נוסף"); if (sheet) { closeSheets(); return loadItems().then(paint, fail); }
       if (wide()) show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); else stack().pop(); back(); }, fail);
   }
