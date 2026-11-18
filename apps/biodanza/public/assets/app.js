@@ -1362,12 +1362,12 @@
           active = -1;
           pop = document.createElement("div"); pop.className = "rmenu rmenu--fixed"; pop.setAttribute("role", "listbox");
           pop.innerHTML = shown.map(function (c, k) { return '<button type="button" class="rmenu__item" role="option" tabindex="-1" data-k="' + k + '"' + (c.key === catSel ? ' aria-selected="true" style="font-weight:var(--fw-bold)"' : '') + '><span>' + esc(c.name_he) + '</span></button>'; }).join("");
-          (inp.closest("dialog") || document.body).appendChild(pop);
-          var b = inp.getBoundingClientRect();
-          pop.style.top = Math.round(b.bottom + 2) + "px"; pop.style.left = Math.round(b.left) + "px"; pop.style.width = Math.round(b.width) + "px"; pop.style.maxWidth = "none"; pop.style.maxHeight = "40vh"; pop.style.overflowY = "auto";   /* the menu is as wide as the field, whatever the menu's own cap */
-          var got = pop.getBoundingClientRect();   /* inside a popup that is moved by a transform, fixed is measured from the popup: correct by what is off */
-          if (Math.abs(got.top - (b.bottom + 2)) > 1) pop.style.top = Math.round(b.bottom + 2 - (got.top - (b.bottom + 2))) + "px";
-          if (Math.abs(got.left - b.left) > 1) pop.style.left = Math.round(b.left - (got.left - b.left)) + "px";
+          /* a popover inside the open popup: it is drawn in the top layer and placed by the window (a popup that is moved or scaled cannot shift it), and the popup stays clickable */
+          var host = inp.closest("dialog"); (host || document.body).appendChild(pop);
+          pop.setAttribute("popover", "manual"); pop.style.inset = "auto"; pop.style.margin = "0"; pop.style.boxSizing = "border-box";
+          try { pop.showPopover(); } catch (x) { /* an old browser: an ordinary fixed menu */ }
+          var b = inp.getBoundingClientRect(), vw = window.innerWidth, w = Math.min(Math.round(b.width), vw - 16), l = Math.max(8, Math.min(Math.round(b.left), vw - 8 - w));
+          pop.style.top = Math.round(b.bottom + 2) + "px"; pop.style.left = l + "px"; pop.style.width = w + "px"; pop.style.maxWidth = "none"; pop.style.maxHeight = Math.max(120, Math.round((window.visualViewport ? window.visualViewport.height : window.innerHeight) - b.bottom - 16)) + "px"; pop.style.overflowY = "auto";   /* as wide as the field, inside the window, above the keyboard */
           pop.querySelectorAll("[data-k]").forEach(function (o) { o.addEventListener("mousedown", function (e) { e.preventDefault(); choose(shown[+o.dataset.k].key); }); });
           inp.setAttribute("aria-expanded", "true");
         }
