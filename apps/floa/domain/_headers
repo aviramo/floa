@@ -2,3 +2,7 @@
   Cache-Control: public, max-age=0, must-revalidate
 /auth.js
   Cache-Control: public, max-age=0, must-revalidate
+/kit.css
+  Cache-Control: public, max-age=0, must-revalidate
+/sheet.js
+  Cache-Control: public, max-age=0, must-revalidate
