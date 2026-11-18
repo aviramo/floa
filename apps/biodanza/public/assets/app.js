@@ -1440,7 +1440,7 @@
       var dlg = document.getElementById("exDlg");
       if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "exDlg"; document.body.appendChild(dlg); }
       RosterSheet.render(dlg, { title: name(e), from: "bottom", action: { label: word, icon: I.check, id: "exgo" },
-        body: bleedCss("exDlg") + '<div style="padding-block:var(--sp-2)">' + ((card("poetics", "פואטיקה") + card("guidance", "הנחיה") + card("level", "רמת הקבוצה") + card("curve", "מיקום בעקומה")) || ph("אין עדיין תיאור לתרגיל", "")) + musicRows(songs, sel) + '</div>' });
+        body: bleedCss("exDlg") + '<div style="padding-block:var(--sp-2)">' + ((card("level", "רמת הקבוצה") + card("curve", "מיקום בעקומה") + card("poetics", "פואטיקה") + card("guidance", "הנחיה")) || ph("אין עדיין תיאור לתרגיל", "")) + musicRows(songs, sel) + '</div>' });
       bleedSet(dlg);
       wirePick(dlg, function (id) { sel = id; });
       dlg.querySelector("#exgo").addEventListener("click", function () { if (swapIt) confirmSwap(e, swapIt, true, sel); else addEx(e, undefined, true, sel); });
@@ -1494,7 +1494,7 @@
       if (tok !== previewTok) return;   /* a later row was chosen meanwhile */
       var fake = { exercises: { exercise_texts: rows || [] } };
       var card = function (k, label) { return txt(fake, k) ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">' + label + '</span></div><div class="rcard__body"' + (isDraft(fake, k) ? DRAFT : "") + '>' + rtHtml(txt(fake, k)) + '</div></div>' : ""; };
-      var body = card("poetics", "פואטיקה") + card("guidance", "הנחיה") + card("level", "רמת הקבוצה") + card("curve", "מיקום בעקומה");
+      var body = card("level", "רמת הקבוצה") + card("curve", "מיקום בעקומה") + card("poetics", "פואטיקה") + card("guidance", "הנחיה");
       var word = swapIt ? "החלפה בתרגיל הזה" : "הוספה", sel = songs.length ? songs[0].id : null;
       var act = wide() ? '<button class="rbtn" type="button" data-act="doswap">' + word + '</button>'   /* the action is in the header, on the left; on a narrow screen a plain check, like the kit's popups */
                        : '<button class="rbtn" type="button" style="flex:none;width:var(--ctl);padding:0" data-act="doswap" aria-label="' + word + '" title="' + word + '">' + I.check + '</button>';   /* the green button, with a check */
@@ -1540,9 +1540,9 @@
       '<div class="rlist"><div class="pad">' +
       '<span class="rchip rchip--s">' + (k + 1) + ' מתוך ' + state.items.length + '</span>' +
       (it.music ? '<span class="rchip rchip--info rchip--l">' + esc(it.music.name) + '</span>' : '') +
+      [["level", "רמת הקבוצה"], ["curve", "מיקום בעקומה"]].map(function (f) { return txt(it, f[0]) ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">' + f[1] + '</span></div><div class="rcard__body"' + (isDraft(it, f[0]) ? DRAFT : "") + '>' + rtHtml(txt(it, f[0])) + '</div></div>' : ''; }).join('') +
       (txt(it, "poetics") ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">פואטיקה</span></div><div class="rcard__body"' + (isDraft(it, "poetics") ? DRAFT : "") + '>' + rtHtml(txt(it, "poetics")) + '</div></div>' : '') +
       (txt(it, "guidance") ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">הנחיה</span></div><div class="rcard__body"' + (isDraft(it, "guidance") ? DRAFT : "") + '>' + rtHtml(txt(it, "guidance")) + '</div></div>' : '') +
-      [["level", "רמת הקבוצה"], ["curve", "מיקום בעקומה"]].map(function (f) { return txt(it, f[0]) ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">' + f[1] + '</span></div><div class="rcard__body"' + (isDraft(it, f[0]) ? DRAFT : "") + '>' + rtHtml(txt(it, f[0])) + '</div></div>' : ''; }).join('') +
       (it.notes ? '<div class="rhint"><span class="rhint__tx">' + rtHtml(it.notes) + '</span></div>' : '') +
       '</div></div><div class="bar">' + (last ? '' : '<button class="rbtn rbtn--block" data-act="next">התרגיל הבא</button>') + (k ? '<button class="rbtn rbtn--ghost rbtn--block" data-act="prev">התרגיל הקודם</button>' : '') + '</div>', function (r) {
       on(r, "back", back);
