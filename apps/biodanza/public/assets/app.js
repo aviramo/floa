@@ -54,6 +54,7 @@
   function wide() { return window.matchMedia("(min-width: 1024px)").matches; }
   var api = function (p, o) { return FLOA_AUTH.api(p, o); };
   var likes = {};   /* the songs I loved (their ids), mine alone */
+  var likesEx = {};   /* the exercises I loved (their ids), mine alone */
   var liveItem = null;   /* the open exercise screen, so a change that comes from another person can be written into it */
   var state = { members: [], me: null, lines: [], phases: [], cat: null, vivs: [], viv: null, items: [], filter: "" };
 
@@ -211,6 +212,29 @@
       if (was) likes[id] = true; else delete likes[id]; paintHearts(id); toast("אי אפשר לשמור עכשיו");   /* it did not reach the server: back as it was */
     });
   }, true);
+  /* the heart of an exercise: in the exercise page's header, and in my list of loved exercises */
+  function heartBtnEx(exId, cls) {
+    var on = !!likesEx[exId];
+    return '<button type="button" class="rbtn rbtn--icon ' + (cls || "") + '" data-likex="' + exId + '" aria-pressed="' + on + '" aria-label="' + (on ? "הסרה מהתרגילים שאהבתי" : "תרגיל שאהבתי") + '" title="' + (on ? "הסרה מהתרגילים שאהבתי" : "תרגיל שאהבתי") + '" style="color:' + (on ? "var(--danger)" : "var(--text-3)") + '">' + (on ? I.heart.replace('fill="none"', 'fill="currentColor"') : I.heart) + '</button>';
+  }
+  function paintHeartsEx(id) {
+    document.querySelectorAll('[data-likex="' + id + '"]').forEach(function (b) {
+      var on = !!likesEx[id], tt = on ? "הסרה מהתרגילים שאהבתי" : "תרגיל שאהבתי";
+      b.setAttribute("aria-pressed", on); b.style.color = on ? "var(--danger)" : "var(--text-3)"; b.title = tt; b.setAttribute("aria-label", tt);
+      b.innerHTML = on ? I.heart.replace('fill="none"', 'fill="currentColor"') : I.heart;
+    });
+  }
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("[data-likex]"); if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    var id = b.dataset.likex, was = !!likesEx[id];
+    if (was) delete likesEx[id]; else likesEx[id] = true;
+    paintHeartsEx(id);
+    (was ? api("/rest/v1/exercise_likes?exercise_id=eq." + id, { method: "DELETE" })
+         : api("/rest/v1/exercise_likes", { method: "POST", json: { exercise_id: id }, prefer: "resolution=ignore-duplicates,return=minimal" })).catch(function () {
+      if (was) likesEx[id] = true; else delete likesEx[id]; paintHeartsEx(id); toast("אי אפשר לשמור עכשיו");
+    });
+  }, true);
   /* a song as a row to choose from: the same element, a row of its own */
   function songRow(m, cur, attr) {
     return '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-2);flex-wrap:wrap"' + (cur ? ' aria-current="true"' : '') + '>' + heartBtn(m) + '<button type="button" class="rrow__main" ' + attr + '="' + m.id + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit">' + songLines(m) + '</button>' + playCol(m, true) + songBar(m) + '</div>';   /* the text takes what is left, so a long name never pushes the play tile to a line of its own */
@@ -295,14 +319,14 @@
       '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="nextW" aria-label="הבא" title="הבא"' + (hasNext ? "" : " disabled") + '>' + I.fwd + '</button></header>';
   }
   /* the header of one exercise: buttons only, each with its word. Previous and the list on the right, next on the left. The name is the field below. */
-  function itemHead(hasPrev, hasNext, where) {
+  function itemHead(hasPrev, hasNext, where, exId) {
     var b = function (act, ico, label, off, after) {
       var shown = esc(label);
       var m = act === "list" && where && String(where).match(/^(\d+)\/(\d+)$/);
       if (m) shown = '<span style="display:inline-flex;align-items:baseline;gap:2px;direction:ltr"><b class="bio-num" style="display:inline-block;font:var(--fw-black) var(--fs-xl)/1 var(--font);--nx:' + ((state.slideFrom || 0) * 24) + 'px' + (state.slideFrom ? ';animation:bioNum .26s cubic-bezier(.2,.8,.2,1) both' : '') + '">' + m[1] + '</b><span style="color:var(--text-2);font:var(--fw-regular) var(--fs-s)/1 var(--font)">/' + m[2] + '</span></span>';   /* the number of this exercise is big, and rolls in from the side the page came from */
       return '<button class="rbtn' + (act === "nextW" ? "" : " rbtn--ghost") + '" data-act="' + act + '" title="' + esc(label) + '"' + (act === "list" ? ' style="flex:1 1 auto"' : "") + (off ? " disabled" : "") + '>' + (after ? '<span>' + shown + '</span>' + ico : ico + '<span>' + shown + '</span>') + '</button>';
     };
-    return '<header class="rhead">' + b("prevW", I.back, "הקודם", !hasPrev) + b("list", I.list, where || "לרשימה", false) + b("nextW", I.fwd, "הבא", !hasNext, true) + '</header>';
+    return '<header class="rhead">' + b("prevW", I.back, "הקודם", !hasPrev) + b("list", I.list, where || "לרשימה", false) + (exId ? heartBtnEx(exId, "") : "") + b("nextW", I.fwd, "הבא", !hasNext, true) + '</header>';
   }
   (function () {
     var st = document.createElement("style");
@@ -368,6 +392,18 @@
   }
 
   /* ---------- home: my vivencias ---------- */
+  /* the exercises I loved: my list, newest first; the heart takes one off it */
+  function likedExScreen() {
+    show(head("תרגילים שאהבתי", "", true) + '<div class="rlist" id="likx"><div class="rskel rskel--title"></div></div>', function (r) {
+      on(r, "back", back);
+      api("/rest/v1/exercise_likes?select=exercises(id,title_he,title_en,category)&order=created_at.desc").then(function (rows) {
+        var l = r.querySelector("#likx"), list = (rows || []).map(function (x) { return x.exercises; }).filter(Boolean);
+        l.innerHTML = list.length ? list.map(function (e) {
+          return '<div class="rrow" style="padding-inline:var(--gutter);padding-block:var(--sp-2)">' + heartBtnEx(e.id, "rrow__trail") + '<div class="rrow__main" style="flex:1 1 0;min-width:0"><span class="rrow__title">' + esc(name(e)) + '</span>' + (catName(e.category) ? '<span class="rrow__sub">' + esc(catName(e.category)) + '</span>' : '') + '</div></div>';
+        }).join("") : ph("עוד אין תרגילים שאהבת", "לחצו על הלב בראש תרגיל כדי לשמור אותו כאן");
+      }, fail);
+    });
+  }
   /* the songs I loved: my list, newest first, each as a song row (the heart takes a song off it) */
   function likedScreen() {
     show(head("שירים שאהבתי", "", true) + '<div class="rlist" id="likl"><div class="rskel rskel--title"></div></div>', function (r) {
@@ -387,7 +423,7 @@
       '<div class="rlist" data-fab-room id="hl"><div class="rskel rskel--title"></div></div>' +
       '<button class="rfab" data-act="new" aria-label="ויוונסיה חדשה" title="ויוונסיה חדשה">' + I.plus + '</button>', function (r) {
       on(r, "homemore", function (b) {   /* one menu: the songs I loved, who may enter (the manager), leaving */
-        var items = [{ label: "שירים שאהבתי", icon: I.heart, fn: function () { go(likedScreen); } }];
+        var items = [{ label: "שירים שאהבתי", icon: I.heart, fn: function () { go(likedScreen); } }, { label: "תרגילים שאהבתי", icon: I.heart, fn: function () { go(likedExScreen); } }];
         if (state.me.admin) items.push({ label: "מורשים", icon: I.users, fn: allowPopup });
         items.push({ label: "יציאה", icon: I.out, tone: "danger", fn: function () { Promise.resolve(FLOA_AUTH.signOut()).then(function () { location.reload(); }); } });
         menu(b, items);
@@ -753,7 +789,7 @@
     markItem();
     var k = state.items.indexOf(it), prevIt = state.items[k - 1], nextIt = state.items[k + 1];
     /* the header walks the sequence: the right button to the previous exercise, the left one to the next, the name between them */
-    var hd = itemHead(!!prevIt, !!nextIt, (k + 1) + "/" + state.items.length);   /* the middle button says where we are, and still opens the list */
+    var hd = itemHead(!!prevIt, !!nextIt, (k + 1) + "/" + state.items.length, it.exercise_id);   /* the middle button says where we are, and still opens the list */
     show(hd + '<style>#ipg, #ipg * { touch-action: pan-y } #ipg textarea { max-height: none } #ifields > .rfield { margin: 0 } #ipg .rfield:has(> textarea)::before { content: ""; position: absolute; z-index: 1; top: 0; inset-inline: 0; height: 19px; background: var(--bg); pointer-events: none }</style><div id="ipg" style="display:flex;flex-direction:column;flex:1 1 auto;min-height:0"><div class="pad" style="padding-bottom:0">' +
       '<div style="display:flex;align-items:flex-end;gap:var(--gap-button)">' + '<label class="rfield" style="flex:1 1 auto;margin:0"><span>שם התרגיל</span><input id="ina" style="font-weight: var(--fw-black); font-size: var(--fs-m)" placeholder=" " autocomplete="off" value="' + esc(itemName(it)) + '"></label>' + facChip(it) + '</div>' +
       '</div>' +
@@ -1365,7 +1401,8 @@
     api("/rest/v1/rpc/me", { method: "POST", json: {} }).then(function (me) {
       state.me = me;
       if (!me || !me.allowed) return gate("לחשבון " + FLOA_AUTH.email() + " אין הרשאה להיכנס. אפשר לבקש מהמנהל להוסיף אותו.", true);
-      return Promise.all([api("/rest/v1/lines?select=key,name_he&order=sort"), api("/rest/v1/phases?select=key,name_he&order=sort")]).then(function (r) { state.lines = r[0]; state.phases = r[1]; home(); startRealtime(); api("/rest/v1/song_likes?select=music_id").then(function (ls) { likes = {}; (ls || []).forEach(function (x) { likes[x.music_id] = true; }); }, function () { /* no hearts this time */ }); });
+      return Promise.all([api("/rest/v1/lines?select=key,name_he&order=sort"), api("/rest/v1/phases?select=key,name_he&order=sort")]).then(function (r) { state.lines = r[0]; state.phases = r[1]; home(); startRealtime(); api("/rest/v1/song_likes?select=music_id").then(function (ls) { likes = {}; (ls || []).forEach(function (x) { likes[x.music_id] = true; }); }, function () { /* no hearts this time */ });
+        api("/rest/v1/exercise_likes?select=exercise_id").then(function (ls) { likesEx = {}; (ls || []).forEach(function (x) { likesEx[x.exercise_id] = true; }); }, function () { /* no hearts this time */ }); });
     }).catch(function (e) { console.error(e); gate("לא הצלחנו להתחבר. נסו שוב.", false); });
   }
   /* wide screen: drag the line between the list and the vivencia to change the width (arrows on the keyboard, double click resets); kept in this browser */
