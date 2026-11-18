@@ -549,5 +549,5 @@ update biodanza.phases set aliases = case key
   when 'activation' then array['Phase II - Adrenergic', 'Phase II', 'Adrenergic', 'Activation', 'שלב II', 'II, אדרנרגי', 'שלב II, אדרנרגי', 'אדרנרגי']
   when 'bridge'     then array['Phase III - Transition', 'Phase III', 'Transition', 'Bridge', 'שלב III', 'III, מעבר', 'שלב III, גשר ומעבר', 'מעבר']
   when 'regression' then array['Phase IV - Cholinergic', 'Phase IV', 'Cholinergic', 'Regression', 'שלב IV', 'IV, כולינרגי', 'שלב IV, כולינרגי', 'כולינרגי']
-  when 'closing'    then array['Phase V - Closing', 'Phase V', 'Closing', 'Final activation', 'שלב V', 'V, סיום', 'שלב V, אקטיבציה וסיום', 'סיום']
+  when 'closing'    then array['Phase V - Activation and Final', 'Activation and Final', 'Phase V - Closing', 'Phase V', 'Closing', 'Final activation', 'שלב V', 'V, סיום', 'שלב V, אקטיבציה וסיום', 'סיום']
 end;
