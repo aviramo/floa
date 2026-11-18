@@ -373,6 +373,18 @@
     loadManager();
   }
 
+  /* the business's own menu sends here with ?biz=<slug>&do=<rename|accounts|trash|delete>: open that action once, then clean the address */
+  var deepDone = false;
+  function openDeepLink() {
+    if (deepDone) return;
+    deepDone = true;
+    var q = new URLSearchParams(location.search), slug = q.get("biz"), act = q.get("do");
+    if (!slug || !act) return;
+    history.replaceState(null, "", location.pathname);
+    var b = S.biz.filter(function (x) { return x.slug === slug; })[0];
+    if (b && /^(rename|accounts|trash|delete)$/.test(act)) rowAct(act, b.id);
+  }
+
   function loadManager() {
     var mine = epoch;
     if (!S.biz.length) list.innerHTML = '<li class="empty" role="status">טוען…</li>';
@@ -392,6 +404,7 @@
       S.parts = {};
       (Array.isArray(r[3]) ? r[3] : []).forEach(function (m) { S.parts[m.business_id] = (S.parts[m.business_id] || 0) + 1; });
       renderList();
+      openDeepLink();
     }).catch(function (e) {
       if ((e && e.signedOut) || epoch !== mine) return;
       list.innerHTML = '<li class="empty"><b>לא הצלחנו לטעון את העסקים</b>' + esc(T.loadFail) + '<br><button type="button" class="rbtn rbtn--ghost" data-act="reload">ניסיון נוסף</button></li>';
@@ -399,17 +412,17 @@
   }
 
   /* a business is a row of the participants list, same anatomy: the accounts count in the age column, the name, the identifier at the end.
-     The whole row opens its summary, and every action lives there: there is no swipe on this list. */
+     The whole row opens the business itself; edit, accounts, recently deleted and delete live in the business's own menu (admin page), which comes back here with ?do=. */
   function rowHtml(b) {
     var id = esc(b.id), n = accList(b).length, mc = (S.meets && S.meets[b.id]) || 0, pc = (S.parts && S.parts[b.id]) || 0;
     /* two lines of its own (the participants row's flow could not keep the identifier on the first line): the accounts count and the name at the start,
        the identifier at the top-left of the card; under them, at the start, the meetings chip (the calendar symbol of "meetings", the one the meetings menu uses, and their number) */
     return '<li class="row ucard bizrow" data-row="' + id + '">' +
-      '<div class="main nobadge" role="button" tabindex="0" data-open="' + id + '" aria-label="סיכום העסק ' + esc(b.name) + '">' +
+      '<a class="main nobadge" href="' + esc(bizHref(b.slug)) + '" aria-label="פתיחת העסק ' + esc(b.name) + '">' +
       '<div class="brow"><span class="age n" title="' + esc(pc === 0 ? "אין משתתפים" : pc === 1 ? "משתתף אחד" : pc + " משתתפים") + '"><bdi dir="rtl">' + pc + ' <b class="gl">' + icon("person", "i14") + '</b></bdi></span>' +
       '<span class="bname" dir="rtl">' + esc(b.name) + '</span>' +
       '<span class="bslug"><bdi dir="ltr">' + esc(b.slug) + '</bdi></span></div>' +
-      '<div class="brow brow--2"><span class="mcnt mcnt2" title="' + esc(mc === 1 ? "מפגש אחד" : mc + " מפגשים") + '">' + icon("cal", "i14") + mc + "</span></div></div></li>";
+      '<div class="brow brow--2"><span class="mcnt mcnt2" title="' + esc(mc === 1 ? "מפגש אחד" : mc + " מפגשים") + '">' + icon("cal", "i14") + mc + "</span></div></a></li>";
   }
 
 

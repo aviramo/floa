@@ -26,6 +26,8 @@
     copy: ['s', '<rect x="8" y="8" width="12" height="12" rx="3"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>'],
     dots: ['f', '<circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>'],
     edit: ['s', '<path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17z"/><path d="M14 7l3 3"/>'],
+    users: ['s', '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8"/><path d="M18.5 14.4c1.9.7 3 2.5 3 5.6"/>'],
+    restore: ['s', '<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>'],
     plus: ['s', '<path d="M12 5v14"/><path d="M5 12h14"/>'],
     enter: ['s', '<path d="M4 12h11M11 7l5 5-5 5M20 5v14"/>'],
     eye: ['s', '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'],
@@ -260,6 +262,7 @@
     BIZ = { slug: row.slug, id: row.id, name: row.name || row.slug };
     document.title = 'ניהול משתתפים · ' + BIZ.name; $('#bizName').textContent = BIZ.name;
     $('#connectLink').href = '/roster/connect/?biz=' + encodeURIComponent(BIZ.slug);
+    document.querySelectorAll('.bizdo').forEach((a) => { a.hidden = !row.is_super; a.href = '/roster/?biz=' + encodeURIComponent(BIZ.slug) + '&do=' + a.dataset.do; });   // עריכה, חשבונות, נמחקו לאחרונה ומחיקה: של מנהל הפלטפורמה, והמסך שלהם הוא של רשימת העסקים
     $('#bizSwitch').hidden = !(row.is_super || mine.length > 1);   // החלפת עסק: למי שיש לו יותר מעסק אחד (הבעלים תמיד)
     document.body.classList.remove('locked'); $('#gate').hidden = true;
     load();
