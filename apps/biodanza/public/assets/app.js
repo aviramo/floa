@@ -69,7 +69,22 @@
   function closeLayer(el) { if (el.id === "moreMenu") el.remove(); else slideClose(el); }
   function parseUrl() { var seg = location.pathname.slice(BASE.length).split("/").filter(Boolean); return { viv: seg[0] || "", item: seg[1] || "" }; }
   function wide() { return window.matchMedia("(min-width: 1024px)").matches; }
-  var api = function (p, o) { return state.offline ? offlineApi(p, o) : FLOA_AUTH.api(p, o); };
+  var api = function (p, o) {
+    if (state.offline) return offlineApi(p, o);
+    var r = FLOA_AUTH.api(p, o);
+    if (o && o.method && o.method !== "GET" && /\/rest\/v1\/(vivenc|rpc\/(leave_vivencia|vivencia))/.test(p)) r.then(function () { localSoon(); }, function () { /* nothing was written */ });
+    return r;
+  };
+  /* the device's copy follows every write: what the screen already shows (changed at once) is kept, and the list-level facts follow the list */
+  var localT = 0;
+  function localSoon() {
+    clearTimeout(localT);
+    localT = setTimeout(function () {
+      if (state.offline || !window.BioOffline) return;
+      if (state.viv && state.items && state.viv.id && BioOffline.isSaved(state.viv.id)) refreshOffline(state.viv);
+      if (state.vivsLoaded) BioOffline.patchRows(state.vivs).then(function (need) { if (need) syncOffline(true); });
+    }, 800);
+  }
   /* With no internet the app reads the copies kept on the device (assets/offline.js): the same questions, answered from them. Anything that would
      change something, or that is not in a copy, is refused the way a lost connection is. */
   var offlineRecs = {};
@@ -207,7 +222,7 @@
     var up = "calc(var(--gutter) + var(--inset-b))", left = "calc(max(var(--gutter), var(--inset-l)) + var(--fab) + var(--sp-2))", right = "max(var(--gutter), var(--inset-r))";
     var vis = "opacity: 0; transform: translateY(calc(var(--fab) + var(--sp-3))); pointer-events: none";
     var st = document.createElement("style");
-    st.textContent = ".bio-dock, .bio-dock-in { position: fixed; inset: auto " + right + " " + up + " " + left + "; margin: 0; box-sizing: border-box; height: var(--fab); display: flex; align-items: center; gap: var(--sp-2); padding: 0 var(--sp-2) 0 0; overflow: visible; color: var(--text); background: var(--bg); border: 0; border-radius: var(--r-fab); box-shadow: var(--sh-pop); z-index: var(--z-sticky); " + vis + "; transition: transform var(--t-base) var(--ease), opacity var(--t-base) var(--ease) } " +
+    st.textContent = ".bio-dock, .bio-dock-in { position: fixed; inset: auto " + right + " " + up + " " + left + "; margin: 0; width: auto; max-width: none; box-sizing: border-box; height: var(--fab); display: flex; align-items: center; gap: var(--sp-2); padding: 0 0 0 var(--sp-2); overflow: visible; color: var(--text); background: var(--bg); border: 0; border-radius: var(--r-fab); box-shadow: var(--sh-pop); z-index: var(--z-sticky); " + vis + "; transition: transform var(--t-base) var(--ease), opacity var(--t-base) var(--ease) } " +
       ".bio-dock.on, .bio-dock-in.on { opacity: 1; transform: none; pointer-events: auto } " +
       "html.rs-lock .bio-dock, html.dlg-lock .bio-dock, html.kb-open .bio-dock { " + vis + " } " +
       ".bio-dock__btn { flex: none; display: grid; place-items: center; width: var(--fab); height: var(--fab); padding: 0; border: 0; border-radius: var(--r-fab); background: var(--danger); color: var(--on-primary); cursor: pointer } " +
@@ -573,9 +588,15 @@
     });
     /* the list is asked for again when an answer fails (a refresh can hit a moment the connection or the token is not ready); only if it still fails, the copies kept on the device are shown, else a line that says so: never an empty list that looks like "no vivencias" */
     var tries = function (n) { return loadVivs().catch(function (e) { if (n <= 0) throw e; return new Promise(function (r) { setTimeout(r, 800); }).then(function () { return tries(n - 1); }); }); };
-    tries(3).then(renderVivs, function (e) {
+    /* the screen shows the device's copies at once; the cloud's answer follows and corrects it */
+    var cloudIn = false;
+    if (window.BioOffline) BioOffline.ready.then(function () { return state.vivs.length ? state.vivs : BioOffline.list().then(function (recs) { return (recs || []).map(function (x) { return Object.assign({}, x.row, { role: x.role, pos: x.pos }); }).sort(function (a, b) { var pa = a.pos == null ? -1 : a.pos, pb = b.pos == null ? -1 : b.pos; return pa - pb; }); }); }).then(function (vs) {
+      if (cloudIn || !vs || !vs.length || !document.getElementById("hl")) return;
+      state.vivs = vs; renderVivs();
+    });
+    tries(3).then(function () { cloudIn = true; renderVivs(); }, function (e) {
       console.error(e);
-      var l = document.getElementById("hl"); if (!l || state.vivsLoaded) return;
+      var l = document.getElementById("hl"); if (!l || state.vivsLoaded || state.vivs.length) return;
       (window.BioOffline ? BioOffline.list() : Promise.resolve([])).then(function (recs) {
         if (recs && recs.length) { state.vivs = recs.map(function (x) { return Object.assign({}, x.row, { role: x.role, pos: x.pos }); }); state.vivs.sort(function (a, b) { var pa = a.pos == null ? -1 : a.pos, pb = b.pos == null ? -1 : b.pos; return pa - pb; }); renderVivs(); }
         else l.innerHTML = ph("לא הצלחנו לטעון את הוויוונסיות", "רעננו את הדף כדי לנסות שוב");
@@ -594,7 +615,7 @@
       state.vivs = (r[0] || []).map(function (v) { v.pos = pos[v.id]; v.role = role[v.id] || "view"; return v; });
       /* my own order; a vivencia I have not placed yet (a new one) comes first, newest first */
       state.vivs.sort(function (a, b) { var pa = a.pos == null ? -1 : a.pos, pb = b.pos == null ? -1 : b.pos; return pa - pb || (a.updated_at < b.updated_at ? 1 : -1); });
-      syncOffline();   /* the device is made equal to the cloud, in the background */
+      syncOffline();   /* the device is made equal to the cloud, in the background (not more than every 30 seconds unless asked) */
     });
   }
   /* the arrow of an empty list, drawn in the real places: it leaves just under the words, goes down and bends left, and ends beside the + button */
@@ -815,8 +836,17 @@
         menu(b, items);
       });
     });
-    api("/rest/v1/rpc/vivencia_members", { method: "POST", json: { v: v.id } }).then(function (mm) { state.members = mm || []; if (document.getElementById("list")) paint(); }, function () { state.members = []; });
+    /* the exercises come from the device's copy at once (the skeleton only when there is none); the cloud's answer then corrects them */
+    var local = Promise.resolve(null);
+    if (window.BioOffline && BioOffline.isSaved(v.id)) local = BioOffline.get(v.id).catch(function () { return null; });
+    var cloudDone = false;
+    local.then(function (rec) {
+      if (!rec || cloudDone || !state.viv || state.viv.id !== v.id || !document.getElementById("list")) return;
+      state.items = rec.items || []; state.members = rec.members || []; paint();
+    });
+    api("/rest/v1/rpc/vivencia_members", { method: "POST", json: { v: v.id } }).then(function (mm) { state.members = mm || []; if (document.getElementById("list")) paint(); }, function () { if (!state.members) state.members = []; });
     loadItems().then(function () {
+      cloudDone = true;
       paint();
       refreshOffline(v);
       if (pending && pending.item) {   /* opened on an exercise's own address */
@@ -830,8 +860,9 @@
   /* somebody a vivencia was shared with takes themselves off it; it stays with its owner and the others */
   /* every vivencia is kept on the device, always: at each open the cloud and the device are compared and made equal (also what somebody else changed in a vivencia shared with me) */
   var syncT = 0;
-  function syncOffline() {
+  function syncOffline(force) {
     if (state.offline || !window.BioOffline || !state.vivsLoaded || navigator.onLine === false) return;
+    if (!force && Date.now() - syncT < 30000) return;
     syncT = Date.now();
     BioOffline.sync(state.vivs, function (v) {
       return Promise.all([itemsOf(v.id), api("/rest/v1/rpc/vivencia_members", { method: "POST", json: { v: v.id } })]).then(function (r) {
@@ -1533,12 +1564,12 @@
         state.viv.role = cur.role; state.viv.title = cur.title;
         if ((roleChanged || titleChanged) && document.getElementById("list") && document.getElementById("list").hasAttribute("data-fab-room") && !(liveItem && liveItem.root.isConnected)) editor();
       }
-      renderVivs();
+      renderVivs(); localSoon();
     }, function () { /* the next change will try again */ });
     if (i && state.viv) {
       api("/rest/v1/rpc/vivencia_members", { method: "POST", json: { v: state.viv.id } }).then(function (mm) { state.members = mm || []; }, function () { /* kept as it was */ });
       loadItems().then(function () {
-        paint();
+        paint(); localSoon();
         if (liveItem && liveItem.root.isConnected) {
           var f = state.items.filter(function (x) { return x.id === liveItem.id; })[0];
           if (f) liveItem.apply(f);
@@ -1657,10 +1688,18 @@
     if (!FLOA_AUTH.signedIn()) return gate("כניסה למאפשרי ביודנסה", false);
     if (navigator.onLine === false) return startOffline();
     show('<div class="rlist"><div class="rskel rskel--title"></div></div>');
+    /* kept copies on the device: the list shows at once, before the cloud has answered who this is (the cloud still decides: no permission, and the screen is replaced) */
+    var localHome = false;
+    if (window.BioOffline) BioOffline.ready.then(function () { return BioOffline.list(); }).then(function (recs) {
+      if (state.me || !recs || !recs.length) return;
+      var ad = false; try { ad = localStorage.getItem("biodanza.admin") === "1"; } catch (x) { /* none */ }
+      state.me = { allowed: true, admin: ad }; state.lines = state.lines || []; state.phases = state.phases || [];
+      localHome = true; home();
+    });
     api("/rest/v1/rpc/me", { method: "POST", json: {} }).then(function (me) {
-      state.me = me;
+      state.me = me; try { localStorage.setItem("biodanza.admin", me && me.admin ? "1" : "0"); } catch (x) { /* none */ }
       if (!me || !me.allowed) return gate("לחשבון " + FLOA_AUTH.email() + " אין הרשאה להיכנס. אפשר לבקש מהמנהל להוסיף אותו.", true);
-      return Promise.all([api("/rest/v1/lines?select=key,name_he&order=sort"), api("/rest/v1/phases?select=key,name_he&order=sort")]).then(function (r) { state.lines = r[0]; state.phases = r[1]; home(); startRealtime(); api("/rest/v1/song_likes?select=music_id").then(function (ls) { likes = {}; (ls || []).forEach(function (x) { likes[x.music_id] = true; }); }, function () { /* no hearts this time */ });
+      return Promise.all([api("/rest/v1/lines?select=key,name_he&order=sort"), api("/rest/v1/phases?select=key,name_he&order=sort")]).then(function (r) { state.lines = r[0]; state.phases = r[1]; if (!localHome) home(); startRealtime(); api("/rest/v1/song_likes?select=music_id").then(function (ls) { likes = {}; (ls || []).forEach(function (x) { likes[x.music_id] = true; }); }, function () { /* no hearts this time */ });
         api("/rest/v1/vivencia_likes?select=vivencia_id").then(function (ls) { likesViv = {}; (ls || []).forEach(function (x) { likesViv[x.vivencia_id] = true; }); if (state.vivsLoaded) renderVivs(); }, function () { /* no hearts this time */ });
         api("/rest/v1/exercise_likes?select=exercise_id").then(function (ls) { likesEx = {}; (ls || []).forEach(function (x) { likesEx[x.exercise_id] = true; }); }, function () { /* no hearts this time */ }); });
     }).catch(function (e) {

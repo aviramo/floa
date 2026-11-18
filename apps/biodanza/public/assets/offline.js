@@ -118,6 +118,18 @@
       });
       return syncing;
     },
+    /* the list-level facts (title, my role, my place) of kept copies follow the list the screen holds; true when a vivencia has no copy yet (the caller then asks for a full sync) */
+    patchRows: function (vivs) {
+      return ready.then(function () { return all(); }).then(function (rows) {
+        var by = {}, missing = false; rows.forEach(function (r) { by[r.id] = r; });
+        var puts = [];
+        vivs.forEach(function (v) {
+          var r = by[v.id]; if (!r) { missing = true; return; }
+          if ((r.row && r.row.title) !== v.title || r.role !== v.role || r.pos !== v.pos) { r.row = Object.assign({}, r.row, { title: v.title, updated_at: v.updated_at }); r.role = v.role; r.pos = v.pos; puts.push(run("readwrite", function (s) { return s.put(r); })); }
+        });
+        return Promise.all(puts).then(function () { return missing || rows.some(function (r) { return !vivs.some(function (v) { return v.id === r.id; }); }); });
+      }).catch(function () { return false; });
+    },
     /* what the list says now: a copy of a vivencia that is no longer there for this person goes */
     reconcile: function (keepIds) {
       var keep = {}; keepIds.forEach(function (i) { keep[i] = true; });
