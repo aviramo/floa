@@ -582,3 +582,13 @@ on conflict (key) do update set name_he = excluded.name_he, sort = excluded.sort
 update biodanza.exercises set phase_hint = 'unclassified', phase_keys = array['unclassified'] where owner_id is null and phase_hint is null and cardinality(phase_keys) = 0;
 update biodanza.exercise_texts t set curve = 'לא מסווג', curve_basis = '' from biodanza.exercises e
   where t.exercise_id = e.id and t.lang = 'he' and e.owner_id is null and e.phase_hint = 'unclassified' and t.curve_basis in ('inferred', '');
+
+-- "unclassified" for the line and the category too: every exercise the catalogs do not place gets it, to be set by hand.
+-- Lines: an exercise with no line at all. Categories: the 2014 and 2018 exercises that only sat in the catch-all "Danses Specifiques" (the 2012
+-- catalog's own section of that name keeps its exercises).
+insert into biodanza.lines (key, name_he, sort) values ('unclassified', 'לא מסווג', 6) on conflict (key) do update set name_he = excluded.name_he, sort = excluded.sort;
+insert into biodanza.exercise_lines (exercise_id, line_key, main)
+  select e.id, 'unclassified', true from biodanza.exercises e where e.owner_id is null and not exists (select 1 from biodanza.exercise_lines l where l.exercise_id = e.id)
+  on conflict do nothing;
+insert into biodanza.categories (key, name_he, sort) values ('unclassified', 'לא מסווג', 99) on conflict (key) do update set name_he = excluded.name_he, sort = excluded.sort;
+update biodanza.exercises set category = 'unclassified' where owner_id is null and category = 'Danses Specifiques' and source in ('catalog2014', 'cimeb2018');
