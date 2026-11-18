@@ -152,7 +152,7 @@
     });
     document.addEventListener("bioaudio", function (ev) {
       playing = !!(ev.detail && ev.detail.playing);
-      volState.on = playing; if (window.BioAudio && BioAudio.volume) volState.v = BioAudio.volume(0); paintVol();
+      if (window.BioAudio && BioAudio.volume) volState.v = BioAudio.volume(0); paintVol();
       if (playing) document.querySelectorAll("dialog[open]").forEach(function (d) {
         if (!d.querySelector(".bio-stop-in")) {
           var b = make("bio-stop-in"); b.setAttribute("popover", "manual"); d.appendChild(b);
@@ -239,7 +239,8 @@
   /* the placeholder of an empty list or pane: the curve icon, a title and one line */
   function ph(title, text) { return '<div class="rempty">' + I.curve + '<b>' + esc(title) + '</b>' + (text ? '<span>' + esc(text) + '</span>' : '') + '</div>'; }
   function uuid() { return crypto.randomUUID(); }
-  var volState = { on: false, v: 1 };   /* the volume gauge in the headers: shown while a song plays */
+  var volState = { on: true, v: 1 };   /* the volume gauge in the headers: always shown */
+  try { var sv0 = parseFloat(localStorage.getItem("biodanza.volume")); if (sv0 >= 0 && sv0 <= 1) volState.v = sv0; } catch (x) { /* full */ }
   function paintVol() {
     document.querySelectorAll(".bio-vol").forEach(function (g) { g.classList.toggle("on", volState.on); g.style.setProperty("--v", volState.v); g.setAttribute("aria-valuenow", Math.round(volState.v * 100)); });
   }
