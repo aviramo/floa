@@ -496,3 +496,15 @@ drop policy if exists vivencia_likes_write on biodanza.vivencia_likes;
 create policy vivencia_likes_write on biodanza.vivencia_likes for all to authenticated
   using (user_id = auth.uid() and biodanza.is_allowed()) with check (user_id = auth.uid() and biodanza.is_allowed());
 grant select, insert, update, delete on biodanza.vivencia_likes to authenticated, service_role;
+
+-- ---------- the raw material of the catalogs, and the texts per language ----------
+-- exercises.raw_sources keeps EVERYTHING the catalogs say about an exercise, as it was written, so a new analysis never goes back to the PDFs:
+-- a list of { catalog, lang, title, fields: { <the catalog's own label>: <its text> } }, one entry per catalog and language. An exercise that
+-- appears in several catalogs carries the entries of all of them.
+alter table biodanza.exercises add column if not exists raw_sources jsonb not null default '[]'::jsonb;
+
+-- exercise_texts: one row per exercise and language. lang says which language it is; source says whether it is the catalog's own wording
+-- in that language ('catalog' = original) or a translation made for the app ('translation'). Hebrew always exists. level and curve are
+-- fields of their own, never part of poetics or guidance: the group level the exercise is for, and its place on the session curve.
+alter table biodanza.exercise_texts add column if not exists level text not null default '';
+alter table biodanza.exercise_texts add column if not exists curve text not null default '';
