@@ -172,6 +172,8 @@
     el.addEventListener("paste", function (e) { e.preventDefault(); document.execCommand("insertText", false, (e.clipboardData || window.clipboardData).getData("text/plain")); });
     el.addEventListener("blur", function () { el.dispatchEvent(new Event("change")); });
   }
+  /* a search ignores capitals and marks: "marron" finds "Marrón", "cafe" finds "café" (also Hebrew points) */
+  function fold(t) { return String(t == null ? "" : t).normalize("NFD").replace(new RegExp("[" + String.fromCharCode(0x300) + "-" + String.fromCharCode(0x36f) + String.fromCharCode(0x591) + "-" + String.fromCharCode(0x5c7) + "]", "g"), "").toLowerCase(); }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   function name(e) { return e.title_he || e.title_en || ""; }
   function phaseName(k) { var p = state.phases.filter(function (x) { return x.key === k; })[0]; return p ? p.name_he : ""; }
@@ -804,10 +806,10 @@
     });
     function who(e) { var c = cands.filter(function (x) { return x.email === e; })[0]; return c && c.note ? c.note : e; }
     function paintS() {
-      var q = dlg.querySelector("#sq").value.trim().toLowerCase(), l = dlg.querySelector("#slist");
+      var q = fold(dlg.querySelector("#sq").value.trim()), l = dlg.querySelector("#slist");
       var have = {}; shares.forEach(function (x) { have[x.email] = 1; });
-      var mine = shares.filter(function (x) { return !q || (x.email + " " + who(x.email)).toLowerCase().indexOf(q) >= 0; });
-      var rest = cands.filter(function (c) { return !have[c.email] && (!q || (c.email + " " + (c.note || "")).toLowerCase().indexOf(q) >= 0); });
+      var mine = shares.filter(function (x) { return !q || fold(x.email + " " + who(x.email)).indexOf(q) >= 0; });
+      var rest = cands.filter(function (c) { return !have[c.email] && (!q || fold(c.email + " " + (c.note || "")).indexOf(q) >= 0); });
       var title2 = function (t) { return '<div class="rrow rrow--compact"><span class="rrow__sub">' + t + '</span></div>'; };
       var html = "";
       if (mine.length) {
@@ -1246,7 +1248,7 @@
     if (exMusicP) return exMusicP;
     var by = {}, order = [], PAGE = 1000;
     function page(off) {
-      return api("/rest/v1/exercise_music?select=exercise_id,exercises(id,title_he,title_en),music(id,name,title,artist,duration_sec,audio_object,in_catalog)&order=exercise_id&limit=" + PAGE + "&offset=" + off).then(function (rows) {
+      return api("/rest/v1/exercise_music?select=exercise_id,exercises(id,title_he,title_en),music(id,name,title,artist,duration_sec,audio_object,in_catalog)&order=exercise_id,music_id&limit=" + PAGE + "&offset=" + off).then(function (rows) {
         rows = rows || [];
         rows.forEach(function (x) {
           if (!x.exercises || !x.music) return;
@@ -1264,9 +1266,9 @@
     l.innerHTML = '<label class="rfield" style="margin-bottom:var(--sp-2)"><span>חיפוש מוזיקה או תרגיל</span><input id="mq" placeholder=" " autocomplete="off"></label><div id="mb"></div>' + (tail || "");
     var mb = l.querySelector("#mb"), q = l.querySelector("#mq"), groups = null, open = {}, byId = {};
     own.forEach(function (m) { byId[m.id] = m; });
-    function hit(m, s) { return (songName(m) + " " + songBy(m)).toLowerCase().indexOf(s) >= 0; }
+    function hit(m, s) { return fold(songName(m) + " " + songBy(m)).indexOf(s) >= 0; }
     function draw() {
-      var s = q.value.trim().toLowerCase(), h = "";
+      var s = fold(q.value.trim()), h = "";
       var mine = own.filter(function (m) { return !s || hit(m, s); });
       h += mine.map(function (m) { return songRow(m, it.music_id === m.id, "data-m"); }).join("");
       if (!groups) h += '<div class="rskel rskel--title"></div>';
@@ -1274,7 +1276,7 @@
         var shown = 0;
         groups.forEach(function (g) {
           if (g.id === it.exercise_id) return;
-          var nm = !!s && g.name.toLowerCase().indexOf(s) >= 0, ms = s ? (nm ? g.songs : g.songs.filter(function (m) { return hit(m, s); })) : g.songs;
+          var nm = !!s && fold(g.name).indexOf(s) >= 0, ms = s ? (nm ? g.songs : g.songs.filter(function (m) { return hit(m, s); })) : g.songs;
           if (!ms.length) return;
           var on = open[g.id] != null ? open[g.id] : (!!s && !nm);   /* a search that matched songs inside opens their exercise; an exercise matched by name stays closed until asked */
           shown++;
@@ -1370,8 +1372,8 @@
     api("/rest/v1/music?in_catalog=eq.false&select=id,name,title,artist,duration_sec,audio_object,in_catalog&order=title&limit=1000").then(function (rows) {
       var all = rows || [], l = r.querySelector("#olist");
       function draw() {
-        var q = r.querySelector("#oq").value.trim().toLowerCase();
-        var vis = all.filter(function (m) { return !q || (songName(m) + " " + songBy(m)).toLowerCase().indexOf(q) >= 0; });
+        var q = fold(r.querySelector("#oq").value.trim());
+        var vis = all.filter(function (m) { return !q || fold(songName(m) + " " + songBy(m)).indexOf(q) >= 0; });
         l.innerHTML = vis.length ? vis.map(function (m) { return songRow(m, it.music_id === m.id, "data-o"); }).join("") : ph("לא נמצא", "");
         l.querySelectorAll("[data-o]").forEach(function (b) { b.addEventListener("click", function () { chooseSong(it, all.filter(function (x) { return x.id === b.dataset.o; })[0]); }); });
       }
@@ -1384,8 +1386,8 @@
       api("/rest/v1/music?in_catalog=eq.false&select=id,name,title,artist,duration_sec,audio_object,in_catalog&order=title&limit=1000").then(function (rows) {
         var all = rows || [], l = r.querySelector("#olist");
         function draw() {
-          var q = r.querySelector("#oq").value.trim().toLowerCase();
-          var vis = all.filter(function (m) { return !q || (songName(m) + " " + songBy(m)).toLowerCase().indexOf(q) >= 0; });
+          var q = fold(r.querySelector("#oq").value.trim());
+          var vis = all.filter(function (m) { return !q || fold(songName(m) + " " + songBy(m)).indexOf(q) >= 0; });
           l.innerHTML = vis.length ? vis.map(function (m) {
             return songRow(m, it.music_id === m.id, "data-o");
           }).join("") : ph("לא נמצא", "");
@@ -1477,10 +1479,10 @@
         });
       }
       function paintCat() {
-        var q = r.querySelector("#q").value.trim().toLowerCase(), ln = r.querySelector("#ln").value, lv = r.querySelector("#lv").value, cv = r.querySelector("#cv").value, cg = catSel, l = r.querySelector("#list");
+        var q = fold(r.querySelector("#q").value.trim()), ln = r.querySelector("#ln").value, lv = r.querySelector("#lv").value, cv = r.querySelector("#cv").value, cg = catSel, l = r.querySelector("#list");
         pk = { q: r.querySelector("#q").value, ln: ln, cg: cg, lv: lv, cv: cv };   /* what was typed and chosen is kept while an exercise is looked at and back again */
         var rows = (state.cat || []).filter(function (e) {
-          return (!cg || e.category === cg) && (!lv || e.level_key === lv) && (!cv || (e.phase_keys || []).indexOf(cv) >= 0) && (!ln || (e.exercise_lines || []).some(function (x) { return x.line_key === ln; })) && (!q || (name(e) + " " + e.title_en + " " + e.category).toLowerCase().indexOf(q) >= 0);
+          return (!cg || e.category === cg) && (!lv || e.level_key === lv) && (!cv || (e.phase_keys || []).indexOf(cv) >= 0) && (!ln || (e.exercise_lines || []).some(function (x) { return x.line_key === ln; })) && (!q || fold(name(e) + " " + e.title_en + " " + e.category).indexOf(q) >= 0);
         });
         l.innerHTML = rows.length ? rows.map(function (e) {
           return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-ex="' + e.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(name(e)) + '</span><span class="rrow__sub">' + esc([catName(e.category)].concat((e.exercise_lines || []).map(function (x) { return lineName(x.line_key); })).filter(Boolean).join(" · ")) + '</span></button></div>';
@@ -1676,8 +1678,8 @@
         '<button class="rbtn" id="addm" type="button">הוספה</button></div><div id="alist"></div>'
     });
     function paintA() {
-      var q = dlg.querySelector("#aq").value.trim().toLowerCase(), l = dlg.querySelector("#alist");
-      var vis = rows.filter(function (a) { return !q || (a.email + " " + (a.note || "")).toLowerCase().indexOf(q) >= 0; });
+      var q = fold(dlg.querySelector("#aq").value.trim()), l = dlg.querySelector("#alist");
+      var vis = rows.filter(function (a) { return !q || fold(a.email + " " + (a.note || "")).indexOf(q) >= 0; });
       var sup = !!(state.me && state.me.super), roleOf = function (a) { return a.is_super ? "super" : a.is_admin ? "admin" : "member"; };
       var ROLES = [["member", "חבר"], ["admin", "מנהל"], ["super", "מנהל על"]];
       l.innerHTML = vis.length ? vis.map(function (a) {
