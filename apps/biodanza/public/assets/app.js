@@ -1338,13 +1338,14 @@
       /* a field you can type in that also opens its options when you click it: the options are the kit's menu, placed under the field */
       /* scrolling down slides the two filter rows away (the search stays at the top); the first scroll up brings them back */
       function wireHide() {
-        var sc = r.querySelector("#pks"), h = r.querySelector("#pkh"), f = r.querySelector("#pkf"), last = 0, hidden = false;
-        if (!sc || !h || !f) return;
-        function set(on) { if (on === hidden) return; hidden = on; h.style.transform = on ? "translateY(-" + f.offsetHeight + "px)" : ""; }
+        var sc = r.querySelector("#pks"), h = r.querySelector("#pkh"), f = r.querySelector("#pkf"), qf = r.querySelector("#q").closest("label"), last = 0, hidden = false;
+        if (!sc || !h || !f || !qf) return;
+        function drop() { return qf.offsetTop; }   /* how far the search is from the head's top edge: the rows, the gaps and the padding above it */
+        function set(on) { if (on === hidden) return; hidden = on; h.style.transform = on ? "translateY(-" + drop() + "px)" : ""; }
         sc.addEventListener("scroll", function () {
           var t = sc.scrollTop;
           if (t <= 2) set(false);
-          else if (t > last + 2 && t > f.offsetHeight) set(true);
+          else if (t > last + 2 && t > drop()) set(true);
           else if (t < last - 2) set(false);
           last = t;
         }, { passive: true });
