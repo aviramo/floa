@@ -67,6 +67,7 @@
     up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>',
     down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>',
     users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M16 5a3 3 0 010 6M18 15c2 .6 3 2.2 3 5"/></svg>',
+    swap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></svg>',
     trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
     fwd: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>',
     curve: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 16c2.5-9 5-9 7.5-1s5 8 7.5 0c1-3 2.500-5 5-6"/></svg>',
@@ -81,6 +82,70 @@
     out: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 5H5v14h5M15 8l4 4-4 4M19 12H9"/></svg>'
   };
 
+  /* ---------- bold words in the three texts: kept as **word** in the same text, drawn as bold ---------- */
+  function rtHtml(s) { return esc(s).replace(/\*\*([\s\S]+?)\*\*/g, "<b>$1</b>").replace(/\n/g, "<br>"); }
+  function rtWalk(root, marks) {   /* the text of a box (or of a piece of one): lines as \n, bold between ** when marks */
+    var out = "", on = false;
+    function put(s, b) { if (marks && b !== on) { out += "**"; on = b; } out += s; }
+    function isB(e) { var w = e.style && e.style.fontWeight; return e.tagName === "B" || e.tagName === "STRONG" || w === "bold" || +w >= 600; }
+    (function walk(n, b) {
+      for (var c = n.firstChild; c; c = c.nextSibling) {
+        if (c.nodeType === 3) put(c.nodeValue.replace(/ /g, " "), b);
+        else if (c.nodeType === 1) {
+          if (c.tagName === "BR") { put("\n", b); continue; }
+          if ((c.tagName === "DIV" || c.tagName === "P") && out && out.slice(-1) !== "\n") put("\n", b);
+          walk(c, b || isB(c));
+        }
+      }
+    })(root, false);
+    if (on) out += "**";
+    var last = root.lastChild;
+    if (last && last.nodeType === 1 && last.tagName === "BR" && out.slice(-1) === "\n") out = out.slice(0, -1);   /* the browser's own empty last line */
+    return marks ? out.replace(/\*\*\*\*/g, "") : out;
+  }
+  function rtIndex(el, node, off) { var q = document.createRange(); q.selectNodeContents(el); q.setEnd(node, off); var d = document.createElement("div"); d.appendChild(q.cloneContents()); return rtWalk(d, false).length; }
+  function rtSel(el) { var s = window.getSelection(); if (!s || !s.rangeCount || !el.contains(s.anchorNode)) return { a: 0, b: 0 }; var r = s.getRangeAt(0); return { a: rtIndex(el, r.startContainer, r.startOffset), b: rtIndex(el, r.endContainer, r.endOffset) }; }
+  function rtPoint(root, idx) {   /* the place in the box that is `idx` characters in */
+    var n = 0, res = null;
+    (function w(p) {
+      for (var c = p.firstChild; c && !res; c = c.nextSibling) {
+        if (c.nodeType === 3) { if (idx <= n + c.nodeValue.length) res = [c, idx - n]; else n += c.nodeValue.length; }
+        else if (c.nodeType === 1) { if (c.tagName === "BR") { if (idx <= n) res = [p, Array.prototype.indexOf.call(p.childNodes, c)]; else n++; } else w(c); }
+      }
+    })(root);
+    return res || [root, root.childNodes.length];
+  }
+  function rtInit(el) {   /* a box that answers like a textarea: .value */
+    function mark() { if (el.parentElement) el.parentElement.dataset.rf = el.textContent ? "v" : "e"; }
+    Object.defineProperty(el, "value", { configurable: true, get: function () { return rtWalk(el, true); }, set: function (v) { el.innerHTML = rtHtml(v); mark(); } });
+    mark();
+    el.addEventListener("input", mark);
+    el.addEventListener("beforeinput", function (e) { if (e.inputType === "insertParagraph") { e.preventDefault(); document.execCommand("insertLineBreak"); } });
+    el.addEventListener("paste", function (e) { e.preventDefault(); document.execCommand("insertText", false, (e.clipboardData || window.clipboardData).getData("text/plain")); });
+    el.addEventListener("blur", function () { el.dispatchEvent(new Event("change")); });
+  }
+  (function () {   /* the bold button: under the selected words, in any of the three texts */
+    var st = document.createElement("style");
+    st.textContent = ".bio-boldbtn { position: fixed; z-index: var(--z-menu); display: none; font-weight: var(--fw-black) } .bio-boldbtn.show { display: inline-flex } .bio-boldbtn.on { background: var(--primary); color: var(--on-primary) }";
+    document.head.appendChild(st);
+    var b = document.createElement("button"); b.type = "button"; b.className = "rbtn rbtn--icon bio-boldbtn"; b.textContent = "B"; b.setAttribute("aria-label", "הדגשה"); b.title = "הדגשה";
+    b.addEventListener("pointerdown", function (e) { e.preventDefault(); });
+    b.addEventListener("mousedown", function (e) { e.preventDefault(); });
+    b.addEventListener("click", function () { document.execCommand("bold"); place(); });
+    document.addEventListener("DOMContentLoaded", function () { document.body.appendChild(b); });
+    if (document.body) document.body.appendChild(b);
+    function place() {
+      var s = window.getSelection(), el = s && s.rangeCount && !s.isCollapsed && s.anchorNode && (s.anchorNode.nodeType === 1 ? s.anchorNode : s.anchorNode.parentElement);
+      el = el && el.closest && el.closest(".rf-rich");
+      if (!el || !el.contains(s.focusNode)) { b.classList.remove("show"); return; }
+      var r = s.getRangeAt(0).getBoundingClientRect(), w = 44;
+      var top = r.bottom + 8; if (top + w > window.innerHeight - 8) top = Math.max(8, r.top - w - 8);
+      b.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + "px"; b.style.top = top + "px";
+      b.classList.toggle("on", document.queryCommandState("bold")); b.classList.add("show");
+    }
+    document.addEventListener("selectionchange", place);
+    window.addEventListener("scroll", place, true); window.addEventListener("resize", place);
+  })();
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   function name(e) { return e.title_he || e.title_en || ""; }
   function phaseName(k) { var p = state.phases.filter(function (x) { return x.key === k; })[0]; return p ? p.name_he : ""; }
@@ -406,7 +471,7 @@
     var x0 = 0, y0 = 0, t0 = 0, dx = 0, mode = 0;
     pg.addEventListener("pointerdown", function (e) {
       if (e.target.closest && e.target.closest(".bio-bar")) return;   /* a drag on the song's bar moves the song, never the page */
-      if (e.pointerType !== "touch" && (e.button > 0 || (e.target.closest && e.target.closest("input, textarea, select, a, button")))) return;   /* a finger anywhere; a mouse (a narrow window) only off the fields and buttons */
+      if (e.pointerType !== "touch" && (e.button > 0 || (e.target.closest && e.target.closest("input, textarea, select, a, button, .rf-rich")))) return;   /* a finger anywhere; a mouse (a narrow window) only off the fields and buttons */
       x0 = e.clientX; y0 = e.clientY; t0 = performance.now(); dx = 0; mode = 1; });
     pg.addEventListener("pointermove", function (e) {
       if (mode === 0 || mode === 3) return;
@@ -895,16 +960,18 @@
     var k = state.items.indexOf(it), prevIt = state.items[k - 1], nextIt = state.items[k + 1];
     /* the header walks the sequence: the right button to the previous exercise, the left one to the next, the name between them */
     var hd = itemHead(!!prevIt, !!nextIt, (k + 1) + "/" + state.items.length, it.exercise_id);   /* the middle button says where we are, and still opens the list */
-    show(hd + '<style>#ipg, #ipg * { touch-action: pan-y } #ipg textarea { max-height: none } #ifields > .rfield { margin: 0 } #ipg .rfield:has(> textarea)::before { content: ""; position: absolute; z-index: 1; top: 0; inset-inline: 0; height: 19px; background: var(--bg); pointer-events: none }</style><div id="ipg" style="display:flex;flex-direction:column;flex:1 1 auto;min-height:0"><div class="pad" style="padding-bottom:0">' +
+    show(hd + '<style>#ipg, #ipg * { touch-action: pan-y } #ipg textarea, #ipg .rf-rich { max-height: none } #ifields > .rfield { margin: 0 } #ipg .rfield:has(> textarea, > .rf-rich)::before { content: ""; position: absolute; z-index: 1; top: 0; inset-inline: 0; height: 19px; background: var(--bg); pointer-events: none }</style><div id="ipg" style="display:flex;flex-direction:column;flex:1 1 auto;min-height:0"><div class="pad" style="padding-bottom:0">' +
       '<div style="display:flex;align-items:flex-end;gap:var(--gap-button)">' + '<label class="rfield" style="flex:1 1 auto;margin:0"><span>שם התרגיל</span><input id="ina" style="font-weight: var(--fw-black); font-size: var(--fs-m)" placeholder=" " autocomplete="off" value="' + esc(itemName(it)) + '"></label>' + facChip(it) + '</div>' +
       '</div>' +
       '<div class="rrow rrow--link" data-act="pickMusic" role="button" tabindex="0" style="flex:none;padding-inline:var(--sp-2);padding-block:var(--sp-2);border-bottom:0;cursor:pointer"><div style="flex:1 1 auto;min-width:0">' +
         (it.music ? songLines(it.music) : '<span class="rrow__title">לחצו לבחירת מוזיקה</span>') + '</div>' + (it.music ? playCol(it.music, true) : '') + '</div>' +   /* a strip across the width, like the music chooser's rows */
       songBar(it.music, "flex:none;padding:var(--sp-1) var(--sp-2) 0", true) +
-      '<div id="ifields" style="flex:1 1 auto;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:var(--gap-field);padding:var(--gutter) var(--gutter) 0"><label class="rfield" style="flex:none"><span>פואטיקה</span><textarea id="ipo" rows="1" placeholder=" "' + (isDraft(it, "poetics") ? DRAFT_FIELD : "") + '>' + esc(txt(it, "poetics")) + '</textarea></label>' +
-      '<label class="rfield" style="flex:none"><span>הנחיה</span><textarea id="igu" rows="1" placeholder=" "' + (isDraft(it, "guidance") ? DRAFT_FIELD : "") + '>' + esc(txt(it, "guidance")) + '</textarea></label>' +
-      '<label class="rfield" style="flex:none"><span>הערות</span><textarea id="it" rows="1" placeholder=" ">' + esc(it.notes || "") + '</textarea></label></div>' +
-      '<div id="ibtns" style="flex:none;display:flex;gap:var(--gap-button);padding:var(--gutter) max(var(--gutter), var(--inset-r)) calc(var(--gutter) + var(--inset-b)) max(var(--gutter), var(--inset-l))"><button class="rbtn rbtn--ghost rbtn--block" style="flex:1 1 0;min-width:0;padding-inline:var(--sp-1);font-size:var(--fs-s)" data-act="swap">' + (wide() ? I.back : I.up) + 'החלפת תרגיל</button><button class="rbtn rbtn--ghost rbtn--danger rbtn--block" style="flex:1 1 0;min-width:0;padding-inline:var(--sp-1);font-size:var(--fs-s)" data-act="del">הסרה מהוויוונסיה</button></div></div>', function (r) {
+      '<div id="ifields" style="flex:1 1 auto;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:var(--gap-field);padding:var(--gutter) var(--gutter) 0"><label class="rfield" style="flex:none"><span>פואטיקה</span><div id="ipo" class="rf-rich" contenteditable="true" role="textbox" aria-multiline="true"' + (isDraft(it, "poetics") ? DRAFT_FIELD : "") + '>' + rtHtml(txt(it, "poetics")) + '</div></label>' +
+      '<label class="rfield" style="flex:none"><span>הנחיה</span><div id="igu" class="rf-rich" contenteditable="true" role="textbox" aria-multiline="true"' + (isDraft(it, "guidance") ? DRAFT_FIELD : "") + '>' + rtHtml(txt(it, "guidance")) + '</div></label>' +
+      '<label class="rfield" style="flex:none"><span>הערות</span><div id="it" class="rf-rich" contenteditable="true" role="textbox" aria-multiline="true">' + rtHtml(it.notes || "") + '</div></label></div>' +
+      '<div id="ibtns" style="flex:none;height:calc(var(--fab) + 2 * var(--gutter) + var(--inset-b))"></div></div>' +
+      '<button class="rfab" data-act="swap" aria-label="החלפת תרגיל" title="החלפת תרגיל">' + I.swap + '</button>' +   /* the two actions are buttons at the left, so the right is free for the music's */
+      '<button class="rfab" data-act="del" aria-label="הסרה מהוויוונסיה" title="הסרה מהוויוונסיה" style="left:calc(max(var(--gutter), var(--inset-l)) + var(--fab) + var(--sp-2));border-color:var(--danger);background:var(--danger)">' + I.trash + '</button>', function (r) {
       var sf = state.slideFrom || 0, pg = r.querySelector("#ipg"); state.slideFrom = 0;
       r.style.overflowX = "clip";   /* a page sliding in from the side must not make the window scroll sideways */
       if (pg && sf && !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)) {
@@ -922,6 +989,7 @@
       r.querySelectorAll('[data-act="pickMusic"]').forEach(function (c) { c.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toMusic(); } }); });
       /* the three fields share the height that is left, by how many lines each has: all of it if it fits; if not, each gets its share and scrolls on its own */
       var box = r.querySelector("#ifields"), tas = ["#ipo", "#igu", "#it"].map(function (q) { return r.querySelector(q); });
+      tas.forEach(rtInit);
       function layoutFields() {
         if (!box || !box.isConnected) return;
         tas.forEach(function (t) { t.style.height = "auto"; t.style.overflowY = "hidden"; });
@@ -980,7 +1048,7 @@
       });
       if (pg) pg.addEventListener("focusout", function () { setTimeout(function () { if (liveItem && liveItem.pending && pg.isConnected && !pg.contains(document.activeElement)) { var f = liveItem.pending; liveItem.pending = null; itemScreen(f); } }, 0); });
       liveItem = { id: it.id, root: fld.title, fld: fld, prev: prevIt && prevIt.id, next: nextIt && nextIt.id, apply: function (fresh) {
-        var inField = r.contains(document.activeElement) && /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName), k2 = fresh.id === it.id ? state.items.indexOf(fresh) : -1;
+        var inField = r.contains(document.activeElement) && (/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName) || document.activeElement.classList.contains("rf-rich")), k2 = fresh.id === it.id ? state.items.indexOf(fresh) : -1;
         var pid = state.items[k2 - 1] && state.items[k2 - 1].id, nid = state.items[k2 + 1] && state.items[k2 + 1].id;
         var strip = r.querySelector('[data-act="pickMusic"]');
         if (fresh.music_id !== it.music_id && strip && fresh.exercise_id === it.exercise_id) {   /* the song changed: the strip and its bar are written anew in place, so it shows even while I am typing */
@@ -1220,7 +1288,7 @@
     loadPreview(e.id).then(function (res) { var rows = res.rows, songs = res.songs;
       if (tok !== previewTok) return;
       var fake = { exercises: { exercise_texts: rows || [] } };
-      var card = function (k, label) { return txt(fake, k) ? '<div class="rcard rcard--flat" style="margin-inline:0"><div class="rcard__head"><span class="rcard__title">' + label + '</span></div><div class="rcard__body"' + (isDraft(fake, k) ? DRAFT : "") + '>' + esc(txt(fake, k)) + '</div></div>' : ""; };
+      var card = function (k, label) { return txt(fake, k) ? '<div class="rcard rcard--flat" style="margin-inline:0"><div class="rcard__head"><span class="rcard__title">' + label + '</span></div><div class="rcard__body"' + (isDraft(fake, k) ? DRAFT : "") + '>' + rtHtml(txt(fake, k)) + '</div></div>' : ""; };
       var word = swapIt ? "החלפה בתרגיל הזה" : "הוספה", sel = songs.length ? songs[0].id : null;
       var dlg = document.getElementById("exDlg");
       if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "exDlg"; document.body.appendChild(dlg); }
@@ -1278,7 +1346,7 @@
     loadPreview(e.id).then(function (res) { var rows = res.rows, songs = res.songs;
       if (tok !== previewTok) return;   /* a later row was chosen meanwhile */
       var fake = { exercises: { exercise_texts: rows || [] } };
-      var card = function (k, label) { return txt(fake, k) ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">' + label + '</span></div><div class="rcard__body"' + (isDraft(fake, k) ? DRAFT : "") + '>' + esc(txt(fake, k)) + '</div></div>' : ""; };
+      var card = function (k, label) { return txt(fake, k) ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">' + label + '</span></div><div class="rcard__body"' + (isDraft(fake, k) ? DRAFT : "") + '>' + rtHtml(txt(fake, k)) + '</div></div>' : ""; };
       var body = card("poetics", "פואטיקה") + card("guidance", "הנחיה");
       var word = swapIt ? "החלפה בתרגיל הזה" : "הוספה", sel = songs.length ? songs[0].id : null;
       var act = wide() ? '<button class="rbtn" type="button" data-act="doswap">' + word + '</button>'   /* the action is in the header, on the left; on a narrow screen a plain check, like the kit's popups */
@@ -1324,9 +1392,9 @@
       '<div class="rlist"><div class="pad">' +
       '<span class="rchip rchip--s">' + (k + 1) + ' מתוך ' + state.items.length + '</span>' +
       (it.music ? '<span class="rchip rchip--info rchip--l">' + esc(it.music.name) + '</span>' : '') +
-      (txt(it, "poetics") ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">פואטיקה</span></div><div class="rcard__body"' + (isDraft(it, "poetics") ? DRAFT : "") + '>' + esc(txt(it, "poetics")) + '</div></div>' : '') +
-      (txt(it, "guidance") ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">הנחיה</span></div><div class="rcard__body"' + (isDraft(it, "guidance") ? DRAFT : "") + '>' + esc(txt(it, "guidance")) + '</div></div>' : '') +
-      (it.notes ? '<div class="rhint"><span class="rhint__tx">' + esc(it.notes) + '</span></div>' : '') +
+      (txt(it, "poetics") ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">פואטיקה</span></div><div class="rcard__body"' + (isDraft(it, "poetics") ? DRAFT : "") + '>' + rtHtml(txt(it, "poetics")) + '</div></div>' : '') +
+      (txt(it, "guidance") ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">הנחיה</span></div><div class="rcard__body"' + (isDraft(it, "guidance") ? DRAFT : "") + '>' + rtHtml(txt(it, "guidance")) + '</div></div>' : '') +
+      (it.notes ? '<div class="rhint"><span class="rhint__tx">' + rtHtml(it.notes) + '</span></div>' : '') +
       '</div></div><div class="bar">' + (last ? '' : '<button class="rbtn rbtn--block" data-act="next">התרגיל הבא</button>') + (k ? '<button class="rbtn rbtn--ghost rbtn--block" data-act="prev">התרגיל הקודם</button>' : '') + '</div>', function (r) {
       on(r, "back", back);
       on(r, "next", function () { stack().push(function () { player(k + 1); }); player(k + 1); });
@@ -1467,7 +1535,7 @@
     if (!liveItem || !liveItem.fld) return;
     var el = document.activeElement, k = Object.keys(liveItem.fld).filter(function (x) { return liveItem.fld[x] === el; })[0];
     if (!k || k === "title") return curSend({ item: liveItem.id, email: FLOA_AUTH.email().toLowerCase(), field: null });
-    curSend({ item: liveItem.id, email: FLOA_AUTH.email().toLowerCase(), field: k, a: el.selectionStart, b: el.selectionEnd });
+    curSend({ item: liveItem.id, email: FLOA_AUTH.email().toLowerCase(), field: k, a: rtSel(el).a, b: rtSel(el).b });
   }
   function curThrottled() { var d = Date.now() - cur.last; clearTimeout(cur.trail); if (d >= 120) { cur.last = Date.now(); curMine(); } else cur.trail = setTimeout(function () { cur.last = Date.now(); curMine(); }, 120 - d); }
   function paintGhosts() {
@@ -1481,10 +1549,12 @@
         var ta = liveItem.fld[pr.field], host = ta.parentElement, id = "g-" + email + "-" + pr.field, g = host.querySelector('[data-gid="' + id + '"]');
         if (!g) { g = document.createElement("div"); g.className = "bio-ghost"; g.dataset.gid = id; g.innerHTML = "<div></div>"; host.appendChild(g); }
         g.dataset.keep = "1";
-        var cs = getComputedStyle(ta), inner = g.firstChild, text = ta.value, a = Math.min(pr.a, text.length), b = Math.min(pr.b, text.length), hue = whoHue(email);
-        inner.style.cssText = "position:absolute;top:0;left:0;white-space:pre-wrap;overflow-wrap:break-word;color:transparent;box-sizing:border-box;width:" + ta.clientWidth + "px;font:" + cs.font + ";letter-spacing:" + cs.letterSpacing + ";padding:" + cs.padding + ";direction:" + cs.direction + ";text-align:" + cs.textAlign + ";transform:translateY(" + (-ta.scrollTop) + "px)";
-        var caret = '<span class="bio-caret" style="--c:hsl(' + hue + ' 62% 38%)"><i>' + esc(pr.name) + '</i></span>';
-        inner.innerHTML = a === b ? esc(text.slice(0, a)) + caret + esc(text.slice(a)) : esc(text.slice(0, a)) + '<mark style="background:hsl(' + hue + ' 70% 78% / .75)">' + esc(text.slice(a, b)) + '</mark>' + caret + esc(text.slice(b));
+        var cs = getComputedStyle(ta), inner = g.firstChild, hue = whoHue(email), len = rtWalk(ta, false).length, a = Math.min(pr.a, len), b = Math.min(pr.b, len);
+        inner.style.cssText = "position:absolute;top:0;left:0;white-space:pre-wrap;overflow-wrap:anywhere;color:transparent;box-sizing:border-box;width:" + ta.clientWidth + "px;font:" + cs.font + ";letter-spacing:" + cs.letterSpacing + ";padding:" + cs.padding + ";direction:" + cs.direction + ";text-align:" + cs.textAlign + ";transform:translateY(" + (-ta.scrollTop) + "px)";
+        inner.innerHTML = ta.innerHTML;
+        var caret = document.createElement("span"); caret.className = "bio-caret"; caret.style.setProperty("--c", "hsl(" + hue + " 62% 38%)"); caret.innerHTML = "<i>" + esc(pr.name) + "</i>";
+        if (a !== b) { try { var p1 = rtPoint(inner, a), p2 = rtPoint(inner, b), rg = document.createRange(); rg.setStart(p1[0], p1[1]); rg.setEnd(p2[0], p2[1]); var mk = document.createElement("mark"); mk.style.background = "hsl(" + hue + " 70% 78% / .75)"; rg.surroundContents(mk); } catch (x) { /* across several tags: the caret alone */ } }
+        var pc = rtPoint(inner, b), rc = document.createRange(); rc.setStart(pc[0], pc[1]); rc.collapse(true); rc.insertNode(caret);
       });
     }
     document.querySelectorAll(".bio-ghost").forEach(function (g) { if (!g.dataset.keep) g.remove(); });
@@ -1494,7 +1564,7 @@
     st.textContent = ".bio-ghost { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 2 } .bio-ghost mark { color: transparent; border-radius: 2px } .bio-caret { display: inline-block; width: 0; height: 1.1em; vertical-align: text-bottom; border-inline-start: 2px solid var(--c); position: relative } .bio-caret > i { position: absolute; bottom: 100%; inset-inline-start: -2px; padding: 0 5px; border-radius: 4px 4px 4px 0; background: var(--c); color: #fff; font: 600 11px/16px var(--font); font-style: normal; white-space: nowrap }";
     document.head.appendChild(st);
     setInterval(paintGhosts, 1500);   /* a marker that was not renewed goes */
-    function inMyField() { var el = document.activeElement; return !!(liveItem && liveItem.fld && liveItem.root.isConnected && el && el.tagName === "TEXTAREA" && ["poetics", "guidance", "notes"].some(function (k) { return liveItem.fld[k] === el; })); }
+    function inMyField() { var el = document.activeElement; return !!(liveItem && liveItem.fld && liveItem.root.isConnected && el && el.classList.contains("rf-rich") && ["poetics", "guidance", "notes"].some(function (k) { return liveItem.fld[k] === el; })); }
     setInterval(function () { if (cur.topic && inMyField()) curMine(); }, 2500);   /* standing still in a field is still being there */
     document.addEventListener("selectionchange", function () { if (cur.topic && inMyField()) curThrottled(); });
   })();
