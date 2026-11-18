@@ -746,7 +746,7 @@
     var r = btn.getBoundingClientRect();
     m.style.top = Math.round(r.bottom + 4) + "px"; m.style.left = Math.max(8, Math.round(r.left)) + "px";
     function close() { m.remove(); document.removeEventListener("click", away, true); document.removeEventListener("keydown", onKey, true); }
-    function away(e) { if (!m.contains(e.target)) close(); }
+    function away(e) { if (!m.contains(e.target)) { e.preventDefault(); e.stopPropagation(); close(); } }
     function onKey(e) { if (e.key === "Escape") close(); }
     setTimeout(function () { document.addEventListener("click", away, true); document.addEventListener("keydown", onKey, true); }, 0);
     m.querySelectorAll("[data-k]").forEach(function (b) { b.addEventListener("click", function () { var it = items[+b.dataset.k]; if (it.keep) { it.fn(b, close); return; } var f = it.fn; close(); f(); }); });   /* an item with `keep` leaves the menu open: it shows its own progress */
@@ -1352,7 +1352,8 @@
       function wireCat() {
         var inp = r.querySelector("#cg"), pop = null, active = -1, shown = [];
         function label() { return catSel ? catName(catSel) : "הכול"; }
-        function close(revert) { if (pop) { pop.remove(); pop = null; } inp.setAttribute("aria-expanded", "false"); if (revert) inp.value = label(); }
+        var shield = null;
+        function close(revert) { if (shield) { shield.remove(); shield = null; } if (pop) { pop.remove(); pop = null; } inp.setAttribute("aria-expanded", "false"); if (revert) inp.value = label(); }
         function choose(k) { catSel = k; close(true); paintCat(); }
         function open(filter) {
           close(false);
@@ -1363,7 +1364,11 @@
           pop = document.createElement("div"); pop.className = "rmenu rmenu--fixed"; pop.setAttribute("role", "listbox");
           pop.innerHTML = shown.map(function (c, k) { return '<button type="button" class="rmenu__item" role="option" tabindex="-1" data-k="' + k + '"' + (c.key === catSel ? ' aria-selected="true" style="font-weight:var(--fw-bold)"' : '') + '><span>' + esc(c.name_he) + '</span></button>'; }).join("");
           /* a popover inside the open popup: it is drawn in the top layer and placed by the window (a popup that is moved or scaled cannot shift it), and the popup stays clickable */
-          var host = inp.closest("dialog"); (host || document.body).appendChild(pop);
+          var host = inp.closest("dialog");
+          shield = document.createElement("div"); shield.setAttribute("popover", "manual"); shield.style.cssText = "position:fixed;inset:0;margin:0;padding:0;border:0;width:auto;height:auto;background:transparent;touch-action:none";   /* an invisible sheet over everything: a touch outside the menu only closes it and reaches nothing behind */
+          ["pointerdown", "click", "touchstart"].forEach(function (n) { shield.addEventListener(n, function (e) { e.preventDefault(); e.stopPropagation(); if (n !== "touchstart") close(true); }, { passive: false }); });
+          (host || document.body).appendChild(shield); try { shield.showPopover(); } catch (x) { /* none */ }
+          (host || document.body).appendChild(pop);
           pop.setAttribute("popover", "manual"); pop.style.inset = "auto"; pop.style.margin = "0"; pop.style.boxSizing = "border-box";
           try { pop.showPopover(); } catch (x) { /* an old browser: an ordinary fixed menu */ }
           var b = inp.getBoundingClientRect(), vw = window.innerWidth, w = Math.min(Math.round(b.width), vw - 16), l = Math.max(8, Math.min(Math.round(b.left), vw - 8 - w));
