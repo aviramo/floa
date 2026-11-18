@@ -1240,6 +1240,60 @@
   function chooseSongHere(it, m, out) {   /* a song (or none) for this exercise, in the pane */
     api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { music_id: m ? m.id : null } }).then(function () { it.music_id = m ? m.id : null; it.music = m; if (wide()) paint(); out(); }, fail);
   }
+  /* songs of the other exercises: every exercise that has songs, each with its list (read once, page by page, then kept) */
+  var exMusicP = null;
+  function loadExMusic() {
+    if (exMusicP) return exMusicP;
+    var by = {}, order = [], PAGE = 1000;
+    function page(off) {
+      return api("/rest/v1/exercise_music?select=exercise_id,exercises(id,title_he,title_en),music(id,name,title,artist,duration_sec,audio_object,in_catalog)&order=exercise_id&limit=" + PAGE + "&offset=" + off).then(function (rows) {
+        rows = rows || [];
+        rows.forEach(function (x) {
+          if (!x.exercises || !x.music) return;
+          var g = by[x.exercise_id]; if (!g) { g = by[x.exercise_id] = { id: x.exercise_id, name: name(x.exercises), songs: [], seen: {} }; order.push(g); }
+          if (!g.seen[x.music.id]) { g.seen[x.music.id] = 1; g.songs.push(x.music); }
+        });
+        return rows.length === PAGE ? page(off + PAGE) : order;
+      });
+    }
+    exMusicP = page(0).then(function (o) { return o.sort(function (a, b) { return a.name.localeCompare(b.name, "he"); }); }, function (e) { exMusicP = null; throw e; });
+    return exMusicP;
+  }
+  /* the music chooser: one search over this exercise's songs, the exercises, and the songs inside them; each other exercise opens like an accordion onto its songs */
+  function musicBrowse(l, own, it, pick, tail) {
+    l.innerHTML = '<label class="rfield" style="margin-bottom:var(--sp-2)"><span>חיפוש מוזיקה או תרגיל</span><input id="mq" placeholder=" " autocomplete="off"></label><div id="mb"></div>' + (tail || "");
+    var mb = l.querySelector("#mb"), q = l.querySelector("#mq"), groups = null, open = {}, byId = {};
+    own.forEach(function (m) { byId[m.id] = m; });
+    function hit(m, s) { return (songName(m) + " " + songBy(m)).toLowerCase().indexOf(s) >= 0; }
+    function draw() {
+      var s = q.value.trim().toLowerCase(), h = "";
+      var mine = own.filter(function (m) { return !s || hit(m, s); });
+      h += mine.map(function (m) { return songRow(m, it.music_id === m.id, "data-m"); }).join("");
+      if (!groups) h += '<div class="rskel rskel--title"></div>';
+      else {
+        var shown = 0;
+        groups.forEach(function (g) {
+          if (g.id === it.exercise_id) return;
+          var nm = !!s && g.name.toLowerCase().indexOf(s) >= 0, ms = s ? (nm ? g.songs : g.songs.filter(function (m) { return hit(m, s); })) : g.songs;
+          if (!ms.length) return;
+          var on = open[g.id] != null ? open[g.id] : (!!s && !nm);   /* a search that matched songs inside opens their exercise; an exercise matched by name stays closed until asked */
+          shown++;
+          h += '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-2)"><button type="button" class="rrow__main" data-ex="' + g.id + '" aria-expanded="' + on + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit;display:flex;align-items:center;gap:var(--sp-2)"><span style="flex:1 1 auto;min-width:0"><span class="rrow__title">' + esc(g.name) + '</span><span class="rrow__sub">' + ms.length + ' מוזיקות</span></span><span style="flex:none;width:20px;height:20px;transition:transform .2s;' + (on ? 'transform:rotate(180deg)' : '') + '">' + I.down + '</span></button></div>';
+          if (on) ms.forEach(function (m) { byId[m.id] = m; h += songRow(m, it.music_id === m.id, "data-m"); });
+        });
+        if (!mine.length && !shown) h += ph("לא נמצא", "");
+      }
+      mb.innerHTML = h;
+    }
+    mb.addEventListener("click", function (e) {
+      var x = e.target.closest("[data-ex]");
+      if (x) { var id = x.dataset.ex, g = groups.filter(function (z) { return z.id === id; })[0]; open[id] = !(x.getAttribute("aria-expanded") === "true"); draw(); return; }
+      var b = e.target.closest("[data-m]"); if (b && byId[b.dataset.m]) pick(byId[b.dataset.m]);
+    });
+    q.addEventListener("input", draw);
+    draw();
+    loadExMusic().then(function (g) { groups = g; draw(); }, function () { groups = []; draw(); });
+  }
   function musicScreen(it) {
     var out = wide() ? function () { if (inSub()) leaveAll(); else itemScreen(it); } : back;   /* beside the list, back is the same exercise */
     /* clearing the song is the neutral tile at the header's left, as in the popup on a phone, not a row */
@@ -1252,15 +1306,9 @@
         (rows || []).forEach(function (x) { if (x.music && !seen[x.music.id]) { seen[x.music.id] = 1; list.push(x.music); } });
         var row = function (id, t, sub, cur, m) { return '<div class="rrow rrow--link"' + (cur ? ' aria-current="true"' : '') + '><button type="button" class="rrow__main" data-m="' + id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(t) + '</span>' + (sub ? '<span class="rrow__sub">' + esc(sub) + '</span>' : '') + '</button>' + (m ? songBtn(m, true) : '') + '</div>'; };
         var l = r.querySelector("#mlist");
-        l.innerHTML = list.map(function (m) { return songRow(m, it.music_id === m.id, "data-m"); }).join("") +
-          '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-act="other" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">מוזיקות אחרות</span><span class="rrow__sub">שירים שאינם בקטלוג</span></button></div>';
+        musicBrowse(l, list, it, function (m) { chooseSongHere(it, m, out); },
+          '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-act="other" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">מוזיקות אחרות</span><span class="rrow__sub">שירים שאינם בקטלוג</span></button></div>');
         on(l, "other", function () { otherMusic(it, out); subEnter(); });
-        l.querySelectorAll("[data-m]").forEach(function (b) {
-          b.addEventListener("click", function () {
-            var m = list.filter(function (x) { return x.id === b.dataset.m; })[0] || null;
-            api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { music_id: m ? m.id : null } }).then(function () { it.music_id = m ? m.id : null; it.music = m; if (wide()) paint(); out(); }, fail);
-          });
-        });
       }, fail);
     }, "d");
   }
@@ -1312,9 +1360,8 @@
       (rows || []).forEach(function (x) { if (x.music && !seen[x.music.id]) { seen[x.music.id] = 1; list.push(x.music); } });
       var plain = function (attr, t, sub, cur) { return '<div class="rrow rrow--link"' + (cur ? ' aria-current="true"' : '') + '><button type="button" class="rrow__main" ' + attr + ' style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(t) + '</span>' + (sub ? '<span class="rrow__sub">' + esc(sub) + '</span>' : '') + '</button></div>'; };
       var l = r.querySelector("#mlist");
-      l.innerHTML = list.map(function (m) { return songRow(m, it.music_id === m.id, "data-m"); }).join("") + plain('data-act="other"', "מוזיקות אחרות", "שירים שאינם בקטלוג", false);
+      musicBrowse(l, list, it, function (m) { chooseSong(it, m); }, plain('data-act="other"', "מוזיקות אחרות", "שירים שאינם בקטלוג", false));
       on(l, "other", function () { otherSheet(it); });
-      l.querySelectorAll("[data-m]").forEach(function (b) { b.addEventListener("click", function () { chooseSong(it, list.filter(function (x) { return x.id === b.dataset.m; })[0] || null); }); });
     }, fail);
   }
   function otherSheet(it) {
