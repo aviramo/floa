@@ -641,7 +641,7 @@
       '<button class="rfab" data-act="new" aria-label="ויוונסיה חדשה" title="ויוונסיה חדשה">' + I.plus + '</button>', function (r) {
       on(r, "homemore", function (b) {   /* one menu: the songs I loved, who may enter (the manager), leaving */
         var items = state.offline ? [] : [{ label: "ויוונסיות שאהבתי", icon: I.heart, fn: function () { goSub(likedVivScreen); } }, { label: "תרגילים שאהבתי", icon: I.heart, fn: function () { goSub(likedExScreen); } }, { label: "שירים שאהבתי", icon: I.heart, fn: function () { goSub(likedScreen); } }];   /* in the order of the app: vivencias, exercises, songs */
-        if (state.me.admin) items.push({ label: "מורשים", icon: I.users, fn: allowPopup });
+        if (state.me.admin) items.push({ label: "ניהול משתמשים", icon: I.users, fn: allowPopup });
         items.push({ label: "יציאה", icon: I.out, tone: "danger", fn: function () { Promise.resolve(FLOA_AUTH.signOut()).then(function () { location.reload(); }); } });
         menu(b, items);
       });
@@ -1527,7 +1527,7 @@
       var dlg = document.getElementById("exDlg");
       if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "exDlg"; document.body.appendChild(dlg); }
       RosterSheet.render(dlg, { title: name(e), from: "bottom",
-        body: bleedCss("exDlg") + '<style>#exDlg .sheet-body { padding-bottom: calc(var(--fab) + var(--gutter) * 2 + var(--inset-b)) } html.rs-lock:not(.kb-open) #exDlg .rfab { opacity: 1; transform: none; pointer-events: auto }</style>' + '<div style="padding-block:var(--sp-2)">' + ((card("level", "רמת הקבוצה") + card("curve", "מיקום בעקומה") + card("poetics", "פואטיקה") + card("guidance", "הנחיה")) || ph("אין עדיין תיאור לתרגיל", "")) + musicRows(songs, sel) + '</div>' });
+        body: bleedCss("exDlg") + '<style>#exDlg .sheet-body { padding-bottom: calc(var(--fab) + var(--gutter) * 2 + var(--inset-b)) } html.rs-lock:not(.kb-open) #exDlg .rfab { opacity: 1; transform: none; pointer-events: auto }</style>' + '<div style="padding-block:var(--sp-2)">' + ((placementCards(e, card) + card("poetics", "פואטיקה") + card("guidance", "הנחיה")) || ph("אין עדיין תיאור לתרגיל", "")) + musicRows(songs, sel) + '</div>' });
       bleedSet(dlg);
       /* the action is the round button at the bottom left, where the add button of a list is (a popover inside the popup: drawn in the top layer, placed by the window) */
       var fab = document.createElement("button"); fab.type = "button"; fab.id = "exgo"; fab.className = "rfab"; fab.innerHTML = I.check; fab.setAttribute("aria-label", word); fab.title = word;
@@ -1548,6 +1548,26 @@
     }
     return page(0);
   }
+  /* the super admin sets the group level and the place on the curve of a catalog exercise, right in its preview (the rules are in the database: biodanza.set_exercise_placement) */
+  function placementCards(e, card) {
+    if (!(state.me && state.me.super) || !e) return card("level", "רמת הקבוצה") + card("curve", "מיקום בעקומה");
+    var lv = state.levels && state.levels.length ? state.levels : LEVELS_FALLBACK, ph = state.phases || [];
+    var opt = function (list, val, none) { return (none ? '<option value="">' + none + '</option>' : '') + list.map(function (x) { return '<option value="' + x.key + '"' + (x.key === val ? ' selected' : '') + '>' + esc(x.name_he) + '</option>'; }).join(""); };
+    var main = e.phase_hint || "unclassified", second = (e.phase_keys || []).filter(function (k) { return k !== main && k !== "unclassified"; })[0] || "";
+    var box = function (title, inner) { return '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">' + title + '</span></div><div class="rcard__body">' + inner + '</div></div>'; };
+    return box("רמת הקבוצה", '<label class="rfield"><select data-pl="lv" data-ex="' + e.id + '">' + opt(lv, e.level_key || "", "לא נקבעה") + '</select></label>') +
+      box("מיקום בעקומה", '<label class="rfield"><span>שלב</span><select data-pl="main" data-ex="' + e.id + '">' + opt(ph, main) + '</select></label>' +
+        '<label class="rfield"><span>שלב נוסף (לא חובה)</span><select data-pl="second" data-ex="' + e.id + '">' + opt(ph.filter(function (x) { return x.key !== "unclassified"; }), second, "בלי") + '</select></label>');
+  }
+  document.addEventListener("change", function (ev) {
+    var t = ev.target; if (!t || !t.dataset || !t.dataset.pl) return;
+    var id = t.dataset.ex, q = function (k) { var el = document.querySelector('select[data-pl="' + k + '"][data-ex="' + id + '"]'); return el ? el.value : ""; };
+    var e = (state.cat || []).filter(function (x) { return x.id === id; })[0];
+    api("/rest/v1/rpc/set_exercise_placement", { method: "POST", json: { ex: id, lvl: q("lv"), main: q("main"), second: q("second") } }).then(function () {
+      if (e) { e.level_key = q("lv") || null; e.phase_hint = q("main"); e.phase_keys = q("second") ? [q("main"), q("second")] : [q("main")]; }
+      toast("נשמר");
+    }, function (x) { toast("אין הרשאה לערוך"); fail(x); });
+  });
   /* a catalog exercise shown on the left while one is being added or replaced: its own words, and one button that does it */
   var previewTok = 0;
   /* what a catalog exercise shows before it is added: its words and every song linked to it */
@@ -1585,7 +1605,7 @@
       if (tok !== previewTok) return;   /* a later row was chosen meanwhile */
       var fake = { exercises: { exercise_texts: rows || [] } };
       var card = function (k, label) { return txt(fake, k) ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">' + label + '</span></div><div class="rcard__body"' + (isDraft(fake, k) ? DRAFT : "") + '>' + rtHtml(txt(fake, k)) + '</div></div>' : ""; };
-      var body = card("level", "רמת הקבוצה") + card("curve", "מיקום בעקומה") + card("poetics", "פואטיקה") + card("guidance", "הנחיה");
+      var body = placementCards(e, card) + card("poetics", "פואטיקה") + card("guidance", "הנחיה");
       var word = swapIt ? "החלפה בתרגיל הזה" : "הוספה", sel = songs.length ? songs[0].id : null;
       var act = wide() ? '<button class="rbtn" type="button" data-act="doswap">' + word + '</button>'   /* the action is in the header, on the left; on a narrow screen a plain check, like the kit's popups */
                        : '<button class="rbtn" type="button" style="flex:none;width:var(--ctl);padding:0" data-act="doswap" aria-label="' + word + '" title="' + word + '">' + I.check + '</button>';   /* the green button, with a check */
@@ -1648,7 +1668,7 @@
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "allowDlg"; document.body.appendChild(dlg); }
     var rows = [];
     RosterSheet.render(dlg, {
-      title: "מי מורשה להיכנס", from: "bottom",
+      title: "ניהול משתמשים", from: "bottom",
       body: '<div class="pad">' +
         '<label class="rfield"><span>חיפוש</span><input id="aq" type="search" placeholder=" " autocomplete="off"></label>' +
         '<label class="rfield rfield--ltr"><span>אימייל של חשבון גוגל</span><input id="em" type="email" placeholder=" " autocomplete="off"></label>' +
@@ -1658,11 +1678,19 @@
     function paintA() {
       var q = dlg.querySelector("#aq").value.trim().toLowerCase(), l = dlg.querySelector("#alist");
       var vis = rows.filter(function (a) { return !q || (a.email + " " + (a.note || "")).toLowerCase().indexOf(q) >= 0; });
+      var sup = !!(state.me && state.me.super), roleOf = function (a) { return a.is_super ? "super" : a.is_admin ? "admin" : "member"; };
+      var ROLES = [["member", "חבר"], ["admin", "מנהל"], ["super", "מנהל על"]];
       l.innerHTML = vis.length ? vis.map(function (a) {
-        return '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title" dir="ltr">' + esc(a.email) + '</span>' + (a.is_admin ? '<span class="rchip rchip--info rchip--s">מנהל</span>' : '') + '</div>' +
+        return '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title" dir="ltr">' + esc(a.email) + '</span>' + (a.is_super ? '<span class="rchip rchip--info rchip--s">מנהל על</span>' : a.is_admin ? '<span class="rchip rchip--info rchip--s">מנהל</span>' : '') + '</div>' +
           '<label class="rfield"><span>שם</span><input data-note="' + esc(a.email) + '" placeholder=" " value="' + esc(a.note || "") + '"></label>' +
-          (a.is_admin ? '' : '<div class="rcard__foot"><button class="rbtn rbtn--sm rbtn--ghost rbtn--danger" type="button" data-rm="' + esc(a.email) + '">הסרה</button></div>') + '</div>';
+          (sup ? '<label class="rfield"><span>רמת הרשאה</span><select data-urole="' + esc(a.email) + '">' + ROLES.map(function (r) { return '<option value="' + r[0] + '"' + (roleOf(a) === r[0] ? ' selected' : '') + '>' + r[1] + '</option>'; }).join("") + '</select></label>' : '') +
+          ((a.is_admin && !sup) ? '' : '<div class="rcard__foot"><button class="rbtn rbtn--sm rbtn--ghost rbtn--danger" type="button" data-rm="' + esc(a.email) + '">הסרה</button></div>') + '</div>';
       }).join("") : '<div class="rempty"><b>' + (rows.length ? "לא נמצא" : "הרשימה ריקה") + '</b></div>';
+      l.querySelectorAll("[data-urole]").forEach(function (i) {
+        i.addEventListener("change", function () {
+          api("/rest/v1/rpc/set_member_role", { method: "POST", json: { target: i.dataset.urole, new_role: i.value } }).then(function () { toast("נשמר"); load(); }, function () { toast("אי אפשר לשנות: חייב להישאר לפחות מנהל על אחד"); load(); });
+        });
+      });
       l.querySelectorAll("[data-rm]").forEach(function (b) { b.addEventListener("click", function () { api("/rest/v1/allowed?email=eq." + encodeURIComponent(b.dataset.rm), { method: "DELETE" }).then(load, fail); }); });
       l.querySelectorAll("[data-note]").forEach(function (i) {
         i.addEventListener("change", function () {
@@ -1670,7 +1698,7 @@
         });
       });
     }
-    function load() { return api("/rest/v1/allowed?select=email,is_admin,note&order=added_at").then(function (r) { rows = r || []; paintA(); }, fail); }
+    function load() { return api("/rest/v1/allowed?select=email,is_admin,is_super,note&order=added_at").then(function (r) { rows = r || []; paintA(); }, fail); }
     dlg.querySelector("#aq").addEventListener("input", paintA);
     dlg.querySelector("#addm").addEventListener("click", function () {
       var em = dlg.querySelector("#em").value.trim().toLowerCase(), nm = dlg.querySelector("#en").value.trim();
@@ -1830,12 +1858,12 @@
     var localHome = false;
     if (window.BioOffline) BioOffline.ready.then(function () { return BioOffline.list(); }).then(function (recs) {
       if (state.me || !recs || !recs.length) return;
-      var ad = false; try { ad = localStorage.getItem("biodanza.admin") === "1"; } catch (x) { /* none */ }
-      state.me = { allowed: true, admin: ad }; state.lines = state.lines || []; state.phases = state.phases || [];
+      var ad = false, su = false; try { ad = localStorage.getItem("biodanza.admin") === "1"; su = localStorage.getItem("biodanza.super") === "1"; } catch (x) { /* none */ }
+      state.me = { allowed: true, admin: ad, super: su }; state.lines = state.lines || []; state.phases = state.phases || [];
       localHome = true; home();
     });
     api("/rest/v1/rpc/me", { method: "POST", json: {} }).then(function (me) {
-      state.me = me; try { localStorage.setItem("biodanza.admin", me && me.admin ? "1" : "0"); } catch (x) { /* none */ }
+      state.me = me; try { localStorage.setItem("biodanza.admin", me && me.admin ? "1" : "0"); localStorage.setItem("biodanza.super", me && me.super ? "1" : "0"); } catch (x) { /* none */ }
       if (!me || !me.allowed) return gate("לחשבון " + FLOA_AUTH.email() + " אין הרשאה להיכנס. אפשר לבקש מהמנהל להוסיף אותו.", true);
       return Promise.all([api("/rest/v1/lines?select=key,name_he&order=sort"), api("/rest/v1/phases?select=key,name_he&order=sort"), api("/rest/v1/levels?select=key,name_he&order=rank").catch(function () { return []; })]).then(function (r) { state.lines = r[0]; state.phases = r[1]; state.levels = r[2]; if (!localHome) home(); startRealtime(); api("/rest/v1/song_likes?select=music_id").then(function (ls) { likes = {}; (ls || []).forEach(function (x) { likes[x.music_id] = true; }); }, function () { /* no hearts this time */ });
         api("/rest/v1/vivencia_likes?select=vivencia_id").then(function (ls) { likesViv = {}; (ls || []).forEach(function (x) { likesViv[x.vivencia_id] = true; }); if (state.vivsLoaded) renderVivs(); }, function () { /* no hearts this time */ });

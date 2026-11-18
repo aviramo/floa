@@ -592,3 +592,93 @@ insert into biodanza.exercise_lines (exercise_id, line_key, main)
   on conflict do nothing;
 insert into biodanza.categories (key, name_he, sort) values ('unclassified', 'לא מסווג', 99) on conflict (key) do update set name_he = excluded.name_he, sort = excluded.sort;
 update biodanza.exercises set category = 'unclassified' where owner_id is null and category = 'Danses Specifiques' and source in ('catalog2014', 'cimeb2018');
+
+-- ---------- permission levels: member, admin, super admin ----------
+-- member: enters and builds vivencias. admin: also manages the allowlist (members only). super admin: also sets who is an admin or a super admin, and
+-- is the ONLY one who edits the group level and the place on the curve of a catalog exercise. A request from the server side (no signed-in user,
+-- like scripts/sql.mjs) is not restricted.
+alter table biodanza.allowed add column if not exists is_super boolean not null default false;
+update biodanza.allowed set is_super = true, is_admin = true where email = 'ofir.aviram@gmail.com';
+alter table biodanza.allowed drop constraint if exists allowed_super_is_admin;
+alter table biodanza.allowed add constraint allowed_super_is_admin check (not is_super or is_admin);
+
+create or replace function biodanza.is_super() returns boolean
+  language sql stable security definer set search_path = biodanza, public as
+  $$ select exists (select 1 from biodanza.allowed where email = biodanza.jwt_email() and is_super) $$;
+
+create or replace function biodanza.me() returns jsonb
+  language sql stable security definer set search_path = biodanza, public as
+  $$ select jsonb_build_object('email', biodanza.jwt_email(), 'allowed', biodanza.is_allowed(), 'admin', biodanza.is_admin(), 'super', biodanza.is_super()) $$;
+
+create or replace function biodanza.allowed_guard() returns trigger
+  language plpgsql security definer set search_path = biodanza, public as $$
+begin
+  if auth.uid() is null then return coalesce(new, old); end if;
+  if biodanza.is_super() then
+    if (tg_op = 'DELETE' and old.is_super) or (tg_op = 'UPDATE' and old.is_super and not new.is_super) then
+      if (select count(*) from biodanza.allowed where is_super) <= 1 then raise exception 'last_super'; end if;
+    end if;
+    return coalesce(new, old);
+  end if;
+  if tg_op = 'INSERT' and (new.is_admin or new.is_super) then raise exception 'only_super'; end if;
+  if tg_op = 'UPDATE' and (old.is_admin or old.is_super or new.is_admin <> old.is_admin or new.is_super <> old.is_super) then raise exception 'only_super'; end if;
+  if tg_op = 'DELETE' and (old.is_admin or old.is_super) then raise exception 'only_super'; end if;
+  return coalesce(new, old);
+end $$;
+drop trigger if exists allowed_guard on biodanza.allowed;
+create trigger allowed_guard before insert or update or delete on biodanza.allowed for each row execute function biodanza.allowed_guard();
+
+create or replace function biodanza.exercise_placement_guard() returns trigger
+  language plpgsql security definer set search_path = biodanza, public as $$
+begin
+  if auth.uid() is null or new.owner_id is not null or biodanza.is_super() then return new; end if;
+  if (new.level_key, new.phase_hint, new.phase_keys) is distinct from (old.level_key, old.phase_hint, old.phase_keys) then raise exception 'only_super'; end if;
+  return new;
+end $$;
+drop trigger if exists exercise_placement_guard on biodanza.exercises;
+create trigger exercise_placement_guard before update on biodanza.exercises for each row execute function biodanza.exercise_placement_guard();
+
+create or replace function biodanza.text_placement_guard() returns trigger
+  language plpgsql security definer set search_path = biodanza, public as $$
+declare o uuid; own boolean;
+begin
+  if auth.uid() is null or biodanza.is_super() then return new; end if;
+  select (owner_id is not null) into own from biodanza.exercises where id = new.exercise_id;
+  if coalesce(own, true) then return new; end if;
+  if tg_op = 'INSERT' then
+    if new.level <> '' or new.curve <> '' then raise exception 'only_super'; end if;
+  elsif (new.level, new.curve, new.level_basis, new.curve_basis) is distinct from (old.level, old.curve, old.level_basis, old.curve_basis) then raise exception 'only_super'; end if;
+  return new;
+end $$;
+drop trigger if exists text_placement_guard on biodanza.exercise_texts;
+create trigger text_placement_guard before insert or update on biodanza.exercise_texts for each row execute function biodanza.text_placement_guard();
+
+-- the super admin sets the group level and the place on the curve (a main phase and, optionally, a second one) of a catalog exercise
+create or replace function biodanza.set_exercise_placement(ex uuid, lvl text, main text, second text default '') returns void
+  language plpgsql security definer set search_path = biodanza, public as $$
+declare ltxt text := ''; ctxt text; keys text[];
+begin
+  if not biodanza.is_super() then raise exception 'only_super'; end if;
+  if lvl is not null and lvl <> '' then select name_he into ltxt from biodanza.levels where key = lvl; if ltxt is null then raise exception 'bad_level'; end if; else lvl := null; end if;
+  if main is null or not exists (select 1 from biodanza.phases where key = main) then raise exception 'bad_phase'; end if;
+  if second is null or second = '' or second = main or second = 'unclassified' or not exists (select 1 from biodanza.phases where key = second) then second := ''; end if;
+  keys := case when second = '' then array[main] else array[main, second] end;
+  select name_he || case when second <> '' then ', או ' || (select name_he from biodanza.phases where key = second) else '' end into ctxt from biodanza.phases where key = main;
+  update biodanza.exercises set level_key = lvl, phase_hint = main, phase_keys = keys, updated_at = now() where id = ex and owner_id is null;
+  if not found then raise exception 'not_a_catalog_exercise'; end if;
+  insert into biodanza.exercise_texts (exercise_id, lang, source) values (ex, 'he', 'draft') on conflict do nothing;
+  update biodanza.exercise_texts set level = coalesce(ltxt, ''), level_basis = case when lvl is null then '' else 'manual' end,
+    curve = ctxt, curve_basis = case when main = 'unclassified' then '' else 'manual' end, updated_at = now() where exercise_id = ex and lang = 'he';
+end $$;
+grant execute on function biodanza.set_exercise_placement(uuid, text, text, text) to authenticated;
+
+-- the super admin changes an account's permission level
+create or replace function biodanza.set_member_role(target text, new_role text) returns void
+  language plpgsql security definer set search_path = biodanza, public as $$
+begin
+  if not biodanza.is_super() then raise exception 'only_super'; end if;
+  if new_role not in ('member', 'admin', 'super') then raise exception 'bad_role'; end if;
+  update biodanza.allowed set is_admin = new_role in ('admin', 'super'), is_super = (new_role = 'super') where email = lower(target);
+  if not found then raise exception 'no_such_account'; end if;
+end $$;
+grant execute on function biodanza.set_member_role(text, text) to authenticated;
