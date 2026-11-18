@@ -563,6 +563,7 @@
       var pos = {}, role = {};
       (r[2] || []).forEach(function (o) { pos[o.vivencia_id] = o.position; role[o.vivencia_id] = o.role; });   /* shared with me */
       (r[1] || []).forEach(function (o) { pos[o.vivencia_id] = o.position; role[o.vivencia_id] = "owner"; });   /* mine: an owner is above any share */
+      state.vivsLoaded = true;
       state.vivs = (r[0] || []).map(function (v) { v.pos = pos[v.id]; v.role = role[v.id] || "view"; return v; });
       /* my own order; a vivencia I have not placed yet (a new one) comes first, newest first */
       state.vivs.sort(function (a, b) { var pa = a.pos == null ? -1 : a.pos, pb = b.pos == null ? -1 : b.pos; return pa - pb || (a.updated_at < b.updated_at ? 1 : -1); });
@@ -597,7 +598,7 @@
     l.querySelectorAll("[data-id]").forEach(function (b) { b.addEventListener("click", function () { openViv(b.dataset.id); }); });
     if (state.vivs.length) enableDrag(l, "[data-id]", persistVivs);
     paintSel();
-    if (pending && pending.viv) {   /* opened on a vivencia's own address */
+    if (pending && pending.viv && state.vivsLoaded) {   /* opened on a vivencia's own address; only once the list is really here (the hearts can answer first, and an empty list would throw the address away) */
       var vv = state.vivs.filter(function (x) { return x.id === pending.viv; })[0];
       var want = pending; pending = want.item ? { item: want.item } : null;   /* the address is used once: going back to the list must not open it again */
       if (vv) { openViv(vv.id); return; }
