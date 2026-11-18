@@ -99,13 +99,14 @@
     var types = O.types() || [];
     mark('w', types.length > 0);                      /* with types the first step is already behind us, so the guide continues from the templates */
     mark('t', false); mark('c', false);
-    var m = $('#hMenu'), b = $('#menuBtn');
+    var m = $('#hMenu'), b = $('#menuBtn'), cm = $('#cfgMenu');
     if (m && !m.hidden && b) b.click();
+    if (cm && !cm.hidden) cm.hidden = true;   /* the settings popup it was started from */
     setTimeout(tick, 80);
   }
 
   function addMenuItem() {
-    var after = $('#connectLink'), menu = $('#hMenu');
+    var after = $('#connectLink'), menu = $('#cfgMenu');
     if (!menu || $('#onbMenu')) return;
     var b = document.createElement('button');
     b.type = 'button'; b.className = 'hmi'; b.id = 'onbMenu'; b.setAttribute('role', 'menuitem');

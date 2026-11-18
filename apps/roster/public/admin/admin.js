@@ -4304,7 +4304,7 @@
   });
   $('#tplDlg').addEventListener('close', () => { const e = tplEd; tplEd = null; tplPopSave(e, true); });
   /* תפריטי הסינון, המיון והוואטסאפ הם פופאפים רגילים (dialog): עולים מלמטה, נסגרים בהחלקה, בלחיצה בחוץ ובחזרה */
-  [['viewMenu', 'viewDlg', () => closeView()], ['sortMenu', 'sortDlg', () => closeSort()], ['amMenu', 'amDlg', () => { $('#amMenu').hidden = true; }]].forEach(([mi, di, cl]) => {
+  [['viewMenu', 'viewDlg', () => closeView()], ['sortMenu', 'sortDlg', () => closeSort()], ['cfgMenu', 'cfgDlg', () => { $('#cfgMenu').hidden = true; }], ['amMenu', 'amDlg', () => { $('#amMenu').hidden = true; }]].forEach(([mi, di, cl]) => {
     const m = document.getElementById(mi), d = document.getElementById(di);
     new MutationObserver(() => { if (!m.hidden) { if (!d.open) d.showModal(); } else if (d.open) d.close(); }).observe(m, { attributes: true, attributeFilter: ['hidden'] });
     d.addEventListener('close', () => { if (!m.hidden) cl(); });
@@ -4444,7 +4444,11 @@
     catch (err) { if (prev) state.prefs[em] = prev; else delete state.prefs[em]; fail(err); }
     renderSettings();
   });
-  $('#setBtn').addEventListener('click', () => openSetRoot('main'));   // החשבון שלי: השם שלי במערכת
+  /* the settings popup (cfgDlg) holds: my account, the setup guide, connections and the platform owner's business actions. A popup that opens another one closes first and opens it after the close, so the history stays right */
+  const afterCfgClose = (fn) => { const d = $('#cfgDlg'); if (!d.open) { fn(); return; } d.addEventListener('close', () => setTimeout(fn, 0), { once: true }); $('#cfgMenu').hidden = true; };
+  window.ROSTER_AFTER_CFG = afterCfgClose;
+  $('#cfgBtn').addEventListener('click', () => { $('#cfgMenu').hidden = false; });
+  $('#setBtn').addEventListener('click', () => afterCfgClose(() => openSetRoot('main')));   // החשבון שלי: השם שלי במערכת
   $('#finSrcBtn').addEventListener('click', () => openSetRoot('src'));   // קיצורי דרך בראש מסך הכספים (הוסרו מהתפריט הראשי)
   $('#finPmBtn').addEventListener('click', () => openSetRoot('pm'));
 

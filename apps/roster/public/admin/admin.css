@@ -293,6 +293,7 @@ h1 { margin: 0; font-size: var(--fs-l); font-weight: var(--fw-black); letter-spa
 
 .hmi.out { margin-top: var(--sp-hair); border-top: 1px solid var(--line); color: var(--text-2); }
 .hmi.out svg { color: var(--text-2); }
+#cfgMenu .hmi { justify-content: flex-start; text-decoration: none; }   /* the settings popup lists the same rows as the menu: the icon and its words side by side, links included */
 
 /* תפריט בחירת המפגש: טבלה (מפגש, נרשמו, שילמו, עריכה) */
 .mmenu { left: auto; right: 0; width: min(400px, calc(100vw - 16px)); max-height: 72vh; overflow-y: auto; }

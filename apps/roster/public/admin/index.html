@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="../assets/field.css?v=b722987f" />
   <link rel="stylesheet" href="../assets/popup.css?v=3cced8f3" />
   <link rel="stylesheet" href="../assets/ui.css?v=570ac43a" />
-  <link rel="stylesheet" href="admin.css?v=cd4c06fb" />
+  <link rel="stylesheet" href="admin.css?v=a4c5ae9b" />
 </head>
 <body class="locked">
   <div class="gate" id="gate" hidden>
@@ -46,12 +46,7 @@
             <div class="hmtitle" id="bizName" role="presentation"></div>
             <button type="button" role="menuitem" class="hmi" id="statsBtn"><svg data-i="stats"></svg><span>סטטיסטיקות</span></button>
             <button type="button" role="menuitem" class="hmi" id="moneyBtn"><svg data-i="money"></svg><span>כספים</span></button>
-            <button type="button" role="menuitem" class="hmi" id="setBtn"><svg data-i="user"></svg><span>החשבון שלי</span></button>
-            <a role="menuitem" class="hmi" id="connectLink" href="/roster/connect/"><svg data-i="plug"></svg><span>חיבורים</span></a>
-            <a role="menuitem" class="hmi bizdo" data-do="rename" href="/roster/" hidden><svg data-i="edit"></svg><span>עריכת העסק</span></a>
-            <a role="menuitem" class="hmi bizdo" data-do="accounts" href="/roster/" hidden><svg data-i="users"></svg><span>ניהול חשבונות</span></a>
-            <a role="menuitem" class="hmi bizdo" data-do="trash" href="/roster/" hidden><svg data-i="restore"></svg><span>נמחקו לאחרונה</span></a>
-            <a role="menuitem" class="hmi bizdo out" data-do="delete" href="/roster/" hidden><svg data-i="trash"></svg><span>מחיקת העסק</span></a>
+            <button type="button" role="menuitem" class="hmi" id="cfgBtn"><svg data-i="mixer"></svg><span>הגדרות</span></button>
             <a role="menuitem" class="hmi" id="bizSwitch" href="/roster/" hidden><svg data-i="swap"></svg><span>החלפת עסק</span></a>
             <button type="button" role="menuitem" class="hmi out" id="signOut"><svg data-i="logout"></svg><span>יציאה</span></button>
           </div>
@@ -429,6 +424,14 @@
 
   <div class="qmenu" id="qMenu" role="menu" hidden></div>
   <dialog id="viewDlg" data-from="bottom" class="mdlg" aria-labelledby="viewTitle"><div class="sheet"><div class="sheet-head"><h2 id="viewTitle">העדפות</h2><button type="button" class="vclear" id="viewClear" disabled>איפוס</button></div><div class="qmenu" id="viewMenu" role="menu" hidden></div></div></dialog>
+  <dialog id="cfgDlg" data-from="bottom" class="mdlg" aria-labelledby="cfgTitle"><div class="sheet"><div class="sheet-head"><h2 id="cfgTitle">הגדרות</h2></div><div class="sortmenu" id="cfgMenu" role="menu" hidden>
+    <button type="button" role="menuitem" class="hmi" id="setBtn"><svg data-i="user"></svg><span>החשבון שלי</span></button>
+    <a role="menuitem" class="hmi" id="connectLink" href="/roster/connect/"><svg data-i="plug"></svg><span>חיבורים</span></a>
+    <a role="menuitem" class="hmi bizdo" data-do="rename" href="/roster/" hidden><svg data-i="edit"></svg><span>עריכת העסק</span></a>
+    <a role="menuitem" class="hmi bizdo" data-do="accounts" href="/roster/" hidden><svg data-i="users"></svg><span>ניהול חשבונות</span></a>
+    <a role="menuitem" class="hmi bizdo" data-do="trash" href="/roster/" hidden><svg data-i="restore"></svg><span>נמחקו לאחרונה</span></a>
+    <a role="menuitem" class="hmi bizdo out" data-do="delete" href="/roster/" hidden><svg data-i="trash"></svg><span>מחיקת העסק</span></a>
+  </div></div></dialog>
   <dialog id="sortDlg" data-from="bottom" class="mdlg" aria-labelledby="sortTitle"><div class="sheet"><div class="sheet-head"><h2 id="sortTitle">מיון</h2></div><div class="sortmenu" id="sortMenu" role="menu" hidden></div></div></dialog>
   <dialog id="amDlg" data-from="bottom" class="mdlg" aria-labelledby="amTitle"><div class="sheet"><div class="sheet-head"><h2 id="amTitle">שיוך למפגש</h2></div><div class="qmenu am" id="amMenu" role="menu" hidden></div></div></dialog>
   <div class="qmenu" id="fMenu" role="menu" hidden></div>
@@ -443,8 +446,8 @@
   <script src="age.js?v=816fedce"></script>
   <script src="rt.js?v=9f0bd1e7"></script>
   <script src="../assets/field.js?v=3373b0b3"></script>
-  <script src="admin.js?v=88fbced5"></script>
-  <script src="onboarding.js?v=544be310"></script>
+  <script src="admin.js?v=3d688370"></script>
+  <script src="onboarding.js?v=01874e4f"></script>
   <script src="/roster/assets/ui.js?v=0e4b73f3"></script>
   <script src="/roster/assets/undo.js?v=ed21e8f0"></script>
   <script src="/roster/admin/admin-kit.js?v=266496be"></script>
