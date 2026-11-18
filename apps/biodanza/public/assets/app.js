@@ -251,7 +251,12 @@
       return d;
     }
     var dock = make("bio-dock"); dock.setAttribute("popover", "manual"); document.body.appendChild(dock);
-    function top() { try { dock.hidePopover(); } catch (x) { /* not shown yet */ } try { dock.showPopover(); } catch (x) { /* an old browser: the pill is an ordinary fixed element */ } }   /* the top layer keeps what was shown last on top: showing it again puts it over a popup that has just opened */
+    function top() {   /* while a popup is open the page behind it is inert, the pill with it: it moves INTO the topmost open popup (as a popover, so it is drawn over it) and back to the page when none is open */
+      var dl = document.querySelectorAll("dialog[open]"), target = dl.length ? dl[dl.length - 1] : document.body;
+      try { dock.hidePopover(); } catch (x) { /* not shown yet */ }
+      if (dock.parentNode !== target) target.appendChild(dock);
+      try { dock.showPopover(); } catch (x) { /* an old browser: the pill is an ordinary fixed element */ }
+    }
     top();
     function sync() {
       var on = !!(window.FLOA_AUTH && FLOA_AUTH.signedIn());
@@ -266,8 +271,9 @@
     }
     var topKey = "";
     function ensureIn() {   /* the pill is never hidden or moved: when a popup opens it is put over it again, with no change to see */
-      var key = Array.prototype.map.call(document.querySelectorAll("dialog[open]"), function (d) { return d.id || "?"; }).join("|");
-      if (key !== topKey) { topKey = key; top(); }
+      var dl = document.querySelectorAll("dialog[open]"), target = dl.length ? dl[dl.length - 1] : document.body;
+      var key = Array.prototype.map.call(dl, function (d) { return d.id || "?"; }).join("|");
+      if (key !== topKey || dock.parentNode !== target || !dock.isConnected) { topKey = key; top(); }
     }
     try { new MutationObserver(ensureIn).observe(document.body, { attributes: true, attributeFilter: ["open"], subtree: true }); } catch (x) { /* the timer below does it */ }
     setInterval(function () { ensureIn(); sync(); }, 200);
