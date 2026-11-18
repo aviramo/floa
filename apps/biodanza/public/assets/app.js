@@ -136,12 +136,12 @@
       "@media (prefers-reduced-motion: reduce) { .bio-stop, .bio-stop-in { transition: none } }";
     /* the second button, above the stop button: it shows the time left, and opens the song's bar over everything (at the stop button's own level) */
     var face2 = face.replace(/border: 1px solid var\(--danger\)/, "border: 1px solid var(--line-strong)").replace("background: var(--danger)", "background: var(--bg)").replace("color: var(--on-primary)", "color: var(--text)");
-    var up = "calc(var(--gutter) + var(--inset-b) + var(--fab) + var(--sp-2))", up2 = "calc(var(--gutter) + var(--inset-b) + 2 * (var(--fab) + var(--sp-2)))";
+    var up = "calc(var(--gutter) + var(--inset-b))", side = "calc(max(var(--gutter), var(--inset-r)) + var(--fab) + var(--sp-2))";
     st.textContent += " .bio-seekfab, .bio-seekfab-in { " + face2 + "; " + vis + "; font: var(--fw-bold) var(--fs-xs)/1 var(--font); font-variant-numeric: tabular-nums } " +
-      ".bio-seekfab { position: fixed; right: max(var(--gutter), var(--inset-r)); bottom: " + up + "; z-index: var(--z-sticky) } " +
-      ".bio-seekfab-in { position: fixed; inset: auto max(var(--gutter), var(--inset-r)) " + up + " auto; margin: 0; overflow: visible } " +
+      ".bio-seekfab { position: fixed; right: " + side + "; bottom: " + up + "; z-index: var(--z-sticky) } " +
+      ".bio-seekfab-in { position: fixed; inset: auto " + side + " " + up + " auto; margin: 0; overflow: visible } " +
       ".bio-seekfab.on, .bio-seekfab-in.on { opacity: 1; transform: none; pointer-events: auto } " +
-      ".bio-seekpan, .bio-seekpan-in { position: fixed; left: max(var(--gutter), var(--inset-l)); right: calc(max(var(--gutter), var(--inset-r)) + var(--fab) + var(--sp-2)); bottom: " + up + "; width: auto; height: var(--fab); margin: 0; box-sizing: border-box; display: flex; align-items: center; padding: 0 var(--sp-3); overflow: visible; background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-fab); box-shadow: var(--sh-pop); z-index: var(--z-sticky); opacity: 0; transform: translateX(16px) scale(.98); transform-origin: right center; pointer-events: none; transition: transform var(--t-base) var(--ease), opacity var(--t-base) var(--ease) } " +
+      ".bio-seekpan, .bio-seekpan-in { position: fixed; left: max(var(--gutter), var(--inset-l)); right: calc(max(var(--gutter), var(--inset-r)) + 2 * (var(--fab) + var(--sp-2))); bottom: " + up + "; width: auto; height: var(--fab); margin: 0; box-sizing: border-box; display: flex; align-items: center; padding: 0 var(--sp-3); overflow: visible; background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-fab); box-shadow: var(--sh-pop); z-index: var(--z-sticky); opacity: 0; transform: translateX(16px) scale(.98); transform-origin: right center; pointer-events: none; transition: transform var(--t-base) var(--ease), opacity var(--t-base) var(--ease) } " +
       ".bio-seekpan.open, .bio-seekpan-in.open { opacity: 1; transform: none; pointer-events: auto } " +
       ".bio-seekpan > input, .bio-seekpan-in > input { display: block; width: 100%; margin: 0; direction: ltr; accent-color: var(--primary); touch-action: none } " +
       "html.rs-lock .bio-seekfab, html.dlg-lock .bio-seekfab, html.kb-open .bio-seekfab, html.rs-lock .bio-seekpan, html.dlg-lock .bio-seekpan { opacity: 0; pointer-events: none } " +
