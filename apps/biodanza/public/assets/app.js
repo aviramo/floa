@@ -424,7 +424,7 @@
         var l = r.querySelector("#likv"), list = (rows || []).map(function (x) { return state.vivs.filter(function (v) { return v.id === x.vivencia_id; })[0]; }).filter(Boolean);
         l.innerHTML = list.length ? list.map(function (v) {
           var n = v.vivencia_items && v.vivencia_items[0] ? v.vivencia_items[0].count : 0;
-          return '<div class="rrow rrow--link">' + heartBtnViv(v.id, "rrow__trail") + '<button type="button" class="rrow__main" data-open="' + v.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub">' + n + ' תרגילים</span></button></div>';
+          return '<div class="rrow rrow--link">' + heartBtnViv(v.id, "rrow__trail") + '<button type="button" class="rrow__main" data-open="' + v.id + '" style="margin-inline-start:var(--sp-1);background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub">' + n + ' תרגילים</span></button></div>';
         }).join("") : ph("עוד אין ויוונסיות שאהבת", "לחצו על הלב ליד ויוונסיה כדי לשמור אותה כאן");
         l.querySelectorAll("[data-open]").forEach(function (b) { b.addEventListener("click", function () { openViv(b.dataset.open); }); });
       }, fail);
@@ -437,7 +437,7 @@
       api("/rest/v1/exercise_likes?select=exercises(id,title_he,title_en,category)&order=created_at.desc").then(function (rows) {
         var l = r.querySelector("#likx"), list = (rows || []).map(function (x) { return x.exercises; }).filter(Boolean);
         l.innerHTML = list.length ? list.map(function (e) {
-          return '<div class="rrow" style="padding-inline:var(--gutter);padding-block:var(--sp-2)">' + heartBtnEx(e.id, "rrow__trail") + '<div class="rrow__main" style="flex:1 1 0;min-width:0"><span class="rrow__title">' + esc(name(e)) + '</span>' + (catName(e.category) ? '<span class="rrow__sub">' + esc(catName(e.category)) + '</span>' : '') + '</div></div>';
+          return '<div class="rrow" style="padding-inline:var(--gutter);padding-block:var(--sp-2)">' + heartBtnEx(e.id, "rrow__trail") + '<div class="rrow__main" style="flex:1 1 0;min-width:0;margin-inline-start:var(--sp-1)"><span class="rrow__title">' + esc(name(e)) + '</span>' + (catName(e.category) ? '<span class="rrow__sub">' + esc(catName(e.category)) + '</span>' : '') + '</div></div>';
         }).join("") : ph("עוד אין תרגילים שאהבת", "לחצו על הלב בראש תרגיל כדי לשמור אותו כאן");
       }, fail);
     });
@@ -487,7 +487,7 @@
     var l = document.getElementById("hl"); if (!l) return;
     l.innerHTML = state.vivs.length ? state.vivs.map(function (v) {
       var n = v.vivencia_items && v.vivencia_items[0] ? v.vivencia_items[0].count : 0;
-      return '<div class="rrow rrow--link">' + heartBtnViv(v.id, "rrow__trail") + '<button type="button" class="rrow__main" data-id="' + v.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub" data-n="' + v.id + '">' + n + ' תרגילים' + (v.role === "owner" ? "" : " · משותף" + (v.role === "view" ? " (צפייה)" : " (עריכה)")) + '</span></button></div>';
+      return '<div class="rrow rrow--link">' + heartBtnViv(v.id, "rrow__trail") + '<button type="button" class="rrow__main" data-id="' + v.id + '" style="margin-inline-start:var(--sp-1);background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub" data-n="' + v.id + '">' + n + ' תרגילים' + (v.role === "owner" ? "" : " · משותף" + (v.role === "view" ? " (צפייה)" : " (עריכה)")) + '</span></button></div>';
     }).join("") : ph("עוד אין ויוונסיות", "לחצו על + כדי ליצור את הראשונה");
     l.querySelectorAll("[data-id]").forEach(function (b) { b.addEventListener("click", function () { openViv(b.dataset.id); }); });
     if (state.vivs.length) enableDrag(l, "[data-id]", persistVivs);
