@@ -459,7 +459,7 @@
       if (m) shown = '<span style="display:inline-flex;align-items:baseline;gap:2px;direction:ltr"><b class="bio-num" style="display:inline-block;font:var(--fw-black) var(--fs-xl)/1 var(--font);--nx:' + ((state.slideFrom || 0) * 24) + 'px' + (state.slideFrom ? ';animation:bioNum .26s cubic-bezier(.2,.8,.2,1) both' : '') + '">' + m[1] + '</b><span style="color:var(--text-2);font:var(--fw-regular) var(--fs-s)/1 var(--font)">/' + m[2] + '</span></span>';   /* the number of this exercise is big, and rolls in from the side the page came from */
       return '<button class="rbtn' + (act === "nextW" ? "" : " rbtn--ghost") + '" data-act="' + act + '" title="' + esc(label) + '"' + (act === "list" ? ' style="flex:1 1 auto"' : "") + (off ? " disabled" : "") + '>' + (after ? '<span>' + shown + '</span>' + ico : ico + '<span>' + shown + '</span>') + '</button>';
     };
-    return '<header class="rhead">' + b("prevW", I.back, "הקודם", !hasPrev) + b("list", I.list, where || "לרשימה", false) + (exId ? heartBtnEx(exId, "") : "") + b("nextW", I.fwd, "הבא", !hasNext, true) + '</header>';
+    return '<header class="rhead">' + b("prevW", I.back, "הקודם", !hasPrev) + b("list", "", where || "לרשימה", false) + (exId ? heartBtnEx(exId, "") : "") + b("nextW", I.fwd, "הבא", !hasNext, true) + '</header>';
   }
   (function () {
     var st = document.createElement("style");
@@ -970,8 +970,8 @@
       '<label class="rfield" style="flex:none"><span>הנחיה</span><div id="igu" class="rf-rich" contenteditable="true" role="textbox" aria-multiline="true"' + (isDraft(it, "guidance") ? DRAFT_FIELD : "") + '>' + rtHtml(txt(it, "guidance")) + '</div></label>' +
       '<label class="rfield" style="flex:none"><span>הערות</span><div id="it" class="rf-rich" contenteditable="true" role="textbox" aria-multiline="true">' + rtHtml(it.notes || "") + '</div></label></div>' +
       '<div id="ibtns" style="flex:none;height:calc(var(--fab) + 2 * var(--gutter) + var(--inset-b))"></div></div>' +
-      '<button class="rfab" data-act="swap" aria-label="החלפת תרגיל" title="החלפת תרגיל">' + I.swap + '</button>' +   /* the two actions are buttons at the left, so the right is free for the music's */
-      '<button class="rfab" data-act="del" aria-label="הסרה מהוויוונסיה" title="הסרה מהוויוונסיה" style="left:calc(max(var(--gutter), var(--inset-l)) + var(--fab) + var(--sp-2));border-color:var(--danger);background:var(--danger)">' + I.trash + '</button>', function (r) {
+      '<button class="rfab" data-act="swap" aria-label="החלפת תרגיל" title="החלפת תרגיל" style="left:calc(max(var(--gutter), var(--inset-l)) + var(--fab) + var(--sp-2))">' + I.swap + '</button>' +   /* the two actions are buttons at the left, so the right is free for the music's */
+      '<button class="rfab" data-act="del" aria-label="הסרה מהוויוונסיה" title="הסרה מהוויוונסיה" style="border-color:var(--line-strong);background:var(--bg);color:var(--text)">' + I.trash + '</button>', function (r) {
       var sf = state.slideFrom || 0, pg = r.querySelector("#ipg"); state.slideFrom = 0;
       r.style.overflowX = "clip";   /* a page sliding in from the side must not make the window scroll sideways */
       if (pg && sf && !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)) {
