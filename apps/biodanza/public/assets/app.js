@@ -1438,6 +1438,11 @@
           else if (t < last - 2) set(false);
           last = t;
         }, { passive: true });
+        /* on a phone the keyboard leaves little room: while the search is being typed in, the two rows of filters make way, so the results are what is seen above the keyboard */
+        var qi = r.querySelector("#q");
+        qi.addEventListener("focus", function () { if (wide()) return; set(false); f.style.display = "none"; sc.scrollTop = 0; });
+        qi.addEventListener("blur", function () { if (!qi.value) f.style.display = ""; });   /* with words in the search the rows stay away: a tap on a result must not find the list moved under the finger */
+        qi.addEventListener("input", function () { sc.scrollTop = 0; });
       }
       function wireCat() {
         var inp = r.querySelector("#cg"), pop = null, active = -1, shown = [];
