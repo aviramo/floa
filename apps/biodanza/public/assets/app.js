@@ -222,7 +222,7 @@
     var up = "calc(var(--gutter) + var(--inset-b))", left = "calc(max(var(--gutter), var(--inset-l)) + var(--fab) + var(--sp-2))", right = "max(var(--gutter), var(--inset-r))";
     var st = document.createElement("style");
     st.textContent = ".bio-dock { position: fixed; inset: auto " + right + " " + up + " " + left + "; margin: 0; width: auto; max-width: none; box-sizing: border-box; height: var(--fab); display: flex; align-items: center; gap: var(--sp-2); padding: 0 0 0 var(--sp-2); overflow: visible; color: var(--text); background: var(--bg); border: 0; border-radius: var(--r-fab); box-shadow: var(--sh-pop); z-index: var(--z-sticky); } " +
-      ".bio-dock:not(.on) { display: none } " +
+      ".bio-dock:not(.on), html:has(#confirmDlg[open]) .bio-dock { display: none } " +
       ".bio-dock__btn { flex: none; display: grid; place-items: center; width: var(--fab); height: var(--fab); padding: 0; border: 0; border-radius: var(--r-fab); background: var(--danger); color: var(--on-primary); cursor: pointer } " +
       ".bio-dock__btn[data-st=\"paused\"] { background: var(--primary) } .bio-dock__btn:disabled { background: var(--surface-2); color: var(--text-3); cursor: default } " +
       ".bio-dock__btn > svg { width: var(--icon-l); height: var(--icon-l) } " +
