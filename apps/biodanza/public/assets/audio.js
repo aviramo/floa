@@ -77,6 +77,35 @@
   el.addEventListener("ended", function () { tell("", 0, 0); });
   new MutationObserver(paint).observe(document.documentElement, { childList: true, subtree: true });
 
+  /* what the phone shows on its lock screen and notification shade (Android, iPhone, desktop media keys): the song's name and who plays it,
+     and the controls work from there. app.js tells which name is which song (info). */
+  var infos = {}, ms = "mediaSession" in navigator ? navigator.mediaSession : null;
+  function showMeta() {
+    if (!ms || !window.MediaMetadata || !now) return;
+    var i = infos[now] || {};
+    try {
+      ms.metadata = new MediaMetadata({ title: i.title || "ביודנסה", artist: i.artist || "", album: "ביודנסה",
+        artwork: [{ src: new URL("favicon.png", document.baseURI).href, sizes: "192x192", type: "image/png" }] });
+    } catch (e) { /* no lock screen info this time */ }
+  }
+  function showPos() {
+    if (!ms || !ms.setPositionState || !(el.duration > 0) || !isFinite(el.duration)) return;
+    try { ms.setPositionState({ duration: el.duration, position: Math.min(el.currentTime, el.duration), playbackRate: el.playbackRate || 1 }); } catch (e) { /* not supported */ }
+  }
+  if (ms) {
+    var act = function (n, fn) { try { ms.setActionHandler(n, fn); } catch (e) { /* this action is not supported here */ } };
+    act("play", function () { if (el.src) el.play(); });
+    act("pause", function () { el.pause(); });
+    act("seekto", function (d) { if (el.duration && d && d.seekTime != null) el.currentTime = Math.max(0, Math.min(el.duration, d.seekTime)); });
+    act("seekbackward", function (d) { if (el.duration) el.currentTime = Math.max(0, el.currentTime - ((d && d.seekOffset) || 10)); });
+    act("seekforward", function (d) { if (el.duration) el.currentTime = Math.min(el.duration, el.currentTime + ((d && d.seekOffset) || 10)); });
+    el.addEventListener("play", function () { ms.playbackState = "playing"; showMeta(); showPos(); });
+    el.addEventListener("pause", function () { ms.playbackState = el.ended ? "none" : "paused"; showPos(); });
+    el.addEventListener("loadedmetadata", showPos);
+    el.addEventListener("seeked", showPos);
+    el.addEventListener("ended", function () { ms.playbackState = "none"; });
+  }
+
   function toggle(name) {
     if (now === name && url) { if (el.paused) el.play(); else el.pause(); return; }
     busy = name; paint();
@@ -121,6 +150,8 @@
         if (window.toast) window.toast(e && e.status === 403 ? "אין הרשאה להשמיע" : "אי אפשר להשמיע עכשיו");
       }).then(function () { loadingSeek = ""; busy = ""; paint(); });
     },
+    /* the name a song's file is shown by on the phone's lock screen */
+    info: function (name, title, artist) { if (name) infos[name] = { title: title || "", artist: artist || "" }; if (name === now) showMeta(); },
     kept: isKept
   };
 })();
