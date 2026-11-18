@@ -222,9 +222,10 @@
     var up = "calc(var(--gutter) + var(--inset-b))", left = "calc(max(var(--gutter), var(--inset-l)) + var(--fab) + var(--sp-2))", right = "max(var(--gutter), var(--inset-r))";
     var st = document.createElement("style");
     st.textContent = ".bio-dock { position: fixed; inset: auto " + right + " " + up + " " + left + "; margin: 0; width: auto; max-width: none; box-sizing: border-box; height: var(--fab); display: flex; align-items: center; gap: var(--sp-2); padding: 0 0 0 var(--sp-2); overflow: visible; color: var(--text); background: var(--bg); border: 0; border-radius: var(--r-fab); box-shadow: var(--sh-pop); z-index: var(--z-sticky); } " +
-      ".bio-dock:not(.on), html:has(#confirmDlg[open]) .bio-dock { display: none } " +
+      ".bio-dock:not(.on), .bio-dock.closed, html:has(#confirmDlg[open]) .bio-dock { display: none } " +
       ".bio-dock__btn { flex: none; display: grid; place-items: center; width: var(--fab); height: var(--fab); padding: 0; border: 0; border-radius: var(--r-fab); background: var(--danger); color: var(--on-primary); cursor: pointer } " +
       ".bio-dock__btn[data-st=\"paused\"] { background: var(--primary) } .bio-dock__btn:disabled { background: var(--surface-2); color: var(--text-3); cursor: default } " +
+      ".bio-dock__x { flex: none; display: grid; place-items: center; width: var(--ctl); height: var(--ctl); padding: 0; border: 0; border-radius: var(--r-ctl); background: transparent; color: var(--text-2); cursor: pointer } .bio-dock__x > svg { width: var(--icon-m, 20px); height: var(--icon-m, 20px); stroke-width: var(--icon-w) } .bio-dock.idle .bio-dock__x { display: none } " +
       ".bio-dock__btn > svg { width: var(--icon-l); height: var(--icon-l) } " +
       ".bio-dock__time { flex: none; min-width: 2.6em; text-align: center; font: var(--fw-bold) var(--fs-xs)/1 var(--font); font-variant-numeric: tabular-nums } " +
       ".bio-dock__bar { flex: 1 1 0; width: auto; max-width: none; min-width: 0; display: block; margin: 0; padding: 0; direction: ltr; accent-color: var(--primary); touch-action: none } " +
@@ -235,12 +236,13 @@
     document.head.appendChild(st);
     var PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
     var PLAY = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>';
-    var playing = false, loaded = false, seekDrag = false, leftNow = 0, frac = 0;
+    var playing = false, loaded = false, closed = false, seekDrag = false, leftNow = 0, frac = 0;
     function make(cls) {
       var d = document.createElement("div"); d.className = cls + " idle";
       d.innerHTML = '<button type="button" class="bio-dock__btn" disabled aria-label="השמעה">' + PLAY + '</button><span class="bio-dock__time">0:00</span>' +
-        '<input class="bio-dock__bar" type="range" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר"><span class="bio-dock__none">לא נבחרה מוזיקה</span>';
+        '<input class="bio-dock__bar" type="range" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר"><span class="bio-dock__none">לא נבחרה מוזיקה</span><button type="button" class="bio-dock__x" aria-label="עצירה וסגירה" title="עצירה וסגירה">' + I.x + '</button>';
       d.querySelector("button").addEventListener("click", function () { if (window.BioAudio && BioAudio.playPause) BioAudio.playPause(); });
+      d.querySelector(".bio-dock__x").addEventListener("click", function () { closed = true; if (window.BioAudio && BioAudio.stop) BioAudio.stop(); sync(); });
       var r = d.querySelector("input");
       r.addEventListener("pointerdown", function () { seekDrag = true; });
       ["pointerup", "pointercancel", "change"].forEach(function (n) { r.addEventListener(n, function () { seekDrag = false; }); });
@@ -253,7 +255,7 @@
     function sync() {
       var on = !!(window.FLOA_AUTH && FLOA_AUTH.signedIn());
       [dock].forEach(function (d) {
-        d.classList.toggle("on", on); d.classList.toggle("idle", !loaded);
+        d.classList.toggle("on", on); d.classList.toggle("idle", !loaded); d.classList.toggle("closed", closed && !loaded);
         var b = d.querySelector("button"), t = d.querySelector(".bio-dock__time"), r = d.querySelector("input"), s = clock(leftNow);
         b.disabled = !loaded; b.dataset.st = playing ? "playing" : "paused";
         var lab = playing ? "השהיית השיר" : "השמעה"; if (b.getAttribute("aria-label") !== lab) { b.setAttribute("aria-label", lab); b.title = lab; b.innerHTML = playing ? PAUSE : PLAY; }
@@ -285,7 +287,7 @@
     });
     document.addEventListener("bioaudio", function (ev) {
       var dd = ev.detail || {};
-      playing = !!dd.playing; loaded = !!dd.name;
+      playing = !!dd.playing; loaded = !!dd.name; if (loaded) closed = false;
       if (loaded && dd.d > 0) { leftNow = Math.max(0, Math.ceil(dd.d - dd.t)); frac = dd.t / dd.d; } else { leftNow = 0; frac = 0; }
       if (window.BioAudio && BioAudio.volume) volState.v = BioAudio.volume(0); paintVol();
       ensureIn(); sync();

@@ -146,6 +146,8 @@
     skip: function (sec) { if (el.duration) el.currentTime = Math.max(0, Math.min(el.duration, el.currentTime + sec)); },
     pause: function () { el.pause(); },
     /* the player's one button: the loaded song plays or pauses */
+    /* the player's X: the song stops and is let go, so the pill has nothing loaded */
+    stop: function () { el.pause(); now = ""; try { el.removeAttribute("src"); el.load(); } catch (e) { /* nothing to let go */ } if (url) { URL.revokeObjectURL(url); url = ""; } tell("", 0, 0); paint(); },
     playPause: function () { if (now && url) { if (el.paused) el.play(); else el.pause(); } },
     seek: function (f) { if (el.duration) el.currentTime = Math.max(0, Math.min(1, f)) * el.duration; },
     /* move a song to a place in it, also one that is not playing: its file is loaded (not played) and put there; play then goes on from that place */
