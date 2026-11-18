@@ -179,4 +179,28 @@
       return keptNames().then(function (names) { haveOnly = {}; names.forEach(function (n) { haveOnly[n] = true; }); paint(); });
     }
   };
+
+  /* a refresh stops the sound (the browser allows nothing else), but not the place: the song and where it was are remembered, and after the
+     reload the player shows the same song paused at the same second; one tap plays on from there */
+  var LAST = "biodanza.last", lastAt = 0;
+  function remember(force) {
+    if (!now) return;
+    var n = Date.now(); if (!force && n - lastAt < 1000) return; lastAt = n;
+    try { localStorage.setItem(LAST, JSON.stringify({ name: now, t: el.currentTime || 0 })); } catch (e) { /* not kept */ }
+  }
+  function forget() { try { localStorage.removeItem(LAST); } catch (e) { /* none */ } }
+  el.addEventListener("timeupdate", function () { remember(false); });
+  el.addEventListener("pause", function () { if (!el.ended) remember(true); });
+  window.addEventListener("pagehide", function () { remember(true); });
+  el.addEventListener("ended", forget);
+  var origStop = window.BioAudio.stop; window.BioAudio.stop = function () { forget(); return origStop(); };
+  (function restore() {
+    var last = null; try { last = JSON.parse(localStorage.getItem(LAST) || "null"); } catch (e) { last = null; }
+    if (!last || !last.name || now) return;
+    bytes(last.name).then(function (b) {
+      if (now) return;   /* a song was started meanwhile */
+      url = URL.createObjectURL(b); now = last.name; el.src = url;
+      el.addEventListener("loadedmetadata", function () { if (now === last.name && el.currentTime < 0.5) el.currentTime = Math.min(last.t || 0, Math.max(0, el.duration - 1)); tell(now, el.currentTime, el.duration || 0); }, { once: true });
+    }).catch(function () { forget(); });
+  })();
 })();
