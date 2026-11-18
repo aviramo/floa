@@ -637,7 +637,7 @@
     const pid = sheet.id, pp = partOf(pid) || {};
     const sig = notesOf(pid).map((n) => n.id + (n.mail_id || '') + (n.mail_failed ? (n.mail_noaddr ? '?' : '!') : '')).join(',') + '|' + state.att.filter((a) => a.participant_id === pid).map((a) => [a.meeting_id, a.attended, a.paid_amount, a.details_sent_at, a.status_key, a.no_pay, a.pay_later_at, a.pay_due_amount, a.pay_closed_at].join(':')).join(',')
       + '|' + state.payments.filter((x) => x.participant_id === pid).map((x) => [x.id, x.kind, x.amount, x.method, x.meeting_id, x.from_credit].join(':')).join(',')
-      + '|' + [pp.name, pp.phone, pp.email, pp.address, pp.age, pp.gender, pp.promoter_id, pp.active].join(':');
+      + '|' + [pp.name, pp.phone, pp.email, pp.address, pp.age, pp.gender, pp.promoter_id, pp.source_code, pp.active].join(':');
     if (sig === sheetSig) return; sheetSig = sig;
     renderNotes(); refreshSheetMeetings(); renderContact();
     renderWallet();   // דף הקרדיט
@@ -3285,6 +3285,7 @@
     pForm.age.value = p ? (shownAge(p) ?? '') : '';
     pForm.email.value = p ? (p.email || '') : '';
     pForm.address.value = p ? (p.address || '') : '';
+    pForm.source_code_view.value = p ? (p.source_code || '') : '';
     pForm.gender.value = p && p.gender ? p.gender : '';
     fillPromoSel(p);
     setTitle(p);
