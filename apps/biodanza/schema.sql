@@ -540,3 +540,14 @@ drop policy if exists levels_read on biodanza.levels;
 create policy levels_read on biodanza.levels for select to authenticated using (biodanza.is_allowed());
 grant select on biodanza.levels to authenticated;
 alter table biodanza.exercises add column if not exists level_key text references biodanza.levels(key);
+
+-- every way the catalogs write a phase, so any text that names one maps to the same phase and the same Hebrew name (phases.name_he):
+-- "Phase II - Adrenergic" (with any kind of dash), "שלב III, גשר ומעבר", "Transition" and so on. The curve text of an exercise uses name_he.
+alter table biodanza.phases add column if not exists aliases text[] not null default '{}';
+update biodanza.phases set aliases = case key
+  when 'opening'    then array['Phase I - Start', 'Phase I', 'Start', 'Opening', 'שלב I', 'I, התחלה', 'שלב I, פתיחה', 'פתיחה']
+  when 'activation' then array['Phase II - Adrenergic', 'Phase II', 'Adrenergic', 'Activation', 'שלב II', 'II, אדרנרגי', 'שלב II, אדרנרגי', 'אדרנרגי']
+  when 'bridge'     then array['Phase III - Transition', 'Phase III', 'Transition', 'Bridge', 'שלב III', 'III, מעבר', 'שלב III, גשר ומעבר', 'מעבר']
+  when 'regression' then array['Phase IV - Cholinergic', 'Phase IV', 'Cholinergic', 'Regression', 'שלב IV', 'IV, כולינרגי', 'שלב IV, כולינרגי', 'כולינרגי']
+  when 'closing'    then array['Phase V - Closing', 'Phase V', 'Closing', 'Final activation', 'שלב V', 'V, סיום', 'שלב V, אקטיבציה וסיום', 'סיום']
+end;
