@@ -368,17 +368,30 @@
   }
 
   /* ---------- home: my vivencias ---------- */
+  /* the songs I loved: my list, newest first, each as a song row (the heart takes a song off it) */
+  function likedScreen() {
+    show(head("שירים שאהבתי", "", true) + '<div class="rlist" id="likl"><div class="rskel rskel--title"></div></div>', function (r) {
+      on(r, "back", back);
+      api("/rest/v1/song_likes?select=music(id,name,title,artist,duration_sec,audio_object,in_catalog)&order=created_at.desc").then(function (rows) {
+        var l = r.querySelector("#likl"), list = (rows || []).map(function (x) { return x.music; }).filter(Boolean);
+        l.innerHTML = list.length ? list.map(function (m) { return songRow(m, false, "data-liked"); }).join("") : ph("עוד אין שירים שאהבת", "לחצו על הלב ליד שיר כדי לשמור אותו כאן");
+      }, fail);
+    });
+  }
   function home() {
     curLeave();
     if (!wide()) { stack().length = 0; stack().push(home); setUrl(BASE); }
     show(head("הוויוונסיות שלי", "", false,
-      (state.me.admin ? '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="allow" aria-label="מורשים" title="מורשים">' + I.users + '</button>' : '') +
-      '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="out" aria-label="יציאה" title="יציאה">' + I.out + '</button>',
+      '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="homemore" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>',
       '<img src="favicon.png" alt="" style="flex:none;width:var(--ctl);height:var(--ctl);border-radius:var(--r-ctl)">') +
       '<div class="rlist" data-fab-room id="hl"><div class="rskel rskel--title"></div></div>' +
       '<button class="rfab" data-act="new" aria-label="ויוונסיה חדשה" title="ויוונסיה חדשה">' + I.plus + '</button>', function (r) {
-      on(r, "out", function () { Promise.resolve(FLOA_AUTH.signOut()).then(function () { location.reload(); }); });
-      on(r, "allow", allowPopup);
+      on(r, "homemore", function (b) {   /* one menu: the songs I loved, who may enter (the manager), leaving */
+        var items = [{ label: "שירים שאהבתי", icon: I.heart, fn: function () { go(likedScreen); } }];
+        if (state.me.admin) items.push({ label: "מורשים", icon: I.users, fn: allowPopup });
+        items.push({ label: "יציאה", icon: I.out, tone: "danger", fn: function () { Promise.resolve(FLOA_AUTH.signOut()).then(function () { location.reload(); }); } });
+        menu(b, items);
+      });
       on(r, "new", newViv);
     });
     loadVivs().then(renderVivs, fail);
