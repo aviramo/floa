@@ -74,6 +74,8 @@ begin
     select pr.id into prid from roster.promoters pr where pr.business_id = b and (lower(pr.code) = sc or sc = any (select lower(x) from unnest(coalesce(pr.codes, '{}'::text[])) x)) limit 1;
     if prid is not null then
       update roster.participants set source = 'site-ad', source_code = sc, promoter_id = prid where id = pid and business_id = b and promoter_id is null and coalesce(source_code, '') = '';
+    else   -- an unknown code is kept too (source stays as it is, no promoter), only when the participant has no code yet
+      update roster.participants set source_code = sc where id = pid and business_id = b and promoter_id is null and coalesce(source_code, '') = '';
     end if;
   end if;
 

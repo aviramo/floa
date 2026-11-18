@@ -8,7 +8,10 @@ begin
   if st <> 'ok' then return roster.me_text(st); end if;
   if sc = '' or char_length(sc) > 40 or sc ~ '[[:cntrl:]]' then return 'none'; end if;
   select pr.id into prid from roster.promoters pr where pr.business_id = b and (lower(pr.code) = sc or sc = any (select lower(x) from unnest(coalesce(pr.codes, '{}'::text[])) x)) limit 1;
-  if prid is null then return 'none'; end if;
+  if prid is null then   -- an unknown code is kept as it is (no promoter, source unchanged), only when there is none yet
+    update roster.participants set source_code = sc where id = pid and business_id = b and promoter_id is null and coalesce(source_code, '') = '';
+    return 'none';
+  end if;
   update roster.participants set source = 'site-ad', source_code = sc, promoter_id = prid
    where id = pid and business_id = b and promoter_id is null and coalesce(source_code, '') = '';
   return 'ok';

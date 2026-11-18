@@ -49,7 +49,7 @@ begin
     if scode <> '' then select pr.id into prid from roster.promoters pr where pr.business_id = k.business_id and (lower(pr.code) = scode or scode = any (select lower(x) from unnest(coalesce(pr.codes, '{}'::text[])) x)) limit 1; end if;
     begin
       insert into roster.participants (business_id, first_name, last_name, phone, age_set_at, email, source, source_code, promoter_id)
-        values (k.business_id, '', '', norm, roster.today(), nullif(em, ''), case when prid is not null then 'site-ad' else 'site' end, case when prid is not null then scode end, prid)
+        values (k.business_id, '', '', norm, roster.today(), nullif(em, ''), case when prid is not null then 'site-ad' else 'site' end, nullif(scode, ''), prid)   -- an unknown code is kept too (source stays site, no promoter): the admin sees which link the person came from
         returning id into pid;
       created := true;
       perform roster.sys_note(k.business_id, pid, 'נרשם/ה דרך האתר · טלפון ' || norm, 'registered');

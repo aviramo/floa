@@ -1,5 +1,5 @@
 -- Checks for me-phone-source.sql on the TEST schema (run: node scripts/sql.mjs --table < apps/roster/me-phone-source.check.sql). Everything is rolled back.
--- Expected: 1 email/source/registered; 2 old 3-argument answer is exactly {status, complete}; 3 bad email and unknown code ignored;
+-- Expected: 1 email/source/registered; 2 old 3-argument answer is exactly {status, complete}; 3 a bad email is ignored and an unknown code is kept (source unchanged, no promoter);
 -- 4 an existing source is never overwritten; 5 the email of another participant is not saved and nothing fails.
 begin;
 create temp table res(t text, v text) on commit drop;
@@ -35,7 +35,7 @@ delete from "roster-test".members where user_id = '0be14972-287d-4e7e-aae8-90e63
 set local role authenticated;
 insert into res select '3 status', "roster-test".me_phone('harpatka', '0501110023', null, 'not-an-email', 'zzz')->>'status';
 reset role;
-insert into res select '3 email/source', coalesce(email, '(none)') || '/' || coalesce(source_code, '(none)') from "roster-test".participants where business_id = current_setting('check.b')::uuid and phone_norm = roster.normalize_phone('0501110023');
+insert into res select '3 email/code/source/promoter', coalesce(email, '(none)') || '/' || coalesce(source_code, '(none)') || '/' || coalesce(source, '(none)') || '/' || (promoter_id is null)::text from "roster-test".participants where business_id = current_setting('check.b')::uuid and phone_norm = roster.normalize_phone('0501110023');
 delete from "roster-test".members where user_id = '0be14972-287d-4e7e-aae8-90e63f70fea7';
 
 -- 4. a participant that already has a source keeps it
