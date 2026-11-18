@@ -24,7 +24,7 @@ export const projects = {
     icon: "doc",
     name: "אקורדים",
     title: "אפליקציית ספריית שירים ואקורדים",
-    href: "https://floa.co.il/chords/",
+    href: "https://chords.floa.co.il/",
     ariaLabel: "האפליקציה אקורדים",
     linkLabel: "לאפליקציה",
     /* The library beside one song open for playing: the two screens the app
@@ -59,7 +59,7 @@ export const projects = {
   roster: {
     name: "Roster",
     title: "אפליקציה לניהול משתתפים",
-    href: "https://floa.co.il/roster/",
+    href: "https://roster.floa.co.il/",
     ariaLabel: "האפליקציה Roster",
     linkLabel: "לאפליקציה",
     /* The admin as it runs, captured with invented participants: no real name or
@@ -78,7 +78,7 @@ export const projects = {
   aum: {
     name: "AUM",
     title: "דף נחיתה והרשמה לריטריט יומי",
-    href: "https://floa.co.il/tal/aum/",
+    href: "https://aum.floa.co.il/",
     ariaLabel: "האתר AUM",
     linkLabel: "לצפייה באתר",
     /* Two captures of the live page, desktop beside phone, like harpatka. */

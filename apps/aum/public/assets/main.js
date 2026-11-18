@@ -60,11 +60,11 @@
       eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
       eventStatus: "https://schema.org/EventScheduled",
       location: { "@type": "Place", name: ev.location, address: { "@type": "PostalAddress", addressLocality: "גדרה", addressCountry: "IL" } },
-      image: "https://floa.co.il/tal/aum/assets/img/og.jpg",
+      image: "https://aum.floa.co.il/assets/img/og.jpg",
       performer: { "@type": "Person", name: "טל אמיתי-לביא" },
       organizer: { "@type": "Person", name: "טל אמיתי-לביא", telephone: "+972-52-849-7146" },
     };
-    if (ev.price) data.offers = { "@type": "Offer", price: String(ev.price), priceCurrency: "ILS", availability: "https://schema.org/InStock", url: "https://floa.co.il/tal/aum/" };
+    if (ev.price) data.offers = { "@type": "Offer", price: String(ev.price), priceCurrency: "ILS", availability: "https://schema.org/InStock", url: "https://aum.floa.co.il/" };
     var s = document.createElement("script");
     s.type = "application/ld+json";
     s.textContent = JSON.stringify(data);
