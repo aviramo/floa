@@ -142,13 +142,13 @@
     }
     document.body.appendChild(make("bio-stop"));
     function sync() { document.querySelectorAll(".bio-stop, .bio-stop-in").forEach(function (b) { b.classList.toggle("on", playing); }); }
-    /* the arrow keys are the volume while a song plays (up, down; outside a field, a menu or a popup, where they keep their own job) */
+    /* the up and down arrow keys are the volume, always (outside a field, a menu or a popup, where they keep their own job); Shift for steps of five */
     document.addEventListener("keydown", function (e) {
-      if (!playing || (e.key !== "ArrowUp" && e.key !== "ArrowDown") || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+      if ((e.key !== "ArrowUp" && e.key !== "ArrowDown") || e.ctrlKey || e.metaKey || e.altKey) return;
       var tg = e.target; if (tg && (tg.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName))) return;
-      if (document.querySelector("dialog[open], #moreMenu, .rmenu") || !window.BioAudio || !BioAudio.volume) return;
+      if (document.querySelector("dialog[open], #moreMenu") || !window.BioAudio || !BioAudio.volume || !window.matchMedia("(min-width: 1024px)").matches) return;
       e.preventDefault();
-      volState.v = BioAudio.volume(e.key === "ArrowUp" ? 0.01 : -0.01); paintVol();   /* the sound and the gauge in the header are the answer: no message */
+      volState.v = BioAudio.volume((e.key === "ArrowUp" ? 1 : -1) * (e.shiftKey ? 0.05 : 0.01)); paintVol();   /* the sound and the gauge in the header are the answer: no message */
     });
     document.addEventListener("bioaudio", function (ev) {
       playing = !!(ev.detail && ev.detail.playing); document.documentElement.classList.toggle("bio-playing", playing);   /* the stop button takes the bottom right: the buttons of the exercise leave it room */
