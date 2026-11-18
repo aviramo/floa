@@ -519,3 +519,24 @@ alter table biodanza.exercise_texts add column if not exists curve_basis text no
 -- experience, orientation groups), 'deep' (deepening and radicalization groups, schools, advanced). An exercise can have several.
 alter table biodanza.exercises add column if not exists phase_keys text[] not null default '{}';
 alter table biodanza.exercises add column if not exists level_keys text[] not null default '{}';
+
+-- ---------- the index of group levels ----------
+-- An ordered index, from the easiest group to the most experienced. Every catalog exercise is assigned ONE level: the lowest group level it
+-- suits. exercise_texts.level keeps the wording shown (the catalog's own detail when it has one); level_key is what filters and sorts use.
+create table if not exists biodanza.levels (
+  key         text primary key,
+  rank        int  not null unique,
+  name_he     text not null,
+  description text not null default ''
+);
+insert into biodanza.levels (key, rank, name_he, description) values
+  ('all',   1, 'מתאים לכל הקבוצות',                   'לא דורש ניסיון: פשוט, בטוח, חשיפה רגשית נמוכה. מעגלי פתיחה, הליכות פשוטות, ריקודים קצביים בסיסיים, משחקים קלים.'),
+  ('exp3',  2, 'לקבוצות עם ניסיון של כמה חודשים',      'דורש מעט אמון בקבוצה: מגע בזוגות, ליטופים, מבטים, מפגשים, חשיפה רגשית מתונה. קבוצות התמצאות אחרי שלושה חודשים בערך.'),
+  ('exp6',  3, 'לקבוצות עם ניסיון של חצי שנה ויותר',   'דורש קבוצה מגובשת: עומק חיבתי או רגרסיבי, קן קבוצתי, עוצמה והבעה חזקות, תנוחות מכוננות מורכבות.'),
+  ('deep',  4, 'לקבוצות העמקה ומתקדמות',               'קבוצות העמקה והקצנה של חוויות ובתי ספר, שנה ויותר: חוויות עזות, טקסים, פרויקט המינוטאור, מיניות, חשיפה רגשית גבוהה.')
+on conflict (key) do update set rank = excluded.rank, name_he = excluded.name_he, description = excluded.description;
+alter table biodanza.levels enable row level security;
+drop policy if exists levels_read on biodanza.levels;
+create policy levels_read on biodanza.levels for select to authenticated using (biodanza.is_allowed());
+grant select on biodanza.levels to authenticated;
+alter table biodanza.exercises add column if not exists level_key text references biodanza.levels(key);

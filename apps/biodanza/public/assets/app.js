@@ -1318,13 +1318,13 @@
   /* ---------- picker: the catalog ---------- */
   var pk = { q: "", ln: "", cg: "", lv: "", cv: "" };   /* the catalog's search, line, category, group level and place on the curve */
   function resetPk() { pk = { q: "", ln: "", cg: "", lv: "", cv: "" }; }
-  var LEVELS = [["all", "מתאים לכל הקבוצות"], ["exp", "לקבוצות עם ניסיון של כמה חודשים"], ["deep", "לקבוצות העמקה ומתקדמות"]];   /* the three groups the catalog's level texts fall into (exercises.level_keys) */
+  var LEVELS_FALLBACK = [{ key: "all", name_he: "מתאים לכל הקבוצות" }, { key: "exp3", name_he: "לקבוצות עם ניסיון של כמה חודשים" }, { key: "exp6", name_he: "לקבוצות עם ניסיון של חצי שנה ויותר" }, { key: "deep", name_he: "לקבוצות העמקה ומתקדמות" }];   /* the index of group levels (biodanza.levels), when it has not come from the cloud */
   /* the catalog picker: the filters and the list. On a wide screen it is a pane; on a narrow one it is a popup from the bottom. */
   function pickerBody() {
     var two = function (x, y) { return '<div style="display:flex;gap:var(--gap-button);align-items:flex-end">' + x + y + '</div>'; };
     var sel = function (id, label, opts) { return '<label class="rfield" style="flex:1 1 0;min-width:0;margin:0"><span>' + label + '</span><select id="' + id + '"><option value="">הכול</option>' + opts + '</select></label>'; };
     var cat = '<label class="rfield" style="flex:1 1 0;min-width:0;margin:0"><span>קטגוריה</span><input id="cg" placeholder=" " autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox" value="הכול"></label>';
-    var lvl = sel("lv", "רמת הקבוצה", LEVELS.map(function (l) { return '<option value="' + l[0] + '">' + l[1] + '</option>'; }).join(""));
+    var lvl = sel("lv", "רמת הקבוצה", (state.levels && state.levels.length ? state.levels : LEVELS_FALLBACK).map(function (l) { return '<option value="' + l.key + '">' + esc(l.name_he) + '</option>'; }).join(""));
     var cur = sel("cv", "מיקום בעקומה", state.phases.map(function (x) { return '<option value="' + x.key + '">' + esc(x.name_he) + '</option>'; }).join(""));
     var lin = sel("ln", "קו", state.lines.map(function (l) { return '<option value="' + l.key + '">' + esc(l.name_he) + '</option>'; }).join(""));
     var srch = '<label class="rfield" style="margin:0"><span>חיפוש</span><input id="q" placeholder=" "></label>';
@@ -1392,7 +1392,7 @@
         var q = r.querySelector("#q").value.trim().toLowerCase(), ln = r.querySelector("#ln").value, lv = r.querySelector("#lv").value, cv = r.querySelector("#cv").value, cg = catSel, l = r.querySelector("#list");
         pk = { q: r.querySelector("#q").value, ln: ln, cg: cg, lv: lv, cv: cv };   /* what was typed and chosen is kept while an exercise is looked at and back again */
         var rows = (state.cat || []).filter(function (e) {
-          return (!cg || e.category === cg) && (!lv || (e.level_keys || []).indexOf(lv) >= 0) && (!cv || (e.phase_keys || []).indexOf(cv) >= 0) && (!ln || (e.exercise_lines || []).some(function (x) { return x.line_key === ln; })) && (!q || (name(e) + " " + e.title_en + " " + e.category).toLowerCase().indexOf(q) >= 0);
+          return (!cg || e.category === cg) && (!lv || e.level_key === lv) && (!cv || (e.phase_keys || []).indexOf(cv) >= 0) && (!ln || (e.exercise_lines || []).some(function (x) { return x.line_key === ln; })) && (!q || (name(e) + " " + e.title_en + " " + e.category).toLowerCase().indexOf(q) >= 0);
         });
         l.innerHTML = rows.length ? rows.map(function (e) {
           return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-ex="' + e.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(name(e)) + '</span><span class="rrow__sub">' + esc([catName(e.category)].concat((e.exercise_lines || []).map(function (x) { return lineName(x.line_key); })).filter(Boolean).join(" · ")) + '</span></button></div>';
@@ -1449,7 +1449,7 @@
   function loadCatalog() {
     var all = [], PAGE = 1000;
     function page(off) {
-      return api("/rest/v1/exercises?select=id,title_he,title_en,category,phase_hint,phase_keys,level_keys,exercise_lines(line_key)&order=title_en,id&limit=" + PAGE + "&offset=" + off).then(function (rows) {
+      return api("/rest/v1/exercises?select=id,title_he,title_en,category,phase_hint,phase_keys,level_key,exercise_lines(line_key)&order=title_en,id&limit=" + PAGE + "&offset=" + off).then(function (rows) {
         rows = rows || []; all = all.concat(rows);
         return rows.length === PAGE ? page(off + PAGE) : all;
       });
@@ -1745,7 +1745,7 @@
     api("/rest/v1/rpc/me", { method: "POST", json: {} }).then(function (me) {
       state.me = me; try { localStorage.setItem("biodanza.admin", me && me.admin ? "1" : "0"); } catch (x) { /* none */ }
       if (!me || !me.allowed) return gate("לחשבון " + FLOA_AUTH.email() + " אין הרשאה להיכנס. אפשר לבקש מהמנהל להוסיף אותו.", true);
-      return Promise.all([api("/rest/v1/lines?select=key,name_he&order=sort"), api("/rest/v1/phases?select=key,name_he&order=sort")]).then(function (r) { state.lines = r[0]; state.phases = r[1]; if (!localHome) home(); startRealtime(); api("/rest/v1/song_likes?select=music_id").then(function (ls) { likes = {}; (ls || []).forEach(function (x) { likes[x.music_id] = true; }); }, function () { /* no hearts this time */ });
+      return Promise.all([api("/rest/v1/lines?select=key,name_he&order=sort"), api("/rest/v1/phases?select=key,name_he&order=sort"), api("/rest/v1/levels?select=key,name_he&order=rank").catch(function () { return []; })]).then(function (r) { state.lines = r[0]; state.phases = r[1]; state.levels = r[2]; if (!localHome) home(); startRealtime(); api("/rest/v1/song_likes?select=music_id").then(function (ls) { likes = {}; (ls || []).forEach(function (x) { likes[x.music_id] = true; }); }, function () { /* no hearts this time */ });
         api("/rest/v1/vivencia_likes?select=vivencia_id").then(function (ls) { likesViv = {}; (ls || []).forEach(function (x) { likesViv[x.vivencia_id] = true; }); if (state.vivsLoaded) renderVivs(); }, function () { /* no hearts this time */ });
         api("/rest/v1/exercise_likes?select=exercise_id").then(function (ls) { likesEx = {}; (ls || []).forEach(function (x) { likesEx[x.exercise_id] = true; }); }, function () { /* no hearts this time */ }); });
     }).catch(function (e) {
