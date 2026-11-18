@@ -222,6 +222,7 @@
     var up = "calc(var(--gutter) + var(--inset-b))", left = "calc(max(var(--gutter), var(--inset-l)) + var(--fab) + var(--sp-2))", right = "max(var(--gutter), var(--inset-r))";
     var st = document.createElement("style");
     st.textContent = ".bio-dock { position: fixed; inset: auto " + right + " " + up + " " + left + "; margin: 0; width: auto; max-width: none; box-sizing: border-box; height: var(--fab); display: flex; align-items: center; gap: var(--sp-2); padding: 0 0 0 var(--sp-2); overflow: visible; color: var(--text); background: var(--bg); border: 0; border-radius: var(--r-fab); box-shadow: var(--sh-pop); z-index: var(--z-sticky); } " +
+      "@keyframes bio-dock-pop { from { opacity: 0; transform: translateY(calc(var(--fab) / 2)) } to { opacity: 1; transform: none } } .bio-dock.pop { animation: bio-dock-pop var(--t-base) var(--ease) } @media (prefers-reduced-motion: reduce) { .bio-dock.pop { animation: none } } " +
       ".bio-dock:not(.on), .bio-dock.closed, html:has(#confirmDlg[open]) .bio-dock { display: none } " +
       ".bio-dock__btn { flex: none; display: grid; place-items: center; width: var(--fab); height: var(--fab); padding: 0; border: 0; border-radius: var(--r-fab); background: var(--danger); color: var(--on-primary); cursor: pointer } " +
       ".bio-dock__btn[data-st=\"paused\"] { background: var(--primary) } .bio-dock__btn:disabled { background: var(--surface-2); color: var(--text-3); cursor: default } " +
@@ -255,7 +256,7 @@
     function sync() {
       var on = !!(window.FLOA_AUTH && FLOA_AUTH.signedIn());
       [dock].forEach(function (d) {
-        d.classList.toggle("on", on); d.classList.toggle("idle", !loaded); d.classList.toggle("closed", closed && !loaded);
+        d.classList.toggle("on", on); d.classList.toggle("idle", !loaded); var wasClosed = d.classList.contains("closed"); d.classList.toggle("closed", !loaded); if (loaded && wasClosed) { d.classList.add("pop"); setTimeout(function () { d.classList.remove("pop"); }, 400); }
         var b = d.querySelector("button"), t = d.querySelector(".bio-dock__time"), r = d.querySelector("input"), s = clock(leftNow);
         b.disabled = !loaded; b.dataset.st = playing ? "playing" : "paused";
         var lab = playing ? "השהיית השיר" : "השמעה"; if (b.getAttribute("aria-label") !== lab) { b.setAttribute("aria-label", lab); b.title = lab; b.innerHTML = playing ? PAUSE : PLAY; }
