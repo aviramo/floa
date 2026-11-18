@@ -244,10 +244,29 @@
   function paintVol() {
     document.querySelectorAll(".bio-vol").forEach(function (g) { g.classList.toggle("on", volState.on); g.style.setProperty("--v", volState.v); g.setAttribute("aria-valuenow", Math.round(volState.v * 100)); });
   }
+  /* the gauge moves with a drag or a click (mouse or finger) along it, and with the arrow keys when it has focus */
+  function setVol(v) {
+    v = Math.max(0, Math.min(1, v));
+    if (window.BioAudio && BioAudio.volume) volState.v = BioAudio.volume(v - BioAudio.volume(0)); else volState.v = Math.round(v * 100) / 100;
+    paintVol();
+  }
+  var volDrag = null;
+  function volFrom(e) { var r = volDrag.querySelector("b").getBoundingClientRect(); setVol((e.clientX - r.left) / (r.width || 1)); }
+  document.addEventListener("pointerdown", function (e) {
+    var g = e.target.closest && e.target.closest(".bio-vol"); if (!g || e.button > 0) return;
+    e.preventDefault(); volDrag = g; try { g.setPointerCapture(e.pointerId); } catch (x) { /* none */ } g.focus({ preventScroll: true }); volFrom(e);
+  });
+  document.addEventListener("pointermove", function (e) { if (volDrag) volFrom(e); });
+  ["pointerup", "pointercancel"].forEach(function (n) { document.addEventListener(n, function () { volDrag = null; }); });
+  document.addEventListener("keydown", function (e) {
+    var g = e.target.closest && e.target.closest(".bio-vol"); if (!g || e.ctrlKey || e.metaKey || e.altKey) return;
+    var d = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1 }[e.key]; if (!d) return;
+    e.preventDefault(); setVol(volState.v + d * (e.shiftKey ? 0.05 : 0.01));
+  });
   function head(title, sub, back, trail, lead) {
     return '<header class="rhead">' + (lead || '') + (back ? '<button class="rbtn rbtn--icon rbtn--edge-start" data-act="back" aria-label="חזרה" title="חזרה">' + I.back + '</button>' : '') +
       '<div class="rhead__text"><h1 class="rhead__title">' + esc(title) + '</h1>' + (sub ? '<span class="rhead__sub">' + esc(sub) + '</span>' : '') + '</div>' +
-      '<div class="bio-vol' + (volState.on ? ' on' : '') + '" role="meter" aria-label="עוצמת שמע" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.round(volState.v * 100) + '" style="--v:' + volState.v + '"><b><i></i></b></div>' + (trail || '') + '</header>';   /* the volume, while a song plays: a bar across the free room of the header */
+      '<div class="bio-vol' + (volState.on ? ' on' : '') + '" role="slider" tabindex="0" aria-label="עוצמת שמע" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.round(volState.v * 100) + '" style="--v:' + volState.v + '"><b><i></i></b></div>' + (trail || '') + '</header>';   /* the volume, while a song plays: a bar across the free room of the header */
   }
   /* the header that walks a sequence: previous on the right, next on the left, the name centred between them */
   function walkHead(title, hasPrev, hasNext, withList) {
@@ -269,7 +288,7 @@
   }
   (function () {
     var st = document.createElement("style");
-    st.textContent = "@keyframes bioNum { from { opacity: 0; transform: translateX(var(--nx, 0)) } to { opacity: 1; transform: none } } @media (prefers-reduced-motion: reduce) { .bio-num { animation: none !important } } .bio-bar, .bio-bar * { touch-action: none } .bio-vol { display: none; flex: 1 1 0; min-width: 40px; align-items: center; height: var(--ctl); margin-inline-end: var(--sp-1) } .bio-vol.on { display: flex } .rhead:has(.bio-vol.on) .rhead__text { flex: 0 1 auto } .bio-vol > b { display: block; position: relative; direction: ltr; width: 100%; height: 22px; background: var(--line-strong); clip-path: polygon(0 100%, 100% 100%, 100% 0) } .bio-vol > b > i { position: absolute; inset: 0; background: linear-gradient(90deg, var(--primary) 0%, var(--primary) 55%, var(--warn) 80%, var(--danger) 100%); clip-path: inset(0 calc((1 - var(--v)) * 100%) 0 0); transition: clip-path var(--t-fast) var(--ease) }";
+    st.textContent = "@keyframes bioNum { from { opacity: 0; transform: translateX(var(--nx, 0)) } to { opacity: 1; transform: none } } @media (prefers-reduced-motion: reduce) { .bio-num { animation: none !important } } .bio-bar, .bio-bar * { touch-action: none } .bio-vol { display: none; touch-action: none; cursor: pointer; user-select: none; flex: 1 1 0; min-width: 40px; align-items: center; height: var(--ctl); margin-inline-end: var(--sp-1) } .bio-vol.on { display: flex } .rhead:has(.bio-vol.on) .rhead__text { flex: 0 1 auto } .bio-vol > b { display: block; position: relative; direction: ltr; width: 100%; height: 22px; background: var(--line-strong); clip-path: polygon(0 100%, 100% 100%, 100% 0) } .bio-vol > b > i { position: absolute; inset: 0; background: linear-gradient(90deg, var(--primary) 0%, var(--primary) 55%, var(--warn) 80%, var(--danger) 100%); clip-path: inset(0 calc((1 - var(--v)) * 100%) 0 0); transition: clip-path var(--t-fast) var(--ease) }";
     document.head.appendChild(st);
   })();
   /* the exercise as a pager: drag the page sideways to go to the next or the previous one (to the right = the next, as in a right to left book); the page follows the finger, a short drag springs back */
