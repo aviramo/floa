@@ -1,6 +1,0 @@
-workflow:   Deploy test
-conclusion: cancelled
-commit:     b725eadf46591eae754f128756bb805a2afe0310
-run:        https://github.com/aviramo/floa/actions/runs/44407083612
-at:         2026-11-18T22:00:27Z
-
