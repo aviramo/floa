@@ -419,7 +419,7 @@
        the identifier at the top-left of the card; under them, at the start, the meetings chip (the calendar symbol of "meetings", the one the meetings menu uses, and their number) */
     return '<li class="row ucard bizrow" data-row="' + id + '">' +
       '<a class="main nobadge" href="' + esc(bizHref(b.slug)) + '" aria-label="פתיחת העסק ' + esc(b.name) + '">' +
-      '<div class="brow"><span class="age n" title="' + esc(pc === 0 ? "אין משתתפים" : pc === 1 ? "משתתף אחד" : pc + " משתתפים") + '"><bdi dir="rtl">' + pc + ' <b class="gl">' + icon("person", "i14") + '</b></bdi></span>' +
+      '<div class="brow"><span class="age n" title="' + esc(pc === 0 ? "אין משתתפים" : pc === 1 ? "משתתף אחד" : pc + " משתתפים") + '"><bdi dir="rtl"><b class="gl">' + icon("person", "i14") + '</b> ' + pc + '</bdi></span>' +
       '<span class="bname" dir="rtl">' + esc(b.name) + '</span>' +
       '<span class="bslug"><bdi dir="ltr">' + esc(b.slug) + '</bdi></span></div>' +
       '<div class="brow brow--2"><span class="mcnt mcnt2" title="' + esc(mc === 1 ? "מפגש אחד" : mc + " מפגשים") + '">' + icon("cal", "i14") + mc + "</span></div></a></li>";

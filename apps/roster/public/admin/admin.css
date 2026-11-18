@@ -1606,9 +1606,9 @@ a.hmi { text-decoration: none; }   /* "החלפת עסק" הוא קישור, ו�
 
 /* פופאפ הסינון, המיון והוואטסאפ: הדיאלוג עצמו הוא הגולל, ונפתח עד ראש המסך כשהתוכן ארוך.
    הסיבה לתקלה (13.11.26): התפריט שבתוכו היה גם הוא מיכל גלילה (overflow auto עם overscroll-behavior: contain). מיכל כזה שלא נגלל בפועל בולע את הנגיעה ולא מעביר אותה להורה, ולכן האצבע על הרשימה לא גללה כלום. הכלל: בתוך פופאפ יש מיכל גלילה אחד, והמיכלים שבתוכו הם מיכלי תוכן (overflow visible). הבדיקה: roster-ui.test.mjs, scrollProbe */
-:is(#viewDlg, #sortDlg, #waDlg, #amDlg) { max-height: calc(100dvh - var(--envtop, 0px)); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
-:is(#viewDlg, #sortDlg, #waDlg, #amDlg) .sheet { max-height: none; overflow: visible; }
-:is(#viewDlg, #sortDlg, #waDlg, #amDlg) :is(#viewMenu, #sortMenu, #waMenu) { max-height: none !important; overflow: visible !important; height: auto !important; top: auto !important; left: auto !important; }   /* גם מיקום וגובה שנשארו בסגנון inline מתפריט צף ישן לא נוגעים בו */
+:is(#viewDlg, #sortDlg, #cfgDlg, #waDlg, #amDlg) { max-height: calc(100dvh - var(--envtop, 0px)); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
+:is(#viewDlg, #sortDlg, #cfgDlg, #waDlg, #amDlg) .sheet { max-height: none; overflow: visible; }
+:is(#viewDlg, #sortDlg, #cfgDlg, #waDlg, #amDlg) :is(#viewMenu, #sortMenu, #waMenu) { max-height: none !important; overflow: visible !important; height: auto !important; top: auto !important; left: auto !important; }   /* גם מיקום וגובה שנשארו בסגנון inline מתפריט צף ישן לא נוגעים בו */
 
 /* המשתתף האחרון שנגענו בו: טקסט "אחרון" בפינה השמאלית התחתונה של הכרטיס, במקום פס הצל */
 .wrap > .list > .row.last, .wrap > .list > .row.sel, .wrap > .list > .row.sel:hover { box-shadow: none; }
@@ -2042,7 +2042,7 @@ dialog .sheet-head { min-height: var(--pp-head); align-items: center; }
 dialog .dclose { width: var(--pp-x); min-width: var(--pp-x); height: var(--pp-x); margin-block: 0; }
 dialog .sheet { padding-inline: var(--pp-px); }
 /* one anatomy for every popup that is a centered window on a computer and a bottom sheet on touch: the same paddings, header and gap (popup.css tokens) */
-:is(#pDlg, #allocDlg, #ppDlg, #mDlg, #mailDlg, #cDlg, #lockDlg, #tplDlg, #tplPrevDlg, #iDlg, #viewDlg, #sortDlg, #waDlg, #amDlg, #finFormDlg, #mfPopDlg, #onbDlg):not(.drawer):not(.side) .sheet { padding: var(--pp-pt-sheet) var(--pp-px) var(--sheet-b); }
+:is(#pDlg, #allocDlg, #ppDlg, #mDlg, #mailDlg, #cDlg, #lockDlg, #tplDlg, #tplPrevDlg, #iDlg, #viewDlg, #sortDlg, #cfgDlg, #waDlg, #amDlg, #finFormDlg, #mfPopDlg, #onbDlg):not(.drawer):not(.side) .sheet { padding: var(--pp-pt-sheet) var(--pp-px) var(--sheet-b); }
 :is(#setDlg, #stDlg, #prDlg, #finDlg) .sheet { padding-top: var(--pp-pt-sheet); }
 @media (max-width: 759px) { :is(#setDlg, #stDlg, #prDlg, #finDlg) .sheet { padding-bottom: var(--sheet-b); } }
 .grab { z-index: var(--z-sticky); }
@@ -2588,7 +2588,7 @@ html.is-loading .msub { display: block; visibility: hidden; }
 /* the place on the date line of a meeting card sits a gutter in from the card's left edge, level with the age/gender mark on the right (18px from its edge) */
 .mlist .mrow .mdt .mwh { margin-inline-end: var(--sp-1); }
 /* a popup title is never see-through: the sticky header of every popup sits ABOVE the content that scrolls under it (fields, cards and chips that are positioned drew over it), with its own solid background; the grab bar stays above the header */
-.mdlg .sheet-head, :is(#tplDlg, #tplPrevDlg, #prDlg, #mailDlg, #cDlg, #lockDlg, #mfPopDlg, #finFormDlg, #viewDlg, #sortDlg, #waDlg, #amDlg, #setDlg, #mDlg, #stDlg, #finDlg, #pDlg) .sheet-head { z-index: var(--z-sticky); background: var(--bg); }
+.mdlg .sheet-head, :is(#tplDlg, #tplPrevDlg, #prDlg, #mailDlg, #cDlg, #lockDlg, #mfPopDlg, #finFormDlg, #viewDlg, #sortDlg, #cfgDlg, #waDlg, #amDlg, #setDlg, #mDlg, #stDlg, #finDlg, #pDlg) .sheet-head { z-index: var(--z-sticky); background: var(--bg); }
 .grab { z-index: calc(var(--z-sticky) + 1); }
 /* paid marketing in the settings: an ACCORDION. The closed row is the name, what it costs and the balance; opened, the whole card is there to edit */
 .srcacc { padding: 0; border-bottom: 1px solid var(--line); }
@@ -2636,9 +2636,9 @@ html.is-loading .msub { display: block; visibility: hidden; }
 .rfield.field > :is(input:not([type="checkbox"], [type="radio"], [type="hidden"]), select) { height: var(--rf-h) !important; padding-block: calc(var(--sp-hair) * 4.75) calc(var(--sp-hair) * 0.75) !important; font-size: var(--sp-2) !important; font-weight: var(--fw-regular) !important; line-height: calc(var(--sp-hair) * 5.5) !important; }   /* !important on purpose: the id-based rules of each popup (#setDlg .setinp, #ppDlg ...) were each restyling the field, and this one block is the field */
 .rfield.field > .dtbox, .rfield.field > .dtbox > input { font-size: var(--sp-2) !important; font-weight: var(--fw-regular) !important; }   /* the date and time fields (wrapped by the page) type at the field size too */
 /* ===== ONE POPUP SHELL (stage 1 of the clean-up). Every popup header is the same: the grab strip (--pp-top) on a phone, then a 44px row (--pp-head) with the title centred in it, then one step (--sp-2) of its own bottom padding. The row is the CONTENT box (so the padding does not eat it), the header is sticky with a solid background (the body scrolls under it and never shows through), and on a computer the sheet's top padding is pulled into the header. The participant card (#pDlg) keeps its own header: a name that wraps, with chips. ===== */
-:is(#tplDlg, #tplPrevDlg, #mailDlg, #ppDlg, #allocDlg, #mDlg, #stDlg, #iDlg, #setDlg, #prDlg, #finDlg, #cDlg, #finFormDlg, #mfPopDlg, #lockDlg, #viewDlg, #sortDlg, #waDlg, #amDlg, #onbDlg) .sheet-head { box-sizing: content-box; position: sticky; top: 0; z-index: var(--z-sticky); background: var(--bg); display: flex; align-items: center; min-height: var(--pp-head); margin: calc(var(--pp-pt-sheet) * -1) 0 0; padding: var(--pp-pt-sheet) 0 var(--sp-2); }
-@media (max-width: 759px) { :is(#tplDlg, #tplPrevDlg, #mailDlg, #ppDlg, #allocDlg, #mDlg, #stDlg, #iDlg, #setDlg, #prDlg, #finDlg, #cDlg, #finFormDlg, #mfPopDlg, #lockDlg, #viewDlg, #sortDlg, #waDlg, #amDlg, #onbDlg) .sheet-head { top: var(--pp-top); } }
-:is(#tplDlg, #tplPrevDlg, #mailDlg, #ppDlg, #allocDlg, #mDlg, #stDlg, #iDlg, #setDlg, #prDlg, #finDlg, #cDlg, #finFormDlg, #mfPopDlg, #lockDlg, #viewDlg, #sortDlg, #waDlg, #amDlg, #onbDlg) .sheet-head h2 { align-self: center; margin: 0; padding: 0; min-height: 0; line-height: 1.25; }
+:is(#tplDlg, #tplPrevDlg, #mailDlg, #ppDlg, #allocDlg, #mDlg, #stDlg, #iDlg, #setDlg, #prDlg, #finDlg, #cDlg, #finFormDlg, #mfPopDlg, #lockDlg, #viewDlg, #sortDlg, #cfgDlg, #waDlg, #amDlg, #onbDlg) .sheet-head { box-sizing: content-box; position: sticky; top: 0; z-index: var(--z-sticky); background: var(--bg); display: flex; align-items: center; min-height: var(--pp-head); margin: calc(var(--pp-pt-sheet) * -1) 0 0; padding: var(--pp-pt-sheet) 0 var(--sp-2); }
+@media (max-width: 759px) { :is(#tplDlg, #tplPrevDlg, #mailDlg, #ppDlg, #allocDlg, #mDlg, #stDlg, #iDlg, #setDlg, #prDlg, #finDlg, #cDlg, #finFormDlg, #mfPopDlg, #lockDlg, #viewDlg, #sortDlg, #cfgDlg, #waDlg, #amDlg, #onbDlg) .sheet-head { top: var(--pp-top); } }
+:is(#tplDlg, #tplPrevDlg, #mailDlg, #ppDlg, #allocDlg, #mDlg, #stDlg, #iDlg, #setDlg, #prDlg, #finDlg, #cDlg, #finFormDlg, #mfPopDlg, #lockDlg, #viewDlg, #sortDlg, #cfgDlg, #waDlg, #amDlg, #onbDlg) .sheet-head h2 { align-self: center; margin: 0; padding: 0; min-height: 0; line-height: 1.25; }
 /* תת כותרת בהדר של פופאפ: .htitle עוטף את הכותרת ואת השורה שמתחתיה (מפגש), וההדר נשאר שורה אחת */
 .sheet-head .htitle { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-self: center; }
 .sheet-head .htitle .psub { margin: 0; padding: 0; line-height: 1.3; }
