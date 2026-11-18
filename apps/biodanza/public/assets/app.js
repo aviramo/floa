@@ -246,38 +246,7 @@
       g.classList.toggle("on", volState.on); g.style.setProperty("--v", volState.v); g.setAttribute("aria-valuenow", Math.round(volState.v * 100));
       var n = g.querySelector("b"); if (n) n.textContent = Math.round(volState.v * 100);
     });
-    var pp = document.querySelector(".bio-volpop"); if (pp) pp.style.setProperty("--v", volState.v);
   }
-  /* on a hover the long bar opens under the button: a vertical track, filled from the bottom, with a marble on it; a click or a drag along it sets the level */
-  var volPopT = 0, volPan = false;
-  function volPopEl() {
-    var pp = document.querySelector(".bio-volpop");
-    if (!pp) { pp = document.createElement("div"); pp.className = "bio-volpop"; pp.innerHTML = '<div class="bio-volpop__track"><i></i><s></s></div>'; document.body.appendChild(pp); }
-    return pp;
-  }
-  function volPopOpen(tile) {
-    clearTimeout(volPopT);
-    var pp = volPopEl(), r = tile.getBoundingClientRect();
-    pp.style.setProperty("--v", volState.v); pp.classList.add("on");
-    pp.style.top = Math.round(r.bottom + 6) + "px"; pp.style.left = Math.round(r.left + r.width / 2 - pp.offsetWidth / 2) + "px";
-  }
-  function volPopClose() { clearTimeout(volPopT); volPopT = setTimeout(function () { if (!volPan) { var pp = document.querySelector(".bio-volpop"); if (pp) pp.classList.remove("on"); } }, 220); }
-  function volPopSet(e) { var tr = document.querySelector(".bio-volpop__track").getBoundingClientRect(); setVol(1 - (e.clientY - tr.top) / (tr.height || 1)); }
-  document.addEventListener("mouseover", function (e) {
-    var g = e.target.closest && e.target.closest(".bio-vol, .bio-volpop"); if (!g) return;
-    if (g.classList.contains("bio-volpop")) clearTimeout(volPopT); else volPopOpen(g);
-  });
-  document.addEventListener("mouseout", function (e) {
-    var from = e.target.closest && e.target.closest(".bio-vol, .bio-volpop"); if (!from) return;
-    var to = e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest(".bio-vol, .bio-volpop"); if (!to) volPopClose();
-  });
-  document.addEventListener("pointerdown", function (e) {
-    var tr = e.target.closest && e.target.closest(".bio-volpop"); if (!tr || e.button > 0) return;
-    e.preventDefault(); volPan = true; try { tr.setPointerCapture(e.pointerId); } catch (x) { /* none */ } volPopSet(e);
-  });
-  document.addEventListener("pointermove", function (e) { if (volPan) volPopSet(e); });
-  ["pointerup", "pointercancel"].forEach(function (n) { document.addEventListener(n, function () { if (volPan) { volPan = false; volPopClose(); } }); });
-  document.addEventListener("wheel", function (e) { if (e.target.closest && e.target.closest(".bio-volpop")) { e.preventDefault(); setVol(volState.v + (e.deltaY < 0 ? 1 : -1) * (e.shiftKey ? 0.05 : 0.01)); } }, { passive: false });
   /* the gauge moves with a drag or a click (mouse or finger) along it, and with the arrow keys when it has focus */
   function setVol(v) {
     v = Math.max(0, Math.min(1, v));
@@ -325,7 +294,7 @@
   }
   (function () {
     var st = document.createElement("style");
-    st.textContent = "@keyframes bioNum { from { opacity: 0; transform: translateX(var(--nx, 0)) } to { opacity: 1; transform: none } } @media (prefers-reduced-motion: reduce) { .bio-num { animation: none !important } } .bio-bar, .bio-bar * { touch-action: none } .bio-vol { display: none; position: relative; flex: none; place-items: center; width: var(--ctl); height: var(--ctl); border-radius: var(--r-ctl); background: var(--surface-2); overflow: hidden; touch-action: none; cursor: ns-resize; user-select: none; margin-inline-end: var(--sp-1) } .bio-vol.on { display: grid } @media (max-width: 1023px) { .bio-vol, .bio-vol.on { display: none } } .bio-vol > i { position: absolute; inset: auto 0 0 0; height: calc(var(--v) * 100%); background: color-mix(in srgb, var(--primary) 32%, transparent); transition: height var(--t-fast) var(--ease) } .bio-vol > b { position: relative; font: var(--fw-bold) var(--fs-s)/1 var(--font); font-variant-numeric: tabular-nums; color: var(--text) } .bio-volpop { position: fixed; z-index: var(--z-menu); display: none; padding: 14px 20px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-card); box-shadow: var(--sh-pop); touch-action: none; user-select: none } .bio-volpop.on { display: block } .bio-volpop__track { position: relative; width: 8px; height: 120px; margin: 0 auto; border-radius: var(--r-chip); background: var(--line-strong); cursor: pointer } .bio-volpop__track > i { position: absolute; inset: auto 0 0 0; height: calc(var(--v) * 100%); border-radius: inherit; background: linear-gradient(0deg, var(--primary) 0%, var(--primary) 55%, var(--warn) 80%, var(--danger) 100%); background-size: 100% 120px; background-position: bottom; transition: height var(--t-fast) var(--ease) } .bio-volpop__track > s { position: absolute; left: 50%; bottom: calc(var(--v) * 100%); width: 18px; height: 18px; box-sizing: border-box; border-radius: 50%; background: var(--bg); border: 2px solid var(--primary); box-shadow: 0 1px 4px rgba(16, 24, 40, .25); transform: translate(-50%, 50%); pointer-events: none; transition: bottom var(--t-fast) var(--ease) } .bio-vol:focus { outline: none } .bio-vol:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }";
+    st.textContent = "@keyframes bioNum { from { opacity: 0; transform: translateX(var(--nx, 0)) } to { opacity: 1; transform: none } } @media (prefers-reduced-motion: reduce) { .bio-num { animation: none !important } } .bio-bar, .bio-bar * { touch-action: none } .bio-vol { display: none; position: relative; flex: none; place-items: center; width: var(--ctl); height: var(--ctl); border-radius: var(--r-ctl); background: var(--surface-2); overflow: hidden; touch-action: none; cursor: ns-resize; user-select: none; margin-inline-end: var(--sp-1) } .bio-vol.on { display: grid } @media (max-width: 1023px) { .bio-vol, .bio-vol.on { display: none } } .bio-vol > i { position: absolute; inset: auto 0 0 0; height: calc(var(--v) * 100%); background: color-mix(in srgb, var(--primary) 32%, transparent); transition: height var(--t-fast) var(--ease) } .bio-vol > b { position: relative; font: var(--fw-bold) var(--fs-s)/1 var(--font); font-variant-numeric: tabular-nums; color: var(--text) } .bio-vol:focus { outline: none } .bio-vol:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }";
     document.head.appendChild(st);
   })();
   /* the exercise as a pager: drag the page sideways to go to the next or the previous one (to the right = the next, as in a right to left book); the page follows the finger, a short drag springs back */
