@@ -575,3 +575,10 @@ alter table biodanza.exercises add column if not exists phase_guess text;
 alter table biodanza.exercises add column if not exists phase_keys_guess text[] not null default '{}';
 update biodanza.exercises e set phase_guess = e.phase_hint, phase_keys_guess = e.phase_keys, phase_hint = null, phase_keys = '{}'
   from biodanza.exercise_texts t where t.exercise_id = e.id and t.lang = 'he' and t.curve_basis = 'inferred' and e.owner_id is null and e.phase_guess is null;
+
+-- a sixth place on the curve, for every exercise nobody has placed yet (no phase from the catalog, its text, or a person): to be set by hand.
+insert into biodanza.phases (key, name_he, catalog_phase, sort, aliases) values ('unclassified', 'לא מסווג', '', 6, array['Unclassified', 'לא מסווג'])
+on conflict (key) do update set name_he = excluded.name_he, sort = excluded.sort, aliases = excluded.aliases;
+update biodanza.exercises set phase_hint = 'unclassified', phase_keys = array['unclassified'] where owner_id is null and phase_hint is null and cardinality(phase_keys) = 0;
+update biodanza.exercise_texts t set curve = 'לא מסווג', curve_basis = '' from biodanza.exercises e
+  where t.exercise_id = e.id and t.lang = 'he' and e.owner_id is null and e.phase_hint = 'unclassified' and t.curve_basis in ('inferred', '');
