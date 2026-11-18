@@ -1318,7 +1318,7 @@
   /* ---------- picker: the catalog ---------- */
   var pk = { q: "", ln: "", cg: "", lv: "", cv: "" };   /* the catalog's search, line, category, group level and place on the curve */
   function resetPk() { pk = { q: "", ln: "", cg: "", lv: "", cv: "" }; }
-  var LEVELS = [["all", "כל הקבוצות"], ["exp", "קבוצות עם ניסיון"], ["deep", "קבוצות העמקה ומתקדמות"]];   /* the three groups the catalog's level texts fall into (exercises.level_keys) */
+  var LEVELS = [["all", "מתאים לכל הקבוצות"], ["exp", "לקבוצות עם ניסיון של כמה חודשים"], ["deep", "לקבוצות העמקה ומתקדמות"]];   /* the three groups the catalog's level texts fall into (exercises.level_keys) */
   /* the catalog picker: the filters and the list. On a wide screen it is a pane; on a narrow one it is a popup from the bottom. */
   function pickerBody() {
     var two = function (x, y) { return '<div style="display:flex;gap:var(--gap-button);align-items:flex-end">' + x + y + '</div>'; };
