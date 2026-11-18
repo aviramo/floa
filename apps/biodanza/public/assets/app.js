@@ -150,6 +150,13 @@
       e.preventDefault();
       volState.v = BioAudio.volume((e.key === "ArrowUp" ? 1 : -1) * (e.shiftKey ? 0.05 : 0.01)); paintVol();   /* the sound and the gauge in the header are the answer: no message */
     });
+    /* while a song plays, on a wide screen, the right and left arrows move it forward and back (5 seconds, Shift 15), whatever page of the app is open */
+    document.addEventListener("keydown", function (e) {
+      if (!playing || (e.key !== "ArrowRight" && e.key !== "ArrowLeft") || e.ctrlKey || e.metaKey || e.altKey) return;
+      var tg = e.target; if (tg && (tg.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName) || (tg.closest && tg.closest(".bio-vol")))) return;
+      if (document.querySelector("dialog[open], #moreMenu") || !window.BioAudio || !BioAudio.skip || !window.matchMedia("(min-width: 1024px)").matches) return;
+      e.preventDefault(); BioAudio.skip((e.key === "ArrowRight" ? 1 : -1) * (e.shiftKey ? 15 : 5));
+    });
     document.addEventListener("bioaudio", function (ev) {
       playing = !!(ev.detail && ev.detail.playing); document.documentElement.classList.toggle("bio-playing", playing);   /* the stop button takes the bottom right: the buttons of the exercise leave it room */
       if (window.BioAudio && BioAudio.volume) volState.v = BioAudio.volume(0); paintVol();

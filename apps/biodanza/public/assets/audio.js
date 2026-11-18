@@ -101,6 +101,8 @@
     /* the volume, kept in this browser: a step up or down (in fractions of 1), the new level back */
     volume: function (d) { if (!wideNow()) { el.volume = 1; return 1; }   /* a phone has its own volume keys: the page always plays at full */
       vol = Math.max(0, Math.min(1, Math.round((vol + d) * 100) / 100)); el.volume = vol; try { localStorage.setItem("biodanza.volume", String(vol)); } catch (e) { /* not kept */ } return vol; },
+    /* move the playing song by seconds (negative: back) */
+    skip: function (sec) { if (el.duration) el.currentTime = Math.max(0, Math.min(el.duration, el.currentTime + sec)); },
     pause: function () { el.pause(); },
     seek: function (f) { if (el.duration) el.currentTime = Math.max(0, Math.min(1, f)) * el.duration; },
     kept: isKept
