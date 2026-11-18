@@ -115,7 +115,7 @@
   /* the song's bar: ONE element everywhere. A song with a file keeps its room for it, the bar shows while that song plays, follows it, and a drag moves the song. */
   function songBar(m, extra) {
     if (!m || !m.audio_object) return "";
-    return '<div class="bio-bar" data-for="' + esc(m.audio_object) + '" style="visibility:hidden;' + (extra || "flex:0 0 100%;order:3;padding-top:var(--sp-1)") + ';position:relative;z-index:var(--z-raised)"><input type="range" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר" style="display:block;width:100%;margin:0;direction:ltr;accent-color:var(--primary)"></div>';
+    return '<div class="bio-bar" data-for="' + esc(m.audio_object) + '"  style="' + (extra || "flex:0 0 100%;order:3;padding-top:var(--sp-1)") + ';position:relative;z-index:var(--z-raised)"><input type="range" min="0" max="1000" value="0" step="1" disabled aria-label="מקום בשיר" style="display:block;width:100%;margin:0;direction:ltr;accent-color:var(--primary)"></div>';
   }
   /* a song's length: the catalog's, else what its own file told the player the first time (kept in this browser) */
   var durKnown = {};
@@ -174,10 +174,10 @@
   document.addEventListener("bioaudio", function (ev) {
     var d = ev.detail || {};
     document.querySelectorAll(".bio-bar").forEach(function (b) {
-      var mine = d.name && b.dataset.for === d.name && d.d > 0;
-      if (!mine) { b.style.visibility = "hidden"; return; }
-      b.style.visibility = "visible";
-      var r = b.querySelector("input"); if (!barDrag) r.value = Math.round(d.t / d.d * 1000);
+      var mine = d.name && b.dataset.for === d.name && d.d > 0, r = b.querySelector("input");
+      r.disabled = !mine;   /* the bar of every song with a file is always there; it moves only for the song that has the player */
+      if (!mine) { r.value = 0; return; }
+      if (!barDrag) r.value = Math.round(d.t / d.d * 1000);
     });
   });
   document.addEventListener("pointerdown", function (e) { if (e.target.closest && e.target.closest(".bio-bar")) barDrag = true; }, true);
