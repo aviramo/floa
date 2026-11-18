@@ -241,7 +241,7 @@
     function make(cls) {
       var d = document.createElement("div"); d.className = cls + " idle";
       d.innerHTML = '<button type="button" class="bio-dock__btn" disabled aria-label="השמעה">' + PLAY + '</button><span class="bio-dock__time">0:00</span>' +
-        '<input class="bio-dock__bar" type="range" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר"><span class="bio-dock__none">לא נבחרה מוזיקה</span><button type="button" class="bio-dock__x" aria-label="עצירה וסגירה" title="עצירה וסגירה">' + I.x + '</button>';
+        '<input class="bio-dock__bar" type="range" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר"><span class="bio-dock__none">לא נבחרה מוזיקה</span>' + volDock() + '<button type="button" class="bio-dock__x" aria-label="עצירה וסגירה" title="עצירה וסגירה">' + I.x + '</button>';
       d.querySelector("button").addEventListener("click", function () { if (window.BioAudio && BioAudio.playPause) BioAudio.playPause(); });
       d.querySelector(".bio-dock__x").addEventListener("click", function () { closed = true; if (window.BioAudio && BioAudio.stop) BioAudio.stop(); sync(); });
       var r = d.querySelector("input");
@@ -451,10 +451,12 @@
     if (!wide()) return "";
     return '<div class="bio-vol' + (volState.on ? ' on' : '') + '" role="slider" tabindex="0" aria-label="עוצמת שמע" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.round(volState.v * 100) + '" style="--v:' + volState.v + '"><i></i><b>' + Math.round(volState.v * 100) + '</b></div>';
   }
+  /* on a wide screen the volume lives in the player pill, between the bar and the X */
+  function volDock() { var v = typeof volState === "object" ? volState.v : 1; return '<div class="bio-vol on" role="slider" tabindex="0" aria-label="עוצמת שמע" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.round(v * 100) + '" style="--v:' + v + '"><i></i><b>' + Math.round(v * 100) + '</b></div>'; }
   function head(title, sub, back, trail, lead) {
     return '<header class="rhead">' + (lead || '') + (back ? '<button class="rbtn rbtn--icon rbtn--edge-start" data-act="back" aria-label="חזרה" title="חזרה">' + I.back + '</button>' : '') +
       '<div class="rhead__text"><h1 class="rhead__title">' + esc(title) + '</h1>' + (sub ? '<span class="rhead__sub">' + esc(sub) + '</span>' : '') + '</div>' +
-      volTile() + (trail || '') + '</header>';   /* the volume, while a song plays: a bar across the free room of the header */
+      (trail || '') + '</header>';   /* the volume, while a song plays: a bar across the free room of the header */
   }
   /* the header that walks a sequence: previous on the right, next on the left, the name centred between them */
   function walkHead(title, hasPrev, hasNext, withList) {
