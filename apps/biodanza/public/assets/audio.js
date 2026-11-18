@@ -54,9 +54,10 @@
   /* ---- one player for the whole app ---- */
   var el = new Audio(), now = "", url = "", busy = "";
   el.preload = "none";
+  function wideNow() { return !window.matchMedia || window.matchMedia("(min-width: 1024px)").matches; }
   var vol = 1;
   try { var sv = parseFloat(localStorage.getItem("biodanza.volume")); if (sv >= 0 && sv <= 1) vol = sv; } catch (e) { /* the default */ }
-  el.volume = vol;
+  el.volume = wideNow() ? vol : 1;
   function paint() {
     document.querySelectorAll("[data-audio]").forEach(function (b) {
       var me = b.dataset.audio, st = busy === me ? "wait" : (now === me && !el.paused ? "pause" : "sound");
@@ -98,7 +99,8 @@
     },
     /* move the playing song to a place in it: a fraction from 0 to 1 */
     /* the volume, kept in this browser: a step up or down (in fractions of 1), the new level back */
-    volume: function (d) { vol = Math.max(0, Math.min(1, Math.round((vol + d) * 100) / 100)); el.volume = vol; try { localStorage.setItem("biodanza.volume", String(vol)); } catch (e) { /* not kept */ } return vol; },
+    volume: function (d) { if (!wideNow()) { el.volume = 1; return 1; }   /* a phone has its own volume keys: the page always plays at full */
+      vol = Math.max(0, Math.min(1, Math.round((vol + d) * 100) / 100)); el.volume = vol; try { localStorage.setItem("biodanza.volume", String(vol)); } catch (e) { /* not kept */ } return vol; },
     pause: function () { el.pause(); },
     seek: function (f) { if (el.duration) el.currentTime = Math.max(0, Math.min(1, f)) * el.duration; },
     kept: isKept
