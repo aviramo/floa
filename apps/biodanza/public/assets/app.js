@@ -1479,9 +1479,13 @@
       var word = swapIt ? "החלפה בתרגיל הזה" : "הוספה", sel = songs.length ? songs[0].id : null;
       var dlg = document.getElementById("exDlg");
       if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "exDlg"; document.body.appendChild(dlg); }
-      RosterSheet.render(dlg, { title: name(e), from: "bottom", action: { label: word, icon: I.check, id: "exgo" },
-        body: bleedCss("exDlg") + '<div style="padding-block:var(--sp-2)">' + ((card("level", "רמת הקבוצה") + card("curve", "מיקום בעקומה") + card("poetics", "פואטיקה") + card("guidance", "הנחיה")) || ph("אין עדיין תיאור לתרגיל", "")) + musicRows(songs, sel) + '</div>' });
+      RosterSheet.render(dlg, { title: name(e), from: "bottom",
+        body: bleedCss("exDlg") + '<style>#exDlg .sheet-body { padding-bottom: calc(var(--fab) + var(--gutter) * 2 + var(--inset-b)) } html.rs-lock:not(.kb-open) #exDlg .rfab { opacity: 1; transform: none; pointer-events: auto }</style>' + '<div style="padding-block:var(--sp-2)">' + ((card("level", "רמת הקבוצה") + card("curve", "מיקום בעקומה") + card("poetics", "פואטיקה") + card("guidance", "הנחיה")) || ph("אין עדיין תיאור לתרגיל", "")) + musicRows(songs, sel) + '</div>' });
       bleedSet(dlg);
+      /* the action is the round button at the bottom left, where the add button of a list is (a popover inside the popup: drawn in the top layer, placed by the window) */
+      var fab = document.createElement("button"); fab.type = "button"; fab.id = "exgo"; fab.className = "rfab"; fab.innerHTML = I.check; fab.setAttribute("aria-label", word); fab.title = word;
+      fab.style.cssText = "inset:auto;margin:0;left:max(var(--gutter), var(--inset-l));bottom:calc(var(--gutter) + var(--inset-b))";
+      fab.setAttribute("popover", "manual"); dlg.appendChild(fab); try { fab.showPopover(); } catch (x) { /* an old browser: an ordinary fixed button */ }
       wirePick(dlg, function (id) { sel = id; });
       dlg.querySelector("#exgo").addEventListener("click", function () { if (swapIt) confirmSwap(e, swapIt, true, sel); else addEx(e, undefined, true, sel); });
     }, fail);
