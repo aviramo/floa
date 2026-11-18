@@ -723,7 +723,12 @@
     var l = document.getElementById("list"); if (!l || !l.hasAttribute("data-fab-room")) return;   /* only the vivencia's own list: the catalog picker has a list too */
     var cnt = state.viv && pl.querySelector('[data-n="' + state.viv.id + '"]'); if (cnt) cnt.textContent = state.items.length + " תרגילים";
     var vis = state.items;   /* the order of the list IS the curve: no phase is kept on an item */
-    if (!vis.length) { l.innerHTML = ph("הוויוונסיה ריקה", "לחצו על + כדי להוסיף תרגיל מהקטלוג"); return; }
+    if (!vis.length) {
+      /* an empty vivencia: the words, and an arrow from them down to the + button (only for somebody who can add) */
+      l.style.position = "relative";
+      l.innerHTML = ph("הוויוונסיה ריקה", canEdit() ? "לחצו על + כדי להוסיף תרגיל מהקטלוג" : "") + (canEdit() ? '<svg viewBox="0 0 120 160" aria-hidden="true" style="position:absolute;width:120px;height:160px;left:calc(var(--gutter) + var(--fab) / 2 - 14px);bottom:calc(var(--gutter) + var(--inset-b) + var(--fab) + 6px);fill:none;stroke:var(--text-3);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;pointer-events:none"><path d="M96 6C104 70 70 98 30 128"/><path d="M43.800 128.200L26 131L33.700 114.700"/></svg>' : "");
+      return;
+    }
     l.innerHTML = vis.map(function (i, k) {
       var e = i.exercises || {};
       var pb = i.music ? playCol(i.music, true) : "";
