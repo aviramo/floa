@@ -40,6 +40,7 @@ html[dir="ltr"] .rfield:has(> :is(input:where(:not([type="checkbox"], [type="rad
 .rfield > :is(input.ltr, textarea.ltr)::placeholder { text-align: right; }
 
 /* extension: textarea grows with its text up to a limit, then scrolls inside */
+.rfield > .rf-box { box-sizing: border-box; width: 100%; min-height: var(--rf-h); padding: 19px 0 3px; color: var(--rf-ink); font: 400 16px/22px var(--font, "Heebo", system-ui, sans-serif); text-align: start; overflow-wrap: anywhere; }   /* a value that is shown, not typed: no frame, no line, not focusable */
 .rfield > textarea { height: auto; min-height: var(--rf-h); max-height: 260px; resize: none; overflow-y: auto; }
 
 /* extension: select, with one arrow of ours on the left */

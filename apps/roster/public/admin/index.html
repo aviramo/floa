@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="onboarding.css?v=b05a360f" />
-  <link rel="stylesheet" href="../assets/field.css?v=7e4c4a08" />
+  <link rel="stylesheet" href="../assets/field.css?v=b722987f" />
   <link rel="stylesheet" href="../assets/popup.css?v=3cced8f3" />
   <link rel="stylesheet" href="../assets/ui.css?v=570ac43a" />
   <link rel="stylesheet" href="admin.css?v=f984fa9e" />
@@ -141,7 +141,7 @@
         </div>
         <div class="prow">
           <label class="rfield field"><span>כתובת</span><input placeholder=" " name="address" maxlength="200" autocomplete="street-address" /></label>
-          <label class="rfield field"><span>קוד הגעה</span><input placeholder=" " name="source_code_view" readonly tabindex="-1" autocomplete="off" /></label>   <!-- the exact code of the link the person came with (?s=), shown only: it is set by the signup -->
+          <label class="rfield field"><span>קוד הגעה</span><div class="rf-box" id="pSrcCode"></div></label>   <!-- the exact code of the link the person came with (?s=), shown only: it is set by the signup -->
           <input type="hidden" name="email" />   <!-- no field for it: the email comes from the linked Google account (or the signup) and is kept as it is -->
         </div>
         <div class="gacc" id="pGoogle" hidden></div>
@@ -443,7 +443,7 @@
   <script src="age.js?v=816fedce"></script>
   <script src="rt.js?v=9f0bd1e7"></script>
   <script src="../assets/field.js?v=3373b0b3"></script>
-  <script src="admin.js?v=e494cfa8"></script>
+  <script src="admin.js?v=88fbced5"></script>
   <script src="onboarding.js?v=544be310"></script>
   <script src="/roster/assets/ui.js?v=0e4b73f3"></script>
   <script src="/roster/assets/undo.js?v=ed21e8f0"></script>

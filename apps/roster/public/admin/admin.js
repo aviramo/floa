@@ -498,8 +498,8 @@
   const srcChip = (p, mid) => { const o = originOf(p, mid); if (!o) return ''; const c = PALETTE[o.color] || PALETTE.sky; return '<span class="osrc" style="background:' + c[0] + ';color:' + c[1] + '" title="' + esc(o.name) + '">' + esc(o.name) + '</span>'; };   // צבע דרך ההגעה: בטקסט בלבד, בלי רקע
   const promoterOf = (id) => state.promoters.find((x) => x.id === id);
   const calcCommission = () => '';   // העלות לא נחרטת על התשלום: היא מחושבת לפי התעריף הנוכחי על מה שעוד לא הוסדר (payCostOf)
-  /* עמלה מתשלום: אחוז = על כל תשלום; ₪ קבוע = פעם אחת למשתתף (בתשלום הראשון) */
-  const commOnEvery = (pr) => !!(pr && pr.cost_from_payment && pr.rate_type === 'percent');
+  /* עמלה מתשלום: רק על התשלום הראשון של המשתתף (שקלים או אחוז ממנו), אף פעם לא על כל תשלום */
+  const commOnEvery = () => false;
   /* כסף שהמשתתף שילם בפועל (בלי הקצאות מהקרדיט, פחות החזרים), והלידים של שיווק ממומן */
   const cashOf = (x) => (((x.kind === 'payment' || x.kind === 'deposit') && !x.from_credit) ? Number(x.amount) : x.kind === 'refund' ? -Number(x.amount) : 0);
   const netPaid = (pid) => state.payments.filter((x) => x.participant_id === pid).reduce((s, x) => s + cashOf(x), 0);
@@ -509,8 +509,8 @@
     const out = [];
     srcLeads(id).forEach((q) => {
       const recs = state.payments.filter((r) => r.participant_id === q.id && cashOf(r) !== 0).sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
-      if (pct) recs.forEach((r) => { if (String(r.created_at || '') > lastTs) out.push({ q, r, amount: cashOf(r) * rate / 100 }); });
-      else { const f = recs.find((r) => cashOf(r) > 0); if (f && String(f.created_at || '') > lastTs && netPaid(q.id) > 0) out.push({ q, r: f, amount: rate }); }
+      const f = recs.find((r) => cashOf(r) > 0);   // the participant's FIRST payment only (owner 2026-11-19), in shekels or as a percent of it; none if everything was refunded
+      if (f && String(f.created_at || '') > lastTs && netPaid(q.id) > 0) out.push({ q, r: f, amount: pct ? cashOf(f) * rate / 100 : rate });
     });
     return out;
   }
@@ -3285,7 +3285,7 @@
     pForm.age.value = p ? (shownAge(p) ?? '') : '';
     pForm.email.value = p ? (p.email || '') : '';
     pForm.address.value = p ? (p.address || '') : '';
-    pForm.source_code_view.value = p ? (p.source_code || '') : '';
+    $('#pSrcCode').textContent = p ? (p.source_code || '') : '';
     pForm.gender.value = p && p.gender ? p.gender : '';
     fillPromoSel(p);
     setTitle(p);
@@ -4604,16 +4604,16 @@
       '<div class="srcgrid">' +
         fld('', 'שם', '<input data-rf-bare data-f="name" value="' + esc(x.name) + '" maxlength="24" placeholder=" " aria-label="שם דרך ההגעה" style="' + nameStyle(x.color || 'red') + '" />') +
         '<div class="srcfld srccolf"><span class="srccol">' + colDot(x.color || 'red', w) + '</span></div>' +
-        fld(ct ? ' wide2' : '', 'סוג עלות', sel('cost_type', '', 'סוג העלות', opt('lead', 'עלות לליד', !fp && !ct) + opt('pay', 'עלות מהתשלום', fp) + opt('total', 'עלות כללית', ct))) +
+        fld(ct ? ' wide2' : '', 'סוג עלות', sel('cost_type', '', 'סוג העלות', opt('lead', 'עלות לליד', !fp && !ct) + opt('pay', 'עלות לתשלום ראשון בלבד', fp) + opt('total', 'עלות כללית', ct))) +
         (ct ? '' : fp ? fld('', 'יחידה', sel('rate_type', '', 'סוג', opt('fixed', '₪ שקלים', !pct) + opt('percent', '% אחוז', pct))) : '') +
-        (ct ? '' : fld('', fp ? (pct ? 'אחוז מהתשלום' : 'סכום מהתשלום, בשקלים') : 'כמה עולה ליד, בשקלים', '<input data-rf-bare data-f="rate" type="number" inputmode="decimal" min="0" value="' + (isNew && !Number(x.rate) ? '' : Number(x.rate || 0)) + '" placeholder=" " aria-label="עלות" />')) +
+        (ct ? '' : fld('', fp ? (pct ? 'אחוז מהתשלום הראשון' : 'סכום מהתשלום הראשון, בשקלים') : 'כמה עולה ליד, בשקלים', '<input data-rf-bare data-f="rate" type="number" inputmode="decimal" min="0" value="' + (isNew && !Number(x.rate) ? '' : Number(x.rate || 0)) + '" placeholder=" " aria-label="עלות" />')) +
         fld(' srccp', 'טלפון', '<input data-rf-bare data-f="contact_phone" type="tel" inputmode="tel" dir="ltr" value="' + esc(x.contact_phone || '') + '" maxlength="20" aria-label="טלפון איש הקשר" placeholder=" " autocomplete="off" />') +
         fld(' srccodes wide2', 'קודים בקישור (s=)', '<input data-rf-bare data-f="codes" dir="ltr" value="' + esc((Array.isArray(x.codes) ? x.codes : (x.code ? [x.code] : [])).join(', ')) + '" maxlength="60" placeholder="p, pm" aria-label="קודים בקישור, מופרדים בפסיק" autocomplete="off" autocapitalize="off" spellcheck="false" />') +
         (isNew ? '' : '<div class="rfield field srcf srcsettle"><span>' + (!ct && bal > 0 ? 'לתשלום' : 'התחשבנות') + '</span><button type="button" class="prsettle rf-box" data-settle="' + x.id + '" aria-label="' + esc('התחשבנות עם ' + x.name + ': ' + (ct ? 'תשלומים' : bal > 0 ? nfx(bal) + ' שקלים לתשלום' : 'מסולק')) + '"><b' + (ct ? '' : ' class="' + (bal > 0 ? 'owe' : 'ok') + '"') + '>' + (ct ? 'תשלומים' : bal > 0 ? '₪' + nfx(bal) : 'מסולק') + '</b>' + icon('next', 'i14') + '</button></div>') +
       '</div>' + (isNew ? '' : '<button type="button" class="srcdelbtn" data-sdel="' + w + '">מחיקה</button>');
     if (isNew) return '<div class="srccard" data-w="' + w + '">' + inner + '</div>';
     /* an accordion: the closed row is the name, the cost and the balance; opened it holds every detail, editable */
-    const open = srcOpen === w, cost = ct ? 'עלות כללית' : fp ? (x.rate_type === 'percent' ? Number(x.rate || 0) + '% מהתשלום' : '₪' + nfx(Number(x.rate || 0)) + ' מהתשלום') : '₪' + nfx(Number(x.rate || 0)) + ' לליד', st = ct ? '' : bal > 0 ? '₪' + nfx(bal) : 'מסולק';
+    const open = srcOpen === w, cost = ct ? 'עלות כללית' : fp ? (x.rate_type === 'percent' ? Number(x.rate || 0) + '% מהתשלום הראשון' : '₪' + nfx(Number(x.rate || 0)) + ' מהתשלום הראשון') : '₪' + nfx(Number(x.rate || 0)) + ' לליד', st = ct ? '' : bal > 0 ? '₪' + nfx(bal) : 'מסולק';
     return '<div class="srccard srcacc' + (open ? ' is-open' : '') + '" data-w="' + w + '"><button type="button" class="srchead" aria-expanded="' + open + '" aria-label="' + esc(x.name) + '"><span class="srcdot" style="background:' + (PALETTE[x.color || 'red'] || PALETTE.sky)[0] + '"></span><b class="srcnm" style="' + nameStyle(x.color || 'red') + '">' + esc(x.name) + '</b><span class="srcsum">' + (st ? '<i class="' + (bal > 0 ? 'owe' : 'ok') + '">' + esc(st) + '</i>' : '') + '</span>' + icon('chev', 'i16') + '</button><div class="srcbody"' + (open ? '' : ' inert') + '><div class="srcinner">' + inner + '</div></div></div>';
   }
   $('#srcPrList').addEventListener('click', (e) => {
