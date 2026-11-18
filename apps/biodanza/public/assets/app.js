@@ -1745,7 +1745,6 @@
       '<div class="rlist"><div class="pad">' +
       '<span class="rchip rchip--s">' + (k + 1) + ' מתוך ' + state.items.length + '</span>' +
       (it.music ? '<span class="rchip rchip--info rchip--l">' + esc(it.music.name) + '</span>' : '') +
-      [["level", "רמת הקבוצה"], ["curve", "מיקום בעקומה"]].map(function (f) { return txt(it, f[0]) ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">' + f[1] + '</span></div><div class="rcard__body"' + (isDraft(it, f[0]) ? DRAFT : "") + '>' + rtHtml(txt(it, f[0])) + '</div></div>' : ''; }).join('') +
       (txt(it, "poetics") ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">פואטיקה</span></div><div class="rcard__body"' + (isDraft(it, "poetics") ? DRAFT : "") + '>' + rtHtml(txt(it, "poetics")) + '</div></div>' : '') +
       (txt(it, "guidance") ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">הנחיה</span></div><div class="rcard__body"' + (isDraft(it, "guidance") ? DRAFT : "") + '>' + rtHtml(txt(it, "guidance")) + '</div></div>' : '') +
       (it.notes ? '<div class="rhint"><span class="rhint__tx">' + rtHtml(it.notes) + '</span></div>' : '') +
