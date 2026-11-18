@@ -115,7 +115,7 @@
   /* the song's bar: ONE element everywhere. A song with a file keeps its room for it, the bar shows while that song plays, follows it, and a drag moves the song. */
   function songBar(m, extra) {
     if (!m || !m.audio_object) return "";
-    return '<div class="bio-bar" data-for="' + esc(m.audio_object) + '"  style="' + (extra || "flex:0 0 100%;order:3;padding-top:var(--sp-1)") + ';position:relative;z-index:var(--z-raised)"><input type="range" min="0" max="1000" value="0" step="1" disabled aria-label="מקום בשיר" style="display:block;width:100%;margin:0;direction:ltr;accent-color:var(--primary)"></div>';
+    return '<div class="bio-bar" data-for="' + esc(m.audio_object) + '" style="visibility:hidden;' + (extra || "flex:0 0 100%;order:3;padding-top:var(--sp-1)") + ';position:relative;z-index:var(--z-raised)"><input type="range" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר" style="display:block;width:100%;margin:0;direction:ltr;accent-color:var(--primary)"></div>';
   }
   /* a song's length: the catalog's, else what its own file told the player the first time (kept in this browser) */
   var durKnown = {};
@@ -175,8 +175,8 @@
     var d = ev.detail || {};
     document.querySelectorAll(".bio-bar").forEach(function (b) {
       var mine = d.name && b.dataset.for === d.name && d.d > 0, r = b.querySelector("input");
-      r.disabled = !mine;   /* the bar of every song with a file is always there; it moves only for the song that has the player */
-      if (!mine) { r.value = 0; return; }
+      if (!mine) { b.style.visibility = "hidden"; return; }   /* it shows only while the exercise's own song has the player; its room is kept */
+      b.style.visibility = "visible";
       if (!barDrag) r.value = Math.round(d.t / d.d * 1000);
     });
   });
@@ -213,7 +213,7 @@
   }, true);
   /* a song as a row to choose from: the same element, a row of its own */
   function songRow(m, cur, attr) {
-    return '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-2);flex-wrap:wrap"' + (cur ? ' aria-current="true"' : '') + '>' + heartBtn(m) + '<button type="button" class="rrow__main" ' + attr + '="' + m.id + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit">' + songLines(m) + '</button>' + playCol(m, true) + songBar(m) + '</div>';   /* the text takes what is left, so a long name never pushes the play tile to a line of its own */
+    return '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-2);flex-wrap:wrap"' + (cur ? ' aria-current="true"' : '') + '>' + heartBtn(m) + '<button type="button" class="rrow__main" ' + attr + '="' + m.id + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit">' + songLines(m) + '</button>' + playCol(m, true) + '</div>';   /* the text takes what is left, so a long name never pushes the play tile to a line of its own */
   }
   window.toast = window.toast || toast;
   document.addEventListener("click", function (e) {
