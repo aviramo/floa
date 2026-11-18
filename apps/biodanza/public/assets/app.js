@@ -113,9 +113,9 @@
     });
   });
   /* the song's bar: ONE element everywhere. A song with a file keeps its room for it, the bar shows while that song plays, follows it, and a drag moves the song. */
-  function songBar(m, extra) {
+  function songBar(m, extra, always) {
     if (!m || !m.audio_object) return "";
-    return '<div class="bio-bar" data-for="' + esc(m.audio_object) + '" style="visibility:hidden;' + (extra || "flex:0 0 100%;order:3;padding-top:var(--sp-1)") + ';position:relative;z-index:var(--z-raised)"><input type="range" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר" style="display:block;width:100%;margin:0;direction:ltr;accent-color:var(--primary)"></div>';
+    return '<div class="bio-bar" data-for="' + esc(m.audio_object) + '"' + (always ? ' data-always="1"' : '') + ' style="' + (always ? '' : 'visibility:hidden;') + (extra || "flex:0 0 100%;order:3;padding-top:var(--sp-1)") + ';position:relative;z-index:var(--z-raised)"><input type="range" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר" style="display:block;width:100%;margin:0;direction:ltr;accent-color:var(--primary)"></div>';
   }
   /* a song's length: the catalog's, else what its own file told the player the first time (kept in this browser) */
   var durKnown = {};
@@ -175,14 +175,14 @@
     var d = ev.detail || {};
     document.querySelectorAll(".bio-bar").forEach(function (b) {
       var mine = d.name && b.dataset.for === d.name && d.d > 0, r = b.querySelector("input");
-      if (!mine) { b.style.visibility = "hidden"; return; }   /* it shows only while the exercise's own song has the player; its room is kept */
+      if (!mine) { if (b.dataset.always) { if (!barDrag) r.value = 0; } else b.style.visibility = "hidden"; return; }   /* in a list a bar shows only for the song that has the player (its room is kept); the exercise page's own bar is always there */
       b.style.visibility = "visible";
       if (!barDrag) r.value = Math.round(d.t / d.d * 1000);
     });
   });
   document.addEventListener("pointerdown", function (e) { if (e.target.closest && e.target.closest(".bio-bar")) barDrag = true; }, true);
   ["pointerup", "pointercancel", "change"].forEach(function (n) { document.addEventListener(n, function () { barDrag = false; }, true); });
-  document.addEventListener("input", function (e) { var b = e.target.closest && e.target.closest(".bio-bar"); if (b && window.BioAudio && BioAudio.seek) BioAudio.seek(e.target.value / 1000); });
+  document.addEventListener("input", function (e) { var b = e.target.closest && e.target.closest(".bio-bar"); if (b && window.BioAudio) { if (b.dataset.always && BioAudio.seekTo) BioAudio.seekTo(b.dataset.for, e.target.value / 1000); else if (BioAudio.seek) BioAudio.seek(e.target.value / 1000); } });
   function playCol(m, trail) {
     var tile = songBtn(m, trail).replace(/width:var\(--fab\);height:var\(--fab\);min-height:var\(--fab\);/, "width:var(--ctl);height:var(--ctl);min-height:var(--ctl);border-radius:var(--r-ctl);background:var(--surface-2);");
     return '<div style="flex:none;display:flex;flex-direction:column;align-items:center;gap:var(--gap-button)">' + tile +
@@ -746,7 +746,7 @@
       '</div>' +
       '<div class="rrow rrow--link" data-act="pickMusic" role="button" tabindex="0" style="flex:none;padding-inline:var(--sp-2);padding-block:var(--sp-2);border-bottom:0;cursor:pointer"><div style="flex:1 1 auto;min-width:0">' +
         (it.music ? songLines(it.music) : '<span class="rrow__title">לחצו לבחירת מוזיקה</span>') + '</div>' + (it.music ? playCol(it.music, true) : '') + '</div>' +   /* a strip across the width, like the music chooser's rows */
-      songBar(it.music, "flex:none;padding:var(--sp-1) var(--sp-2) 0") +
+      songBar(it.music, "flex:none;padding:var(--sp-1) var(--sp-2) 0", true) +
       '<div id="ifields" style="flex:1 1 auto;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:var(--gap-field);padding:var(--gutter) var(--gutter) 0"><label class="rfield" style="flex:none"><span>פואטיקה</span><textarea id="ipo" rows="1" placeholder=" "' + (isDraft(it, "poetics") ? DRAFT_FIELD : "") + '>' + esc(txt(it, "poetics")) + '</textarea></label>' +
       '<label class="rfield" style="flex:none"><span>הנחיה</span><textarea id="igu" rows="1" placeholder=" "' + (isDraft(it, "guidance") ? DRAFT_FIELD : "") + '>' + esc(txt(it, "guidance")) + '</textarea></label>' +
       '<label class="rfield" style="flex:none"><span>הערות</span><textarea id="it" rows="1" placeholder=" ">' + esc(it.notes || "") + '</textarea></label></div>' +

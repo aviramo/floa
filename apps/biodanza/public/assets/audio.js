@@ -55,6 +55,7 @@
   var el = new Audio(), now = "", url = "", busy = "";
   el.preload = "none";
   function wideNow() { return !window.matchMedia || window.matchMedia("(min-width: 1024px)").matches; }
+  var seekWant = 0, loadingSeek = "";
   var vol = 1;
   try { var sv = parseFloat(localStorage.getItem("biodanza.volume")); if (sv >= 0 && sv <= 1) vol = sv; } catch (e) { /* the default */ }
   el.volume = wideNow() ? vol : 1;
@@ -105,6 +106,21 @@
     skip: function (sec) { if (el.duration) el.currentTime = Math.max(0, Math.min(el.duration, el.currentTime + sec)); },
     pause: function () { el.pause(); },
     seek: function (f) { if (el.duration) el.currentTime = Math.max(0, Math.min(1, f)) * el.duration; },
+    /* move a song to a place in it, also one that is not playing: its file is loaded (not played) and put there; play then goes on from that place */
+    seekTo: function (name, f) {
+      f = Math.max(0, Math.min(1, f));
+      if (now === name && url && el.duration) { el.currentTime = f * el.duration; return; }
+      seekWant = f;
+      if (loadingSeek === name) return;   /* already loading it: the last place asked is the one it goes to */
+      loadingSeek = name; busy = name; paint();
+      bytes(name).then(function (b) {
+        if (url) URL.revokeObjectURL(url);
+        url = URL.createObjectURL(b); now = name; el.src = url;
+        return new Promise(function (res, rej) { el.addEventListener("loadedmetadata", res, { once: true }); el.addEventListener("error", rej, { once: true }); });
+      }).then(function () { el.currentTime = seekWant * el.duration; tell(now, el.currentTime, el.duration || 0); }).catch(function (e) {
+        if (window.toast) window.toast(e && e.status === 403 ? "אין הרשאה להשמיע" : "אי אפשר להשמיע עכשיו");
+      }).then(function () { loadingSeek = ""; busy = ""; paint(); });
+    },
     kept: isKept
   };
 })();
