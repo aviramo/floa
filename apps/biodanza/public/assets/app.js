@@ -424,6 +424,7 @@
   function isDraft(it, k) {
     if (it[k] != null) return false;
     var ts = (it.exercises || {}).exercise_texts || [], t = ts.filter(function (x) { return x.lang === LANG && x[k]; })[0];
+    if (k === "level" || k === "curve") return !!t && t[k + "_basis"] === "inferred";   /* a value the catalog does not state: assigned from the method, shown as a draft */
     return !!t && (t.source === "draft" || t.source === "translation");
   }
   /* a draft in a field: the text and the writing area are yellow, the label above it stays on the page's own colour */
@@ -836,7 +837,7 @@
 
   /* ---------- the vivencia: plan along the curve ---------- */
   function openViv(id) { if (!state.viv || state.viv.id !== id) state.lastItem = null; state.filter = ""; state.viv = state.vivs.filter(function (v) { return v.id === id; })[0] || { id: id, title: "" }; if (wide()) { stack().length = 0; show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); } go(editor); paintSel(); }
-  var ITEM_SELECT = "&select=id,position,exercise_id,music_id,notes,title,poetics,guidance,exercises(title_he,title_en,poetics,guidance,objective,exercise_texts(lang,poetics,guidance,level,curve,source)),music(id,name,title,artist,duration_sec,audio_object,in_catalog),vivencia_item_facilitators(email)&order=position";
+  var ITEM_SELECT = "&select=id,position,exercise_id,music_id,notes,title,poetics,guidance,exercises(title_he,title_en,poetics,guidance,objective,exercise_texts(lang,poetics,guidance,level,curve,level_basis,curve_basis,source)),music(id,name,title,artist,duration_sec,audio_object,in_catalog),vivencia_item_facilitators(email)&order=position";
   function itemsOf(id) { return api("/rest/v1/vivencia_items?vivencia_id=eq." + id + ITEM_SELECT); }
   function loadItems() {
     return itemsOf(state.viv.id).then(function (r) { state.items = r || []; });
@@ -1315,20 +1316,39 @@
   }
 
   /* ---------- picker: the catalog ---------- */
-  var pk = { q: "", ln: "", cg: "" };   /* the catalog's search, line and category */
-  function resetPk() { pk = { q: "", ln: "", cg: "" }; }
+  var pk = { q: "", ln: "", cg: "", lv: "", cv: "" };   /* the catalog's search, line, category, group level and place on the curve */
+  function resetPk() { pk = { q: "", ln: "", cg: "", lv: "", cv: "" }; }
+  var LEVELS = [["all", "כל הקבוצות"], ["exp", "קבוצות עם ניסיון"], ["deep", "קבוצות העמקה ומתקדמות"]];   /* the three groups the catalog's level texts fall into (exercises.level_keys) */
   /* the catalog picker: the filters and the list. On a wide screen it is a pane; on a narrow one it is a popup from the bottom. */
   function pickerBody() {
-    var cat = '<label class="rfield"><span>קטגוריה</span><input id="cg" placeholder=" " autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox" value="הכול"></label>';
-    var row = '<div style="display:flex;gap:var(--gap-button);align-items:flex-end"><label class="rfield" style="flex:1 1 0;min-width:0;margin:0"><span>חיפוש</span><input id="q" placeholder=" "></label>' +
-      '<label class="rfield" style="flex:1 1 0;min-width:0;margin:0"><span>קו</span><select id="ln"><option value="">הכול</option>' + state.lines.map(function (l) { return '<option value="' + l.key + '">' + esc(l.name_he) + '</option>'; }).join("") + '</select></label></div>';
-    return '<div class="pad" data-pickhead>' + cat + row + '</div>' +   /* the category first, then the search and the line */
-      '<div class="rlist" id="list"><div class="rskel rskel--title"></div></div>';
+    var two = function (x, y) { return '<div style="display:flex;gap:var(--gap-button);align-items:flex-end">' + x + y + '</div>'; };
+    var sel = function (id, label, opts) { return '<label class="rfield" style="flex:1 1 0;min-width:0;margin:0"><span>' + label + '</span><select id="' + id + '"><option value="">הכול</option>' + opts + '</select></label>'; };
+    var cat = '<label class="rfield" style="flex:1 1 0;min-width:0;margin:0"><span>קטגוריה</span><input id="cg" placeholder=" " autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox" value="הכול"></label>';
+    var lvl = sel("lv", "רמת הקבוצה", LEVELS.map(function (l) { return '<option value="' + l[0] + '">' + l[1] + '</option>'; }).join(""));
+    var cur = sel("cv", "מיקום בעקומה", state.phases.map(function (x) { return '<option value="' + x.key + '">' + esc(x.name_he) + '</option>'; }).join(""));
+    var lin = sel("ln", "קו", state.lines.map(function (l) { return '<option value="' + l.key + '">' + esc(l.name_he) + '</option>'; }).join(""));
+    var srch = '<label class="rfield" style="margin:0"><span>חיפוש</span><input id="q" placeholder=" "></label>';
+    /* one scroll region holds the head and the list. The head is sticky: the two rows of filters slide away when the list is scrolled down, leaving the search at the top, and come back at the first scroll up. */
+    return '<div class="rlist" id="pks" style="position:relative"><div class="pad" data-pickhead id="pkh" style="position:sticky;top:0;z-index:2;background:var(--bg);flex:none;transition:transform var(--t-base)"><div id="pkf" style="display:flex;flex-direction:column;gap:var(--gap-field)">' + two(lvl, cur) + two(cat, lin) + '</div>' + srch + '</div>' +
+      '<div id="list"><div class="rskel rskel--title"></div></div></div>';
   }
   function pickerWire(r, swapIt, sheet) {
       var catSel = pk.cg;   /* the key of the chosen category, "" = all */
-      r.querySelector("#q").value = pk.q; r.querySelector("#ln").value = pk.ln; r.querySelector("#cg").value = catSel ? catName(catSel) : "הכול";
+      r.querySelector("#q").value = pk.q; r.querySelector("#ln").value = pk.ln; r.querySelector("#lv").value = pk.lv; r.querySelector("#cv").value = pk.cv; r.querySelector("#cg").value = catSel ? catName(catSel) : "הכול";
       /* a field you can type in that also opens its options when you click it: the options are the kit's menu, placed under the field */
+      /* scrolling down slides the two filter rows away (the search stays at the top); the first scroll up brings them back */
+      function wireHide() {
+        var sc = r.querySelector("#pks"), h = r.querySelector("#pkh"), f = r.querySelector("#pkf"), last = 0, hidden = false;
+        if (!sc || !h || !f) return;
+        function set(on) { if (on === hidden) return; hidden = on; h.style.transform = on ? "translateY(-" + f.offsetHeight + "px)" : ""; }
+        sc.addEventListener("scroll", function () {
+          var t = sc.scrollTop;
+          if (t <= 2) set(false);
+          else if (t > last + 2 && t > f.offsetHeight) set(true);
+          else if (t < last - 2) set(false);
+          last = t;
+        }, { passive: true });
+      }
       function wireCat() {
         var inp = r.querySelector("#cg"), pop = null, active = -1, shown = [];
         function label() { return catSel ? catName(catSel) : "הכול"; }
@@ -1364,10 +1384,10 @@
         });
       }
       function paintCat() {
-        var q = r.querySelector("#q").value.trim().toLowerCase(), ln = r.querySelector("#ln").value, cg = catSel, l = r.querySelector("#list");
-        pk = { q: r.querySelector("#q").value, ln: ln, cg: cg };   /* what was typed and chosen is kept while an exercise is looked at and back again */
+        var q = r.querySelector("#q").value.trim().toLowerCase(), ln = r.querySelector("#ln").value, lv = r.querySelector("#lv").value, cv = r.querySelector("#cv").value, cg = catSel, l = r.querySelector("#list");
+        pk = { q: r.querySelector("#q").value, ln: ln, cg: cg, lv: lv, cv: cv };   /* what was typed and chosen is kept while an exercise is looked at and back again */
         var rows = (state.cat || []).filter(function (e) {
-          return (!cg || e.category === cg) && (!ln || (e.exercise_lines || []).some(function (x) { return x.line_key === ln; })) && (!q || (name(e) + " " + e.title_en + " " + e.category).toLowerCase().indexOf(q) >= 0);
+          return (!cg || e.category === cg) && (!lv || (e.level_keys || []).indexOf(lv) >= 0) && (!cv || (e.phase_keys || []).indexOf(cv) >= 0) && (!ln || (e.exercise_lines || []).some(function (x) { return x.line_key === ln; })) && (!q || (name(e) + " " + e.title_en + " " + e.category).toLowerCase().indexOf(q) >= 0);
         });
         l.innerHTML = rows.length ? rows.map(function (e) {
           return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-ex="' + e.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(name(e)) + '</span><span class="rrow__sub">' + esc([catName(e.category)].concat((e.exercise_lines || []).map(function (x) { return lineName(x.line_key); })).filter(Boolean).join(" · ")) + '</span></button></div>';
@@ -1380,7 +1400,7 @@
           else previewEx(ex, swapIt);
         }); });
       }
-      r.querySelector("#q").addEventListener("input", paintCat); r.querySelector("#ln").addEventListener("change", paintCat); wireCat();
+      r.querySelector("#q").addEventListener("input", paintCat); r.querySelector("#ln").addEventListener("change", paintCat); r.querySelector("#lv").addEventListener("change", paintCat); r.querySelector("#cv").addEventListener("change", paintCat); wireCat(); wireHide();
       (state.cats ? Promise.resolve() : api("/rest/v1/categories?select=key,name_he&order=sort").then(function (c) {
         state.cats = c || [];
       })).then(function () { return state.cat ? null : loadCatalog().then(function (c) { state.cat = c; }); }).then(paintCat, fail);
@@ -1398,8 +1418,8 @@
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "catDlg"; document.body.appendChild(dlg); }
     RosterSheet.render(dlg, { title: swapIt ? "החלפת תרגיל" : "קטלוג התרגילים", from: "bottom", body: bleedCss("catDlg") + pickerBody() });
     bleedSet(dlg);   /* the content sits on the title's own edges, the same on both sides */
-    var r = dlg.querySelector(".sheet-body"), ls = r.querySelector("#list");
-    var ph0 = r.querySelector("[data-pickhead]"); if (ph0) ph0.style.paddingTop = "0";   /* the popup already leaves its standard step under the title */
+    var r = dlg.querySelector(".sheet-body"), ls = r.querySelector("#pks");
+    var ph0 = r.querySelector("[data-pickhead]"); if (ph0) { ph0.style.paddingTop = "0"; ph0.style.paddingInline = "0"; }   /* the popup already leaves its standard step under the title */
     r.style.overflowY = "hidden";   /* the search stays where it is and only the list scrolls, so nothing shows through above it */
     if (ls) ls.style.cssText += ";flex:1 1 auto;min-height:0;overflow-y:auto";
     pickerWire(r, swapIt, true);
@@ -1424,7 +1444,7 @@
   function loadCatalog() {
     var all = [], PAGE = 1000;
     function page(off) {
-      return api("/rest/v1/exercises?select=id,title_he,title_en,category,phase_hint,exercise_lines(line_key)&order=title_en,id&limit=" + PAGE + "&offset=" + off).then(function (rows) {
+      return api("/rest/v1/exercises?select=id,title_he,title_en,category,phase_hint,phase_keys,level_keys,exercise_lines(line_key)&order=title_en,id&limit=" + PAGE + "&offset=" + off).then(function (rows) {
         rows = rows || []; all = all.concat(rows);
         return rows.length === PAGE ? page(off + PAGE) : all;
       });
@@ -1435,7 +1455,7 @@
   var previewTok = 0;
   /* what a catalog exercise shows before it is added: its words and every song linked to it */
   function loadPreview(id) {
-    return Promise.all([api("/rest/v1/exercise_texts?exercise_id=eq." + id + "&select=lang,poetics,guidance,level,curve,source"), api("/rest/v1/exercise_music?exercise_id=eq." + id + "&select=music(id,name,title,artist,duration_sec,audio_object,in_catalog)")]).then(function (r) {
+    return Promise.all([api("/rest/v1/exercise_texts?exercise_id=eq." + id + "&select=lang,poetics,guidance,level,curve,level_basis,curve_basis,source"), api("/rest/v1/exercise_music?exercise_id=eq." + id + "&select=music(id,name,title,artist,duration_sec,audio_object,in_catalog)")]).then(function (r) {
       var seen = {}, songs = [];
       (r[1] || []).forEach(function (x) { if (x.music && !seen[x.music.id]) { seen[x.music.id] = 1; songs.push(x.music); } });
       return { rows: r[0] || [], songs: songs };

@@ -508,3 +508,14 @@ alter table biodanza.exercises add column if not exists raw_sources jsonb not nu
 -- fields of their own, never part of poetics or guidance: the group level the exercise is for, and its place on the session curve.
 alter table biodanza.exercise_texts add column if not exists level text not null default '';
 alter table biodanza.exercise_texts add column if not exists curve text not null default '';
+
+-- where a level or a curve position comes from: 'catalog' (the catalog states it for this exercise), 'text' (the exercise's own text states it),
+-- 'inferred' (assigned from the exercise's nature and its place in the method; shown as a draft until a person checks it). Empty = no value.
+alter table biodanza.exercise_texts add column if not exists level_basis text not null default '';
+alter table biodanza.exercise_texts add column if not exists curve_basis text not null default '';
+
+-- what the catalog filters use, derived from the texts above (so a filter never parses free text in the browser):
+-- phase_keys: every phase the curve text names ('opening'..'closing'); level_keys: 'all' (every group, beginners), 'exp' (groups with some months of
+-- experience, orientation groups), 'deep' (deepening and radicalization groups, schools, advanced). An exercise can have several.
+alter table biodanza.exercises add column if not exists phase_keys text[] not null default '{}';
+alter table biodanza.exercises add column if not exists level_keys text[] not null default '{}';
