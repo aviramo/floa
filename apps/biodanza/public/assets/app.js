@@ -1232,7 +1232,7 @@
         layoutFields(); it = fresh;
       } };
       on(r, "del", function () { confirmRemoveItem(it); });
-      on(r, "swap", function () { resetPk(); if (wide()) goSub(function () { picker(it); }); else pickerSheet(it); });   /* the catalog, to put another exercise in this place */
+      on(r, "swap", function () { resetPk(); pickerSheet(it); });   /* on a computer a popup comes in from the side, on a phone from the bottom: the same popup */   /* the catalog, to put another exercise in this place */
     }, "d");
   }
 
