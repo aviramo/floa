@@ -171,6 +171,7 @@
       return bytes(name).then(function (b) { return keep(name, b); });
     },
     drop: drop,
+    names: keptNames,
     /* no internet: only the songs that are on the device can play; the others' buttons are off */
     offline: function () {
       return keptNames().then(function (names) { haveOnly = {}; names.forEach(function (n) { haveOnly[n] = true; }); paint(); });

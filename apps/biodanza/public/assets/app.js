@@ -585,8 +585,7 @@
       state.vivs = (r[0] || []).map(function (v) { v.pos = pos[v.id]; v.role = role[v.id] || "view"; return v; });
       /* my own order; a vivencia I have not placed yet (a new one) comes first, newest first */
       state.vivs.sort(function (a, b) { var pa = a.pos == null ? -1 : a.pos, pb = b.pos == null ? -1 : b.pos; return pa - pb || (a.updated_at < b.updated_at ? 1 : -1); });
-      /* a copy kept on the device of a vivencia that is no longer here for this person goes (never judged from an empty list) */
-      if (!state.offline && window.BioOffline && state.vivs.length) BioOffline.reconcile(state.vivs.map(function (v) { return v.id; })).then(function (gone) { if (gone && gone.length) renderVivs(); });
+      syncOffline();   /* the device is made equal to the cloud, in the background */
     });
   }
   /* the arrow of an empty list, drawn in the real places: it leaves just under the words, goes down and bends left, and ends beside the + button */
@@ -804,7 +803,6 @@
         if (v.role === "owner") items.push({ label: "שיתוף", icon: I.share, fn: function () { sharePopup(v); } }, { label: "מחיקה", icon: I.trash, tone: "danger", fn: function () { confirmDelete(v); } });
         else items.push({ label: "הסרה שלי מהוויוונסיה", icon: I.out, tone: "danger", fn: function () { confirmLeave(v); } });
         if (state.offline) items.length = 0;   /* with no internet nothing changes: only the copy on the device can be taken off it */
-        if (window.BioOffline) items.push(offlineItem(v));
         menu(b, items);
       });
     });
@@ -821,39 +819,26 @@
   }
   /* a confirmation is the kit's popup with ONE action: closing it is the cancel */
   /* somebody a vivencia was shared with takes themselves off it; it stays with its owner and the others */
-  /* "available offline": a copy of this vivencia on the device, with its songs; the item shows its own progress and the menu stays open */
-  function offlineItem(v) {
-    var saved = BioOffline.isSaved(v.id);
-    return { label: saved ? "זמין אופליין" : "שמירה לאופליין", icon: saved ? I.check : I.down, keep: true, fn: function (btn, close) { toggleOffline(v, btn, close); } };
-  }
-  function toggleOffline(v, btn, close) {
-    if (btn.dataset.busy) return;
-    var show1 = function (label, ico) { btn.innerHTML = ico + '<span>' + esc(label) + '</span>'; };
-    if (BioOffline.isSaved(v.id)) {   /* saved: tapping takes the copy off the device */
-      btn.dataset.busy = "1";
-      BioOffline.remove(v.id).then(function () {
-        delete btn.dataset.busy; show1("שמירה לאופליין", I.down); renderVivs();
-        if (state.offline) { close(); state.viv = null; if (wide()) { stack().length = 0; homeWide(); } else back(); }   /* its copy was all there was to see */
+  /* every vivencia is kept on the device, always: at each open the cloud and the device are compared and made equal (also what somebody else changed in a vivencia shared with me) */
+  var syncT = 0;
+  function syncOffline() {
+    if (state.offline || !window.BioOffline || !state.vivsLoaded || navigator.onLine === false) return;
+    syncT = Date.now();
+    BioOffline.sync(state.vivs, function (v) {
+      return Promise.all([itemsOf(v.id), api("/rest/v1/rpc/vivencia_members", { method: "POST", json: { v: v.id } })]).then(function (r) {
+        var items = r[0] || [];
+        return { id: v.id, row: { id: v.id, title: v.title, updated_at: v.updated_at, vivencia_items: [{ count: items.length }] }, role: v.role, pos: v.pos, items: items, members: r[1] || [] };
       });
-      return;
-    }
-    if (state.offline) return;
-    btn.dataset.busy = "1"; btn.setAttribute("aria-busy", "true"); show1("שומר…", I.down);
-    Promise.all([itemsOf(v.id), api("/rest/v1/rpc/vivencia_members", { method: "POST", json: { v: v.id } })]).then(function (r) {
-      var items = r[0] || [];
-      return BioOffline.save({ id: v.id, row: { id: v.id, title: v.title, updated_at: v.updated_at, vivencia_items: [{ count: items.length }] }, role: v.role, pos: v.pos, items: items, members: r[1] || [] }, function (d, n) {
-        show1(n ? "שומר " + d + " מתוך " + n : "שומר…", I.down);
-      });
-    }).then(function () { show1("זמין אופליין", I.check); renderVivs(); }, function (e) { console.error(e); show1("השמירה לא הצליחה, נסו שוב", I.down); })
-      .then(function () { delete btn.dataset.busy; btn.removeAttribute("aria-busy"); });
+    });
   }
-  /* a saved vivencia that is opened online has its copy made current, quietly */
-  function refreshOffline(v) {
-    if (state.offline || !window.BioOffline || !BioOffline.isSaved(v.id)) return;
+  function refreshOffline(v) {   /* an open vivencia is already read: its copy is made current from that, quietly */
+    if (state.offline || !window.BioOffline) return;
     api("/rest/v1/rpc/vivencia_members", { method: "POST", json: { v: v.id } }).then(function (mm) {
       return BioOffline.update({ id: v.id, row: { id: v.id, title: v.title, updated_at: v.updated_at, vivencia_items: [{ count: state.items.length }] }, role: v.role, pos: v.pos, items: state.items, members: mm || [] });
     }, function () { /* the old copy stays */ });
   }
+  /* coming back to the app, or the internet coming back, is another comparison (not more than once a minute) */
+  document.addEventListener("visibilitychange", function () { if (!document.hidden && Date.now() - syncT > 60000 && state.vivsLoaded && !state.offline) loadVivs().catch(function () { /* no internet now */ }); });
   function confirmLeave(v) {
     var dlg = document.getElementById("confirmDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
