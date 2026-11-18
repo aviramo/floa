@@ -54,6 +54,7 @@
   function wide() { return window.matchMedia("(min-width: 1024px)").matches; }
   var api = function (p, o) { return FLOA_AUTH.api(p, o); };
   var likes = {};   /* the songs I loved (their ids), mine alone */
+  var likesViv = {};   /* the vivencias I loved */
   var likesEx = {};   /* the exercises I loved (their ids), mine alone */
   var liveItem = null;   /* the open exercise screen, so a change that comes from another person can be written into it */
   var state = { members: [], me: null, lines: [], phases: [], cat: null, vivs: [], viv: null, items: [], filter: "" };
@@ -235,6 +236,29 @@
       if (was) likesEx[id] = true; else delete likesEx[id]; paintHeartsEx(id); toast("אי אפשר לשמור עכשיו");
     });
   }, true);
+  /* the heart of a vivencia: at the right edge of its row, in line with the logo above */
+  function heartBtnViv(id, cls) {
+    var on = !!likesViv[id], tt = on ? "הסרה מהוויוונסיות שאהבתי" : "ויוונסיה שאהבתי";
+    return '<button type="button" class="rbtn rbtn--icon ' + (cls || "") + '" data-likev="' + id + '" aria-pressed="' + on + '" aria-label="' + tt + '" title="' + tt + '" style="flex:none;width:var(--ctl);height:var(--ctl);min-height:var(--ctl);color:' + (on ? "var(--danger)" : "var(--text-3)") + '">' + (on ? I.heart.replace('fill="none"', 'fill="currentColor"') : I.heart) + '</button>';
+  }
+  function paintHeartsViv(id) {
+    document.querySelectorAll('[data-likev="' + id + '"]').forEach(function (b) {
+      var on = !!likesViv[id], tt = on ? "הסרה מהוויוונסיות שאהבתי" : "ויוונסיה שאהבתי";
+      b.setAttribute("aria-pressed", on); b.style.color = on ? "var(--danger)" : "var(--text-3)"; b.title = tt; b.setAttribute("aria-label", tt);
+      b.innerHTML = on ? I.heart.replace('fill="none"', 'fill="currentColor"') : I.heart;
+    });
+  }
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("[data-likev]"); if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    var id = b.dataset.likev, was = !!likesViv[id];
+    if (was) delete likesViv[id]; else likesViv[id] = true;
+    paintHeartsViv(id);
+    (was ? api("/rest/v1/vivencia_likes?vivencia_id=eq." + id, { method: "DELETE" })
+         : api("/rest/v1/vivencia_likes", { method: "POST", json: { vivencia_id: id }, prefer: "resolution=ignore-duplicates,return=minimal" })).catch(function () {
+      if (was) likesViv[id] = true; else delete likesViv[id]; paintHeartsViv(id); toast("אי אפשר לשמור עכשיו");
+    });
+  }, true);
   /* a song as a row to choose from: the same element, a row of its own */
   function songRow(m, cur, attr) {
     return '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-2);flex-wrap:wrap"' + (cur ? ' aria-current="true"' : '') + '>' + heartBtn(m) + '<button type="button" class="rrow__main" ' + attr + '="' + m.id + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit">' + songLines(m) + '</button>' + playCol(m, true) + songBar(m) + '</div>';   /* the text takes what is left, so a long name never pushes the play tile to a line of its own */
@@ -392,6 +416,20 @@
   }
 
   /* ---------- home: my vivencias ---------- */
+  /* the vivencias I loved: my list, newest first; a row opens the vivencia */
+  function likedVivScreen() {
+    show(head("ויוונסיות שאהבתי", "", true) + '<div class="rlist" id="likv"><div class="rskel rskel--title"></div></div>', function (r) {
+      on(r, "back", back);
+      api("/rest/v1/vivencia_likes?select=vivencia_id&order=created_at.desc").then(function (rows) {
+        var l = r.querySelector("#likv"), list = (rows || []).map(function (x) { return state.vivs.filter(function (v) { return v.id === x.vivencia_id; })[0]; }).filter(Boolean);
+        l.innerHTML = list.length ? list.map(function (v) {
+          var n = v.vivencia_items && v.vivencia_items[0] ? v.vivencia_items[0].count : 0;
+          return '<div class="rrow rrow--link">' + heartBtnViv(v.id, "rrow__trail") + '<button type="button" class="rrow__main" data-open="' + v.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub">' + n + ' תרגילים</span></button></div>';
+        }).join("") : ph("עוד אין ויוונסיות שאהבת", "לחצו על הלב ליד ויוונסיה כדי לשמור אותה כאן");
+        l.querySelectorAll("[data-open]").forEach(function (b) { b.addEventListener("click", function () { openViv(b.dataset.open); }); });
+      }, fail);
+    });
+  }
   /* the exercises I loved: my list, newest first; the heart takes one off it */
   function likedExScreen() {
     show(head("תרגילים שאהבתי", "", true) + '<div class="rlist" id="likx"><div class="rskel rskel--title"></div></div>', function (r) {
@@ -423,7 +461,7 @@
       '<div class="rlist" data-fab-room id="hl"><div class="rskel rskel--title"></div></div>' +
       '<button class="rfab" data-act="new" aria-label="ויוונסיה חדשה" title="ויוונסיה חדשה">' + I.plus + '</button>', function (r) {
       on(r, "homemore", function (b) {   /* one menu: the songs I loved, who may enter (the manager), leaving */
-        var items = [{ label: "שירים שאהבתי", icon: I.heart, fn: function () { go(likedScreen); } }, { label: "תרגילים שאהבתי", icon: I.heart, fn: function () { go(likedExScreen); } }];
+        var items = [{ label: "ויוונסיות שאהבתי", icon: I.heart, fn: function () { go(likedVivScreen); } }, { label: "תרגילים שאהבתי", icon: I.heart, fn: function () { go(likedExScreen); } }, { label: "שירים שאהבתי", icon: I.heart, fn: function () { go(likedScreen); } }];   /* in the order of the app: vivencias, exercises, songs */
         if (state.me.admin) items.push({ label: "מורשים", icon: I.users, fn: allowPopup });
         items.push({ label: "יציאה", icon: I.out, tone: "danger", fn: function () { Promise.resolve(FLOA_AUTH.signOut()).then(function () { location.reload(); }); } });
         menu(b, items);
@@ -449,7 +487,7 @@
     var l = document.getElementById("hl"); if (!l) return;
     l.innerHTML = state.vivs.length ? state.vivs.map(function (v) {
       var n = v.vivencia_items && v.vivencia_items[0] ? v.vivencia_items[0].count : 0;
-      return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-id="' + v.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub" data-n="' + v.id + '">' + n + ' תרגילים' + (v.role === "owner" ? "" : " · משותף" + (v.role === "view" ? " (צפייה)" : " (עריכה)")) + '</span></button></div>';
+      return '<div class="rrow rrow--link">' + heartBtnViv(v.id, "rrow__trail") + '<button type="button" class="rrow__main" data-id="' + v.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub" data-n="' + v.id + '">' + n + ' תרגילים' + (v.role === "owner" ? "" : " · משותף" + (v.role === "view" ? " (צפייה)" : " (עריכה)")) + '</span></button></div>';
     }).join("") : ph("עוד אין ויוונסיות", "לחצו על + כדי ליצור את הראשונה");
     l.querySelectorAll("[data-id]").forEach(function (b) { b.addEventListener("click", function () { openViv(b.dataset.id); }); });
     if (state.vivs.length) enableDrag(l, "[data-id]", persistVivs);
@@ -1402,6 +1440,7 @@
       state.me = me;
       if (!me || !me.allowed) return gate("לחשבון " + FLOA_AUTH.email() + " אין הרשאה להיכנס. אפשר לבקש מהמנהל להוסיף אותו.", true);
       return Promise.all([api("/rest/v1/lines?select=key,name_he&order=sort"), api("/rest/v1/phases?select=key,name_he&order=sort")]).then(function (r) { state.lines = r[0]; state.phases = r[1]; home(); startRealtime(); api("/rest/v1/song_likes?select=music_id").then(function (ls) { likes = {}; (ls || []).forEach(function (x) { likes[x.music_id] = true; }); }, function () { /* no hearts this time */ });
+        api("/rest/v1/vivencia_likes?select=vivencia_id").then(function (ls) { likesViv = {}; (ls || []).forEach(function (x) { likesViv[x.vivencia_id] = true; }); renderVivs(); }, function () { /* no hearts this time */ });
         api("/rest/v1/exercise_likes?select=exercise_id").then(function (ls) { likesEx = {}; (ls || []).forEach(function (x) { likesEx[x.exercise_id] = true; }); }, function () { /* no hearts this time */ }); });
     }).catch(function (e) { console.error(e); gate("לא הצלחנו להתחבר. נסו שוב.", false); });
   }

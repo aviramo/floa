@@ -481,3 +481,18 @@ drop policy if exists exercise_likes_write on biodanza.exercise_likes;
 create policy exercise_likes_write on biodanza.exercise_likes for all to authenticated
   using (user_id = auth.uid() and biodanza.is_allowed()) with check (user_id = auth.uid() and biodanza.is_allowed());
 grant select, insert, update, delete on biodanza.exercise_likes to authenticated, service_role;
+
+-- the vivencias a facilitator loved: each person's own list, nobody else sees it
+create table if not exists biodanza.vivencia_likes (
+  user_id     uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  vivencia_id uuid not null references biodanza.vivencias(id) on delete cascade,
+  created_at  timestamptz not null default now(),
+  primary key (user_id, vivencia_id)
+);
+alter table biodanza.vivencia_likes enable row level security;
+drop policy if exists vivencia_likes_read on biodanza.vivencia_likes;
+create policy vivencia_likes_read on biodanza.vivencia_likes for select to authenticated using (user_id = auth.uid());
+drop policy if exists vivencia_likes_write on biodanza.vivencia_likes;
+create policy vivencia_likes_write on biodanza.vivencia_likes for all to authenticated
+  using (user_id = auth.uid() and biodanza.is_allowed()) with check (user_id = auth.uid() and biodanza.is_allowed());
+grant select, insert, update, delete on biodanza.vivencia_likes to authenticated, service_role;
