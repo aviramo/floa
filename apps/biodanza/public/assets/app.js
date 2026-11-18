@@ -429,11 +429,7 @@
     }
     pg.addEventListener("pointerup", end); pg.addEventListener("pointercancel", end);
   }
-  function toast(msg) {
-    var t = document.createElement("div");
-    t.className = "rmsg rmsg--toast"; t.setAttribute("role", "status"); t.innerHTML = '<span class="rmsg__text">' + esc(msg) + '</span>';
-    document.body.appendChild(t); setTimeout(function () { t.remove(); }, 2400);
-  }
+  function toast(msg) { /* no black messages at the bottom, by the owner's word: what happened shows on the screen itself; the text goes to the console only */ if (window.console) console.info(msg); }
   function fail(e) { console.error(e); toast("משהו השתבש, נסו שוב"); }
   /* pane "d" is the detail pane (the vivencia), on a wide screen beside the list; on a narrow one every screen takes the single pane. */
   function show(html, wire, pane) { var t = wide() && pane === "d" ? pd : pl; t.innerHTML = html; if (wire) wire(t); }
