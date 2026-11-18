@@ -188,13 +188,22 @@
     dlg.addEventListener("pointerdown", function (e) {
       if (e.button > 0 || drag || wide()) return;   /* no pointer drag on a side panel */
       var h = e.target.closest(".rs-grab, [data-rs-drag]");
-      if (!h || !dlg.contains(h) || e.target.closest("button, a, input, select, textarea")) return;
-      drag = { id: e.pointerId, y0: e.clientY, last: e.clientY, t0: e.timeStamp, lastT: e.timeStamp, v: 0, dy: 0, h: h };
-      try { h.setPointerCapture(e.pointerId); } catch (x) {}
-      dlg.classList.add("rs-dragging");
+      var ctl = e.target.closest("button, a, input, select, textarea");
+      if (!h || !dlg.contains(h) || (ctl && !ctl.closest("[data-rs-drag-all]"))) return;
+      /* a header marked [data-rs-drag-all] can be pulled from its buttons too: the pull starts only once the finger has moved down, so a tap is still a tap */
+      drag = { id: e.pointerId, y0: e.clientY, x0: e.clientX, last: e.clientY, t0: e.timeStamp, lastT: e.timeStamp, v: 0, dy: 0, h: h, pend: !!ctl };
+      if (!ctl) { try { h.setPointerCapture(e.pointerId); } catch (x) {} dlg.classList.add("rs-dragging"); }
     });
     dlg.addEventListener("pointermove", function (e) {
       if (!drag || e.pointerId !== drag.id) return;
+      if (drag.pend) {
+        var mx = e.clientX - drag.x0, my = (e.clientY - drag.y0) * direction(dlg);
+        if (Math.abs(mx) < 8 && Math.abs(my) < 8) return;
+        if (my < Math.abs(mx)) { drag = null; return; }   /* sideways or the other way: not a pull */
+        drag.pend = false; drag.y0 = e.clientY; drag.last = e.clientY;
+        try { drag.h.setPointerCapture(e.pointerId); } catch (x) {} dlg.classList.add("rs-dragging");
+        drag.eat = function (ev) { ev.stopPropagation(); ev.preventDefault(); }; dlg.addEventListener("click", drag.eat, true);   /* the button under the finger is not pressed */
+      }
       var dir = direction(dlg), raw = e.clientY - drag.y0, moved = Math.max(0, raw * dir);
       drag.dy = moved * dir;
       var dt = Math.max(1, e.timeStamp - drag.lastT); drag.v = ((e.clientY - drag.last) * dir) / dt; drag.last = e.clientY; drag.lastT = e.timeStamp;
@@ -203,6 +212,8 @@
     function endPointer(e) {
       if (!drag || e.pointerId !== drag.id) return;
       var d = drag; drag = null;
+      if (d.pend) return;   /* a tap on a button of the header: nothing was pulled */
+      if (d.eat) setTimeout(function () { dlg.removeEventListener("click", d.eat, true); }, 80);
       try { d.h.releasePointerCapture(d.id); } catch (x) {}
       finish(dlg, d.dy, d.v);
     }

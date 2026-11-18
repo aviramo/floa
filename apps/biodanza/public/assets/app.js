@@ -44,9 +44,10 @@
     if (!gone.length && !fresh.length) return;
     var lost = gone.filter(function (l) { return l.own; }).length;
     layers = layers.filter(function (l) { return live.indexOf(l.el) >= 0; });
-    var pairs = Math.min(lost, fresh.length);   /* one closes as another opens (a menu choice): the entry is handed over */
-    fresh.forEach(function (el) { layers.push({ el: el, own: !jump }); });
-    if (!jump) for (var i = 0; i < fresh.length - pairs; i++) history.pushState({ d: curD(), bk: 1 }, "", location.href);
+    var marked = fresh.filter(function (el) { return !el.__screen; });   /* the exercise popup is a screen of its own (its address is its entry): no marker */
+    var pairs = Math.min(lost, marked.length);   /* one closes as another opens (a menu choice): the entry is handed over */
+    fresh.forEach(function (el) { layers.push({ el: el, own: !jump && !el.__screen }); });
+    if (!jump) for (var i = 0; i < marked.length - pairs; i++) history.pushState({ d: curD(), bk: 1 }, "", location.href);
     if (lost - pairs > 0) startJump(lost - pairs, false);
   }
   function closeLayer(el) { if (el.id === "moreMenu") el.remove(); else slideClose(el); }
@@ -124,28 +125,6 @@
     el.addEventListener("paste", function (e) { e.preventDefault(); document.execCommand("insertText", false, (e.clipboardData || window.clipboardData).getData("text/plain")); });
     el.addEventListener("blur", function () { el.dispatchEvent(new Event("change")); });
   }
-  (function () {   /* the bold button: under the selected words, in any of the three texts */
-    var st = document.createElement("style");
-    st.textContent = ".bio-boldbtn { position: fixed; z-index: var(--z-menu); display: none; font-weight: var(--fw-black) } .bio-boldbtn.show { display: inline-flex } .bio-boldbtn.on { background: var(--primary); color: var(--on-primary) }";
-    document.head.appendChild(st);
-    var b = document.createElement("button"); b.type = "button"; b.className = "rbtn rbtn--icon bio-boldbtn"; b.textContent = "B"; b.setAttribute("aria-label", "הדגשה"); b.title = "הדגשה";
-    b.addEventListener("pointerdown", function (e) { e.preventDefault(); });
-    b.addEventListener("mousedown", function (e) { e.preventDefault(); });
-    b.addEventListener("click", function () { document.execCommand("bold"); place(); });
-    document.addEventListener("DOMContentLoaded", function () { document.body.appendChild(b); });
-    if (document.body) document.body.appendChild(b);
-    function place() {
-      var s = window.getSelection(), el = s && s.rangeCount && !s.isCollapsed && s.anchorNode && (s.anchorNode.nodeType === 1 ? s.anchorNode : s.anchorNode.parentElement);
-      el = el && el.closest && el.closest(".rf-rich");
-      if (!el || !el.contains(s.focusNode)) { b.classList.remove("show"); return; }
-      var r = s.getRangeAt(0).getBoundingClientRect(), w = 44;
-      var top = r.bottom + 8; if (top + w > window.innerHeight - 8) top = Math.max(8, r.top - w - 8);
-      b.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + "px"; b.style.top = top + "px";
-      b.classList.toggle("on", document.queryCommandState("bold")); b.classList.add("show");
-    }
-    document.addEventListener("selectionchange", place);
-    window.addEventListener("scroll", place, true); window.addEventListener("resize", place);
-  })();
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   function name(e) { return e.title_he || e.title_en || ""; }
   function phaseName(k) { var p = state.phases.filter(function (x) { return x.key === k; })[0]; return p ? p.name_he : ""; }
@@ -206,7 +185,7 @@
       ".bio-seekfab { position: fixed; right: " + side + "; bottom: " + up + "; z-index: var(--z-sticky) } " +
       ".bio-seekfab-in { position: fixed; inset: auto " + side + " " + up + " auto; margin: 0; overflow: visible } " +
       ".bio-seekfab.on, .bio-seekfab-in.on { opacity: 1; transform: none; pointer-events: auto } " +
-      ".bio-seekpan, .bio-seekpan-in { position: fixed; left: max(var(--gutter), var(--inset-l)); right: calc(max(var(--gutter), var(--inset-r)) + 2 * (var(--fab) + var(--sp-2))); bottom: " + up + "; width: auto; height: var(--fab); margin: 0; box-sizing: border-box; display: flex; align-items: center; padding: 0 var(--sp-3); overflow: visible; background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-fab); box-shadow: var(--sh-pop); z-index: var(--z-sticky); opacity: 0; transform: translateX(16px) scale(.98); transform-origin: right center; pointer-events: none; transition: transform var(--t-base) var(--ease), opacity var(--t-base) var(--ease) } " +
+      ".bio-seekpan, .bio-seekpan-in { position: fixed; left: max(var(--gutter), var(--inset-l)); right: calc(max(var(--gutter), var(--inset-r)) + 2 * (var(--fab) + var(--sp-2))); top: auto; bottom: " + up + "; width: auto; height: var(--fab); margin: 0; box-sizing: border-box; display: flex; align-items: center; padding: 0 var(--sp-3); overflow: visible; background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-fab); box-shadow: var(--sh-pop); z-index: var(--z-sticky); opacity: 0; transform: translateX(16px) scale(.98); transform-origin: right center; pointer-events: none; transition: transform var(--t-base) var(--ease), opacity var(--t-base) var(--ease) } " +
       ".bio-seekpan.open, .bio-seekpan-in.open { opacity: 1; transform: none; pointer-events: auto } " +
       ".bio-seekpan > input, .bio-seekpan-in > input { display: block; width: 100%; margin: 0; direction: ltr; accent-color: var(--primary); touch-action: none } " +
       "html.rs-lock .bio-seekfab, html.dlg-lock .bio-seekfab, html.kb-open .bio-seekfab, html.rs-lock .bio-seekpan, html.dlg-lock .bio-seekpan { opacity: 0; pointer-events: none } " +
@@ -457,13 +436,13 @@
       var shown = esc(label);
       var m = act === "list" && where && String(where).match(/^(\d+)\/(\d+)$/);
       if (m) shown = '<span style="display:inline-flex;align-items:baseline;gap:2px;direction:ltr"><b class="bio-num" style="display:inline-block;font:var(--fw-black) var(--fs-xl)/1 var(--font);--nx:' + ((state.slideFrom || 0) * 24) + 'px' + (state.slideFrom ? ';animation:bioNum .26s cubic-bezier(.2,.8,.2,1) both' : '') + '">' + m[1] + '</b><span style="color:var(--text-2);font:var(--fw-regular) var(--fs-s)/1 var(--font)">/' + m[2] + '</span></span>';   /* the number of this exercise is big, and rolls in from the side the page came from */
-      return '<button class="rbtn' + (act === "nextW" ? "" : " rbtn--ghost") + '" data-act="' + act + '" title="' + esc(label) + '"' + (act === "list" ? ' style="flex:1 1 auto"' : "") + (off ? " disabled" : "") + '>' + (after ? '<span>' + shown + '</span>' + ico : ico + '<span>' + shown + '</span>') + '</button>';
+      return '<button class="rbtn' + (act === "nextW" || act === "prevW" ? "" : " rbtn--ghost") + (act === "list" ? " bio-flat" : "") + '" data-act="' + act + '" title="' + esc(label) + '"' + (act === "list" ? ' style="flex:1 1 auto"' : "") + (off ? " disabled" : "") + '>' + (after ? '<span>' + shown + '</span>' + ico : ico + '<span>' + shown + '</span>') + '</button>';
     };
-    return '<header class="rhead">' + b("prevW", I.back, "הקודם", !hasPrev) + b("list", "", where || "לרשימה", false) + (exId ? heartBtnEx(exId, "") : "") + b("nextW", I.fwd, "הבא", !hasNext, true) + '</header>';
+    return '<header class="rhead">' + b("prevW", I.back, "הקודם", !hasPrev) + b("list", "", where || "לרשימה", false) + (exId ? heartBtnEx(exId, "bio-flat") : "") + b("nextW", I.fwd, "הבא", !hasNext, true) + '</header>';
   }
   (function () {
     var st = document.createElement("style");
-    st.textContent = "@keyframes bioNum { from { opacity: 0; transform: translateX(var(--nx, 0)) } to { opacity: 1; transform: none } } @media (prefers-reduced-motion: reduce) { .bio-num { animation: none !important } } .bio-bar, .bio-bar * { touch-action: none } .bio-vol { display: none; position: relative; flex: none; place-items: center; width: var(--ctl); height: var(--ctl); border-radius: var(--r-ctl); background: var(--surface-2); overflow: hidden; touch-action: none; cursor: ns-resize; user-select: none; margin-inline-end: var(--sp-1) } .bio-vol.on { display: grid } @media (max-width: 1023px) { .bio-vol { display: none } } .bio-vol > i { position: absolute; inset: auto 0 0 0; height: calc(var(--v) * 100%); background: color-mix(in srgb, var(--primary) 32%, transparent); transition: height var(--t-fast) var(--ease) } .bio-vol > b { position: relative; font: var(--fw-bold) var(--fs-s)/1 var(--font); font-variant-numeric: tabular-nums; color: var(--text) } #pd .bio-vol { display: none !important } /* the volume button is in the list's header, once */ .bio-vol:focus { outline: none } .bio-vol:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }";
+    st.textContent = ".bio-flat, .rhead .bio-flat, .rhead .bio-flat:hover, .rhead .bio-flat:active, .rhead .bio-flat[aria-expanded] { background: transparent; border-color: transparent } @keyframes bioNum { from { opacity: 0; transform: translateX(var(--nx, 0)) } to { opacity: 1; transform: none } } @media (prefers-reduced-motion: reduce) { .bio-num { animation: none !important } } .bio-bar, .bio-bar * { touch-action: none } .bio-vol { display: none; position: relative; flex: none; place-items: center; width: var(--ctl); height: var(--ctl); border-radius: var(--r-ctl); background: var(--surface-2); overflow: hidden; touch-action: none; cursor: ns-resize; user-select: none; margin-inline-end: var(--sp-1) } .bio-vol.on { display: grid } @media (max-width: 1023px) { .bio-vol { display: none } } .bio-vol > i { position: absolute; inset: auto 0 0 0; height: calc(var(--v) * 100%); background: color-mix(in srgb, var(--primary) 32%, transparent); transition: height var(--t-fast) var(--ease) } .bio-vol > b { position: relative; font: var(--fw-bold) var(--fs-s)/1 var(--font); font-variant-numeric: tabular-nums; color: var(--text) } #pd .bio-vol { display: none !important } /* the volume button is in the list's header, once */ .bio-vol:focus { outline: none } .bio-vol:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }";
     document.head.appendChild(st);
   })();
   /* the exercise as a pager: drag the page sideways to go to the next or the previous one (to the right = the next, as in a right to left book); the page follows the finger, a short drag springs back */
@@ -497,7 +476,8 @@
   function toast(msg) { /* no black messages at the bottom, by the owner's word: what happened shows on the screen itself; the text goes to the console only */ if (window.console) console.info(msg); }
   function fail(e) { console.error(e); toast("משהו השתבש, נסו שוב"); }
   /* pane "d" is the detail pane (the vivencia), on a wide screen beside the list; on a narrow one every screen takes the single pane. */
-  function show(html, wire, pane) { var t = wide() && pane === "d" ? pd : pl; t.innerHTML = html; if (wire) wire(t); }
+  function show(html, wire, pane) { if (!wide() && pane === "d") return itemSheet(html, wire);   /* narrow: the exercise is a popup from the bottom, not a page */
+    var t = wide() && pane === "d" ? pd : pl; t.innerHTML = html; if (wire) wire(t); }
   /* wide screen: the vivencia list on the right, and after choosing one its exercises take that place and the open exercise is on the left. Back from the exercises is the vivencia list again. */
   function homeWide() { state.viv = null; state.lastItem = null; emptyDetail(); home(); }
   function emptyDetail() {
@@ -773,7 +753,8 @@
       var t = inp.value.trim(); if (!t) return toast("חסר נושא");
       var done = function () {
         dlg.close();
-        if (isNew) { state.vivs.unshift({ id: v.id, title: t, role: "owner", updated_at: new Date().toISOString() });   /* the one who made it owns it: the menu has share and delete at once, not only after a reload */ if (wide()) home(); openViv(v.id); }
+        if (isNew) { state.vivs.unshift({ id: v.id, title: t, role: "owner", updated_at: new Date().toISOString() });   /* the one who made it owns it: the menu has share and delete at once, not only after a reload */
+          renderVivs(); persistVivs(0, 0); }   /* it goes FIRST and stays there (its place is saved like any move), and it is not opened: you stay on the list and see it at the top */
         else { v.title = t; if (state.viv && state.viv.id === v.id) state.viv.title = t; if (wide()) home(); if (state.viv && state.viv.id === v.id) editor(); }   /* narrow: the vivencia's own screen is redrawn in place, the address stays */
       };
       (isNew ? api("/rest/v1/vivencias", { method: "POST", json: { id: v.id, title: t }, prefer: "return=minimal" })
@@ -952,6 +933,38 @@
   }
 
   /* ---------- one item: music, poetics, guidance, notes ---------- */
+  /* narrow screen: an exercise of a vivencia is a popup from the bottom (the kit's sheet), over the vivencia's list. It is a SCREEN for the browser's history (its
+     own address /<vivencia>/<exercise>, one entry), not a popup with a marker entry: Back, the X, a swipe down and the header's middle button all end on the list. */
+  (function () {
+    var st = document.createElement("style");
+    st.textContent = "#itemDlg { height: var(--rs-vvh, 100dvh); max-height: none; padding-top: var(--safe-t, 0px); transform: translateY(var(--rs-dy, 0px)) } @media (min-width: 760px) { #itemDlg { height: calc(100dvh - 48px); max-height: calc(100dvh - 48px); padding-top: 0 } } " +
+      "#itemDlg .sheet-head, #itemDlg .sheet-head * { touch-action: none } #itemDlg .sheet-head [data-act=\"list\"] { pointer-events: none; flex: none !important; margin-inline: auto calc(var(--gap-button) * -1) } #itemDlg .sheet-head [data-likex] { margin-inline-end: auto } #itemDlg .sheet-head { margin-inline: calc(var(--pp-px) * -1); margin-bottom: 0 } #itemDlg .sheet-head > .rhead { flex: 1 1 auto; min-width: 0; width: 100%; margin: 0 } " +
+      "#itemDlg .sheet-body { overflow: hidden; margin-inline: calc(var(--pp-px) * -1); padding: 0 } #itemDlg .sheet-body > #itemHost { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; position: relative; padding-inline: 0 } " +
+      "html.rs-lock:not(.kb-open) #itemDlg .rfab { opacity: 1; transform: none; pointer-events: auto }";   /* the kit hides page buttons while a popup is open; these two belong to this one */
+    document.head.appendChild(st);
+  })();
+  function itemSheet(html, wire) {
+    var dlg = document.getElementById("itemDlg");
+    if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "itemDlg"; document.body.appendChild(dlg); }
+    if (!dlg.open) {
+      dlg.__screen = true;   /* before it opens: syncLayers gives it no marker entry */
+      RosterSheet.render(dlg, { title: "", from: "bottom", body: '<div id="itemHost"></div>' });
+      dlg.setAttribute("aria-label", "תרגיל");
+      if (!dlg.__wired) {
+        dlg.__wired = true;
+        dlg.addEventListener("close", function () {
+          liveItem = null;
+          if (dlg.__quiet) { dlg.__quiet = false; return; }   /* closed because the address already changed */
+          if (parseUrl().item) unwind(1);   /* the X, a swipe, the backdrop: give the exercise's own entry back, and the address is the vivencia's */
+        });
+      }
+    }
+    /* the sheet's own header IS the exercise's header (previous, where we are, heart, next): no title row above it */
+    var hm = html.match(/^<header class="rhead">[\s\S]*?<\/header>/), sh = dlg.querySelector(".sheet-head");
+    if (hm) { sh.innerHTML = hm[0]; sh.setAttribute("data-rs-drag-all", ""); html = html.slice(hm[0].length); }
+    var cnt = sh.querySelector('[data-act="list"]'); if (cnt) { cnt.tabIndex = -1; cnt.setAttribute("aria-hidden", "true"); }   /* here the counter only shows where we are: the list is already behind the popup */
+    var host = dlg.querySelector("#itemHost"); host.innerHTML = html; if (wire) wire(dlg.querySelector(".sheet"));
+  }
   function itemScreen(it) {
     var e = it.exercises || {};
     setUrl(BASE + state.viv.id + "/" + it.id);
@@ -966,19 +979,19 @@
       '<div class="rrow rrow--link" data-act="pickMusic" role="button" tabindex="0" style="flex:none;padding-inline:var(--sp-2);padding-block:var(--sp-2);border-bottom:0;cursor:pointer"><div style="flex:1 1 auto;min-width:0">' +
         (it.music ? songLines(it.music) : '<span class="rrow__title">לחצו לבחירת מוזיקה</span>') + '</div>' + (it.music ? playCol(it.music, true) : '') + '</div>' +   /* a strip across the width, like the music chooser's rows */
       songBar(it.music, "flex:none;padding:var(--sp-1) var(--sp-2) 0", true) +
-      '<div id="ifields" style="flex:1 1 auto;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:var(--gap-field);padding:var(--gutter) var(--gutter) 0"><label class="rfield" style="flex:none"><span>פואטיקה</span><div id="ipo" class="rf-rich" contenteditable="true" role="textbox" aria-multiline="true"' + (isDraft(it, "poetics") ? DRAFT_FIELD : "") + '>' + rtHtml(txt(it, "poetics")) + '</div></label>' +
-      '<label class="rfield" style="flex:none"><span>הנחיה</span><div id="igu" class="rf-rich" contenteditable="true" role="textbox" aria-multiline="true"' + (isDraft(it, "guidance") ? DRAFT_FIELD : "") + '>' + rtHtml(txt(it, "guidance")) + '</div></label>' +
-      '<label class="rfield" style="flex:none"><span>הערות</span><div id="it" class="rf-rich" contenteditable="true" role="textbox" aria-multiline="true">' + rtHtml(it.notes || "") + '</div></label></div>' +
+      '<div id="ifields" style="flex:1 1 auto;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:var(--gap-field);padding:var(--gutter) var(--gutter) 0"><label class="rfield" style="flex:none"><span>פואטיקה</span><div id="ipo" class="rf-rich" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true"' + (isDraft(it, "poetics") ? DRAFT_FIELD : "") + '>' + rtHtml(txt(it, "poetics")) + '</div></label>' +
+      '<label class="rfield" style="flex:none"><span>הנחיה</span><div id="igu" class="rf-rich" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true"' + (isDraft(it, "guidance") ? DRAFT_FIELD : "") + '>' + rtHtml(txt(it, "guidance")) + '</div></label>' +
+      '<label class="rfield" style="flex:none"><span>הערות</span><div id="it" class="rf-rich" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true">' + rtHtml(it.notes || "") + '</div></label></div>' +
       '<div id="ibtns" style="flex:none;height:calc(var(--fab) + 2 * var(--gutter) + var(--inset-b))"></div></div>' +
       '<button class="rfab" data-act="swap" aria-label="החלפת תרגיל" title="החלפת תרגיל" style="left:calc(max(var(--gutter), var(--inset-l)) + var(--fab) + var(--sp-2))">' + I.swap + '</button>' +   /* the two actions are buttons at the left, so the right is free for the music's */
-      '<button class="rfab" data-act="del" aria-label="הסרה מהוויוונסיה" title="הסרה מהוויוונסיה" style="border-color:var(--line-strong);background:var(--bg);color:var(--text)">' + I.trash + '</button>', function (r) {
+      '<button class="rfab" data-act="del" aria-label="הסרה מהוויוונסיה" title="הסרה מהוויוונסיה" style="border-color:var(--surface-2);background:var(--surface-2);color:var(--text)">' + I.trash + '</button>', function (r) {
       var sf = state.slideFrom || 0, pg = r.querySelector("#ipg"); state.slideFrom = 0;
       r.style.overflowX = "clip";   /* a page sliding in from the side must not make the window scroll sideways */
       if (pg && sf && !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)) {
         pg.style.transform = "translateX(" + (sf * 100) + "%)";
         requestAnimationFrame(function () { requestAnimationFrame(function () { pg.style.transition = "transform .26s cubic-bezier(.2, .8, .2, 1)"; pg.style.transform = ""; }); });
       }
-      on(r, "list", function () { if (!wide()) back(); });   /* beside the list there is nowhere to go back to */
+      on(r, "list", function () { /* beside the list, or in the popup over it, the counter is a display: nothing to go back to */ });   /* beside the list there is nowhere to go back to */
       wireFac(r);
       function walk(to) { repNext = true; state.slideFrom = to === nextIt ? -1 : 1; if (wide()) return itemScreen(to); stack().pop(); go(function () { itemScreen(to); }); }
       on(r, "prevW", function () { if (prevIt) walk(prevIt); });
@@ -1610,7 +1623,16 @@
       if (history.state && history.state.bk) { startJump(1, false); return; }   /* Forward onto the entry of a popup that is closed: step over it */
     }
     if (!state.me) return;
-    layers.forEach(function (l) { l.own = false; if (l.el.id !== "moreMenu" && l.el.open) l.el.close(); else if (l.el.id === "moreMenu") l.el.remove(); });
+    var u0 = parseUrl();
+    if (!wide() && state.viv && u0.viv === state.viv.id && !u0.item && document.getElementById("list")) {   /* the exercise popup over this vivencia's list: closing it is all */
+      var idlg = document.getElementById("itemDlg");
+      layers.forEach(function (l) { if (l.el !== idlg) { l.own = false; if (l.el.id === "moreMenu") l.el.remove(); else if (l.el.open) l.el.close(); } });
+      if (idlg && idlg.open) { idlg.__quiet = true; slideClose(idlg); }
+      liveItem = null; stack().length = 0; stack().push(home, editor);
+      loadItems().then(paint, fail);   /* what was changed inside is in the list */
+      return;
+    }
+    layers.forEach(function (l) { l.own = false; if (l.el.__screen) l.el.__quiet = true; if (l.el.id !== "moreMenu" && l.el.open) l.el.close(); else if (l.el.id === "moreMenu") l.el.remove(); });
     var u = parseUrl(); popping = true;
     try {
       stack().length = 0;
