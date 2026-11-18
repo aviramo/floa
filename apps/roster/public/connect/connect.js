@@ -1271,7 +1271,7 @@
   function renderTplFoot() {
     const c = ctx;
     $("#tFoot").innerHTML = c.resetAsk
-      ? warn("התבנית המותאמת תחזור לנוסח ברירת המחדל. אפשר לבטל בהודעה שתופיע. להחזיר?") + '<div class="btnrow"><button type="button" class="rbtn rbtn--danger" data-d="tpl-reset-yes" id="tResetYes">כן, להחזיר לברירת מחדל</button></div>'
+      ? warn("התבנית המותאמת תחזור לנוסח ברירת המחדל. להחזיר?") + '<div class="btnrow"><button type="button" class="rbtn rbtn--danger" data-d="tpl-reset-yes" id="tResetYes">כן, להחזיר לברירת מחדל</button></div>'
       : '<div class="btnrow"><button type="button" class="rbtn rbtn--ghost rbtn--danger" data-d="tpl-reset" id="tReset"' + (c.custom ? "" : " disabled") + ">החזרה לברירת מחדל</button></div>";
   }
   function templateInput() { clearTimeout(ctx.pt); ctx.pt = setTimeout(updatePreview, 90); $("#tErr").textContent = ""; }

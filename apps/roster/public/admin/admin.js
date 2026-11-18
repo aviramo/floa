@@ -339,7 +339,6 @@
         if (ov) { ov.doneAt = Date.now(); ov.exp = Date.now() + 15000; }
         if (mailFailHook && (table === T.pay || table === T.a)) mailFailHook();   // תשלום או שיוך נכתבו: אולי המערכת ניסתה לשלוח מייל
         if (mailOfferHook && (table === T.pay || table === T.a)) mailOfferHook(table, method, path, body);   // מנהל סגר תשלום או סימן "לא לתשלום": פופאפ לשליחה (מייל או וואטסאפ), בלי שליחה אוטומטית
-        if (method === 'DELETE' && table !== T.a && window.ROSTER_KIT && window.ROSTER_KIT.deleted) window.ROSTER_KIT.deleted(table, path);   // roster kit: offers the undo of this delete (admin-kit.js); NOT for removing a participant from a meeting (owner 2026-11-17: no undo there; the cancel-mail question is the follow-up)
         return data;
       }
       if (Array.isArray(data)) {
@@ -1850,11 +1849,11 @@
   $('#prPays').addEventListener('click', (e) => {
     const d = e.target.closest('[data-delpay]'); if (!d) return;
     const id = d.dataset.delpay;
-    confirmAct('מחיקת תשלום לשיווק ממומן', null, null, () => {   // the page's own confirm popup (no native window); the undo toast follows the delete
+    confirmAct('מחיקת תשלום לשיווק ממומן', null, null, () => {   // the page's own confirm popup (no native window)
       const prev = state.promoPays;
       state.promoPays = state.promoPays.filter((q) => q.id !== id); showPromoterDetail(prCur);
       api(T.pp + '?id=eq.' + id, { method: 'DELETE' }).catch((err) => { state.promoPays = prev; showPromoterDetail(prCur); fail(err); });
-    }, 'התשלום יימחק מההתחשבנות. אפשר לבטל מיד אחרי.', 'מחיקה', null, { plain: true });
+    }, 'התשלום יימחק מההתחשבנות.', 'מחיקה', null, { plain: true });
   });
   const attPending = new Map();
   function applyAttPending() {
@@ -2567,9 +2566,11 @@
   });
   $('#nList').addEventListener('click', async (e) => {
     const d = e.target.closest('[data-del]'); if (!d) return;
-    const id = d.dataset.del, prev = state.notes;   // no question: the delete is recoverable, the undo toast (admin-kit.js) is the way back
-    state.notes = state.notes.filter((n) => n.id !== id); rebuildNotes(); renderNotes(); render();
-    try { await api(T.n + '?id=eq.' + id, { method: 'DELETE' }); } catch (err) { state.notes = prev; rebuildNotes(); renderNotes(); render(); fail(err); }
+    const id = d.dataset.del, prev = state.notes;   // no undo anymore (owner 2026-11-18), so the page asks first, in its own confirm popup
+    confirmAct('מחיקת הערה', null, null, async () => {
+      state.notes = state.notes.filter((n) => n.id !== id); rebuildNotes(); renderNotes(); render();
+      try { await api(T.n + '?id=eq.' + id, { method: 'DELETE' }); } catch (err) { state.notes = prev; rebuildNotes(); renderNotes(); render(); fail(err); }
+    }, 'ההערה תימחק.', 'מחיקה', null, { plain: true });
   });
 
   /* מסך אחד: ראשי (וואטסאפ וחיוג, מפגשים אחרונים, הערות) או פרטים (אייקון בכותרת; חץ חזרה בתוכו) */
@@ -3499,11 +3500,10 @@
     }, MSG[1], MSG[2], null, to === 'approved' ? { primary: true } : undefined);
   });
   /* מחיקת משתתף: פופאפ אישור מלמטה (לא חלון confirm של הדפדפן, שבטלפון עלול להיחסם בשקט ואז לא קורה כלום) */
-  $('#pDelete').addEventListener('click', async () => {   // בלי שאלה: ההסרה הפיכה (active=false), והודעת הביטול היא הדרך חזרה, כמו בהחלקה ברשימה
+  $('#pDelete').addEventListener('click', async () => {   // ההסרה היא active=false (אפשר להחזיר מהרשימה), בלי הודעת ביטול
     const p = partOf(sheet.id); if (!p) return;
     if (!(await deleteParticipant(p))) return;
-    if (window.RosterUndo) window.RosterUndo.delete({ kind: 'person', itemId: p.id, label: 'הוסר: ' + p.name, onUndo: () => quickActive(p, true), onCommit: () => {} });
-    else toast('הוסר');
+    toast('הוסר');
   });
   /* the swipe actions of the participants list (admin-kit.js): the same remove and restore as the card, without touching the card's own buttons unless that card is the one open */
   async function quickActive(p, on) {
@@ -3921,14 +3921,14 @@
     const blocked = () => toast('לא ניתן למחוק מפגש שמשויכים אליו משתתפים. קודם צריך להסיר את השיוכים');
     if (state.att.some((a) => a.meeting_id === m.id)) { blocked(); return; }
     try { const rows = await api(T.a + '?meeting_id=eq.' + m.id + '&select=participant_id&limit=1'); if (rows && rows.length) { blocked(); return; } } catch (err) { fail(err); return; }   // בדיקה גם בבסיס הנתונים (כולל משתתפים לא פעילים)
-    confirmAct('מחיקת מפגש', null, null, async () => {   // the page's own confirm popup (no native window); the undo toast follows the delete
+    confirmAct('מחיקת מפגש', null, null, async () => {   // the page's own confirm popup (no native window)
       try {
         await api(T.m + '?id=eq.' + m.id, { method: 'DELETE' });
         state.meetings = state.meetings.filter((x) => x !== m);
         state.att = state.att.filter((a) => a.meeting_id !== m.id);
         state.filter = null; mf.dirty = false; mDlg.close(); render();
       } catch (err) { fail(err); }
-    }, 'המפגש <b class="nb">' + esc(meetingLabel(m)) + '</b> יימחק. אפשר לבטל מיד אחרי.', 'מחיקה', null, { plain: true });
+    }, 'המפגש <b class="nb">' + esc(meetingLabel(m)) + '</b> יימחק.', 'מחיקה', null, { plain: true });
   });
 
   /* ---------- אירועים כלליים ---------- */
@@ -4801,6 +4801,6 @@
       pref: { get: () => { const g = state.viewScopes._g; return (g && g.onb) || {}; }, set: (k, v) => { const g = state.viewScopes._g || (state.viewScopes._g = {}); (g.onb || (g.onb = {}))[k] = v; saveViewPrefs(); } } }; })();
 
     window.ROSTER_KIT = { api, toast, load, deleted: null, partOf, quickActive,
-      askDelete: (p, onYes) => askConfirm(p, 'מחיקת משתתף', 'למחוק את ' + nameB(p.name) + '? אפשר לבטל מיד אחרי המחיקה.', 'כן, מחיקה', onYes, true),
+      askDelete: (p, onYes) => askConfirm(p, 'מחיקת משתתף', 'למחוק את ' + nameB(p.name) + '?', 'כן, מחיקה', onYes, true),
       unlink: (p) => { if (state.filter) confirmLink(p.id, state.filter, false); } };   // the handles admin-kit.js works through (roster kit, p14_kit)
 if (!FRAMED) startAuth();

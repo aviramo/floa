@@ -1,56 +1,13 @@
 /* admin-kit.js (roster's own, p14_kit): the kit behaviours of the admin page. Loaded after admin.js.
-   It talks to the page only through window.ROSTER_KIT (two lines that the build adds to admin.js: the handles, and a call after every successful DELETE).
-     1. UNDO FOR DELETES: every delete the page makes stays recoverable (the database moves a deleted row to trash first), so the page offers "ביטול" in the shared
-        undo toast: it finds what was just deleted (trash_list) and puts it back (restore). Deletes that come together (a meeting type with its meetings)
-        are one toast and one undo. The page's own confirm windows stay as they are.
-     2. ADD BUTTON: the floating plus on the participants list (adding is typing the name into the search, so the plus puts the cursor there).
-     3. PULL TO REFRESH on the participants list (the single scroll region of the page), never under a popup. */
+   It talks to the page only through window.ROSTER_KIT.
+     1. ADD BUTTON: the floating plus on the participants list (adding is typing the name into the search, so the plus puts the cursor there).
+     2. PULL TO REFRESH on the participants list (the single scroll region of the page), never under a popup.
+     There is no undo for deletes (owner 2026-11-18): a delete asks first where it matters and is final. */
 (function () {
   "use strict";
   var doc = document, root = doc.documentElement;
   var K = window.ROSTER_KIT;
   if (!K) return;
-
-  /* ---------- 1. undo for deletes ---------- */
-  var KIND = { notes: "note", meetings: "meeting", payments: "payment", attendance: "attendance", meeting_types: "meeting_type",
-    pay_methods: "pay_method", statuses: "status", promoters: "promoter", promoter_payments: "promoter_payment", finance: "finance",
-    finance_recurring: "finance_recurring", finance_transfers: "finance_transfer", msg_templates: "msg_template" };
-  var batch = [], timer = 0;
-  K.deleted = function (table) {
-    var kind = KIND[table];
-    if (!kind || !window.RosterUndo) return;
-    batch.push(kind);
-    clearTimeout(timer);
-    timer = setTimeout(flush, 350);   // deletes of one action (a type and its meetings) arrive together
-  };
-  function flush() {
-    var kinds = batch.slice(); batch = [];
-    K.api("rpc/trash_list", { method: "POST", body: {}, ui: false }).then(function (rows) {
-      if (!Array.isArray(rows)) return;
-      var need = {}, ids = [], labels = [];
-      kinds.forEach(function (k) { need[k] = (need[k] || 0) + 1; });
-      rows.slice().sort(function (a, b) { return String(b.deleted_at).localeCompare(String(a.deleted_at)); }).forEach(function (r) {
-        if (r.source === "inactive" || !need[r.kind]) return;
-        need[r.kind]--; ids.push({ kind: r.kind, id: r.trash_id }); if (r.label) labels.push(r.label);
-      });
-      if (!ids.length) return;
-      var label = ids.length === 1 && labels[0] ? "נמחק: " + labels[0] : "נמחק";
-      window.RosterUndo.delete({
-        kind: "admin", itemId: ids.map(function (x) { return x.id; }).join(","), label: label,
-        onUndo: function () { return restore(ids); },
-        onCommit: function () { /* it is already deleted: the window only offers the way back */ },
-      });
-    }).catch(function () { /* no undo offered: the delete itself went through */ });
-  }
-  function restore(ids) {
-    /* the last delete first: a type comes back before the meetings that hung on it */
-    var chain = Promise.resolve(), bad = 0;
-    ids.forEach(function (x) {   // ids is newest first: the last deleted (the type) is restored first
-      chain = chain.then(function () { return K.api("rpc/restore", { method: "POST", body: { p_kind: x.kind, p_id: x.id }, ui: false }); })
-        .then(function (r) { if (!r || (r.status !== "ok")) bad++; }, function () { bad++; });
-    });
-    return chain.then(function () { K.toast(bad ? "לא הכול הוחזר" : "הוחזר"); return K.load(true); });
-  }
 
   /* every editor saves from the header as a check icon: its words become its tooltip and stay its name, and they follow the text the page sets ("שמירה", "יצירת מפגש", "הוספה") */
   function hsaveTitle(b) { var t = (b.textContent || "").trim(); if (t) { b.setAttribute("title", t); b.setAttribute("aria-label", t); } }
@@ -59,7 +16,7 @@
     new MutationObserver(function () { hsaveTitle(b); }).observe(b, { childList: true, characterData: true, subtree: true });
   });
 
-  /* ---------- 2. add button ---------- */
+  /* ---------- 1. add button ---------- */
   var PLUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
   var list = doc.getElementById("list"), q = doc.getElementById("q"), fab = null;
   /* on a wide screen the list is one pane of two: the add button belongs to the pane, so it sits in the pane's bottom corner, not in the window's */
@@ -88,7 +45,7 @@
   /* the list may be hidden when this script runs (still loading) and nothing on the body changes when it appears: its own size change is the cue that it is now on screen */
   if (window.ResizeObserver && list) new ResizeObserver(showFab).observe(list);
 
-  /* ---------- 3. pull to refresh ---------- */
+  /* ---------- 2. pull to refresh ---------- */
   if (list && window.RosterUI && RosterUI.ptr) {
     RosterUI.ptr.attach({ scroller: list, onRefresh: function () { return K.load(true); }, enabled: function () { return !doc.querySelector("dialog[open]"); } });
   }
@@ -98,9 +55,9 @@
   if (pMeet && window.RosterUI && RosterUI.swipe) RosterUI.swipe.init(pMeet, { onAway: function (dir) { if (window.rkPagerSwipe) window.rkPagerSwipe(dir); } });   // a swipe on a meeting card that is not the delete swipe changes the tab of the participant card
 
   /* ---------- 4. swipe actions on the participants list ---------- */
-  /* a row slides to show "הסרה" (or "החזרה" for one already removed): the same remove and restore as the card, and the undo toast brings it back. A mouse has no swipe:
+  /* a row slides to show "הסרה" (or "החזרה" for one already removed): the same remove and restore as the card. A mouse has no swipe:
      the card's own buttons are the path there. The first-use hint is the single system-wide one (rk.swipe.understood), shown only to a touch screen. */
-  if (list && window.RosterUI && RosterUI.swipe && window.RosterUndo) {
+  if (list && window.RosterUI && RosterUI.swipe && true) {
     var swipeCtl = RosterUI.swipe.init(list, { caption: "החלקה שמאלה מוחקת, החלקה ימינה שולחת וואטסאפ", both: true }), nudged = false, touch = (navigator.maxTouchPoints || 0) > 0;
     var hintOn = function () {
       if (!touch || !list.querySelector("[data-swipe]") || list.querySelector(".rhint")) return;
@@ -117,13 +74,7 @@
       var kind = b.getAttribute("data-swipe-act");
       if (kind === "go") { var row0 = b.closest("li.row"), tile = row0 && row0.querySelector(".rowwa"); if (tile) tile.click(); return; }   // the card's own send / arrival action, now reached by pulling the card to the right
       if (kind === "unlink") { K.unlink(p); return; }   // inside a meeting: REMOVE from it, after a confirmation popup
-      var run = function () { return K.quickActive(p, on).then(function () {
-        window.RosterUndo.delete({
-          kind: "person", itemId: id, label: (on ? "הוחזר: " : "נמחק: ") + p.name,
-          onUndo: function () { return K.quickActive(p, !on); },
-          onCommit: function () { /* already done: the window only offers the way back */ },
-        });
-      }).catch(function () { K.toast("הפעולה לא הצליחה"); }); };
+      var run = function () { return K.quickActive(p, on).catch(function () { K.toast("הפעולה לא הצליחה"); }); };
       if (kind === "remove") K.askDelete(p, run); else run();   // everywhere else: DELETE, after a confirmation popup (a restore is direct)
     }, true);
   }
