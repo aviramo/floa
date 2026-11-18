@@ -37,6 +37,22 @@
     if (ownCount()) { unwind(0); jump.then = function () { applyUrl(u, rep); }; return; }   /* popups still hold their entries: give them back first */
     applyUrl(u, rep);
   }
+  /* Run `apply` once no popup marker is waiting to be given back (a jump of ours may be under way). */
+  function afterLayers(apply) {
+    if (popping) return;
+    if (jump) { var prev = jump.then; jump.then = function () { if (prev) prev(); apply(); }; return; }
+    if (ownCount()) { unwind(0); jump.then = apply; return; }
+    apply();
+  }
+  /* A level without an address of its own (the liked lists, the catalog or the music beside an open exercise) holds ONE entry (state.sub), same
+     address: Back leaves that level and not the app, and the screen is drawn from the address again. */
+  var subKeep = {};   /* level -> how to draw that level again when Back lands on it from a deeper one */
+  function subEnter(redraw) {
+    afterLayers(function () { var lv = (history.state && history.state.sub || 0) + 1; if (redraw) subKeep[lv] = redraw; history.pushState({ d: curD(), sub: lv }, "", location.href); });
+  }
+  function goSub(fn) { go(fn); subEnter(); }
+  function inSub() { return !!(history.state && history.state.sub); }
+  function leaveAll() { unwind((history.state && history.state.sub) || 0); }   /* out of every level at once, to the screen of the address */
   function syncLayers() {   /* a popup or menu opened or closed, by the user or by code: its marker entry follows */
     var live = [].slice.call(document.querySelectorAll("dialog[open], #moreMenu"));
     var gone = layers.filter(function (l) { return live.indexOf(l.el) < 0; });
@@ -142,7 +158,10 @@
     return '<a class="rbtn rbtn--icon' + (trail ? ' rrow__trail' : '') + '" data-yt="' + esc(m.id || "") + '" href="https://www.youtube.com/results?search_query=' + encodeURIComponent((songName(m) + " " + songBy(m)).trim()) + '" target="_blank" rel="noopener" aria-label="ניגון ביוטיוב" title="ניגון ביוטיוב" style="width:var(--fab);height:var(--fab);min-height:var(--fab);color:' + ytColor(m.id) + '">' + I.yt + '</a>';
   }
   /* a song with a file in the bucket gets the sound button (assets/audio.js); one without keeps the YouTube button */
-  function songBtn(m, trail) { return m.audio_object && window.BioAudio ? BioAudio.button(m.audio_object, trail) : ytLink(m, trail); }
+  function songBtn(m, trail) {
+    if (m.audio_object && window.BioAudio && BioAudio.info) BioAudio.info(m.audio_object, m.title || m.name, m.artist);   /* the phone's lock screen shows the song's name */
+    return m.audio_object && window.BioAudio ? BioAudio.button(m.audio_object, trail) : ytLink(m, trail);
+  }
   /* ONE way to show a song, in the exercise list and in the exercise's own card: the song's name (up to two lines) and the performer on the left of the text, and at the left the play tile (the size of the number tile) with the song's time under it */
   function songLines(m) {
     return '<span style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin-top:var(--gap-tight);color:var(--text-2);font:var(--fw-medium) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(songName(m)) + '</span>' +
@@ -488,7 +507,7 @@
   function on(root, act, fn) { root.querySelectorAll('[data-act="' + act + '"]').forEach(function (b) { b.addEventListener("click", function (ev) { fn(b, ev); }); }); }
   function stack() { return stack.s || (stack.s = []); }
   function go(fn) { stack().push(fn); fn(); }
-  function back() { if (!wide() && curD() > 0) { unwind(1); return; }   /* narrow: one level up IS the browser's Back, so the arrow and the button never differ */
+  function back() { if (inSub() || (!wide() && curD() > 0)) { unwind(1); return; }   /* narrow: one level up IS the browser's Back, so the arrow and the button never differ */
     stack().pop(); var f = stack()[stack().length - 1]; if (f) f(); else if (wide()) homeWide(); else home(); }
 
   /* ---------- gate ---------- */
@@ -546,7 +565,7 @@
       '<div class="rlist" data-fab-room id="hl"><div class="rskel rskel--title"></div></div>' +
       '<button class="rfab" data-act="new" aria-label="ויוונסיה חדשה" title="ויוונסיה חדשה">' + I.plus + '</button>', function (r) {
       on(r, "homemore", function (b) {   /* one menu: the songs I loved, who may enter (the manager), leaving */
-        var items = [{ label: "ויוונסיות שאהבתי", icon: I.heart, fn: function () { go(likedVivScreen); } }, { label: "תרגילים שאהבתי", icon: I.heart, fn: function () { go(likedExScreen); } }, { label: "שירים שאהבתי", icon: I.heart, fn: function () { go(likedScreen); } }];   /* in the order of the app: vivencias, exercises, songs */
+        var items = [{ label: "ויוונסיות שאהבתי", icon: I.heart, fn: function () { goSub(likedVivScreen); } }, { label: "תרגילים שאהבתי", icon: I.heart, fn: function () { goSub(likedExScreen); } }, { label: "שירים שאהבתי", icon: I.heart, fn: function () { goSub(likedScreen); } }];   /* in the order of the app: vivencias, exercises, songs */
         if (state.me.admin) items.push({ label: "מורשים", icon: I.users, fn: allowPopup });
         items.push({ label: "יציאה", icon: I.out, tone: "danger", fn: function () { Promise.resolve(FLOA_AUTH.signOut()).then(function () { location.reload(); }); } });
         menu(b, items);
@@ -775,7 +794,7 @@
     show(head(v.title || "ויוונסיה חדשה", "", true, '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="more" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>') +
       '<div class="rlist" data-fab-room id="list"><div class="rskel rskel--title"></div></div>' +
       (v.role === "view" ? '' : '<button class="rfab" data-act="add" aria-label="הוספת תרגיל" title="הוספת תרגיל">' + I.plus + '</button>'), function (r) {
-      on(r, "back", back); on(r, "add", function () { resetPk(); if (wide()) go(picker); else pickerSheet(); });
+      on(r, "back", back); on(r, "add", function () { resetPk(); if (wide()) goSub(picker); else pickerSheet(); });
       on(r, "more", function (b) {
         /* the owner: rename, share, delete; somebody it is shared with: rename (with edit rights) and taking themselves off it */
         var items = v.role === "view" ? [] : [{ label: "עריכת שם", icon: I.pen, fn: function () { namePopup(v, false); } }];
@@ -999,7 +1018,7 @@
       on(r, "prevW", function () { if (prevIt) walk(prevIt); });
       on(r, "nextW", function () { if (nextIt) walk(nextIt); });
       if (pg) attachPager(pg, { next: nextIt ? function () { walk(nextIt); } : null, prev: prevIt ? function () { walk(prevIt); } : null });
-      function toMusic() { if (wide()) musicScreen(it); else musicSheet(it); }   /* beside the list, the pane; on a narrow screen, a popup from the bottom */
+      function toMusic() { if (wide()) { musicScreen(it); subEnter(function () { musicScreen(it); }); } else musicSheet(it); }   /* beside the list, the pane; on a narrow screen, a popup from the bottom */
       on(r, "pickMusic", function (b, ev) { if (ev.target.closest("a,[data-audio]")) return; toMusic(); });
       r.querySelectorAll('[data-act="pickMusic"]').forEach(function (c) { c.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toMusic(); } }); });
       /* the three fields share the height that is left, by how many lines each has: all of it if it fits; if not, each gets its share and scrolls on its own */
@@ -1087,7 +1106,7 @@
         layoutFields(); it = fresh;
       } };
       on(r, "del", function () { confirmRemoveItem(it); });
-      on(r, "swap", function () { resetPk(); if (wide()) go(function () { picker(it); }); else pickerSheet(it); });   /* the catalog, to put another exercise in this place */
+      on(r, "swap", function () { resetPk(); if (wide()) goSub(function () { picker(it); }); else pickerSheet(it); });   /* the catalog, to put another exercise in this place */
     }, "d");
   }
 
@@ -1096,7 +1115,7 @@
     api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { music_id: m ? m.id : null } }).then(function () { it.music_id = m ? m.id : null; it.music = m; if (wide()) paint(); out(); }, fail);
   }
   function musicScreen(it) {
-    var out = wide() ? function () { itemScreen(it); } : back;   /* beside the list, back is the same exercise */
+    var out = wide() ? function () { if (inSub()) leaveAll(); else itemScreen(it); } : back;   /* beside the list, back is the same exercise */
     /* clearing the song is the neutral tile at the header's left, as in the popup on a phone, not a row */
     var clr = '<button class="rbtn rbtn--icon rbtn--edge-end" type="button" data-act="mclear" aria-label="ניקוי המוזיקה" title="ניקוי המוזיקה"' + (it.music_id ? "" : " disabled") + '>' + I.trash + '</button>';
     show(head("מוזיקה", "", true, clr) + '<div class="rlist" id="mlist"><div class="rskel rskel--title"></div></div>', function (r) {
@@ -1109,7 +1128,7 @@
         var l = r.querySelector("#mlist");
         l.innerHTML = list.map(function (m) { return songRow(m, it.music_id === m.id, "data-m"); }).join("") +
           '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-act="other" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">מוזיקות אחרות</span><span class="rrow__sub">שירים שאינם בקטלוג</span></button></div>';
-        on(l, "other", function () { otherMusic(it, out); });
+        on(l, "other", function () { otherMusic(it, out); subEnter(); });
         l.querySelectorAll("[data-m]").forEach(function (b) {
           b.addEventListener("click", function () {
             var m = list.filter(function (x) { return x.id === b.dataset.m; })[0] || null;
@@ -1188,7 +1207,7 @@
   }
   function otherMusic(it, out) {
     show(head("מוזיקות אחרות", "", true) + '<div class="pad" style="padding-block-end:0"><label class="rfield"><span>חיפוש</span><input id="oq" placeholder=" " autocomplete="off"></label></div><div class="rlist" id="olist"><div class="rskel rskel--title"></div></div>', function (r) {
-      on(r, "back", function () { musicScreen(it); });
+      on(r, "back", function () { if (inSub() && history.state.sub >= 2) unwind(1); else musicScreen(it); });
       api("/rest/v1/music?in_catalog=eq.false&select=id,name,title,artist,duration_sec,audio_object,in_catalog&order=title&limit=1000").then(function (rows) {
         var all = rows || [], l = r.querySelector("#olist");
         function draw() {
@@ -1393,6 +1412,7 @@
           return loadItems().then(function () { var it = state.items.filter(function (x) { return x.id === swapIt.id; })[0]; if (it) { stack().pop(); go(function () { itemScreen(it); }); } else back(); }, fail);
         }
         pending = { item: swapIt.id };
+        if (inSub()) { unwind(1); return; }   /* the catalog beside the exercise holds one entry: leaving it draws the exercise again from the address */
         stack().pop(); if (!wide()) { stack().pop(); stack().pop(); } var f = stack()[stack().length - 1]; if (f) f(); }, fail);   /* narrow: also the exercise screen and the one just seen */
     }
     var pos = state.items.reduce(function (m, i) { return Math.max(m, i.position); }, 0) + 1;
@@ -1625,6 +1645,14 @@
     } else {
       for (var i = layers.length - 1; i >= 0; i--) if (layers[i].own) { layers[i].own = false; closeLayer(layers[i].el); return; }   /* Back closes the top popup only */
       if (history.state && history.state.bk) { startJump(1, false); return; }   /* Forward onto the entry of a popup that is closed: step over it */
+    }
+    var lv = history.state && history.state.sub;   /* landed on a level without an address (see subEnter) */
+    if (!lv) subKeep = {};
+    else {
+      Object.keys(subKeep).forEach(function (k) { if (+k > lv) delete subKeep[k]; });
+      if (subKeep[lv]) { if (state.me) subKeep[lv](); }
+      else startJump(1, false);   /* Forward onto a level that is closed: step over it */
+      return;
     }
     if (!state.me) return;
     var u0 = parseUrl();
