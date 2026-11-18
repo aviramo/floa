@@ -191,8 +191,47 @@
   /* a song with a file in the bucket gets the sound button (assets/audio.js); one without keeps the YouTube button */
   function songBtn(m, trail) {
     if (m.audio_object && window.BioAudio && BioAudio.info) BioAudio.info(m.audio_object, m.title || m.name, m.artist);   /* the phone's lock screen shows the song's name */
-    return m.audio_object && window.BioAudio ? BioAudio.button(m.audio_object, trail) : ytLink(m, trail);
+    if (m.audio_object && window.BioAudio) return BioAudio.button(m.audio_object, trail);
+    songReg[m.id] = m;
+    if (m.in_catalog === false || m.owner_id || state.offline || !m.id) return ytLink(m, trail);   /* only a song of the catalog can be given a file */
+    /* the upload button, to the right of the YouTube one: a file from this device takes the YouTube button's place for everybody */
+    return '<span data-upl-wrap="' + esc(m.id) + '" style="display:flex;gap:var(--gap-tight);align-items:center">' +
+      '<button type="button" class="rbtn rbtn--icon' + (trail ? ' rrow__trail' : '') + '" data-upl="' + esc(m.id) + '" aria-label="העלאת קובץ" title="העלאת קובץ שיחליף את היוטיוב" style="width:var(--fab);height:var(--fab);min-height:var(--fab);color:var(--text-3);font:var(--fw-bold) var(--fs-xs)/1 var(--font)">' + I.up + '</button>' + ytLink(m, trail) + '</span>';
   }
+  var songReg = {};
+  var UPL_FORMATS = { mp3: 1, flac: 1, wav: 1, aiff: 1, aif: 1, m4a: 1 };
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("[data-upl]"); if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    if (b.dataset.busy) return;
+    var id = b.dataset.upl, inp = document.createElement("input"); inp.type = "file"; inp.accept = "audio/*,.flac,.m4a,.aiff,.aif,.wav,.mp3";
+    var say = function (t, ms) { b.innerHTML = '<span>' + esc(t) + '</span>'; if (ms) setTimeout(function () { if (b.isConnected) { b.innerHTML = I.up; } }, ms); };
+    inp.addEventListener("change", function () {
+      var f = inp.files && inp.files[0]; if (!f) return;
+      var fmt = (f.name.split(".").pop() || "").toLowerCase();
+      if (!UPL_FORMATS[fmt]) return say("קובץ שמע בלבד", 2500);
+      b.dataset.busy = "1"; say("0%");
+      FLOA_AUTH.token().then(function (t) {
+        return new Promise(function (res, rej) {
+          var x = new XMLHttpRequest(); x.open("PUT", "https://api.floa.co.il/biodanza/audio/upload");
+          x.setRequestHeader("authorization", "Bearer " + t); x.setRequestHeader("x-format", fmt);
+          x.upload.onprogress = function (ev) { if (ev.lengthComputable) say(Math.round(ev.loaded / ev.total * 100) + "%"); };
+          x.onload = function () { if (x.status === 200) { try { res(JSON.parse(x.responseText)); } catch (er) { rej(er); } } else rej(new Error("upload " + x.status)); };
+          x.onerror = function () { rej(new Error("upload")); };
+          x.send(f);
+        });
+      }).then(function (o) {
+        return api("/rest/v1/rpc/attach_audio", { method: "POST", json: { p_music: id, p_object: o.object, p_format: o.format, p_size: o.size } }).then(function () { return o; });
+      }).then(function (o) {
+        var m = songReg[id]; if (m) m.audio_object = o.object;
+        (state.items || []).forEach(function (it) { if (it.music && it.music.id === id) it.music.audio_object = o.object; });
+        document.querySelectorAll('[data-upl-wrap="' + id + '"]').forEach(function (w) { w.outerHTML = BioAudio.button(o.object, false); });
+        if (window.BioAudio && BioAudio.info && m) BioAudio.info(o.object, m.title || m.name, m.artist);
+        if (window.BioOffline && !state.offline) setTimeout(function () { syncOffline(); }, 300);
+      }).catch(function (er) { console.error(er); delete b.dataset.busy; say("ההעלאה נכשלה", 3000); });
+    });
+    inp.click();
+  }, true);
   /* ONE way to show a song, in the exercise list and in the exercise's own card: the song's name (up to two lines) and the performer on the left of the text, and at the left the play tile (the size of the number tile) with the song's time under it */
   function songLines(m) {
     return '<span style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin-top:var(--gap-tight);color:var(--text-2);font:var(--fw-medium) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(songName(m)) + '</span>' +
@@ -325,7 +364,7 @@
   document.addEventListener("input", paintBars, true);
   setInterval(paintBars, 250);
   function playCol(m, trail) {
-    var tile = songBtn(m, trail).replace(/width:var\(--fab\);height:var\(--fab\);min-height:var\(--fab\);/, "width:var(--ctl);height:var(--ctl);min-height:var(--ctl);border-radius:var(--r-ctl);background:var(--surface-2);");
+    var tile = songBtn(m, trail).replace(/width:var\(--fab\);height:var\(--fab\);min-height:var\(--fab\);/g, "width:var(--ctl);height:var(--ctl);min-height:var(--ctl);border-radius:var(--r-ctl);background:var(--surface-2);");
     return '<div style="flex:none;display:flex;flex-direction:column;align-items:center;gap:var(--gap-button)">' + tile +
       (durOf(m) || m.audio_object ? '<span class="bio-time" data-dur="' + (m.duration_sec || "") + '"' + (m.audio_object ? ' data-for="' + esc(m.audio_object) + '"' : '') + ' style="display:block;min-height:1em;color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/1 var(--font);font-variant-numeric:tabular-nums">' + (durOf(m) ? clock(durOf(m)) : '') + '</span>' : '') + '</div>';
   }

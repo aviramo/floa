@@ -551,3 +551,19 @@ update biodanza.phases set aliases = case key
   when 'regression' then array['Phase IV - Cholinergic', 'Phase IV', 'Cholinergic', 'Regression', 'שלב IV', 'IV, כולינרגי', 'שלב IV, כולינרגי', 'כולינרגי']
   when 'closing'    then array['Phase V - Activation and Final', 'Activation and Final', 'Phase V - Closing', 'Phase V', 'Closing', 'Final activation', 'שלב V', 'V, סיום', 'שלב V, אקטיבציה וסיום', 'סיום']
 end;
+
+-- ATTACHING A FILE (2026-11-18). An allowed account uploads a file for a catalog song that has none yet (the app showed its YouTube
+-- button): the Worker puts the file in the bucket, this function records it. It never replaces a file that is there.
+create or replace function biodanza.attach_audio(p_music uuid, p_object text, p_format text, p_size bigint) returns void
+language plpgsql security definer set search_path = biodanza, public as $$
+declare m biodanza.music%rowtype;
+begin
+  if not biodanza.is_allowed() then raise exception 'not allowed' using errcode = '42501'; end if;
+  if p_object !~ '^[a-f0-9]{32}\.(mp3|flac|wav|aiff|aif|m4a)$' then raise exception 'bad object'; end if;
+  select * into m from biodanza.music where id = p_music and owner_id is null and in_catalog and audio_object is null for update;
+  if not found then raise exception 'song has a file already or is not a catalog song'; end if;
+  insert into biodanza.music_files (object, code, collection, format, size_bytes) values (p_object, '', m.collection, p_format, coalesce(p_size, 0)) on conflict (object) do nothing;
+  update biodanza.music set audio_object = p_object where id = p_music;
+end $$;
+revoke all on function biodanza.attach_audio(uuid, text, text, bigint) from public, anon;
+grant execute on function biodanza.attach_audio(uuid, text, text, bigint) to authenticated;

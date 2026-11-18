@@ -21,8 +21,8 @@ export function isAudioPath(pathname) { return pathname.startsWith(AUDIO_PREFIX)
 function headers(origin, allowed, extra) {
   return {
     "access-control-allow-origin": allowed.includes(origin) ? origin : allowed[0],
-    "access-control-allow-methods": "GET, OPTIONS",
-    "access-control-allow-headers": "authorization, range",
+    "access-control-allow-methods": "GET, PUT, OPTIONS",
+    "access-control-allow-headers": "authorization, range, content-type, x-format",
     "access-control-expose-headers": "content-length, content-range, accept-ranges",
     "access-control-max-age": "86400",
     vary: "origin",
@@ -53,6 +53,7 @@ export async function handleAudio(request, env, allowedOrigins) {
   const plain = (status, body) => new Response(body, { status, headers: headers(origin, allowedOrigins, { "content-type": "text/plain" }) });
 
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: headers(origin, allowedOrigins, {}) });
+  if (request.method === "PUT") return upload(request, env, origin, plain, allowedOrigins);
   if (request.method !== "GET" && request.method !== "HEAD") return plain(405, "method");
   if (!allowedOrigins.includes(origin)) return plain(403, "origin");
   if (!env.AUDIO) return plain(502, "config");
@@ -84,4 +85,26 @@ export async function handleAudio(request, env, allowedOrigins) {
     out["content-length"] = String(object.size);
   }
   return new Response(request.method === "HEAD" ? null : object.body, { status, headers: headers(origin, allowedOrigins, out) });
+}
+
+/* PUT /biodanza/audio/upload: an allowed account puts a song's file into the bucket under a new random name.
+   The name comes back; attaching it to a catalog song is the database's job (biodanza.attach_audio), which also
+   refuses a song that already has a file, so nobody can replace a file that is there. Same two checks as listening. */
+const MAX_BYTES = 200 * 1024 * 1024;
+async function upload(request, env, origin, plain, allowedOrigins) {
+  if (!allowedOrigins.includes(origin)) return plain(403, "origin");
+  if (!env.AUDIO) return plain(502, "config");
+  if (new URL(request.url).pathname !== AUDIO_PREFIX + "upload") return plain(404, "not found");
+  const auth = request.headers.get("authorization") || "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
+  if (!(await mayListen(env, token))) return plain(403, "forbidden");
+  const format = (request.headers.get("x-format") || "").toLowerCase();
+  if (!TYPES[format]) return plain(415, "format");
+  const size = Number(request.headers.get("content-length") || 0);
+  if (!(size > 0)) return plain(411, "length");
+  if (size > MAX_BYTES) return plain(413, "too big");
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  const object = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("") + "." + format;
+  await env.AUDIO.put(object, request.body, { httpMetadata: { contentType: TYPES[format] } });
+  return new Response(JSON.stringify({ object, format, size }), { status: 200, headers: headers(origin, allowedOrigins, { "content-type": "application/json" }) });
 }
