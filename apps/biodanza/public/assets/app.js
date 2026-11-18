@@ -483,17 +483,32 @@
       state.vivs.sort(function (a, b) { var pa = a.pos == null ? -1 : a.pos, pb = b.pos == null ? -1 : b.pos; return pa - pb || (a.updated_at < b.updated_at ? 1 : -1); });
     });
   }
-  /* the arrow of an empty list: from its words down to the + button */
-  function plusArrow() {
-    return '<svg viewBox="0 0 120 160" aria-hidden="true" style="position:absolute;width:120px;height:160px;left:calc(var(--gutter) + var(--fab) / 2 - 14px);bottom:calc(var(--gutter) + var(--inset-b) + var(--fab) + 6px);fill:none;stroke:var(--text-3);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;pointer-events:none"><path d="M96 6C104 70 70 98 30 128"/><path d="M43.800 128.200L26 131L33.700 114.700"/></svg>';
+  /* the arrow of an empty list, drawn in the real places: it leaves just under the words, goes down and bends left, and ends beside the + button */
+  function arrowTo(l) {
+    var old = l.querySelector(".bio-arrow"); if (old) old.remove();
+    var box = l.querySelector(".rempty"), host = l.closest("#pl, #pd") || l.parentElement, fab = host && host.querySelector(".rfab");
+    if (!box || !fab) return;
+    var lr = l.getBoundingClientRect(), fr = fab.getBoundingClientRect(), br = box.getBoundingClientRect();
+    var sx = br.left + br.width / 2 - lr.left, sy = br.bottom - 12 - lr.top;
+    var tx = fr.left + fr.width / 2 - lr.left + fr.width * 0.74, ty = fr.top + fr.height / 2 - lr.top - fr.height * 0.74;
+    var dx = sx - tx, dy = ty - sy; if (dy < 40) return;
+    var c1x = sx, c1y = sy + dy * 0.6, c2x = tx + dx * 0.5, c2y = ty - dy * 0.12;
+    var ang = Math.atan2(ty - c2y, tx - c2x), hl = 15, f = function (n) { return Math.round(n * 10) / 10; };
+    var h1 = [tx - hl * Math.cos(ang - 0.5), ty - hl * Math.sin(ang - 0.5)], h2 = [tx - hl * Math.cos(ang + 0.5), ty - hl * Math.sin(ang + 0.5)];
+    var s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    s.setAttribute("class", "bio-arrow"); s.setAttribute("aria-hidden", "true"); s.setAttribute("width", lr.width); s.setAttribute("height", lr.height);
+    s.style.cssText = "position:absolute;left:0;top:0;fill:none;stroke:var(--text-3);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;pointer-events:none;overflow:visible";
+    s.innerHTML = '<path d="M' + f(sx) + " " + f(sy) + "C" + f(c1x) + " " + f(c1y) + " " + f(c2x) + " " + f(c2y) + " " + f(tx) + " " + f(ty) + '"/><path d="M' + f(h1[0]) + " " + f(h1[1]) + "L" + f(tx) + " " + f(ty) + "L" + f(h2[0]) + " " + f(h2[1]) + '"/>';
+    l.appendChild(s);
+    if (!l.__arrowRo && window.ResizeObserver) { l.__arrowRo = new ResizeObserver(function () { if (l.querySelector(".rempty")) arrowTo(l); }); l.__arrowRo.observe(l); }
   }
   function renderVivs() {
     var l = document.getElementById("hl"); if (!l) return;
     l.innerHTML = state.vivs.length ? state.vivs.map(function (v) {
       var n = v.vivencia_items && v.vivencia_items[0] ? v.vivencia_items[0].count : 0;
       return '<div class="rrow rrow--link">' + heartBtnViv(v.id, "rrow__trail") + '<button type="button" class="rrow__main" data-id="' + v.id + '" style="margin-inline-start:var(--sp-1);background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub" data-n="' + v.id + '">' + n + ' תרגילים' + (v.role === "owner" ? "" : " · משותף" + (v.role === "view" ? " (צפייה)" : " (עריכה)")) + '</span></button></div>';
-    }).join("") : ph("עוד אין ויוונסיות", "לחצו על + כדי ליצור את הראשונה") + plusArrow();
-    if (!state.vivs.length) { l.style.position = "relative"; if (l.firstElementChild) l.firstElementChild.style.marginBlock = "auto"; }   /* the arrow is a second child, so the words are centred by hand (the kit does it only for an only child) */
+    }).join("") : ph("עוד אין ויוונסיות", "לחצו על + כדי ליצור את הראשונה");
+    if (!state.vivs.length) { l.style.position = "relative"; if (l.firstElementChild) l.firstElementChild.style.marginBlock = "auto"; arrowTo(l); setTimeout(function () { arrowTo(l); }, 350); }   /* the arrow is a second child, so the words are centred by hand (the kit does it only for an only child) */
     l.querySelectorAll("[data-id]").forEach(function (b) { b.addEventListener("click", function () { openViv(b.dataset.id); }); });
     if (state.vivs.length) enableDrag(l, "[data-id]", persistVivs);
     paintSel();
@@ -731,8 +746,9 @@
     if (!vis.length) {
       /* an empty vivencia: the words, and an arrow from them down to the + button (only for somebody who can add) */
       l.style.position = "relative";
-      l.innerHTML = ph("הוויוונסיה ריקה", canEdit() ? "לחצו על + כדי להוסיף תרגיל מהקטלוג" : "") + (canEdit() ? plusArrow() : "");
+      l.innerHTML = ph("הוויוונסיה ריקה", canEdit() ? "לחצו על + כדי להוסיף תרגיל מהקטלוג" : "");
       if (l.firstElementChild) l.firstElementChild.style.marginBlock = "auto";   /* the arrow is a second child: the words are centred by hand */
+      if (canEdit()) { arrowTo(l); setTimeout(function () { arrowTo(l); }, 350); }
       return;
     }
     l.innerHTML = vis.map(function (i, k) {
