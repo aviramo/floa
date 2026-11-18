@@ -1318,7 +1318,7 @@
   /* ---------- picker: the catalog ---------- */
   var pk = { q: "", ln: "", cg: "", lv: "", cv: "" };   /* the catalog's search, line, category, group level and place on the curve */
   function resetPk() { pk = { q: "", ln: "", cg: "", lv: "", cv: "" }; }
-  var LEVELS_FALLBACK = [{ key: "all", name_he: "מתאים לכל הקבוצות" }, { key: "exp3", name_he: "לקבוצות עם ניסיון של כמה חודשים" }, { key: "exp6", name_he: "לקבוצות עם ניסיון של חצי שנה ויותר" }, { key: "deep", name_he: "לקבוצות העמקה ומתקדמות" }];   /* the index of group levels (biodanza.levels), when it has not come from the cloud */
+  var LEVELS_FALLBACK = [{ key: "all", name_he: "מתחילים (מתאים לכל הקבוצות)" }, { key: "exp3", name_he: "לקבוצות עם ניסיון של כמה חודשים" }, { key: "exp6", name_he: "לקבוצות עם ניסיון של חצי שנה ויותר" }, { key: "deep", name_he: "לקבוצות העמקה ומתקדמות" }];   /* the index of group levels (biodanza.levels), when it has not come from the cloud */
   /* the catalog picker: the filters and the list. On a wide screen it is a pane; on a narrow one it is a popup from the bottom. */
   function pickerBody() {
     var two = function (x, y) { return '<div style="display:flex;gap:var(--gap-button);align-items:flex-end;min-width:0">' + x + y + '</div>'; };
