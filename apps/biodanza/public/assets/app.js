@@ -493,7 +493,7 @@
       var n = v.vivencia_items && v.vivencia_items[0] ? v.vivencia_items[0].count : 0;
       return '<div class="rrow rrow--link">' + heartBtnViv(v.id, "rrow__trail") + '<button type="button" class="rrow__main" data-id="' + v.id + '" style="margin-inline-start:var(--sp-1);background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub" data-n="' + v.id + '">' + n + ' תרגילים' + (v.role === "owner" ? "" : " · משותף" + (v.role === "view" ? " (צפייה)" : " (עריכה)")) + '</span></button></div>';
     }).join("") : ph("עוד אין ויוונסיות", "לחצו על + כדי ליצור את הראשונה") + plusArrow();
-    if (!state.vivs.length) l.style.position = "relative";
+    if (!state.vivs.length) { l.style.position = "relative"; if (l.firstElementChild) l.firstElementChild.style.marginBlock = "auto"; }   /* the arrow is a second child, so the words are centred by hand (the kit does it only for an only child) */
     l.querySelectorAll("[data-id]").forEach(function (b) { b.addEventListener("click", function () { openViv(b.dataset.id); }); });
     if (state.vivs.length) enableDrag(l, "[data-id]", persistVivs);
     paintSel();
@@ -732,6 +732,7 @@
       /* an empty vivencia: the words, and an arrow from them down to the + button (only for somebody who can add) */
       l.style.position = "relative";
       l.innerHTML = ph("הוויוונסיה ריקה", canEdit() ? "לחצו על + כדי להוסיף תרגיל מהקטלוג" : "") + (canEdit() ? plusArrow() : "");
+      if (l.firstElementChild) l.firstElementChild.style.marginBlock = "auto";   /* the arrow is a second child: the words are centred by hand */
       return;
     }
     l.innerHTML = vis.map(function (i, k) {
