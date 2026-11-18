@@ -1321,9 +1321,9 @@
   var LEVELS_FALLBACK = [{ key: "all", name_he: "מתאים לכל הקבוצות" }, { key: "exp3", name_he: "לקבוצות עם ניסיון של כמה חודשים" }, { key: "exp6", name_he: "לקבוצות עם ניסיון של חצי שנה ויותר" }, { key: "deep", name_he: "לקבוצות העמקה ומתקדמות" }];   /* the index of group levels (biodanza.levels), when it has not come from the cloud */
   /* the catalog picker: the filters and the list. On a wide screen it is a pane; on a narrow one it is a popup from the bottom. */
   function pickerBody() {
-    var two = function (x, y) { return '<div style="display:flex;gap:var(--gap-button);align-items:flex-end">' + x + y + '</div>'; };
-    var sel = function (id, label, opts) { return '<label class="rfield" style="flex:1 1 0;min-width:0;margin:0"><span>' + label + '</span><select id="' + id + '"><option value="">הכול</option>' + opts + '</select></label>'; };
-    var cat = '<label class="rfield" style="flex:1 1 0;min-width:0;margin:0"><span>קטגוריה</span><input id="cg" placeholder=" " autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox" value="הכול"></label>';
+    var two = function (x, y) { return '<div style="display:flex;gap:var(--gap-button);align-items:flex-end;min-width:0">' + x + y + '</div>'; };
+    var sel = function (id, label, opts) { return '<label class="rfield" style="flex:1 1 0;min-width:0;max-width:50%;overflow:hidden;margin:0"><span>' + label + '</span><select id="' + id + '" style="width:100%;min-width:0;max-width:100%;text-overflow:ellipsis"><option value="">הכול</option>' + opts + '</select></label>'; };
+    var cat = '<label class="rfield" style="flex:1 1 0;min-width:0;max-width:50%;overflow:hidden;margin:0"><span>קטגוריה</span><input style="width:100%;min-width:0" id="cg" placeholder=" " autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox" value="הכול"></label>';
     var lvl = sel("lv", "רמת הקבוצה", (state.levels && state.levels.length ? state.levels : LEVELS_FALLBACK).map(function (l) { return '<option value="' + l.key + '">' + esc(l.name_he) + '</option>'; }).join(""));
     var cur = sel("cv", "מיקום בעקומה", state.phases.map(function (x) { return '<option value="' + x.key + '">' + esc(x.name_he) + '</option>'; }).join(""));
     var lin = sel("ln", "קו", state.lines.map(function (l) { return '<option value="' + l.key + '">' + esc(l.name_he) + '</option>'; }).join(""));
