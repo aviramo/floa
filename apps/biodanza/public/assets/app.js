@@ -1821,7 +1821,7 @@
     var list = optList(it), cur = it.music_id;
     var cards = list.map(function (m) { return optCardHtml(m, m.id === cur, !ro); }).join("");
     var addCard = '<div class="rcard rcard--compact" data-addm role="button" tabindex="0" style="margin:0;min-width:0;display:flex;align-items:center;justify-content:center;gap:var(--sp-1);cursor:pointer;min-height:var(--tag-s);border:1px dashed var(--line-strong);background:transparent;box-shadow:none;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>הוספת מוזיקה</div>';
-    if (ro) { var base = (it.item_music_options || []).map(function (o) { return o.music; }).filter(Boolean); return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch">' + base.map(function (m) { return optCardHtml(m, m.id === cur, false, true); }).join("") + addCard + '</div>'; }
+    if (ro) { var base = (it.item_music_options || []).map(function (o) { return o.music; }).filter(Boolean); return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch">' + base.map(function (m) { return optCardHtml(m, !!(it.sel && it.sel.indexOf(m.id) >= 0), false, true); }).join("") + addCard + '</div>'; }
     var add = '<div class="rcard rcard--compact" data-addm role="button" tabindex="0" style="margin:0;min-width:0;display:flex;align-items:center;justify-content:center;gap:var(--sp-1);cursor:pointer;min-height:var(--tag-s);border:1px dashed var(--line-strong);background:transparent;box-shadow:none;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>' + (list.length ? "הוספת מוזיקה" : "בחירת מוזיקה") + '</div>';
     return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch">' + cards + add + '</div>';
   }
@@ -1834,6 +1834,7 @@
   function dropOpt(it, m) {
     if (it.__preview) {
       it.item_music_options = (it.item_music_options || []).filter(function (o) { return o.music_id !== m.id; });
+      if (it.sel) { var ks = it.sel.indexOf(m.id); if (ks >= 0) it.sel.splice(ks, 1); it.music_id = it.sel[0] || null; }
       if (it.music_id === m.id) { it.music_id = null; it.music = null; }
       return Promise.resolve();
     }   /* a song leaves an exercise's options, or the start or end songs; the chosen one of an exercise leaves it without music */
@@ -1889,12 +1890,12 @@
       if (!linked || !rest) return;
       var s0 = fold(qi.value.trim()), words = s0.split(/\s+/).filter(Boolean);
       var hit = function (m) { return fz(songName(m) + " " + songBy(m), s0); };
-      var cur = optList(it), has = {}; cur.forEach(function (m) { has[m.id] = 1; });
+      var cur = it.__preview ? optList(it).filter(function (m) { return it.sel.indexOf(m.id) >= 0; }) : optList(it), has = {}; cur.forEach(function (m) { has[m.id] = 1; });   /* on the catalog's exercise only what was marked counts */
       var nmOf = function (m) { return songName(m) + " " + songBy(m); }, sl = nearest(cur, nmOf, s0), lk = nearest(linked.filter(function (m) { return !has[m.id]; }), nmOf, s0), ot = nearest(rest.filter(function (m) { return !has[m.id]; }), nmOf, s0), cut = ot.slice(0, shown);
       var cnt = r.querySelector("#amc"); if (cnt) cnt.textContent = "חיפוש " + (words.length ? (sl.length + lk.length + ot.length) + " מתוך " : "בין ") + (linked.length + rest.length) + " שירים";   /* as the music page says it */
       var grid = function (arr) { return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(18rem,1fr));gap:var(--sp-1)">' + arr.map(function (m) { return cardHtml(m, !!has[m.id]); }).join("") + '</div>'; };
       var head = function (t, n) { return '<div class="rrow__sub" style="padding:var(--sp-2) 0 var(--sp-1)">' + esc(t) + ' (' + n + ')</div>'; };
-      listEl.innerHTML = (sl.length ? head("בתרגיל", sl.length) + grid(sl) : '') + (lk.length ? head("מקושרות לתרגיל בקטלוג", lk.length) + grid(lk) : '') + (cut.length ? head("שירים אחרים", ot.length) + grid(cut) : '') + (!sl.length && !lk.length && !cut.length ? ph("לא נמצא", "") : '');
+      listEl.innerHTML = (sl.length ? head(it.__preview ? "נבחרו" : "בתרגיל", sl.length) + grid(sl) : '') + (lk.length ? head("מקושרות לתרגיל בקטלוג", lk.length) + grid(lk) : '') + (cut.length ? head("שירים אחרים", ot.length) + grid(cut) : '') + (!sl.length && !lk.length && !cut.length ? ph("לא נמצא", "") : '');
     }
     var upb = r.querySelector("#amup");
     if (upb) upb.addEventListener("click", function () {
@@ -1923,6 +1924,13 @@
       if (ev.target.closest("[data-audio], a")) return;
       var c = ev.target.closest("[data-am]"); if (!c) return;
       var all = (linked || []).concat(rest || []), m = all.filter(function (x) { return x.id === c.dataset.am; })[0]; if (!m) return;
+      if (it.__preview) {   /* the catalog's exercise: a tap marks the song, a second tap takes the mark off */
+        var ix = it.sel.indexOf(m.id);
+        if (ix >= 0) it.sel.splice(ix, 1); else { it.sel.push(m.id); addOpt(it, m); }
+        var f0 = (it.item_music_options || []).map(function (o) { return o.music; }).filter(function (x) { return x && x.id === it.sel[0]; })[0];
+        it.music_id = it.sel[0] || null; it.music = f0 || null;
+        draw(); if (changed) changed(); return;
+      }
       if (optList(it).some(function (x) { return x.id === m.id; })) {   /* a marked song: the mark comes off and it is disconnected from the exercise */
         dropOpt(it, m).then(function () { draw(); if (changed) changed(); }, fail);
         return;
@@ -2196,7 +2204,7 @@
   /* the catalog's exercise as an item of the page: its texts, its songs as options, the first one chosen; nothing of it is written anywhere */
   function itemFake(e, rows, songs) {
     return { __preview: true, id: "", exercise_id: e.id, exercises: Object.assign({}, e, { exercise_texts: rows || [] }), title: null, poetics: null, guidance: null, notes: "",
-      music_id: null, music: null,   /* no song is chosen until one is marked: only that one comes with the exercise */
+      sel: [], music_id: null, music: null,   /* no song is marked until the facilitator marks some: those come with the exercise */
       item_music_options: songs.map(function (m, i) { return { music_id: m.id, created_at: String(1000 + i), music: m }; }) };
   }
   /* the cards of a read only page: a tap plays, the chip chooses the song the exercise is added with */
@@ -2206,8 +2214,9 @@
       if (ev.target.closest("[data-audio], a")) return;
       if (ev.target.closest("[data-addm]")) { openAddMusic(fake, function () { imus.innerHTML = musCards(fake, true); }); return; }   /* more songs for what is shown: not for the catalog */
       var c = ev.target.closest("[data-opt]"); if (!c) return;   /* a tap marks the song (green frame), a second tap takes the mark off; the play tile plays */
-      var id = c.dataset.opt; if (fake.music_id === id) { fake.music_id = null; fake.music = null; }
-      else { var m = (fake.item_music_options || []).map(function (o) { return o.music; }).filter(function (x) { return x && x.id === id; })[0]; fake.music_id = id; fake.music = m || null; }
+      var id = c.dataset.opt, k = fake.sel.indexOf(id); if (k >= 0) fake.sel.splice(k, 1); else fake.sel.push(id);
+      var first = (fake.item_music_options || []).map(function (o) { return o.music; }).filter(function (x) { return x && x.id === fake.sel[0]; })[0];
+      fake.music_id = fake.sel[0] || null; fake.music = first || null;
       imus.innerHTML = musCards(fake, true);
     });
   }
@@ -2223,7 +2232,7 @@
         body: bleedCss("exDlg") + '<style>#exDlg .sheet-body { padding-bottom: calc(var(--fab) + var(--gutter) * 2 + var(--inset-b)) } html.rs-lock:not(.kb-open) #exDlg .rfab { opacity: 1; transform: none; pointer-events: auto }</style>' + itemPageHtml(fake, true) });
       bleedSet(dlg);
       wireRoMusic(dlg, fake);
-      dlg.querySelector("#exgo").addEventListener("click", function () { if (swapIt) confirmSwap(e, swapIt, true, fake.music_id); else addEx(e, undefined, true, fake.music_id); });
+      dlg.querySelector("#exgo").addEventListener("click", function () { if (swapIt) confirmSwap(e, swapIt, true, fake.music_id, fake.sel); else addEx(e, undefined, true, fake.music_id, fake.sel); });
     }, fail);
   }
   /* the catalog is over a thousand exercises and the server hands out at most a thousand rows at a time: read it page by page */
@@ -2297,12 +2306,12 @@
       /* the same page as the exercise of a vivencia, only read: its header, its song cards, its texts; the action is the green button in the header, where the delete is in the vivencia */
       show(itemHead(false, false, "", e.id, name(e), true, word) + itemPageHtml(fake, true), function (r) {
         wireRoMusic(r, fake); sbSync(r);
-        on(r, "doswap", function () { if (swapIt) confirmSwap(e, swapIt, undefined, fake.music_id); else addEx(e, undefined, undefined, fake.music_id); });
+        on(r, "doswap", function () { if (swapIt) confirmSwap(e, swapIt, undefined, fake.music_id, fake.sel); else addEx(e, undefined, undefined, fake.music_id, fake.sel); });
       }, "d");
     }, fail);
   }
   /* replacing is asked in the kit's popup, one action: closing it is the cancel */
-  function confirmSwap(e, swapIt, sheet, mid) {
+  function confirmSwap(e, swapIt, sheet, mid, all) {
     var dlg = document.getElementById("confirmDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
     RosterSheet.render(dlg, { kind: "confirm",
@@ -2310,7 +2319,7 @@
       body: '<div class="pad"><span>להחליף את "' + esc(itemName(swapIt)) + '" ב"' + esc(name(e)) + '"? השם, הפואטיקה וההנחיה שכתבתם בתרגיל הנוכחי יימחקו. ההערות נשארות.</span></div>',
       foot: '<button class="rbtn rbtn--block" type="button" id="cswap">החלפה</button>'
     });
-    dlg.querySelector("#cswap").addEventListener("click", function () { dlg.close(); addEx(e, swapIt, sheet, mid); });
+    dlg.querySelector("#cswap").addEventListener("click", function () { dlg.close(); addEx(e, swapIt, sheet, mid, all); });
   }
   function closeSheets() { ["exDlg", "catDlg"].forEach(function (id) { slideClose(document.getElementById(id)); }); }
   var sgTok = 0;
@@ -2333,11 +2342,14 @@
       return o;
     }, function () { return {}; });
   }
-  function addEx(e, swapIt, sheet, mid) {
+  function optionsFor(itemId, all) {   /* everything that was marked is an option of the exercise; the first is its own song */
+    return all && all.length ? api("/rest/v1/item_music_options?on_conflict=item_id,music_id", { method: "POST", prefer: "resolution=ignore-duplicates,return=minimal", json: all.map(function (id) { return { item_id: itemId, music_id: id }; }) }) : null;
+  }
+  function addEx(e, swapIt, sheet, mid, all) {
     if (swapIt) {   /* the same place in the curve, another exercise: its first song, and none of the old exercise's own wording */
       return Promise.all([firstMusic(e.id, mid), detached(e.id)]).then(function (r) {
         var m = r[0], d = r[1];
-        return api("/rest/v1/vivencia_items?id=eq." + swapIt.id, { method: "PATCH", prefer: "return=minimal", json: { exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, title: d.title || null, poetics: d.poetics || null, guidance: d.guidance || null } });
+        return api("/rest/v1/vivencia_items?id=eq." + swapIt.id, { method: "PATCH", prefer: "return=minimal", json: { exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, title: d.title || null, poetics: d.poetics || null, guidance: d.guidance || null } }).then(function () { return optionsFor(swapIt.id, all); });
       }).then(function () { toast("התרגיל הוחלף");
         if (sheet) {   /* the popups slide out and the same place opens again with the new exercise: no new address, so no entry */
           closeSheets();
@@ -2350,7 +2362,7 @@
     var pos = state.items.reduce(function (m, i) { return Math.max(m, i.position); }, 0) + 1;
     Promise.all([firstMusic(e.id, mid), detached(e.id)]).then(function (r) {
       var m = r[0], d = r[1];
-      return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=minimal", json: { vivencia_id: state.viv.id, position: pos, backlog: true, exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, title: d.title || null, poetics: d.poetics || null, guidance: d.guidance || null } });   /* only the song that was marked comes with the exercise, or none */
+      return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=representation", json: { vivencia_id: state.viv.id, position: pos, backlog: true, exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, title: d.title || null, poetics: d.poetics || null, guidance: d.guidance || null } }).then(function (made) { return made && made[0] ? optionsFor(made[0].id, all) : null; });   /* the songs that were marked come with the exercise, the first as its own; none marked, none comes */
     }).then(function () { toast("התרגיל נוסף"); if (sheet) { closeSheets(); return loadItems().then(paint, fail); }
       if (wide()) show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); else stack().pop(); back(); }, fail);
   }
