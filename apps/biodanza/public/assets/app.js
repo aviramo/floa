@@ -894,10 +894,9 @@
     curLeave();
     if (!wide()) { stack().length = 0; stack().push(home); setUrl(BASE); }
     show(head("הוויוונסיות שלי", "", false,
-      '',
+      '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="homemore" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>',
       '<img src="favicon.png" alt="" style="flex:none;width:var(--ctl);height:var(--ctl);border-radius:var(--r-ctl)">') +
       '<div class="rlist" data-fab-room id="hl"><div class="rskel rskel--title"></div></div>' +
-      '<button class="rfab" data-act="homemore" aria-haspopup="menu" aria-label="עוד" title="עוד" style="background:var(--surface-2);color:var(--text);border-color:var(--surface-2);transform:translateY(calc(-1 * (var(--fab) + var(--sp-1))))">' + I.dots + '</button>' +
       '<button class="rfab" data-act="new" aria-label="ויוונסיה חדשה" title="ויוונסיה חדשה">' + I.plus + '</button>', function (r) {
       on(r, "homemore", function (b) {   /* one menu: the songs I loved, who may enter (the manager), leaving */
         var items = state.offline ? [] : [{ label: "ויוונסיות שאהבתי", icon: I.heart, fn: function () { goSub(likedVivScreen); } }, { label: "תרגילים שאהבתי", icon: I.heart, fn: function () { goSub(likedExScreen); } }, { label: "שירים שאהבתי", icon: I.heart, fn: function () { goSub(likedScreen); } }];   /* in the order of the app: vivencias, exercises, songs */
@@ -958,14 +957,23 @@
     l.appendChild(s);
     if (!l.__arrowRo && window.ResizeObserver) { l.__arrowRo = new ResizeObserver(function () { if (l.querySelector(".rempty")) arrowTo(l); }); l.__arrowRo.observe(l); }
   }
+  function vivMenu(v, b) {   /* the owner: rename, share, delete; somebody it is shared with: rename (with edit rights) and taking themselves off it */
+    var items = v.role === "view" ? [] : [{ label: "עריכת שם", icon: I.pen, fn: function () { namePopup(v, false); } }];
+    if (v.role === "owner") items.push({ label: "שיתוף", icon: I.share, fn: function () { sharePopup(v); } }, { label: "מחיקה", icon: I.trash, tone: "danger", fn: function () { confirmDelete(v); } });
+    else items.push({ label: "הסרה שלי מהוויוונסיה", icon: I.out, tone: "danger", fn: function () { confirmLeave(v); } });
+    if (state.offline) items.length = 0;   /* with no internet nothing changes: only the copy on the device can be taken off it */
+    if (items.length) menu(b, items);
+  }
+  (function () { var st = document.createElement("style"); st.textContent = ".bio-vm { opacity: 0; transition: opacity var(--t-base) var(--ease) } .rrow:hover .bio-vm, .rrow:focus-within .bio-vm, .bio-vm[aria-expanded=\"true\"] { opacity: 1 } @media (hover: none) { .bio-vm { opacity: 1 } }"; document.head.appendChild(st); })();
   function renderVivs() {
     var l = document.getElementById("hl"); if (!l) return;
     l.innerHTML = state.vivs.length ? state.vivs.map(function (v) {
       var n = v.vivencia_items && v.vivencia_items[0] ? v.vivencia_items[0].count : 0;
-      return '<div class="rrow rrow--link">' + heartBtnViv(v.id, "rrow__trail") + '<button type="button" class="rrow__main" data-id="' + v.id + '" style="margin-inline-start:var(--sp-1);background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub" data-n="' + v.id + '">' + n + ' תרגילים' + (v.role === "owner" ? "" : " · משותף" + (v.role === "view" ? " (צפייה)" : " (עריכה)")) + '</span></button></div>';
+      return '<div class="rrow rrow--link">' + heartBtnViv(v.id, "rrow__trail") + (state.offline ? '' : '<button type="button" class="rbtn rbtn--icon rrow__trail bio-vm" data-vm="' + v.id + '" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>') + '<button type="button" class="rrow__main" data-id="' + v.id + '" style="margin-inline-start:var(--sp-1);background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub" data-n="' + v.id + '">' + n + ' תרגילים' + (v.role === "owner" ? "" : " · משותף" + (v.role === "view" ? " (צפייה)" : " (עריכה)")) + '</span></button></div>';
     }).join("") : (state.offline ? ph("אין ויוונסיות שמורות", "שמרו ויוונסיה מהתפריט שלה כשיש חיבור, והיא תהיה כאן גם בלי אינטרנט") : ph("עוד אין ויוונסיות", "לחצו על + כדי ליצור את הראשונה"));
     if (!state.vivs.length) { l.style.position = "relative"; if (l.firstElementChild) l.firstElementChild.style.marginBlock = "auto"; arrowTo(l); setTimeout(function () { arrowTo(l); }, 350); }   /* the arrow is a second child, so the words are centred by hand (the kit does it only for an only child) */
     l.querySelectorAll("[data-id]").forEach(function (b) { b.addEventListener("click", function () { openViv(b.dataset.id); }); });
+    l.querySelectorAll("[data-vm]").forEach(function (b) { b.addEventListener("click", function (ev) { ev.stopPropagation(); var v0 = state.vivs.filter(function (x) { return x.id === b.dataset.vm; })[0]; if (v0) vivMenu(v0, b); }); });   /* the dots on a row of the list: that vivencia's menu */
     if (state.vivs.length) enableDrag(l, "[data-id]", persistVivs);
     paintSel();
     if (pending && pending.viv && state.vivsLoaded) {   /* opened on a vivencia's own address; only once the list is really here (the hearts can answer first, and an empty list would throw the address away) */
@@ -1192,7 +1200,7 @@
   }
   function editor() {
     var v = state.viv; setUrl(BASE + v.id); curJoin(v.id);
-    show(head(v.title || "ויוונסיה חדשה", "", true, (v.role === "view" || wide() ? '' : '<button type="button" class="rbtn" data-act="add" style="flex:none" title="הוספת תרגיל מהקטלוג">לקטלוג</button>') + '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="more" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>') +   /* the way to the catalog is a word in the header, not a floating button */
+    show(head(v.title || "ויוונסיה חדשה", "", true, (v.role === "view" || wide() ? '' : '<button type="button" class="rbtn" data-act="add" style="flex:none" title="הוספת תרגיל מהקטלוג">לקטלוג</button>')) +   /* the way to the catalog is a word in the header, not a floating button */
       '<div class="rlist" data-fab-room id="list"><div class="rskel rskel--title"></div></div>' +
       '', function (r) {   /* on a wide screen the way to the catalog is a green banner down the side, added by show() */
       on(r, "back", back); on(r, "add", function () { resetPk(); if (wide()) goSub(picker); else pickerSheet(); });
