@@ -26,6 +26,7 @@ ROSTER_TEST_MAIL_TO = "ofir.aviram@gmail.com"
 ROSTER_GOOGLE_CLIENT_IDS = "459432002435-349ppd8r1qqe9tkcdm2v3f6rpp48i1ni.apps.googleusercontent.com"   # the business's own Google app (harpatka); sign-in without the Supabase Google provider
 ROSTER_MAIL_NO_MY_LINK = "harpatka"   # its mails do not mention the personal area (the page itself still works)
 ROSTER_AUTH_ORIGINS = "https://test.harpatka.co.il,http://localhost:8080,http://localhost:8099"
+ROSTER_WA_ORIGINS = "https://test.harpatka.co.il,http://localhost:8080,http://localhost:8099"   # the internal WhatsApp list page (/roster-wa/*) of the test site
 
 # the Workflow binding the shared source declares (chords); unused here
 [[workflows]]
