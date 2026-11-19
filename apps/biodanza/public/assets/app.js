@@ -269,7 +269,7 @@
       ".bio-bar input, .bio-dock__bar { -webkit-appearance: none; appearance: none; background: transparent; height: 20px; margin: 0; cursor: pointer; --p: 0%; --c: var(--primary) } .bio-bar input:hover, .bio-dock__bar:hover { --c: var(--danger) } .bio-bar input::-webkit-slider-runnable-track, .bio-dock__bar::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--c) var(--p), var(--surface-2) var(--p)) } .bio-bar input::-webkit-slider-thumb, .bio-dock__bar::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border: 0; border-radius: 50%; background: var(--c) } .bio-bar input::-moz-range-track, .bio-dock__bar::-moz-range-track { height: 4px; border-radius: 2px; background: var(--surface-2) } .bio-bar input::-moz-range-progress, .bio-dock__bar::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--c) } .bio-bar input::-moz-range-thumb, .bio-dock__bar::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: var(--c) } .bio-bar input:focus, .bio-bar input:focus-visible, .bio-dock__bar:focus, .bio-dock__bar:focus-visible, .bio-dock__btn:focus, .bio-dock__btn:focus-visible, .bio-dock__x:focus, .bio-dock__x:focus-visible { outline: none } .bio-dock .bio-vol { margin: 0 } @media (max-width: 1023px) { .bio-dock .bio-vol, .bio-dock .bio-volume { display: none !important } } .bio-volume { flex: none; display: flex; align-items: center; gap: var(--gap-tight); --c: var(--primary) } .bio-volume input { -webkit-appearance: none; appearance: none; background: transparent; width: 7rem; height: 20px; margin: 0; cursor: pointer; direction: ltr; --p: 0% } .bio-volume { direction: ltr; margin-left: var(--sp-3) } .bio-volume input::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--c) var(--p), var(--on-primary) var(--p)) } .bio-volume input::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border: 0; border-radius: 50%; background: var(--c) } .bio-volume input::-moz-range-track { height: 4px; border-radius: 2px; background: var(--on-primary) } .bio-volume input::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--c) } .bio-volume input::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: var(--c) } .bio-volume input:focus, .bio-volume input:focus-visible { outline: none } .bio-volume > .rbtn > svg { width: var(--icon-m); height: var(--icon-m) } .bio-dock__x { flex: none; display: grid; place-items: center; width: var(--icon-m, 20px); height: var(--ctl); padding: 0; border: 0; border-radius: var(--r-ctl); background: transparent; color: var(--text-2); cursor: pointer } .bio-dock__x > svg { width: var(--icon-m, 20px); height: var(--icon-m, 20px); stroke-width: var(--icon-w) } .bio-dock.idle .bio-dock__x { display: none } " +
       ".bio-dock .rbtn > svg { width: var(--icon-l); height: var(--icon-l) } .bio-dock > .rbtn:not(:disabled) { background: var(--primary); border-color: var(--primary); color: var(--on-primary) } " +
       ".bio-dock .bio-dockbar { flex: 1 1 8rem; min-width: 0; padding: 0; touch-action: none } .bio-dock .bio-dockbar .bio-dock__bar { width: 100%; display: block; direction: ltr } .bio-dock .bio-dockbar input::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--c) var(--p), var(--on-primary) var(--p)) } .bio-dock .bio-dockbar input::-moz-range-track { background: var(--on-primary) } " +
-      ".bio-dock__name { flex: 0 1 28rem; min-width: 0; direction: ltr; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis } .bio-dock__name span { color: var(--text-2) } .bio-dock__name span:not(:empty)::before { content: \"· \" } " +
+      ".bio-dock__name { flex: 0 1 28rem; min-width: 8rem; direction: ltr; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis } .bio-dock__name span { color: var(--text-2) } .bio-dock__name span:not(:empty)::before { content: \"· \" } " +
       "@media (max-width: 700px) { .bio-dock { flex-wrap: wrap } .bio-dock__name { flex: 1 1 100%; order: 4 } .bio-dock .bio-dockbar { flex: 0 0 100%; order: 3 } } " +
       ".bio-dock__time { flex: none; min-width: 2.6em; text-align: center; font: var(--fw-bold) var(--fs-xs)/1 var(--font); font-variant-numeric: tabular-nums } " +
       ".bio-dock__bar { flex: 1 1 0; width: auto; max-width: none; min-width: 0; display: block; margin: 0; padding: 0; direction: ltr; accent-color: var(--primary); touch-action: none } " +
@@ -279,13 +279,24 @@
     document.head.appendChild(st);
     var PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
     var PLAY = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>';
-    var playing = false, loaded = false, closed = false, seekDrag = false, leftNow = 0, frac = 0, curT = 0, curD = 0, curTitle = "", curArtist = "", lastH = 0;
+    var playing = false, loaded = false, closed = false, seekDrag = false, leftNow = 0, frac = 0, curT = 0, curD = 0, curTitle = "", curArtist = "", lastH = 0, last = null;
+    try { last = JSON.parse(localStorage.getItem("biodanza.last") || "null"); if (last && !last.n) last = null; } catch (x) { last = null; }   /* the song that played last: the footer keeps it, also after a reload */
+    if (last && window.BioAudio && BioAudio.info) BioAudio.info(last.n, last.t, last.a);
+    var histName = "";
+    function remember(name, title, artist) {   /* one line per start of a song, newest first, the last 300 */
+      histName = name;
+      try { var h = JSON.parse(localStorage.getItem("biodanza.history") || "[]") || []; h.unshift({ n: name, t: title || "", a: artist || "", at: Date.now() }); localStorage.setItem("biodanza.history", JSON.stringify(h.slice(0, 300))); } catch (x) { /* not kept */ }
+    }
     function clk(s) { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2); }
     function make(cls) {
       var d = document.createElement("div"); d.className = cls + " idle";
       d.innerHTML = '<button type="button" class="rbtn rbtn--icon" disabled aria-label="השמעה">' + PLAY + '</button><span class="rchip rchip--s bio-dock__time" style="direction:ltr;font-variant-numeric:tabular-nums">0:00 / 0:00</span>' + volDock() +
         '<div class="bio-dockbar"><input class="bio-dock__bar" type="range" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר" disabled></div><div class="rrow__main bio-dock__name"><b>לא נבחר שיר</b> <span></span></div>';
-      d.querySelector("button").addEventListener("click", function () { if (window.BioAudio && BioAudio.playPause) BioAudio.playPause(); });
+      d.querySelector("button").addEventListener("click", function () {
+        if (loaded) { if (window.BioAudio && BioAudio.playPause) BioAudio.playPause(); return; }
+        if (!last) return;   /* nothing loaded: the last song is loaded and played, as its own button does */
+        var tb = document.createElement("button"); tb.dataset.audio = last.n; tb.style.display = "none"; document.body.appendChild(tb); tb.click(); tb.remove();
+      });
       var r = d.querySelector("input");
       r.addEventListener("pointerdown", function () { seekDrag = true; });
       ["pointerup", "pointercancel", "change"].forEach(function (n) { r.addEventListener(n, function () { seekDrag = false; }); });
@@ -307,11 +318,11 @@
         d.classList.toggle("on", on); d.classList.toggle("away", !!document.querySelector("dialog[open] .sheet-foot"));   /* a popup with its own action button at the bottom (a name, a confirmation) is not covered: the pill slides away while it is open */
         d.classList.toggle("idle", !loaded);
         document.documentElement.classList.toggle("bio-docked", on);   /* the page ends above the footer */
-        var b = d.querySelector("button"), t = d.querySelector(".bio-dock__time"), r = d.querySelector("input"), s = clk(curT) + " / " + clk(curD), nm = d.querySelector(".bio-dock__name");
-        b.disabled = !loaded; r.disabled = !loaded || !(curD > 0); b.dataset.st = playing ? "playing" : "paused";
+        var b = d.querySelector("button"), t = d.querySelector(".bio-dock__time"), r = d.querySelector("input"), s = clk(curT) + " / " + clk(loaded ? curD : (last ? last.d : 0)), nm = d.querySelector(".bio-dock__name");
+        b.disabled = !loaded && !last; r.disabled = !loaded || !(curD > 0); b.dataset.st = playing ? "playing" : "paused";
         var lab = playing ? "השהיית השיר" : "השמעה"; if (b.getAttribute("aria-label") !== lab) { b.setAttribute("aria-label", lab); b.title = lab; b.innerHTML = playing ? PAUSE : PLAY; }
         if (t.textContent !== s) t.textContent = s;
-        var nh = '<b>' + esc(loaded ? (curTitle || "שיר") : "לא נבחר שיר") + '</b> <span>' + esc(loaded ? curArtist : "") + '</span>'; if (nm.dataset.h !== nh) { nm.dataset.h = nh; nm.innerHTML = nh; }
+        var nh = '<b>' + esc(loaded ? (curTitle || "שיר") : (last ? last.t || "שיר" : "לא נבחר שיר")) + '</b> <span>' + esc(loaded ? curArtist : (last ? last.a || "" : "")) + '</span>'; if (nm.dataset.h !== nh) { nm.dataset.h = nh; nm.innerHTML = nh; }
         if (!seekDrag) r.value = Math.round(frac * 1000);
         var hh = d.offsetHeight; if (hh && hh !== lastH) { lastH = hh; document.documentElement.style.setProperty("--dockfull", hh + "px"); }   /* the footer's own height: what the page leaves under it */
       });
@@ -343,8 +354,11 @@
     });
     document.addEventListener("bioaudio", function (ev) {
       var dd = ev.detail || {};
+      var started = !!dd.playing && !playing && !!dd.name && (dd.t < 2 || dd.name !== histName);
       playing = !!dd.playing; loaded = !!dd.name; if (loaded) closed = false;
       curT = loaded ? dd.t || 0 : 0; curD = loaded ? dd.d || 0 : 0; curTitle = dd.title || ""; curArtist = dd.artist || "";
+      if (started) remember(dd.name, curTitle, curArtist);
+      if (loaded && curTitle && (!last || last.n !== dd.name || last.t !== curTitle || last.a !== curArtist || (dd.d > 0 && last.d !== Math.floor(dd.d)))) { last = { n: dd.name, t: curTitle, a: curArtist, d: dd.d > 0 ? Math.floor(dd.d) : (last && last.n === dd.name ? last.d : 0) }; try { localStorage.setItem("biodanza.last", JSON.stringify(last)); } catch (x) { /* not kept */ } }
       if (loaded && dd.d > 0) { leftNow = Math.max(0, Math.ceil(dd.d - dd.t)); frac = dd.t / dd.d; } else { leftNow = 0; frac = 0; }
       if (window.BioAudio && BioAudio.volume) volState.v = BioAudio.volume(0); paintVol();
       ensureIn(); sync();
