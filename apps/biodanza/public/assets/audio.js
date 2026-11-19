@@ -83,9 +83,30 @@
   var vol = 1;
   try { var sv = parseFloat(localStorage.getItem("biodanza.volume")); if (sv >= 0 && sv <= 1) vol = sv; } catch (e) { /* the default */ }
   el.volume = wideNow() ? vol : 1;
+  var fadeT = 0, fadingOut = false, FADE = 1000;
+  function target() { return wideNow() ? vol : 1; }
+  function ramp(to, done) {   /* the volume goes from where it is to `to` in a second */
+    clearInterval(fadeT); var from = el.volume, t0 = Date.now();
+    fadeT = setInterval(function () {
+      var k = Math.min(1, (Date.now() - t0) / FADE); el.volume = Math.max(0, Math.min(1, from + (to - from) * k));
+      if (k >= 1) { clearInterval(fadeT); fadeT = 0; if (done) done(); }
+    }, 40);
+  }
+  function fadeIn() {   /* plays from silence up to the volume of the page */
+    fadingOut = false; if (el.paused) el.volume = 0;
+    var pr = el.play();
+    ramp(target(), function () { el.volume = target(); });
+    return pr;
+  }
+  function fadeOut() {   /* goes down to silence, and only then is paused: the buttons already say it is paused */
+    if (el.paused || fadingOut) return;
+    fadingOut = true; paint(); document.dispatchEvent(new CustomEvent("bioaudio", { detail: { name: now, t: el.currentTime, d: el.duration || 0, playing: false, title: (infos[now] || {}).title || "", artist: (infos[now] || {}).artist || "" } }));
+    ramp(0, function () { el.pause(); fadingOut = false; el.volume = target(); });
+  }
+  function playToggle() { if (fadingOut || el.paused) fadeIn(); else fadeOut(); }
   function paint() {
     document.querySelectorAll("[data-audio]").forEach(function (b) {
-      var me = b.dataset.audio, st = busy === me ? "wait" : (now === me && !el.paused ? "pause" : "sound");
+      var me = b.dataset.audio, st = busy === me ? "wait" : (now === me && !el.paused && !fadingOut ? "pause" : "sound");
       if (haveOnly) { var no = !haveOnly[me]; if (b.disabled !== no) { b.disabled = no; b.style.opacity = no ? ".45" : ""; } }
       if (b.dataset.st === st) return;
       b.dataset.st = st; b.innerHTML = ICON[st];
@@ -95,7 +116,7 @@
   }
   el.addEventListener("pause", paint); el.addEventListener("play", paint); el.addEventListener("ended", paint);
   /* the time left of the song that plays, told to the page (app.js counts it down under the song's button) */
-  function tell(name, t, d) { document.dispatchEvent(new CustomEvent("bioaudio", { detail: { name: name, t: t, d: d, playing: !el.paused && !el.ended, title: (infos[name] || {}).title || "", artist: (infos[name] || {}).artist || "" } })); }
+  function tell(name, t, d) { document.dispatchEvent(new CustomEvent("bioaudio", { detail: { name: name, t: t, d: d, playing: !el.paused && !el.ended && !fadingOut, title: (infos[name] || {}).title || "", artist: (infos[name] || {}).artist || "" } })); }
   el.addEventListener("timeupdate", function () { tell(now, el.currentTime, el.duration || 0); });
   el.addEventListener("play", function () { tell(now, el.currentTime, el.duration || 0); });
   el.addEventListener("pause", function () { tell(now, el.currentTime, el.duration || 0); });
@@ -119,8 +140,8 @@
   }
   if (ms) {
     var act = function (n, fn) { try { ms.setActionHandler(n, fn); } catch (e) { /* this action is not supported here */ } };
-    act("play", function () { if (el.src) el.play(); });
-    act("pause", function () { el.pause(); });
+    act("play", function () { if (el.src) fadeIn(); });
+    act("pause", function () { fadeOut(); });
     act("seekto", function (d) { if (el.duration && d && d.seekTime != null) el.currentTime = Math.max(0, Math.min(el.duration, d.seekTime)); });
     act("seekbackward", function (d) { if (el.duration) el.currentTime = Math.max(0, el.currentTime - ((d && d.seekOffset) || 10)); });
     act("seekforward", function (d) { if (el.duration) el.currentTime = Math.min(el.duration, el.currentTime + ((d && d.seekOffset) || 10)); });
@@ -151,12 +172,12 @@
   }
   function toggle(name) {
     if (queue.length && queue.indexOf(name) < 0) { queue = []; dropNext(); }   /* a song of another place ends the list */
-    if (now === name && url) { if (el.paused) el.play(); else el.pause(); return; }
+    if (now === name && url) { playToggle(); return; }
     busy = name; paint();
     bytes(name).then(function (b) {
       if (url) URL.revokeObjectURL(url);
       url = URL.createObjectURL(b); now = name; el.src = url;
-      return el.play().then(function () { preloadNext(); });
+      return fadeIn().then(function () { preloadNext(); });
     }).catch(function (e) {
       if (window.toast) window.toast(e && e.status === 403 ? "אין הרשאה להשמיע" : "אי אפשר להשמיע עכשיו");
     }).then(function () { busy = ""; paint(); });
@@ -176,23 +197,23 @@
     },
     /* move the playing song to a place in it: a fraction from 0 to 1 */
     /* the volume, kept in this browser: a step up or down (in fractions of 1), the new level back */
-    volume: function (d) { if (!wideNow()) { el.volume = 1; return 1; }   /* a phone has its own volume keys: the page always plays at full */
-      vol = Math.max(0, Math.min(1, Math.round((vol + d) * 100) / 100)); el.volume = vol; try { localStorage.setItem("biodanza.volume", String(vol)); } catch (e) { /* not kept */ } return vol; },
+    volume: function (d) { if (!wideNow()) { if (!fadeT) el.volume = 1; return 1; }   /* a phone has its own volume keys: the page always plays at full */
+      vol = Math.max(0, Math.min(1, Math.round((vol + d) * 100) / 100)); if (!fadeT) el.volume = vol; try { localStorage.setItem("biodanza.volume", String(vol)); } catch (e) { /* not kept */ } return vol; },
     /* move the playing song by seconds (negative: back) */
     skip: function (sec) { if (el.duration) el.currentTime = Math.max(0, Math.min(el.duration, el.currentTime + sec)); },
-    pause: function () { el.pause(); },
+    pause: function () { fadeOut(); },
     /* the player's one button: the loaded song plays or pauses */
     /* the player's X: the song stops and is let go, so the pill has nothing loaded */
     /* play these songs one after the other, without a pause, round again from the first */
     playList: function (names) {
       queue = (names || []).filter(Boolean); dropNext(); if (!queue.length) return;
-      if (now === queue[0] && url) { el.currentTime = 0; el.play(); preloadNext(); } else toggle(queue[0]);
+      if (now === queue[0] && url) { el.currentTime = 0; fadeIn(); preloadNext(); } else toggle(queue[0]);
     },
     setLists: function (o) { lists = o || {}; },
     queueNames: function () { return queue.slice(); },   /* the songs of the list that is playing, if one is */
-    stopList: function () { queue = []; dropNext(); el.pause(); },   /* the list is switched off: what plays is paused and nothing follows it */
-    stop: function () { queue = []; dropNext(); el.pause(); now = ""; try { el.removeAttribute("src"); el.load(); } catch (e) { /* nothing to let go */ } if (url) { URL.revokeObjectURL(url); url = ""; } tell("", 0, 0); paint(); },
-    playPause: function () { if (now && url) { if (el.paused) el.play(); else el.pause(); } },
+    stopList: function () { queue = []; dropNext(); clearInterval(fadeT); fadeT = 0; fadingOut = false; el.pause(); el.volume = target(); },   /* the list is switched off: what plays is paused and nothing follows it */
+    stop: function () { queue = []; dropNext(); clearInterval(fadeT); fadeT = 0; fadingOut = false; el.pause(); el.volume = target(); now = ""; try { el.removeAttribute("src"); el.load(); } catch (e) { /* nothing to let go */ } if (url) { URL.revokeObjectURL(url); url = ""; } tell("", 0, 0); paint(); },
+    playPause: function () { if (now && url) playToggle(); },
     seek: function (f) { if (el.duration) el.currentTime = Math.max(0, Math.min(1, f)) * el.duration; },
     /* move a song to a place in it, also one that is not playing: its file is loaded (not played) and put there; play then goes on from that place */
     seekTo: function (name, f) {
