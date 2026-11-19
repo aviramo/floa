@@ -393,7 +393,7 @@
       };
     }
     document.addEventListener("click", function (ev) { var b = ev.target.closest && ev.target.closest("[data-hist]"); if (b) openHistory(); });
-    dock.addEventListener("click", function (ev) {   /* a song outside the catalog: its name and performer are edited in the same popup as in the lists */
+    document.addEventListener("click", function (ev) {   /* a song outside the catalog: its name and performer are edited in the same popup as in the lists */
       var nmEl = ev.target.closest && ev.target.closest(".bio-dock__name[data-edit]"); if (!nmEl) return;
       var who = nmEl.dataset.who;
       api("/rest/v1/music?id=eq." + nmEl.getAttribute("data-edit") + "&select=id,name,title,artist,duration_sec,audio_object,in_catalog&limit=1").then(function (rows) {
