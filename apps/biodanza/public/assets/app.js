@@ -1898,7 +1898,7 @@
     var body = '<div style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px;' + (o.lead ? '' : 'width:100%') + '">' + title + sub + foot + '</div>';
     return '<div class="rcard rcard--compact bio-card' + (o.cls ? ' ' + o.cls : '') + '" ' + (o.attrs || '') + (o.selected ? ' aria-current="true"' : '') + ' style="margin:0;min-width:0;display:flex;' + (o.lead ? 'flex-direction:row;align-items:flex-start;gap:var(--sp-2);' : 'flex-direction:column;') + 'padding:var(--sp-2);cursor:pointer;position:relative;background:var(--on-primary)">' + lead + body + (o.corner || '') + (o.actions || '') + '</div>';   /* the same room on all four sides */
   }
-  var CARD_PILL = "width:46px;height:var(--tag-s);min-height:var(--tag-s);padding:0;border-radius:999px;background:var(--surface-2);";
+  var CARD_PILL = "width:var(--tag-s);height:var(--tag-s);min-height:var(--tag-s);padding:0;border-radius:999px;background:var(--surface-2);";
   function cardPill(m, listKey) {
     var b = songBtn(m, false).replace(/width:var\(--fab\);height:var\(--fab\);min-height:var\(--fab\);/g, CARD_PILL);
     return listKey ? b.replace('data-audio="', 'data-list="' + esc(listKey) + '" data-audio="') : b;
