@@ -1851,7 +1851,7 @@
       var dlg = document.getElementById("exDlg");
       if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "exDlg"; document.body.appendChild(dlg); }
       RosterSheet.render(dlg, { title: name(e), from: "bottom",
-        body: bleedCss("exDlg") + '<style>#exDlg .sheet-body { padding-bottom: calc(var(--fab) + var(--gutter) * 2 + var(--inset-b)) } html.rs-lock:not(.kb-open) #exDlg .rfab { opacity: 1; transform: none; pointer-events: auto }</style>' + '<div style="padding-block:var(--sp-2)">' + prevMusic(songs, sel) + ((placementCards(e, card) + card("poetics", "פואטיקה") + card("guidance", "הנחיה")) || ph("אין עדיין תיאור לתרגיל", "")) + '</div>' });
+        body: bleedCss("exDlg") + '<style>#exDlg .sheet-body { padding-bottom: calc(var(--fab) + var(--gutter) * 2 + var(--inset-b)) } html.rs-lock:not(.kb-open) #exDlg .rfab { opacity: 1; transform: none; pointer-events: auto }</style>' + '<div style="padding-block:var(--sp-2)">' + prevMusic(songs, sel) + ((card("poetics", "פואטיקה") + card("guidance", "הנחיה")) || ph("אין עדיין תיאור לתרגיל", "")) + '</div>' });
       bleedSet(dlg);
       /* the action is the round button at the bottom left, where the add button of a list is (a popover inside the popup: drawn in the top layer, placed by the window) */
       var fab = document.createElement("button"); fab.type = "button"; fab.id = "exgo"; fab.className = "rfab"; fab.innerHTML = I.check; fab.setAttribute("aria-label", word); fab.title = word;
@@ -1929,7 +1929,7 @@
       if (tok !== previewTok) return;   /* a later row was chosen meanwhile */
       var fake = { exercises: { exercise_texts: rows || [] } };
       var card = function (k, label) { return txt(fake, k) ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">' + label + '</span></div><div class="rcard__body"' + (isDraft(fake, k) ? DRAFT : "") + '>' + rtHtml(txt(fake, k)) + '</div></div>' : ""; };
-      var body = placementCards(e, card) + card("poetics", "פואטיקה") + card("guidance", "הנחיה");
+      var body = card("poetics", "פואטיקה") + card("guidance", "הנחיה");
       var word = swapIt ? "החלפה בתרגיל הזה" : "הוספה", sel = songs.length ? songs[0].id : null;
       var act = wide() ? ""   /* beside the list the action is the round button at the bottom left; on a narrow screen a plain check in the header, like the kit's popups */
                        : '<button class="rbtn" type="button" style="flex:none;width:var(--ctl);padding:0" data-act="doswap" aria-label="' + word + '" title="' + word + '">' + I.check + '</button>';   /* the green button, with a check */
