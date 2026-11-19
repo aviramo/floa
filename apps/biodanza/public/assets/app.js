@@ -364,6 +364,37 @@
       var waited = new Promise(function (res) { setTimeout(function () { res(null); }, 2500); });
       Promise.race([fromDb, waited]).then(function (rows) { renderHistory(rows || local()); }, function () { renderHistory(local()); });
     }
+    /* wide screen: the history is a layer that comes in from the left, as the catalog comes in from the right; its songs are cards in the same grid as any music */
+    var histLayer = null, histOpen = false;
+    (function () { var st = document.createElement("style"); st.textContent = "#histLayer { position: fixed; z-index: 20; display: flex; flex-direction: column; min-height: 0; visibility: hidden; transform: translateX(-100%); transition: transform .25s var(--ease), visibility 0s linear .25s; box-shadow: 1px 0 0 var(--line) } #histLayer.is-open { visibility: visible; transform: none; transition: transform .25s var(--ease), visibility 0s } #histLayer > .rlist { flex: 1 1 auto; min-height: 0 } #pl::after { content: \"\"; position: absolute; inset: 0; z-index: 5; background: var(--pp-scrim, rgba(16, 20, 26, .55)); opacity: 0; pointer-events: none; transition: opacity .25s var(--ease) } #pl.bio-dim::after { opacity: 1; pointer-events: auto } @media (prefers-reduced-motion: reduce) { #histLayer, #pl::after { transition: none } }"; document.head.appendChild(st); })();
+    function placeHist() { if (!histLayer) return; var a = pd.getBoundingClientRect(); histLayer.style.top = a.top + "px"; histLayer.style.height = a.height + "px"; histLayer.style.left = a.left + "px"; histLayer.style.width = a.width + "px"; }
+    function closeHist() { if (!histLayer || !histOpen) return; histOpen = false; histLayer.classList.remove("is-open"); pl.classList.remove("bio-dim"); }
+    window.__closeHist = closeHist;
+    function showHistLayer(rows, when) {
+      if (!histLayer) {
+        histLayer = document.createElement("div"); histLayer.id = "histLayer"; histLayer.style.background = getComputedStyle(document.body).backgroundColor;
+        document.body.appendChild(histLayer);
+        window.addEventListener("resize", placeHist); if (window.ResizeObserver) new ResizeObserver(placeHist).observe(pd);
+        histLayer.addEventListener("click", function (ev) {
+          var c = ev.target.closest && ev.target.closest("[data-hi]"); if (!c) return;
+          var e = histLayer._rows[+c.dataset.hi]; if (!e) return;
+          histLayer.querySelectorAll("[data-hi][aria-current]").forEach(function (x) { x.removeAttribute("aria-current"); });   /* it stays open: the song that plays is the marked one */
+          c.setAttribute("aria-current", "true"); playName(e.n, e.t, e.a);
+        });
+        pl.addEventListener("click", function () { if (histOpen && pl.classList.contains("bio-dim")) closeHist(); });   /* a tap on the dark side closes it */
+      }
+      if (catPanel) closeCatPanel(true);   /* one layer at a time */
+      histLayer._rows = rows;
+      var nw = window.__bioNow || {};
+      var cards = rows.map(function (e, i) {
+        var m = { id: "h" + i, audio_object: e.n, title: e.t, name: e.t, artist: e.a };
+        return cardUi({ attrs: 'data-hi="' + i + '" role="button" tabindex="0"', selected: !!(nw.name && nw.name === e.n), ltr: true, title: e.t || "שיר", sub: e.a || "", pill: cardPill(m),
+          time: '<span style="color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font)">' + esc(when(e.at)) + '</span>' });
+      }).join("");
+      histLayer.innerHTML = head("היסטוריית האזנה", "", false, "") + '<div class="rlist">' + (rows.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);padding:var(--gutter)">' + cards + '</div>' : ph("אין עדיין היסטוריה", "שירים שהתחלתם להשמיע יופיעו כאן")) + '</div>';
+      placeHist(); histOpen = true; pl.classList.add("bio-dim");
+      requestAnimationFrame(function () { histLayer.classList.add("is-open"); });
+    }
     function renderHistory(h) {
       var seen = {}, rows = []; h.forEach(function (e) { if (e && e.n && !seen[e.n]) { seen[e.n] = 1; rows.push(e); } });
       rows = rows.slice(0, 120);
@@ -377,6 +408,7 @@
         var w = Math.floor(d / 7); if (w === 1) return "לפני שבוע"; if (w === 2) return "לפני שבועיים"; if (d < 30) return "לפני " + w + " שבועות";
         var mo = Math.floor(d / 30); if (mo === 1) return "לפני חודש"; if (mo === 2) return "לפני חודשיים"; if (mo < 12) return "לפני " + mo + " חודשים"; return "לפני יותר משנה";
       };
+      if (wide()) { showHistLayer(rows, when); return; }
       var cards = rows.map(function (e, i) {
         return '<div class="rcard rcard--compact bio-card" data-hi="' + i + '"' + (e.n && window.__bioNow && window.__bioNow.name === e.n ? ' aria-current="true"' : '') + ' role="button" tabindex="0" style="cursor:pointer;background:var(--on-primary);margin:0;min-width:0;display:flex;flex-direction:column;gap:2px">' +
           '<span style="direction:ltr;text-align:left;overflow-wrap:anywhere;font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(e.t || "שיר") + '</span>' +
@@ -393,7 +425,7 @@
         c.setAttribute("aria-current", "true"); playName(e.n, e.t, e.a);
       };
     }
-    document.addEventListener("click", function (ev) { var b = ev.target.closest && ev.target.closest("[data-hist]"); if (b) openHistory(); });
+    document.addEventListener("click", function (ev) { var b = ev.target.closest && ev.target.closest("[data-hist]"); if (b) { if (wide() && histOpen) closeHist(); else openHistory(); } });
     document.addEventListener("click", function (ev) {   /* a song outside the catalog: its name and performer are edited in the same popup as in the lists */
       var nmEl = ev.target.closest && ev.target.closest(".bio-dock__name[data-edit]"); if (!nmEl) return;
       var who = nmEl.dataset.who;
@@ -832,6 +864,7 @@
   }
   function openCatPanel() {   /* the whole body slides left; the exercise on the left side goes dark */
     if (catPanel || !catLayer || catLayer.hidden) return;
+    if (window.__closeHist) window.__closeHist();   /* one layer at a time */
     placeCatLayer(); catLayer.classList.add("is-open"); catLayer.querySelector(".catbody").removeAttribute("inert");
     document.querySelectorAll("[data-catopen]").forEach(function (b) { b.setAttribute("aria-pressed", "true"); });
     catPanel = catLayer; state.pickerShow = true; catPreview = !!catPrevId;
