@@ -811,7 +811,8 @@
     if (catPanel || !catLayer || catLayer.hidden) return;
     placeCatLayer(); catLayer.classList.add("is-open"); catLayer.querySelector(".catbody").removeAttribute("inert");
     document.querySelectorAll("[data-catopen]").forEach(function (b) { b.setAttribute("aria-pressed", "true"); });
-    catPanel = catLayer; state.pickerShow = true; if (!catPreview) pd.classList.add("bio-dim");   /* an exercise of the catalog that is on the left stays lit when the layer comes back */
+    catPanel = catLayer; state.pickerShow = true; catPreview = !!pd.querySelector('[data-act="doswap"]');   /* what is on the left right now: only a catalog exercise (it has the add button) stays lit; anything else goes behind the half dark backdrop, as behind every popup */
+    if (!catPreview) pd.classList.add("bio-dim");   /* an exercise of the catalog that is on the left stays lit when the layer comes back */
   }
   document.addEventListener("click", function (ev) { var ab = ev.target.closest && ev.target.closest("[data-addex]"); if (ab) {   /* the plus beside the exercises' title: an empty exercise at the end of the numbered ones, opened to be filled in */
       if (!state.viv || !state.items || ab.disabled) return; ab.disabled = true;
