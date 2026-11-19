@@ -1875,7 +1875,7 @@
         }); });
         /* a typed search also finds songs (any exercise's); choosing one adds an exercise with no name and that song */
         if (q && !swapIt) {
-          var box = document.createElement("div"); box.innerHTML = '<div class="rrow__sub" style="padding:var(--sp-3) 0 var(--sp-1)">מוזיקות</div><div data-sgs></div>'; l.appendChild(box);
+          var box = document.createElement("div"); box.innerHTML = '<div class="rrow__title" style="padding:var(--sp-3) var(--gutter) var(--sp-1)">מוזיקות</div><div data-sgs></div>'; l.appendChild(box);
           var tok = ++sgTok;
           loadExMusic().then(function (gs) {
             if (tok !== sgTok || !box.isConnected) return;
