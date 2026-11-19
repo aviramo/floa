@@ -544,6 +544,8 @@
             return state.items.some(function (x) { return has(x.music) || (x.item_music_options || []).some(function (o) { return has(o.music); }); }) || ["start", "end"].some(function (k) { return (recvCache[state.viv.id + "|" + k] || []).some(function (o) { return has(o.music); }); }); })(curName));
           if (vOn) { var vTxt = clk(Math.max(0, Math.ceil(curD - curT))); if (vtE.textContent !== vTxt) vtE.textContent = vTxt; }
           if (vtE.hidden === vOn) vtE.hidden = !vOn;
+          var vgE = document.getElementById("vgo");   /* the button is for going to the exercise that plays: gone while that exercise is the one that is open */
+          if (vgE) { var itO = liveItem && state.items ? state.items.filter(function (x) { return x.id === liveItem.id; })[0] : null, vShow = vOn && !(itO && optList(itO).some(function (m) { return m.audio_object === curName; })); if (vgE.hidden === vShow) vgE.hidden = !vShow; }
         }
         var tmE = document.getElementById("itimer");
         if (tmE) {
@@ -691,6 +693,21 @@
       if (was) likesEx[id] = true; else delete likesEx[id]; paintHeartsEx(id); toast("אי אפשר לשמור עכשיו");
     });
   }, true);
+  /* the red button beside the countdown: to the exercise of this vivencia that holds the song now playing (or to the start or the end music) */
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("#vgo"); if (!b || !state.viv || !state.items) return;
+    var n = window.__bioNow && window.__bioNow.name, has = function (m) { return m && m.audio_object === n; };
+    var it = state.items.filter(function (x) { return has(x.music) || (x.item_music_options || []).some(function (o) { return has(o.music); }); })[0], el = null;
+    if (it) {
+      el = document.querySelector('[data-icard="' + it.id + '"]');
+      if (wide() && liveItem && liveItem.id === it.id) { if (el) el.scrollIntoView({ block: "nearest", behavior: "smooth" }); return; }   /* already open: only brought into view */
+      if (el) { el.scrollIntoView({ block: "nearest", behavior: "smooth" }); el.click(); }
+      return;
+    }
+    ["start", "end"].some(function (k) {
+      if ((recvCache[state.viv.id + "|" + k] || []).some(function (o) { return has(o.music); })) { el = document.querySelector('[data-recv="' + k + '"]'); if (el) { el.scrollIntoView({ block: "nearest", behavior: "smooth" }); el.click(); } return true; }
+    });
+  });
   /* the heart of a vivencia: at the right edge of its row, in line with the logo above */
   function heartBtnViv(id, cls) {
     var on = !!likesViv[id], tt = on ? "הסרה מהוויוונסיות שאהבתי" : "ויוונסיה שאהבתי";
@@ -1376,7 +1393,7 @@
   }
   function editor() {
     var v = state.viv; setUrl(BASE + v.id); curJoin(v.id); refreshPrevLabel();
-    show(head(v.title || "ויוונסיה חדשה", "", true, wide() ? '<span id="vtimer" hidden aria-live="off" style="flex:none;font:var(--fw-black) calc(2.75 * var(--fs-m))/.95 var(--font);font-variant-numeric:tabular-nums;color:var(--text);direction:ltr"></span>' : '') +   /* the way to the catalog is a word in the header, not a floating button */
+    show(head(v.title || "ויוונסיה חדשה", "", true, wide() ? '<button type="button" id="vgo" class="rbtn rbtn--icon" hidden aria-label="לתרגיל שמתנגן" title="לתרגיל שמתנגן" style="flex:none;color:var(--danger)">' + I.curve + '</button><span id="vtimer" hidden aria-live="off" style="flex:none;font:var(--fw-black) calc(2.75 * var(--fs-m))/.95 var(--font);font-variant-numeric:tabular-nums;color:var(--text);direction:ltr"></span>' : '') +   /* the way to the catalog is a word in the header, not a floating button */
       '<div class="rlist" data-fab-room id="list"><div class="rskel rskel--title"></div></div>' +
       '', function (r) {   /* on a wide screen the way to the catalog is a green banner down the side, added by show() */
       on(r, "back", back); on(r, "add", function () { resetPk(); if (wide()) goSub(picker); else pickerSheet(); });
