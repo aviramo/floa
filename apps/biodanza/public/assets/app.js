@@ -385,7 +385,7 @@
     });
     document.addEventListener("bioaudio", function (ev) {
       var dd = ev.detail || {};
-      var started = !!dd.playing && !playing && !!dd.name && (dd.t < 2 || dd.name !== histName);
+      var started = !!dd.playing && !!dd.name && (dd.name !== histName || (!playing && dd.t < 2));   /* a song that starts: another one than the last written (also while the one before it played), or the same from its beginning */
       playing = !!dd.playing; loaded = !!dd.name; if (loaded) closed = false;
       curT = loaded ? dd.t || 0 : 0; curD = loaded ? dd.d || 0 : 0; curTitle = dd.title || ""; curArtist = dd.artist || "";
       curName = dd.name || "";
@@ -397,6 +397,7 @@
           api("/rest/v1/music?audio_object=eq." + encodeURIComponent(nm0) + "&select=title,name,artist&limit=1").then(function (rows) {
             var x = rows && rows[0]; if (!x) return;
             songInfo[nm0] = { t: x.title || x.name, a: x.artist || "" }; if (window.BioAudio && BioAudio.info) BioAudio.info(nm0, songInfo[nm0].t, songInfo[nm0].a);
+            try { var h0 = JSON.parse(localStorage.getItem("biodanza.history") || "[]") || []; h0.forEach(function (e) { if (e.n === nm0 && !e.t) { e.t = songInfo[nm0].t; e.a = songInfo[nm0].a; } }); localStorage.setItem("biodanza.history", JSON.stringify(h0)); } catch (x3) { /* not kept */ }   /* the history line written before the name was known gets it */
             if (curName === nm0) { curTitle = songInfo[nm0].t; curArtist = songInfo[nm0].a; last = { n: nm0, t: curTitle, a: curArtist, d: curD > 0 ? Math.floor(curD) : 0 }; try { localStorage.setItem("biodanza.last", JSON.stringify(last)); } catch (x2) { /* not kept */ } sync(); }
           }, function () { /* the title stays the plain word */ });
         }
