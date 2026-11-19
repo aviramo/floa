@@ -269,7 +269,7 @@
       ".bio-dock__btn { flex: none; display: grid; place-items: center; width: var(--fab); height: var(--fab); padding: 0; border: 0; border-radius: var(--r-fab); background: var(--danger); color: var(--on-primary); cursor: pointer } " +
       ".bio-dock__btn[data-st=\"paused\"] { background: var(--surface-2); color: var(--text) } .bio-dock__btn:disabled { background: var(--surface-2); color: var(--text-3); cursor: default } " +
       ".bio-bar input, .bio-dock__bar { -webkit-appearance: none; appearance: none; background: transparent; height: 20px; margin: 0; cursor: pointer; --p: 0%; --c: var(--primary) } .bio-bar input:hover, .bio-dock__bar:hover { --c: var(--danger) } .bio-bar input::-webkit-slider-runnable-track, .bio-dock__bar::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--c) var(--p), var(--surface-2) var(--p)) } .bio-bar input::-webkit-slider-thumb, .bio-dock__bar::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border: 0; border-radius: 50%; background: var(--c) } .bio-bar input::-moz-range-track, .bio-dock__bar::-moz-range-track { height: 4px; border-radius: 2px; background: var(--surface-2) } .bio-bar input::-moz-range-progress, .bio-dock__bar::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--c) } .bio-bar input::-moz-range-thumb, .bio-dock__bar::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: var(--c) } .bio-bar input:focus, .bio-bar input:focus-visible, .bio-dock__bar:focus, .bio-dock__bar:focus-visible, .bio-dock__btn:focus, .bio-dock__btn:focus-visible, .bio-dock__x:focus, .bio-dock__x:focus-visible { outline: none } .bio-dock .bio-vol { margin: 0 } @media (max-width: 1023px) { .bio-dock .bio-vol, .bio-dock .bio-volume { display: none !important } } .bio-volume { flex: none; display: flex; align-items: center; gap: var(--gap-tight); --c: var(--primary) } .bio-volume input { -webkit-appearance: none; appearance: none; background: transparent; width: 7rem; height: 20px; margin: 0; cursor: pointer; direction: ltr; --p: 0% } .bio-volume { direction: ltr; margin-left: var(--sp-3) } .bio-volume input::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--c) var(--p), var(--on-primary) var(--p)) } .bio-volume input::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border: 0; border-radius: 50%; background: var(--c) } .bio-volume input::-moz-range-track { height: 4px; border-radius: 2px; background: var(--on-primary) } .bio-volume input::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--c) } .bio-volume input::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: var(--c) } .bio-volume input:focus, .bio-volume input:focus-visible { outline: none } .bio-volume > .rbtn > svg { width: var(--icon-m); height: var(--icon-m) } .bio-dock__x { flex: none; display: grid; place-items: center; width: var(--icon-m, 20px); height: var(--ctl); padding: 0; border: 0; border-radius: var(--r-ctl); background: transparent; color: var(--text-2); cursor: pointer } .bio-dock__x > svg { width: var(--icon-m, 20px); height: var(--icon-m, 20px); stroke-width: var(--icon-w) } .bio-dock.idle .bio-dock__x { display: none } " +
-      ".bio-dock .rbtn > svg { width: var(--icon-l); height: var(--icon-l) } .bio-dock > .rbtn:first-child:not(:disabled) { background: var(--primary); border-color: var(--primary); color: var(--on-primary) } " +
+      ".bio-dock .rbtn > svg { width: var(--icon-l); height: var(--icon-l) } [data-opt] [data-audio] svg, [data-am] [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important } .bio-dock > .rbtn:first-child:not(:disabled) { background: var(--primary); border-color: var(--primary); color: var(--on-primary) } " +
       ".bio-dock .bio-dockbar { flex: 1 1 8rem; min-width: 0; padding: 0; touch-action: none } .bio-dock .bio-dockbar .bio-dock__bar { width: 100%; display: block; direction: ltr } .bio-dock .bio-dockbar input::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--c) var(--p), var(--on-primary) var(--p)) } .bio-dock .bio-dockbar input::-moz-range-track { background: var(--on-primary) } " +
       ".bio-dock__name { flex: 0 1 28rem; min-width: 8rem; direction: ltr; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis } .bio-dock__name span { color: var(--text-2) } .bio-dock__name span:not(:empty)::before { content: \"· \" } " +
       "@media (max-width: 700px) { .bio-dock { flex-wrap: wrap } .bio-dock__name { flex: 1 1 100%; order: 4 } .bio-dock .bio-dockbar { flex: 0 0 100%; order: 3 } } " +
@@ -628,12 +628,12 @@
       '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="nextW" aria-label="הבא" title="הבא"' + (hasNext ? "" : " disabled") + '>' + I.fwd + '</button></header>';
   }
   /* the header of one exercise: buttons only, each with its word. Previous and the list on the right, next on the left. The name is the field below. */
-  function itemHead(hasPrev, hasNext, where, exId, nameText) {
-    var nav = !wide();   /* beside the list there are no previous and next buttons: the list is the way around */
+  function itemHead(hasPrev, hasNext, where, exId, nameText, ro) {
+    var nav = !wide() && !ro;   /* beside the list there are no previous and next buttons: the list is the way around */
     var arrow = function (act, ico, label, off) { return '<button class="rbtn rbtn--icon" data-act="' + act + '" aria-label="' + label + '" title="' + label + '"' + (off ? " disabled" : "") + '>' + ico + '</button>'; };
     return '<header class="rhead">' + (nav ? arrow("prevW", I.back, "הקודם", !hasPrev) : "") +
-      '<div class="rhead__text"><input id="ina" class="rhead__title" placeholder="ללא שם" autocomplete="off" aria-label="שם התרגיל" value="' + esc(nameText || "") + '" style="width:100%;min-width:0;border:0;background:transparent;padding:0;margin:0;color:inherit;text-align:start;outline:0;text-overflow:ellipsis;text-box:trim-both cap alphabetic"></div>' +
-      (exId ? heartBtnEx(exId, "bio-flat") : "") + arrow("del", I.trash, "הסרה מהוויוונסיה", false) + (nav ? arrow("nextW", I.fwd, "הבא", !hasNext) : "") + '</header>';
+      '<div class="rhead__text"><input id="ina" class="rhead__title" placeholder="ללא שם" autocomplete="off" aria-label="שם התרגיל"' + (ro ? ' readonly' : '') + ' value="' + esc(nameText || "") + '" style="width:100%;min-width:0;border:0;background:transparent;padding:0;margin:0;color:inherit;text-align:start;outline:0;text-overflow:ellipsis;text-box:trim-both cap alphabetic"></div>' +
+      (exId ? heartBtnEx(exId, "bio-flat") : "") + (ro ? "" : arrow("del", I.trash, "הסרה מהוויוונסיה", false)) + (nav ? arrow("nextW", I.fwd, "הבא", !hasNext) : "") + '</header>';
   }
   (function () {
     var st = document.createElement("style");
@@ -1211,6 +1211,18 @@
     var cnt = sh.querySelector('[data-act="list"]'); if (cnt) { cnt.tabIndex = -1; cnt.setAttribute("aria-hidden", "true"); }   /* here the counter only shows where we are: the list is already behind the popup */
     var host = dlg.querySelector("#itemHost"); host.innerHTML = html; if (wire) wire(dlg.querySelector(".sheet"));
   }
+  /* the page of an exercise, below its header: the songs (cards), the texts. ro: the catalog's exercise, only read (no facilitators, no notes, the texts are not edited) */
+  function itemPageHtml(it, ro) {
+    return '<style>#ipg, #ipg * { touch-action: pan-y } #ipg textarea, #ipg .rf-rich { max-height: none } #ifields > .rfield { margin: 0 } #imus [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important }</style><div id="ipg" style="display:flex;flex-direction:column;flex:1 1 auto;min-height:0"><div class="pad" style="padding-bottom:0">' +
+      '<div style="display:flex;align-items:flex-end;gap:var(--gap-button)">' + (ro ? '' : facChip(it)) + '</div>' +
+      '</div>' +
+      '<div id="iscroll" style="flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain">' +   /* everything under the name scrolls together; the texts are open to the end */
+      '<div id="imus" style="flex:none;padding:var(--sp-2) var(--gutter) 0">' + musCards(it, ro) + '</div>' +   /* the songs this exercise is torn between, as cards: the chosen one plays in the vivencia */
+      '<div id="ifields" style="flex:none;display:flex;flex-direction:column;gap:var(--gap-field);padding:var(--gutter) var(--gutter) 0"><label class="rfield" style="flex:none"><span>פואטיקה</span><div id="ipo" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true"' + (isDraft(it, "poetics") ? DRAFT_FIELD : "") + '>' + rtHtml(txt(it, "poetics")) + '</div></label>' +
+      '<label class="rfield" style="flex:none"><span>הנחיה</span><div id="igu" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true"' + (isDraft(it, "guidance") ? DRAFT_FIELD : "") + '>' + rtHtml(txt(it, "guidance")) + '</div></label>' +
+      (ro ? '' : '<label class="rfield" style="flex:none"><span>הערות</span><div id="it" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true">' + rtHtml(it.notes || "") + '</div></label>') + '</div>' +
+      '<div id="ibtns" style="flex:none;height:calc(2 * var(--fab) + var(--sp-2) + 2 * var(--gutter) + var(--inset-b))"></div></div></div>';
+  }
   function itemScreen(it) {
     var e = it.exercises || {};
     setUrl(BASE + state.viv.id + "/" + it.id);
@@ -1219,16 +1231,7 @@
     var k = state.items.indexOf(it), prevIt = state.items[k - 1], nextIt = state.items[k + 1];
     /* the header walks the sequence: the right button to the previous exercise, the left one to the next, the name between them */
     var hd = itemHead(!!prevIt, !!nextIt, "", it.exercise_id, itemName(it));   /* the middle button says where we are, and still opens the list */
-    show(hd + '<style>#ipg, #ipg * { touch-action: pan-y } #ipg textarea, #ipg .rf-rich { max-height: none } #ifields > .rfield { margin: 0 } #imus [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important }</style><div id="ipg" style="display:flex;flex-direction:column;flex:1 1 auto;min-height:0"><div class="pad" style="padding-bottom:0">' +
-      '<div style="display:flex;align-items:flex-end;gap:var(--gap-button)">' + facChip(it) + '</div>' +
-      '</div>' +
-      '<div id="iscroll" style="flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain">' +   /* everything under the name scrolls together; the texts are open to the end */
-      '<div id="imus" style="flex:none;padding:var(--sp-2) var(--gutter) 0">' + musCards(it) + '</div>' +   /* the songs this exercise is torn between, as cards: the chosen one plays in the vivencia */
-      '<div id="ifields" style="flex:none;display:flex;flex-direction:column;gap:var(--gap-field);padding:var(--gutter) var(--gutter) 0"><label class="rfield" style="flex:none"><span>פואטיקה</span><div id="ipo" class="rf-rich" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true"' + (isDraft(it, "poetics") ? DRAFT_FIELD : "") + '>' + rtHtml(txt(it, "poetics")) + '</div></label>' +
-      '<label class="rfield" style="flex:none"><span>הנחיה</span><div id="igu" class="rf-rich" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true"' + (isDraft(it, "guidance") ? DRAFT_FIELD : "") + '>' + rtHtml(txt(it, "guidance")) + '</div></label>' +
-      '<label class="rfield" style="flex:none"><span>הערות</span><div id="it" class="rf-rich" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true">' + rtHtml(it.notes || "") + '</div></label></div>' +
-      '<div id="ibtns" style="flex:none;height:calc(2 * var(--fab) + var(--sp-2) + 2 * var(--gutter) + var(--inset-b))"></div></div></div>' +
-      '', function (r) {
+    show(hd + itemPageHtml(it, false), function (r) {
       var sf = state.slideFrom || 0, pg = r.querySelector("#ipg"); state.slideFrom = 0;
       r.style.overflowX = "clip";   /* a page sliding in from the side must not make the window scroll sideways */
       if (pg && sf && !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)) {
@@ -1496,9 +1499,10 @@
       }, fail);
     });
   }
-  function musCards(it) {
+  function musCards(it, ro) {
     var list = optList(it), cur = it.music_id;
-    var cards = list.map(function (m) { return optCardHtml(m, m.id === cur, true); }).join("");
+    var cards = list.map(function (m) { return optCardHtml(m, m.id === cur, !ro); }).join("");
+    if (ro) return cards ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch">' + cards + '</div>' : '';
     var add = '<div class="rcard rcard--compact" data-addm role="button" tabindex="0" style="margin:0;min-width:0;display:flex;align-items:center;justify-content:center;gap:var(--sp-1);cursor:pointer;min-height:var(--tag-s);border:1px dashed var(--line-strong);background:transparent;box-shadow:none;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>' + (list.length ? "הוספת מוזיקה" : "בחירת מוזיקה") + '</div>';
     return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch">' + cards + add + '</div>';
   }
@@ -1841,24 +1845,40 @@
     if (ls) ls.style.cssText += ";flex:1 1 auto;min-height:0;overflow-y:auto";
     pickerWire(r, swapIt, true);
   }
+  /* the catalog's exercise as an item of the page: its texts, its songs as options, the first one chosen; nothing of it is written anywhere */
+  function itemFake(e, rows, songs) {
+    return { id: "", exercise_id: e.id, exercises: Object.assign({}, e, { exercise_texts: rows || [] }), title: null, poetics: null, guidance: null, notes: "",
+      music_id: songs.length ? songs[0].id : null, music: songs[0] || null,
+      item_music_options: songs.map(function (m, i) { return { music_id: m.id, created_at: String(1000 + i), music: m }; }) };
+  }
+  /* the cards of a read only page: a tap plays, the chip chooses the song the exercise is added with */
+  function wireRoMusic(root, fake) {
+    var imus = root.querySelector("#imus"); if (!imus) return;
+    imus.addEventListener("click", function (ev) {
+      if (ev.target.closest("[data-audio], a")) return;
+      var ch = ev.target.closest("[data-choose]");
+      if (ch) { var m = optList(fake).filter(function (x) { return x.id === ch.dataset.choose; })[0]; if (m) { fake.music_id = m.id; fake.music = m; imus.innerHTML = musCards(fake, true); } return; }
+      var c = ev.target.closest("[data-opt]"); if (!c) return;
+      var pb = c.querySelector("[data-audio]"); if (pb) pb.click();
+    });
+  }
   function previewSheet(e, swapIt) {
     var tok = ++previewTok;
     loadPreview(e.id).then(function (res) { var rows = res.rows, songs = res.songs;
       if (tok !== previewTok) return;
-      var fake = { exercises: { exercise_texts: rows || [] } };
-      var card = function (k, label) { return txt(fake, k) ? '<div class="rcard rcard--flat" style="margin-inline:0"><div class="rcard__head"><span class="rcard__title">' + label + '</span></div><div class="rcard__body"' + (isDraft(fake, k) ? DRAFT : "") + '>' + rtHtml(txt(fake, k)) + '</div></div>' : ""; };
-      var word = swapIt ? "החלפה בתרגיל הזה" : "הוספה", sel = songs.length ? songs[0].id : null;
+      var fake = itemFake(e, rows, songs);
+      var word = swapIt ? "החלפה בתרגיל הזה" : "הוספה";
       var dlg = document.getElementById("exDlg");
       if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "exDlg"; document.body.appendChild(dlg); }
       RosterSheet.render(dlg, { title: name(e), from: "bottom",
-        body: bleedCss("exDlg") + '<style>#exDlg .sheet-body { padding-bottom: calc(var(--fab) + var(--gutter) * 2 + var(--inset-b)) } html.rs-lock:not(.kb-open) #exDlg .rfab { opacity: 1; transform: none; pointer-events: auto }</style>' + '<div style="padding-block:var(--sp-2)">' + prevMusic(songs, sel) + ((card("poetics", "פואטיקה") + card("guidance", "הנחיה")) || ph("אין עדיין תיאור לתרגיל", "")) + '</div>' });
+        body: bleedCss("exDlg") + '<style>#exDlg .sheet-body { padding-bottom: calc(var(--fab) + var(--gutter) * 2 + var(--inset-b)) } html.rs-lock:not(.kb-open) #exDlg .rfab { opacity: 1; transform: none; pointer-events: auto }</style>' + itemPageHtml(fake, true) });
       bleedSet(dlg);
       /* the action is the round button at the bottom left, where the add button of a list is (a popover inside the popup: drawn in the top layer, placed by the window) */
       var fab = document.createElement("button"); fab.type = "button"; fab.id = "exgo"; fab.className = "rfab"; fab.innerHTML = I.check; fab.setAttribute("aria-label", word); fab.title = word;
       fab.style.cssText = "inset:auto;margin:0;left:max(var(--gutter), var(--inset-l));bottom:calc(var(--gutter) + var(--dockh))";
       fab.setAttribute("popover", "manual"); dlg.appendChild(fab); try { fab.showPopover(); } catch (x) { /* an old browser: an ordinary fixed button */ }
-      wirePick(dlg, function (id) { sel = id; }, songs, sel);
-      dlg.querySelector("#exgo").addEventListener("click", function () { if (swapIt) confirmSwap(e, swapIt, true, sel); else addEx(e, undefined, true, sel); });
+      wireRoMusic(dlg, fake);
+      dlg.querySelector("#exgo").addEventListener("click", function () { if (swapIt) confirmSwap(e, swapIt, true, fake.music_id); else addEx(e, undefined, true, fake.music_id); });
     }, fail);
   }
   /* the catalog is over a thousand exercises and the server hands out at most a thousand rows at a time: read it page by page */
@@ -1927,13 +1947,13 @@
     var tok = ++previewTok;
     loadPreview(e.id).then(function (res) { var rows = res.rows, songs = res.songs;
       if (tok !== previewTok) return;   /* a later row was chosen meanwhile */
-      var fake = { exercises: { exercise_texts: rows || [] } };
-      var card = function (k, label) { return txt(fake, k) ? '<div class="rcard rcard--flat"><div class="rcard__head"><span class="rcard__title">' + label + '</span></div><div class="rcard__body"' + (isDraft(fake, k) ? DRAFT : "") + '>' + rtHtml(txt(fake, k)) + '</div></div>' : ""; };
-      var body = card("poetics", "פואטיקה") + card("guidance", "הנחיה");
-      var word = swapIt ? "החלפה בתרגיל הזה" : "הוספה", sel = songs.length ? songs[0].id : null;
-      var act = wide() ? ""   /* beside the list the action is the round button at the bottom left; on a narrow screen a plain check in the header, like the kit's popups */
-                       : '<button class="rbtn" type="button" style="flex:none;width:var(--ctl);padding:0" data-act="doswap" aria-label="' + word + '" title="' + word + '">' + I.check + '</button>';   /* the green button, with a check */
-      show(head(name(e), "", !wide(), act) + '<div class="rlist" data-fab-room style="overflow-x:hidden"><div style="padding-block:var(--sp-2)">' + prevMusic(songs, sel, true) + (body || ph("אין עדיין תיאור לתרגיל", "")) + '</div></div>' + (wide() ? '<button class="rfab" type="button" data-act="doswap" aria-label="' + word + '" title="' + word + '">' + I.check + '</button>' : ""), function (r) { on(r, "back", back); wirePick(r, function (id) { sel = id; }, songs, sel); on(r, "doswap", function () { if (swapIt) confirmSwap(e, swapIt, undefined, sel); else addEx(e, undefined, undefined, sel); }); }, "d");
+      var fake = itemFake(e, rows, songs);
+      var word = swapIt ? "החלפה בתרגיל הזה" : "הוספה";
+      /* the same page as the exercise of a vivencia, only read: its header, its song cards, its texts; the action is the round button at the bottom left */
+      show(itemHead(false, false, "", e.id, name(e), true) + itemPageHtml(fake, true) + '<button class="rfab" type="button" data-act="doswap" aria-label="' + word + '" title="' + word + '">' + I.check + '</button>', function (r) {
+        wireRoMusic(r, fake);
+        on(r, "doswap", function () { if (swapIt) confirmSwap(e, swapIt, undefined, fake.music_id); else addEx(e, undefined, undefined, fake.music_id); });
+      }, "d");
     }, fail);
   }
   /* replacing is asked in the kit's popup, one action: closing it is the cancel */
