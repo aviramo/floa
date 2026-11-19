@@ -828,7 +828,7 @@
       var w = pg.getBoundingClientRect().width || 320, v = Math.abs(dx) / Math.max(1, performance.now() - t0), go = dx > 0 ? to.next : to.prev;
       if (go && (Math.abs(dx) > w * 0.22 || v > 0.5)) {
         pg.style.transition = "transform .16s ease-in"; pg.style.transform = "translateX(" + (dx > 0 ? w : -w) + "px)";
-        if (to.drag) { var trk2 = document.querySelector("#itemDlg .bio-tabs__track"); if (trk2) { var tb2 = trk2.parentElement.getBoundingClientRect().width / 3; trk2.style.transition = "transform .16s ease-in"; trk2.style.transform = "translateX(calc(-20% + " + (dx > 0 ? tb2 : -tb2) + "px))"; } }
+        if (to.leave) to.leave(dx > 0 ? 1 : -1);
         setTimeout(go, 150);
       } else { pg.style.transition = "transform .22s cubic-bezier(.2, .8, .2, 1)"; pg.style.transform = ""; if (to.settle) to.settle(); }
     }
@@ -857,7 +857,7 @@
   /* the on-screen keyboard: while it is up, the player (hidden behind it anyway) keeps no room at the bottom of a popup, so the list reaches the keyboard */
   (function () {
     var st = document.createElement("style");
-    st.textContent = "@media (max-width: 700px) { html.bio-docked dialog.rsheet:not(:has(.sheet-foot)) .sheet { padding-bottom: 0 !important } html.bio-docked dialog.rsheet:not(:has(.sheet-foot)) .sheet-body { padding-bottom: var(--dockfull) !important } .bio-ihead--m { flex-wrap: wrap; row-gap: var(--sp-1) } .bio-ihead--m > .bio-tabs { flex: 1 1 100%; order: 10; overflow: hidden; direction: ltr; margin-inline: calc(var(--gutter) * -1); padding-block: 2px } .bio-tabs__track { display: flex; width: 166.667%; transform: translateX(-20%); transition: transform .22s cubic-bezier(.2, .8, .2, 1) } .bio-tab { flex: 0 0 20%; box-sizing: border-box; padding-inline: var(--sp-1); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font: var(--fw-medium) var(--fs-s)/var(--lh-tight) var(--font); color: var(--text-3); direction: rtl } .bio-tab.is-cur { color: var(--text); font-weight: var(--fw-bold) } .bio-ihead { flex-wrap: wrap; row-gap: 0 } .bio-ihead > .rhead__text { display: contents } .bio-ihead #ina { order: 10; flex: 1 1 100% !important; width: 100% !important; margin-top: var(--sp-1) !important } .bio-ihead #itimer { margin-inline-start: auto } :root { --dockfull: calc(var(--ctl) + 20px + var(--sp-1) * 3 + var(--inset-b)) } .bio-dock { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; column-gap: var(--sp-1); row-gap: var(--sp-1); min-height: 0; padding-block: var(--sp-1) calc(var(--sp-1) + var(--inset-b)) } .bio-dock > .bio-dockbar { grid-column: 1 / -1; grid-row: 1 } .bio-dock > .rbtn:first-child { grid-column: 1; grid-row: 2; order: 0; margin-inline-end: 0; width: var(--ctl) !important; height: var(--ctl) !important; min-height: var(--ctl) !important } .bio-dock > .bio-dock__time { grid-column: 2; grid-row: 2; order: 0 } .bio-dock > .bio-dock__name { grid-column: 3; grid-row: 2; order: 0; min-width: 0 } .bio-dock > [data-hist] { grid-column: 4; grid-row: 2; order: 0 } .bio-dock > [data-addcur] { grid-column: 1 / -1; grid-row: 3; order: 0; flex: none !important; min-width: 0; justify-self: stretch; justify-content: center } .bio-dock > [data-addcur] [data-addcur-label] { max-width: 100% !important } .bio-dock > .bio-volume { display: none } } html.bio-kb .bio-dock { display: none !important } html.bio-kb dialog.rsheet:not(:has(.sheet-foot)) .sheet-body { padding-bottom: 0 !important } html.bio-kb dialog.rsheet:not(:has(.sheet-foot)) .sheet { padding-bottom: 0 !important }";
+    st.textContent = "@media (max-width: 700px) { html.bio-docked dialog.rsheet:not(:has(.sheet-foot)) .sheet { padding-bottom: 0 !important } html.bio-docked dialog.rsheet:not(:has(.sheet-foot)) .sheet-body { padding-bottom: var(--dockfull) !important } .bio-ihead--m { flex-wrap: wrap; row-gap: var(--sp-1) } .bio-ihead--m > .bio-tabs { flex: 1 1 100%; order: 10; overflow: hidden; direction: ltr; margin-inline: calc(var(--gutter) * -1); padding-block: 2px } .bio-tabs__track { display: flex; width: max-content; visibility: hidden; transition: transform .22s cubic-bezier(.2, .8, .2, 1) } .bio-tabs__track.is-ready { visibility: visible } .bio-tab { flex: none; padding-inline: var(--sp-3); white-space: nowrap; font: var(--fw-medium) var(--fs-s)/var(--lh-tight) var(--font); color: var(--text-3); direction: rtl } .bio-tab.is-cur { color: var(--text); font-weight: var(--fw-bold) } .bio-ihead { flex-wrap: wrap; row-gap: 0 } .bio-ihead > .rhead__text { display: contents } .bio-ihead #ina { order: 10; flex: 1 1 100% !important; width: 100% !important; margin-top: var(--sp-1) !important } .bio-ihead #itimer { margin-inline-start: auto } :root { --dockfull: calc(var(--ctl) + 20px + var(--sp-1) * 3 + var(--inset-b)) } .bio-dock { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; column-gap: var(--sp-1); row-gap: var(--sp-1); min-height: 0; padding-block: var(--sp-1) calc(var(--sp-1) + var(--inset-b)) } .bio-dock > .bio-dockbar { grid-column: 1 / -1; grid-row: 1 } .bio-dock > .rbtn:first-child { grid-column: 1; grid-row: 2; order: 0; margin-inline-end: 0; width: var(--ctl) !important; height: var(--ctl) !important; min-height: var(--ctl) !important } .bio-dock > .bio-dock__time { grid-column: 2; grid-row: 2; order: 0 } .bio-dock > .bio-dock__name { grid-column: 3; grid-row: 2; order: 0; min-width: 0 } .bio-dock > [data-hist] { grid-column: 4; grid-row: 2; order: 0 } .bio-dock > [data-addcur] { grid-column: 1 / -1; grid-row: 3; order: 0; flex: none !important; min-width: 0; justify-self: stretch; justify-content: center } .bio-dock > [data-addcur] [data-addcur-label] { max-width: 100% !important } .bio-dock > .bio-volume { display: none } } html.bio-kb .bio-dock { display: none !important } html.bio-kb dialog.rsheet:not(:has(.sheet-foot)) .sheet-body { padding-bottom: 0 !important } html.bio-kb dialog.rsheet:not(:has(.sheet-foot)) .sheet { padding-bottom: 0 !important }";
     document.head.appendChild(st);
     var vv = window.visualViewport; if (!vv) return;
     function upd() { document.documentElement.classList.toggle("bio-kb", Math.max(0, window.innerHeight - vv.height - vv.offsetTop) > 120); }
@@ -1721,6 +1721,16 @@
     var set = function () { pd.style.setProperty("--sbw", Math.max(0, sc.offsetWidth - sc.clientWidth) + "px"); };
     set(); if (window.ResizeObserver) new ResizeObserver(set).observe(sc);
   }
+  function tabsCenter(trk) {   /* the current tab is in the middle of the strip, whatever the width of the words is */
+    var cur = trk.querySelector(".is-cur"); if (!cur) return;
+    var base = trk.parentElement.clientWidth / 2 - (cur.offsetLeft + cur.offsetWidth / 2);
+    trk._base = base; trk.style.transition = "none"; trk.style.transform = "translateX(" + base + "px)"; trk.classList.add("is-ready");
+    requestAnimationFrame(function () { requestAnimationFrame(function () { trk.style.transition = ""; }); });
+  }
+  function tabsDist(trk, dir) {   /* how far the middle of the next (dir 1, on the left) or the previous (dir -1) tab is from the middle of this one */
+    var tabs = trk.querySelectorAll(".bio-tab"), cur = trk.querySelector(".is-cur"), i = [].indexOf.call(tabs, cur), t = tabs[i - dir];
+    return t && cur ? Math.abs((t.offsetLeft + t.offsetWidth / 2) - (cur.offsetLeft + cur.offsetWidth / 2)) : 0;
+  }
   function itemScreen(it) {
     var e = it.exercises || {};
     setUrl(BASE + state.viv.id + "/" + it.id);
@@ -1744,8 +1754,10 @@
       on(r, "nextW", function () { if (nextIt) walk(nextIt); });
       var trk = document.querySelector("#itemDlg .bio-tabs__track");
       if (pg) attachPager(pg, { next: nextIt ? function () { walk(nextIt); } : null, prev: prevIt ? function () { walk(prevIt); } : null,
-        drag: trk ? function (dx, w) { var tb = trk.parentElement.getBoundingClientRect().width / 3; trk.style.transition = "none"; trk.style.transform = "translateX(calc(-20% + " + Math.round(dx * tb / w) + "px))"; } : null,
-        settle: trk ? function () { trk.style.transition = ""; trk.style.transform = ""; } : null });   /* the tabs follow the finger, the same way the page does */
+        drag: trk ? function (dx, w) { var dir = dx > 0 ? 1 : -1; trk.style.transition = "none"; trk.style.transform = "translateX(" + ((trk._base || 0) + dir * tabsDist(trk, dir) * Math.min(1, Math.abs(dx) / w)) + "px)"; } : null,
+        settle: trk ? function () { trk.style.transition = ""; trk.style.transform = "translateX(" + (trk._base || 0) + "px)"; } : null,
+        leave: trk ? function (dir) { trk.style.transition = "transform .16s ease-in"; trk.style.transform = "translateX(" + ((trk._base || 0) + dir * tabsDist(trk, dir)) + "px)"; } : null });   /* the tabs follow the finger, the same way the page does */
+      if (trk) { tabsCenter(trk); if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (trk.isConnected) tabsCenter(trk); }); }
       function toMusic() { if (wide()) { musicScreen(it); subEnter(function () { musicScreen(it); }); } else musicSheet(it); }   /* beside the list, the pane; on a narrow screen, a popup from the bottom */
       on(r, "pickMusic", function (b, ev) { if (ev.target.closest("a,[data-audio]")) return; toMusic(); });
       var imus = r.querySelector("#imus");
