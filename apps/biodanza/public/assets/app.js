@@ -191,7 +191,9 @@
     return '<a class="rbtn rbtn--icon' + (trail ? ' rrow__trail' : '') + '" data-yt="' + esc(m.id || "") + '" href="https://www.youtube.com/results?search_query=' + encodeURIComponent((songName(m) + " " + songBy(m)).trim()) + '" target="_blank" rel="noopener" aria-label="ניגון ביוטיוב" title="ניגון ביוטיוב" style="width:var(--fab);height:var(--fab);min-height:var(--fab);color:' + ytColor(m.id) + '">' + I.yt + '</a>';
   }
   /* a song with a file in the bucket gets the sound button (assets/audio.js); one without keeps the YouTube button */
+  var songInfo = {};   /* every song's name and performer by its file, as the lists have shown them: the footer player reads its title here */
   function songBtn(m, trail) {
+    if (m.audio_object) songInfo[m.audio_object] = { t: m.title || m.name, a: m.artist || "" };
     if (m.audio_object && window.BioAudio && BioAudio.info) BioAudio.info(m.audio_object, m.title || m.name, m.artist);   /* the phone's lock screen shows the song's name */
     if (m.audio_object && window.BioAudio) return BioAudio.button(m.audio_object, trail);
     songReg[m.id] = m;
@@ -279,7 +281,7 @@
     document.head.appendChild(st);
     var PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
     var PLAY = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>';
-    var playing = false, loaded = false, closed = false, seekDrag = false, leftNow = 0, frac = 0, curT = 0, curD = 0, curTitle = "", curArtist = "", lastH = 0, last = null;
+    var playing = false, loaded = false, closed = false, seekDrag = false, leftNow = 0, frac = 0, curT = 0, curD = 0, curTitle = "", curArtist = "", lastH = 0, last = null, curName = "", asked = {};
     try { last = JSON.parse(localStorage.getItem("biodanza.last") || "null"); if (last && !last.n) last = null; } catch (x) { last = null; }   /* the song that played last: the footer keeps it, also after a reload */
     if (last && window.BioAudio && BioAudio.info) BioAudio.info(last.n, last.t, last.a);
     var histName = "";
@@ -357,6 +359,19 @@
       var started = !!dd.playing && !playing && !!dd.name && (dd.t < 2 || dd.name !== histName);
       playing = !!dd.playing; loaded = !!dd.name; if (loaded) closed = false;
       curT = loaded ? dd.t || 0 : 0; curD = loaded ? dd.d || 0 : 0; curTitle = dd.title || ""; curArtist = dd.artist || "";
+      curName = dd.name || "";
+      if (loaded && !curTitle) {   /* the name came empty: from what a list showed, from the last song, or (once) from the database */
+        var kn = songInfo[dd.name] || (last && last.n === dd.name ? { t: last.t, a: last.a } : null);
+        if (kn) { curTitle = kn.t; curArtist = kn.a; }
+        else if (!asked[dd.name] && window.FLOA_AUTH && FLOA_AUTH.signedIn()) {
+          asked[dd.name] = 1; var nm0 = dd.name;
+          api("/rest/v1/music?audio_object=eq." + encodeURIComponent(nm0) + "&select=title,name,artist&limit=1").then(function (rows) {
+            var x = rows && rows[0]; if (!x) return;
+            songInfo[nm0] = { t: x.title || x.name, a: x.artist || "" }; if (window.BioAudio && BioAudio.info) BioAudio.info(nm0, songInfo[nm0].t, songInfo[nm0].a);
+            if (curName === nm0) { curTitle = songInfo[nm0].t; curArtist = songInfo[nm0].a; last = { n: nm0, t: curTitle, a: curArtist, d: curD > 0 ? Math.floor(curD) : 0 }; try { localStorage.setItem("biodanza.last", JSON.stringify(last)); } catch (x2) { /* not kept */ } sync(); }
+          }, function () { /* the title stays the plain word */ });
+        }
+      }
       if (started) remember(dd.name, curTitle, curArtist);
       if (loaded && curTitle && (!last || last.n !== dd.name || last.t !== curTitle || last.a !== curArtist || (dd.d > 0 && last.d !== Math.floor(dd.d)))) { last = { n: dd.name, t: curTitle, a: curArtist, d: dd.d > 0 ? Math.floor(dd.d) : (last && last.n === dd.name ? last.d : 0) }; try { localStorage.setItem("biodanza.last", JSON.stringify(last)); } catch (x) { /* not kept */ } }
       if (loaded && dd.d > 0) { leftNow = Math.max(0, Math.ceil(dd.d - dd.t)); frac = dd.t / dd.d; } else { leftNow = 0; frac = 0; }
