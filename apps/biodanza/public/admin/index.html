@@ -86,9 +86,39 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
     var has = m.audio_object && window.BioAudio;
     if (has) BioAudio.info(m.audio_object, m.title || m.name, m.artist);
     return '<div class="rcard rcard--compact"><span class="song__t">' + esc(m.title || m.name) + '</span>' + '<span class="song__a">' + (m.artist ? esc(m.artist) : '&nbsp;') + '</span>' +
-      '<div class="song__f">' + (has ? '<button type="button" class="rbtn rbtn--icon" data-audio="' + esc(m.audio_object) + '" aria-label="השמעה" title="השמעה"></button>' : '<span class="rchip rchip--s">ללא קובץ</span>') +
+      '<div class="song__f">' + (has ? '<button type="button" class="rbtn rbtn--icon" data-audio="' + esc(m.audio_object) + '" aria-label="השמעה" title="השמעה"></button>' : '<button type="button" class="rchip rchip--s" data-up="' + esc(m.id) + '" title="העלאת קובץ לשיר, זמין לכולם" style="cursor:pointer;border:0">ללא קובץ, העלאה</button>') +
       (m.duration_sec ? '<span class="song__d">' + mmss(m.duration_sec) + '</span>' : '<span></span>') + '</div></div>';
   }
+  /* a song with no file: choosing one here puts it in the bucket (through the Worker), attaches it to the song, and the song plays for everybody */
+  var UPL = { mp3: 1, flac: 1, wav: 1, aiff: 1, aif: 1, m4a: 1 };
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("[data-up]"); if (!b || b.dataset.busy) return;
+    var id = b.dataset.up, m = songs.filter(function (x) { return x.id === id; })[0]; if (!m) return;
+    var inp = document.createElement("input"); inp.type = "file"; inp.accept = "audio/*,.flac,.m4a,.aiff,.aif,.wav,.mp3";
+    var label = b.textContent, say = function (t, ms) { b.textContent = t; if (ms) setTimeout(function () { b.textContent = label; delete b.dataset.busy; }, ms); };
+    inp.addEventListener("change", function () {
+      var f = inp.files && inp.files[0]; if (!f) return;
+      var fmt = (f.name.split(".").pop() || "").toLowerCase(); if (!UPL[fmt]) return say("קובץ שמע בלבד", 2500);
+      b.dataset.busy = "1"; say("0%");
+      FLOA_AUTH.token().then(function (t) {
+        return new Promise(function (res, rej) {
+          var x = new XMLHttpRequest(); x.open("PUT", "https://api.floa.co.il/biodanza/audio/upload");
+          x.setRequestHeader("authorization", "Bearer " + t); x.setRequestHeader("x-format", fmt);
+          x.upload.onprogress = function (ev) { if (ev.lengthComputable) say(Math.round(ev.loaded / ev.total * 100) + "%"); };
+          x.onload = function () { if (x.status === 200) { try { res(JSON.parse(x.responseText)); } catch (er) { rej(er); } } else rej(new Error("upload " + x.status)); };
+          x.onerror = function () { rej(new Error("upload")); };
+          x.send(f);
+        });
+      }).then(function (o) {
+        return FLOA_AUTH.api("/rest/v1/rpc/attach_audio", { method: "POST", json: { p_music: id, p_object: o.object, p_format: o.format, p_size: o.size } }).then(function () { return o; });
+      }).then(function (o) {
+        m.audio_object = o.object; byObj[o.object] = m;
+        if (window.BioAudio) { BioAudio.info(o.object, m.title || m.name, m.artist); b.outerHTML = '<button type="button" class="rbtn rbtn--icon" data-audio="' + esc(o.object) + '" aria-label="השמעה" title="השמעה"></button>'; }
+        else say("נשמר", 0);
+      }).catch(function (er) { console.error(er); say("ההעלאה נכשלה", 3000); });
+    });
+    inp.click();
+  });
   function more() {   /* the next cards, when the list is scrolled near its end: the page draws a few dozen at a time, never all three thousand */
     var out = document.getElementById("out"); if (!out || shown >= hitList.length) return;
     out.insertAdjacentHTML("beforeend", hitList.slice(shown, shown + CHUNK).map(card).join("")); shown = Math.min(hitList.length, shown + CHUNK);
