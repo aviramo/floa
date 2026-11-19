@@ -832,7 +832,12 @@
     pd.classList.add("bio-dim");   /* the left goes behind the half dark backdrop, as behind every popup */
   }
   document.addEventListener("click", function (ev) { var ab = ev.target.closest && ev.target.closest("[data-addex]"); if (ab) {   /* the plus beside the exercises' title: an empty exercise at the end of the numbered ones, opened to be filled in */
-      if (!state.viv || !state.items || ab.disabled) return; ab.disabled = true;
+      if (!state.viv || !state.items || ab.disabled) return;
+      if (!ab.dataset.go) {   /* the plus asks which: an empty new exercise, or one from the catalog */
+        menu(ab, [{ label: "תרגיל חדש", icon: I.plus, fn: function () { ab.dataset.go = "1"; ab.click(); } }, { label: "תרגיל מהקטלוג", icon: I.catalog, fn: function () { if (wide()) openCatPanel(); else { resetPk(); pickerSheet(); } } }]);
+        return;
+      }
+      delete ab.dataset.go; ab.disabled = true;
       var cur = liveItem && state.items.filter(function (x) { return x.id === liveItem.id; })[0];   /* standing on an exercise: the new one comes right after it, in its group; otherwise at the end of the numbered ones */
       var pos = cur ? cur.position + 1 : state.items.reduce(function (x, k) { return Math.max(x, k.position); }, 0) + 1;
       var shift = cur ? state.items.filter(function (x) { return x.position > cur.position; }).map(function (x) { return api("/rest/v1/vivencia_items?id=eq." + x.id, { method: "PATCH", prefer: "return=minimal", json: { position: x.position + 1 } }); }) : [];
@@ -1326,7 +1331,7 @@
         sub: m ? songName(m) : "בלי מוזיקה", subRight: !!m, footEnd: true, pill: m ? cardPill(m) : "", chip: facChip(i, " rchip--s"), time: m ? clkSpan(m) : "",
         actions: (canEdit() ? '<button type="button" class="rbtn rbtn--icon bio-ha" data-idel="' + i.id + '" aria-label="הסרה מהוויוונסיה" title="הסרה מהוויוונסיה">' + I.trash + '</button>' : '') + (i.exercise_id ? heartBtnEx(i.exercise_id, "bio-ha") : '') });   /* on hover: the bin at the right, the heart at its left */
     };
-    var exHead = '<div style="display:flex;align-items:center;justify-content:space-between;padding:var(--gutter) var(--gutter) 0"><span class="rrow__title" style="font-weight:var(--fw-black)">ויוונסיה</span>' + (canEdit() ? '<button type="button" class="rbtn rbtn--icon" data-addex aria-label="תרגיל ריק חדש" title="תרגיל ריק חדש">' + I.plus + '</button>' : '') + '</div>';   /* the exercises have a title like the songs of the start, with a plus at its other end */
+    var exHead = '<div style="display:flex;align-items:center;justify-content:space-between;padding:var(--gutter) var(--gutter) 0"><span class="rrow__title" style="font-weight:var(--fw-black)">ויוונסיה</span>' + (canEdit() ? '<button type="button" class="rbtn rbtn--icon" data-addex aria-haspopup="menu" aria-label="הוספת תרגיל" title="הוספת תרגיל">' + I.plus + '</button>' : '') + '</div>';   /* the exercises have a title like the songs of the start, with a plus at its other end */
     l.innerHTML = recvHtml("start") + exHead + '<div id="plist" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch;padding:var(--gutter)">' + main.map(function (i, k) { return rowOf(i, k + 1); }).join("") +
       '<div data-div style="grid-column:1 / -1;padding:var(--sp-2) 0 var(--sp-1);margin-top:var(--sp-1);min-height:var(--ctl)"><div class="rrow__sub">נוספים</div>' + (back.length || !canEdit() ? '' : '<div class="rrow__sub" style="margin-top:var(--sp-1)">גררו לכאן תרגיל שעוד לא החלטתם עליו</div>') + '</div>' +
       back.map(function (i) { return rowOf(i, "•"); }).join("") + '</div>' + recvHtml("end");
