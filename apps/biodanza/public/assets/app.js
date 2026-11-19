@@ -505,7 +505,13 @@
           var nmA = loaded ? curName : (last && last.n), idA = liveItem && liveItem.id, itA = idA && state.items && state.items.filter(function (x) { return x.id === idA; })[0];
           var exOpen = !!(nmA && itA && document.querySelector("#imus [data-addm]"));
           var vivList = !exOpen && !!nmA && !!state.viv && !!state.items && canEdit() && !!document.querySelector("#list[data-fab-room]");
-          var show = exOpen ? !optList(itA).some(function (m) { return m.audio_object === nmA; }) : vivList;   /* an exercise is open and the song is not in it, or the vivencia is open with no exercise */
+          var inViv = function () {   /* is the song already somewhere in this vivencia: an exercise's song or option, the start or the end music */
+            if (!vivList || !state.viv) return false;
+            var has = function (m) { return m && m.audio_object === nmA; };
+            return (state.items || []).some(function (x) { return has(x.music) || (x.item_music_options || []).some(function (o) { return has(o.music); }); }) ||
+              ["start", "end"].some(function (k) { return (recvCache[state.viv.id + "|" + k] || []).some(function (o) { return has(o.music); }); });
+          };
+          var show = exOpen ? !optList(itA).some(function (m) { return m.audio_object === nmA; }) : vivList && !inViv();   /* an exercise is open and the song is not in it, or the vivencia is open with no exercise */
           if (ac.hidden === show) ac.hidden = !show;
           if (show) {
             var lb = ac.querySelector("[data-addcur-label]"), nmE = exOpen ? (itemName(itA) || "התרגיל") : (state.viv.title || "הוויוונסיה");
