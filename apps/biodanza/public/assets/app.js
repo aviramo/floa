@@ -1737,9 +1737,10 @@
     setUrl(BASE + state.viv.id + "/" + it.id);
     state.lastItem = it.id;   /* the strip of the exercise last opened stays marked in the list, like the vivencia in its list */
     markItem();
-    var k = state.items.findIndex(function (x) { return x.id === it.id; }), prevIt = state.items[k - 1], nextIt = state.items[k + 1];   /* its place by its id: the list may have been read again, and its objects are new ones */
+    var seq = it.backlog ? [it] : state.items.filter(function (x) { return !x.backlog; });   /* the pager walks the numbered exercises only: "נוספים" are not in it */
+    var k = seq.findIndex(function (x) { return x.id === it.id; }), prevIt = seq[k - 1], nextIt = seq[k + 1];   /* its place by its id: the list may have been read again, and its objects are new ones */
     /* the header walks the sequence: the right button to the previous exercise, the left one to the next, the name between them */
-    var hd = itemHead(!!prevIt, !!nextIt, "", it.exercise_id, itemName(it), false, "", !!it.backlog, it.backlog ? "•" : String(state.items.filter(function (i) { return !i.backlog; }).findIndex(function (i) { return i.id === it.id; }) + 1), undefined, [2, 1, 0, -1, -2].map(function (d) { var x = state.items[k + d]; if (!x) return null; return { n: x.backlog ? "•" : String(state.items.filter(function (i) { return !i.backlog; }).findIndex(function (i) { return i.id === x.id; }) + 1), t: itemName(x) }; }));   /* the tabs, from the left: the next ones, this one, the previous ones */   /* its number, the same as in the list, before its name */   /* the middle button says where we are, and still opens the list */
+    var hd = itemHead(!!prevIt, !!nextIt, "", it.exercise_id, itemName(it), false, "", !!it.backlog, it.backlog ? "•" : String(state.items.filter(function (i) { return !i.backlog; }).findIndex(function (i) { return i.id === it.id; }) + 1), undefined, [2, 1, 0, -1, -2].map(function (d) { var x = seq[k + d]; if (!x) return null; return { n: x.backlog ? "•" : String(k + d + 1), t: itemName(x) }; }));   /* the tabs, from the left: the next ones, this one, the previous ones */   /* its number, the same as in the list, before its name */   /* the middle button says where we are, and still opens the list */
     show(hd + itemPageHtml(it, false), function (r) {
       var sf = state.slideFrom || 0, pg = r.querySelector("#ipg"); state.slideFrom = 0;
       sbSync(r);
@@ -1760,7 +1761,7 @@
         leave: trk ? function (dir) { trk.classList.remove("is-drag"); trk.style.setProperty("--tx", ((trk._base || 0) + dir * tabsDist(trk, dir)) + "px"); } : null });   /* the tabs follow the finger, the same way the page does */
       if (trk) trk.addEventListener("click", function (ev) {   /* a tap on a tab (its number or its name) goes to that exercise */
         var tab = ev.target.closest(".bio-tab"); if (!tab) return;
-        var idx = [].indexOf.call(trk.querySelectorAll(".bio-tab"), tab), to2 = state.items[k + (2 - idx)];
+        var idx = [].indexOf.call(trk.querySelectorAll(".bio-tab"), tab), to2 = seq[k + (2 - idx)];
         if (idx === 2 || !to2) return;
         repNext = true; state.slideFrom = idx < 2 ? -1 : 1; stack().pop(); go(function () { itemScreen(to2); });
       });
