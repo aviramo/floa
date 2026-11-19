@@ -875,7 +875,7 @@
     var snap = loadCatSnap(); if (snap) { pk.q = snap.q || ""; pk.open = snap.cats || {}; }   /* back to where it was before the refresh */
     var bg = getComputedStyle(document.body).backgroundColor;
     var d = document.createElement("div"); d.id = "catLayer";
-    d.innerHTML = '<div class="catprev" style="background:' + bg + '"></div><div class="catmain" style="background:' + bg + '"><div class="catbody" inert><header class="rhead"><div class="rhead__text">' + searchInput() + '</div>' + catAddHtml() + '</header>' + pickerBody(false) + '</div></div>';
+    d.innerHTML = '<div class="catprev" style="background:' + bg + '"></div><div class="catmain" style="background:' + bg + '"><div class="catbody" inert><header class="rhead"><div class="rhead__text" style="padding-inline-start:0">' + searchInput() + '</div>' + catAddHtml() + '</header>' + pickerBody(false) + '</div></div>';
     document.body.appendChild(d); catLayer = d; catPrev = d.querySelector(".catprev"); d.querySelector("#catAdd").addEventListener("click", function (ev) {
       var c = catPrevCtx; if (!c) return;
       if (!state.viv) vivPick(ev.currentTarget, c.e, c.fake.music_id, c.fake.sel);
