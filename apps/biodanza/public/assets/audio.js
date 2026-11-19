@@ -85,10 +85,10 @@
   el.volume = wideNow() ? vol : 1;
   var fadeT = 0, fadingOut = false, FADE = 1000;
   function target() { return wideNow() ? vol : 1; }
-  function ramp(to, done) {   /* the volume goes from where it is to `to` in a second */
-    clearInterval(fadeT); var from = el.volume, t0 = Date.now();
+  function ramp(to, done, ms) {   /* the volume goes from where it is to `to` in a second (or ms) */
+    clearInterval(fadeT); var from = el.volume, t0 = Date.now(), len = ms || FADE;
     fadeT = setInterval(function () {
-      var k = Math.min(1, (Date.now() - t0) / FADE); el.volume = Math.max(0, Math.min(1, from + (to - from) * k));
+      var k = Math.min(1, (Date.now() - t0) / len); el.volume = Math.max(0, Math.min(1, from + (to - from) * k));
       if (k >= 1) { clearInterval(fadeT); fadeT = 0; if (done) done(); }
     }, 40);
   }
@@ -103,6 +103,26 @@
     fadingOut = true; paint(); document.dispatchEvent(new CustomEvent("bioaudio", { detail: { name: now, t: el.currentTime, d: el.duration || 0, playing: false, title: (infos[now] || {}).title || "", artist: (infos[now] || {}).artist || "" } }));
     ramp(0, function () { el.pause(); fadingOut = false; el.volume = target(); });
   }
+  var SEEK_FADE = 500, ghosts = [], pendT = null, pendTimer = 0;
+  function killGhosts() { ghosts.forEach(function (g) { clearInterval(g.t); try { g.a.pause(); g.a.removeAttribute("src"); } catch (e) { /* gone */ } }); ghosts = []; }
+  function crossTo(t) {   /* a copy of the player stays on the old place and fades out; the player itself goes to the new place and fades in */
+    if (!el.duration) return;
+    t = Math.max(0, Math.min(el.duration, t));
+    if (el.paused || fadingOut || !el.src) { el.currentTime = t; return; }
+    if (ghosts.length > 2) killGhosts();
+    var a = new Audio(), g = { a: a, t: 0 };
+    a.src = el.src; a.volume = el.volume; a.currentTime = el.currentTime;
+    var pr = a.play(); if (pr && pr.catch) pr.catch(function () { /* the new place is heard anyway */ });
+    ghosts.push(g);
+    var from = a.volume, t0 = Date.now();
+    g.t = setInterval(function () {
+      var k = Math.min(1, (Date.now() - t0) / SEEK_FADE); a.volume = Math.max(0, from * (1 - k));
+      if (k >= 1) { clearInterval(g.t); try { a.pause(); a.removeAttribute("src"); } catch (e) { /* gone */ } var i = ghosts.indexOf(g); if (i >= 0) ghosts.splice(i, 1); }
+    }, 30);
+    el.currentTime = t; el.volume = 0; ramp(target(), function () { el.volume = target(); }, SEEK_FADE);
+  }
+  function wantSeek(t) { pendT = t; clearTimeout(pendTimer); pendTimer = setTimeout(commitSeek, 250); }   /* a drag or a few key presses: the place is set when it stops */
+  function commitSeek() { clearTimeout(pendTimer); if (pendT == null) return; var t = pendT; pendT = null; crossTo(t); }
   function playToggle() { if (fadingOut || el.paused) fadeIn(); else fadeOut(); }
   function paint() {
     document.querySelectorAll("[data-audio]").forEach(function (b) {
@@ -142,9 +162,9 @@
     var act = function (n, fn) { try { ms.setActionHandler(n, fn); } catch (e) { /* this action is not supported here */ } };
     act("play", function () { if (el.src) fadeIn(); });
     act("pause", function () { fadeOut(); });
-    act("seekto", function (d) { if (el.duration && d && d.seekTime != null) el.currentTime = Math.max(0, Math.min(el.duration, d.seekTime)); });
-    act("seekbackward", function (d) { if (el.duration) el.currentTime = Math.max(0, el.currentTime - ((d && d.seekOffset) || 10)); });
-    act("seekforward", function (d) { if (el.duration) el.currentTime = Math.min(el.duration, el.currentTime + ((d && d.seekOffset) || 10)); });
+    act("seekto", function (d) { if (el.duration && d && d.seekTime != null) crossTo(d.seekTime); });
+    act("seekbackward", function (d) { if (el.duration) crossTo(el.currentTime - ((d && d.seekOffset) || 10)); });
+    act("seekforward", function (d) { if (el.duration) crossTo(el.currentTime + ((d && d.seekOffset) || 10)); });
     el.addEventListener("play", function () { ms.playbackState = "playing"; showMeta(); showPos(); });
     el.addEventListener("pause", function () { ms.playbackState = el.ended ? "none" : "paused"; showPos(); });
     el.addEventListener("loadedmetadata", showPos);
@@ -175,6 +195,7 @@
     if (now === name && url) { playToggle(); return; }
     busy = name; paint();
     bytes(name).then(function (b) {
+      killGhosts(); pendT = null;
       if (url) URL.revokeObjectURL(url);
       url = URL.createObjectURL(b); now = name; el.src = url;
       return fadeIn().then(function () { preloadNext(); });
@@ -200,7 +221,8 @@
     volume: function (d) { if (!wideNow()) { if (!fadeT) el.volume = 1; return 1; }   /* a phone has its own volume keys: the page always plays at full */
       vol = Math.max(0, Math.min(1, Math.round((vol + d) * 100) / 100)); if (!fadeT) el.volume = vol; try { localStorage.setItem("biodanza.volume", String(vol)); } catch (e) { /* not kept */ } return vol; },
     /* move the playing song by seconds (negative: back) */
-    skip: function (sec) { if (el.duration) el.currentTime = Math.max(0, Math.min(el.duration, el.currentTime + sec)); },
+    skip: function (sec) { if (el.duration) wantSeek((pendT != null ? pendT : el.currentTime) + sec); },
+    commitSeek: function () { commitSeek(); },
     pause: function () { fadeOut(); },
     /* the player's one button: the loaded song plays or pauses */
     /* the player's X: the song stops and is let go, so the pill has nothing loaded */
@@ -211,14 +233,14 @@
     },
     setLists: function (o) { lists = o || {}; },
     queueNames: function () { return queue.slice(); },   /* the songs of the list that is playing, if one is */
-    stopList: function () { queue = []; dropNext(); clearInterval(fadeT); fadeT = 0; fadingOut = false; el.pause(); el.volume = target(); },   /* the list is switched off: what plays is paused and nothing follows it */
-    stop: function () { queue = []; dropNext(); clearInterval(fadeT); fadeT = 0; fadingOut = false; el.pause(); el.volume = target(); now = ""; try { el.removeAttribute("src"); el.load(); } catch (e) { /* nothing to let go */ } if (url) { URL.revokeObjectURL(url); url = ""; } tell("", 0, 0); paint(); },
+    stopList: function () { killGhosts(); queue = []; dropNext(); clearInterval(fadeT); fadeT = 0; fadingOut = false; el.pause(); el.volume = target(); },   /* the list is switched off: what plays is paused and nothing follows it */
+    stop: function () { killGhosts(); queue = []; dropNext(); clearInterval(fadeT); fadeT = 0; fadingOut = false; el.pause(); el.volume = target(); now = ""; try { el.removeAttribute("src"); el.load(); } catch (e) { /* nothing to let go */ } if (url) { URL.revokeObjectURL(url); url = ""; } tell("", 0, 0); paint(); },
     playPause: function () { if (now && url) playToggle(); },
-    seek: function (f) { if (el.duration) el.currentTime = Math.max(0, Math.min(1, f)) * el.duration; },
+    seek: function (f) { if (el.duration) wantSeek(Math.max(0, Math.min(1, f)) * el.duration); },
     /* move a song to a place in it, also one that is not playing: its file is loaded (not played) and put there; play then goes on from that place */
     seekTo: function (name, f) {
       f = Math.max(0, Math.min(1, f));
-      if (now === name && url && el.duration) { el.currentTime = f * el.duration; return; }
+      if (now === name && url && el.duration) { wantSeek(f * el.duration); return; }
       seekWant = f;
       if (loadingSeek === name) return;   /* already loading it: the last place asked is the one it goes to */
       loadingSeek = name; busy = name; paint();
