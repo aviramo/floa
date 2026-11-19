@@ -1476,7 +1476,7 @@
     return '<div class="rcard rcard--compact" data-opt="' + esc(m.id) + '" role="button" tabindex="0"' + (sel ? ' aria-current="true"' : '') + ' style="margin:0;min-width:0;display:flex;flex-direction:column;gap:2px;cursor:pointer;background:var(--on-primary)' + (sel ? ';border-color:var(--primary);box-shadow:inset 0 0 0 1px var(--primary)' : '') + '">' +
       '<span style="display:block;direction:ltr;text-align:left;overflow-wrap:anywhere;padding-right:' + (withRm ? 'var(--ctl)' : '0') + ';font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(songName(m)) + '</span>' +
       '<span style="display:block;direction:ltr;text-align:left;overflow-wrap:anywhere;color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font)">' + (songBy(m) ? esc(songBy(m)) : '&nbsp;') + '</span>' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:var(--gap-tight)">' + tile + pickChip + tm + '</div>' + rm + '</div>';
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:var(--gap-tight)"><div style="display:flex;align-items:center;gap:var(--sp-1)">' + tile + pickChip + '</div>' + tm + '</div>' + rm + '</div>';
   }
   /* removing a song from the options of an exercise: asked in the kit's popup; closing it is the cancel */
   function confirmRemoveOpt(it, m, done) {
