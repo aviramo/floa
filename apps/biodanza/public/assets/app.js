@@ -777,6 +777,7 @@
   function show(html, wire, pane) { if (!wide() && pane === "d") return itemSheet(html, wire);   /* narrow: the exercise is a popup from the bottom, not a page */
     if (wide() && (pane === "d" || !state.pickerShow)) pd.classList.remove("bio-dim");   /* anything new on the left, or the catalog closed, and the exercise is lit again */
     var t = wide() && pane === "d" ? pd : pl;
+    if (t === pd) catPreview = false;   /* anything else on the left is no longer the catalog's exercise (previewEx sets it again after drawing) */
     if (t === pl && catPanel) closeCatPanel(true);
     t.innerHTML = html;
     if (t === pl && wide()) {   /* the catalog layer is ready beside the lists, the vivencias and the exercises of one; elsewhere it is not */
@@ -805,14 +806,12 @@
     catPanel = null; state.pickerShow = false; pd.classList.remove("bio-dim");
     document.querySelectorAll("[data-catopen]").forEach(function (b) { b.setAttribute("aria-pressed", "false"); });
     catLayer.classList.remove("is-open"); catLayer.querySelector(".catbody").setAttribute("inert", "");   /* the layer and its banner slide back off to the right together */
-    if (!quiet && catPreview) { catPreview = false; if (liveItem) itemScreen(liveItem); else show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); }   /* a look at a catalog exercise is over: the left side is as it was */
-    catPreview = false;
   }
   function openCatPanel() {   /* the layer and its banner slide left together; the exercise on the left goes dark */
     if (catPanel || !catLayer || catLayer.hidden) return;
     placeCatLayer(); catLayer.classList.add("is-open"); catLayer.querySelector(".catbody").removeAttribute("inert");
     document.querySelectorAll("[data-catopen]").forEach(function (b) { b.setAttribute("aria-pressed", "true"); });
-    catPanel = catLayer; state.pickerShow = true; pd.classList.add("bio-dim");
+    catPanel = catLayer; state.pickerShow = true; if (!catPreview) pd.classList.add("bio-dim");   /* an exercise of the catalog that is on the left stays lit when the layer comes back */
   }
   document.addEventListener("click", function (ev) { var ab = ev.target.closest && ev.target.closest("[data-addex]"); if (ab) {   /* the plus beside the exercises' title: an empty exercise at the end of the numbered ones, opened to be filled in */
       if (!state.viv || !state.items || ab.disabled) return; ab.disabled = true;
@@ -2381,7 +2380,7 @@
       var word = swapIt ? "החלפה בתרגיל הזה" : state.viv ? (state.viv.title || "הוויוונסיה") : "";   /* adding: a plus with the vivencia's name; with no vivencia open the catalog is only looked at */
       /* the same page as the exercise of a vivencia, only read: its header, its song cards, its texts; the action is the green button in the header, where the delete is in the vivencia */
       show(itemHead(false, false, "", e.id, name(e), true, word, undefined, undefined, !swapIt) + itemPageHtml(fake, true), function (r) {
-        wireRoMusic(r, fake); sbSync(r); catPreview = !!catPanel;
+        wireRoMusic(r, fake); sbSync(r); catPreview = true;
         on(r, "doswap", function () { if (swapIt) confirmSwap(e, swapIt, undefined, fake.music_id, fake.sel); else addEx(e, undefined, undefined, fake.music_id, fake.sel); });
       }, "d");
     }, fail);
@@ -2440,7 +2439,7 @@
       var m = r[0], d = r[1];
       return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=representation", json: { vivencia_id: state.viv.id, position: pos, backlog: true, exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, title: d.title || null, poetics: d.poetics || null, guidance: d.guidance || null } }).then(function (made) { return made && made[0] ? optionsFor(made[0].id, all) : null; });   /* the songs that were marked come with the exercise, the first as its own; none marked, none comes */
     }).then(function () { toast("התרגיל נוסף"); if (sheet) { closeSheets(); return loadItems().then(paint, fail); }
-      if (catPanel) { closeCatPanel(true); show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); return loadItems().then(paint, fail); }
+      if (catPreview || catPanel) { closeCatPanel(true); show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); return loadItems().then(paint, fail); }
       if (wide()) show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); else stack().pop(); back(); }, fail);
   }
 
