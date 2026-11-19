@@ -1505,7 +1505,7 @@
   /* the popup that adds songs to an exercise: the music page's cards and search, in two parts: the songs the catalog links to the exercise, and all the others */
   function openAddMusic(it, changed) {
     var me = FLOA_AUTH.userId(), vid = state.viv && state.viv.id;
-    var r = sheetOf("addMusDlg", "הוספת מוזיקה", '<div><label class="rfield"><span>חיפוש</span><input id="amq" placeholder=" " autocomplete="off"></label></div><div id="amlist" style="flex:1 1 auto;min-height:0;overflow-y:auto;margin-top:var(--sp-2);padding-bottom:var(--gutter)"><div class="rskel rskel--title"></div></div>');
+    var r = sheetOf("addMusDlg", "הוספת מוזיקה", '<style>html.bio-docked #addMusDlg .sheet-body { padding-bottom: 0 }</style><div><label class="rfield"><span>חיפוש</span><input id="amq" placeholder=" " autocomplete="off"></label></div><div id="amlist" style="flex:1 1 auto;min-height:0;overflow-y:auto;margin-top:var(--sp-2);padding-bottom:calc(var(--dockfull) + var(--gutter))"><div class="rskel rskel--title"></div></div>');
     r.style.overflowY = "hidden";   /* the search stays, only the cards scroll */
     var listEl = r.querySelector("#amlist"), qi = r.querySelector("#amq");
     var linked = null, rest = null, shown = 90, fresh = true;
