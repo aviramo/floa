@@ -353,6 +353,10 @@
       histName = name; histSave(name, title, artist);
       try { var h = (JSON.parse(localStorage.getItem("biodanza.history") || "[]") || []).filter(function (e) { return e && e.n !== name; }); h.unshift({ n: name, t: title || "", a: artist || "", at: Date.now() }); localStorage.setItem("biodanza.history", JSON.stringify(h.slice(0, 300))); } catch (x) { /* not kept */ }
     }
+    /* the play button inside a history card says pause while that song plays */
+    function hpOn(n) { return !!(n && window.__bioNow && window.__bioNow.playing && window.__bioNow.name === n); }
+    function hpPaint() { document.querySelectorAll("[data-hp]").forEach(function (b) { var on = hpOn(b.dataset.hn), k = on ? "1" : "0"; if (b.dataset.pl === k) return; b.dataset.pl = k; b.innerHTML = on ? PAUSE : PLAY; b.setAttribute("aria-label", on ? "עצירה" : "השמעה"); b.title = on ? "עצירה" : "השמעה"; }); }
+    document.addEventListener("bioaudio", function () { setTimeout(hpPaint, 0); });
     function playName(n, t, a) {   /* a song of the history plays as its own button would play it */
       if (!n) return;
       if (window.BioAudio && BioAudio.info) BioAudio.info(n, t, a);
@@ -415,7 +419,7 @@
         return '<div class="rcard rcard--compact bio-card" data-hi="' + i + '"' + (e.n && window.__bioNow && window.__bioNow.name === e.n ? ' aria-current="true"' : '') + ' role="button" tabindex="0" style="cursor:pointer;background:var(--on-primary);margin:0;min-width:0;display:flex;flex-direction:column;gap:2px">' +
           '<span style="direction:ltr;text-align:left;overflow-wrap:anywhere;font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(e.t || "שיר") + '</span>' +
           '<span style="direction:ltr;text-align:left;overflow-wrap:anywhere;color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font)">' + (e.a ? esc(e.a) : "&nbsp;") + '</span>' +
-          '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:var(--gap-tight)"><button type="button" class="rbtn rbtn--icon" data-hp="' + i + '" aria-label="השמעה" title="השמעה" style="background:var(--surface-2);border-color:var(--surface-2);width:var(--tag-s);min-height:var(--tag-s);height:var(--tag-s);padding:0;border-radius:999px">' + PLAY + '</button>' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:var(--gap-tight)"><button type="button" class="rbtn rbtn--icon" data-hp="' + i + '" data-hn="' + esc(e.n || "") + '" aria-label="' + (hpOn(e.n) ? "עצירה" : "השמעה") + '" title="' + (hpOn(e.n) ? "עצירה" : "השמעה") + '" style="background:var(--surface-2);border-color:var(--surface-2);width:var(--tag-s);min-height:var(--tag-s);height:var(--tag-s);padding:0;border-radius:999px">' + (hpOn(e.n) ? PAUSE : PLAY) + '</button>' +
           '<span style="color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + esc(when(e.at)) + '</span></div></div>';
       }).join("");
       RosterSheet.render(dlg, { title: "היסטוריית האזנה", from: "bottom", size: "l",
