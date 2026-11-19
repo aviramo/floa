@@ -648,7 +648,8 @@
     var arrow = function (act, ico, label, off) { return '<button class="rbtn rbtn--icon" data-act="' + act + '" aria-label="' + label + '" title="' + label + '"' + (off ? " disabled" : "") + '>' + ico + '</button>'; };
     return '<header class="rhead">' + (nav ? arrow("prevW", I.back, "הקודם", !hasPrev) : "") +
       '<div class="rhead__text"><input id="ina" class="rhead__title" placeholder="ללא שם" autocomplete="off" aria-label="שם התרגיל"' + (ro ? ' readonly' : '') + ' value="' + esc(nameText || "") + '" style="width:100%;min-width:0;border:0;background:transparent;padding-inline:0;margin:0;color:inherit;text-align:start;outline:0;text-overflow:ellipsis;text-box:normal;line-height:1.4;padding-block:4px"></div>' +
-      (exId ? heartBtnEx(exId, "bio-flat") : "") + (ro ? (roLabel ? '<button type="button" class="rbtn" style="flex:none;width:var(--ctl);padding:0" data-act="doswap" aria-label="' + roLabel + '" title="' + roLabel + '">' + I.check + '</button>' : "") : arrow("del", I.trash, "הסרה מהוויוונסיה", false)) + (nav ? arrow("nextW", I.fwd, "הבא", !hasNext) : "") + '</header>';
+      (ro && roLabel ? '<button type="button" class="rbtn" style="flex:none" data-act="doswap">' + esc(roLabel) + '</button>' : "") +   /* a catalog exercise: the action is a word, to the right of the heart */
+      (exId ? heartBtnEx(exId, "bio-flat") : "") + (ro ? "" : arrow("del", I.trash, "הסרה מהוויוונסיה", false)) + (nav ? arrow("nextW", I.fwd, "הבא", !hasNext) : "") + '</header>';
   }
   (function () {
     var st = document.createElement("style");
