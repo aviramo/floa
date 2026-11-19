@@ -1083,7 +1083,7 @@
   /* my vivencias, with my role and my order in each */
   function loadVivs() {
     var uid = FLOA_AUTH.userId();
-    return Promise.all([api("/rest/v1/vivencias?select=id,title,updated_at,vivencia_items(count)"), api("/rest/v1/vivencia_owners?user_id=eq." + uid + "&select=vivencia_id,position"),
+    return Promise.all([api("/rest/v1/vivencias?select=id,title,updated_at,vivencia_items(count)&vivencia_items.backlog=not.is.true"), api("/rest/v1/vivencia_owners?user_id=eq." + uid + "&select=vivencia_id,position"),
       api("/rest/v1/vivencia_shares?email=eq." + encodeURIComponent(FLOA_AUTH.email().toLowerCase()) + "&select=vivencia_id,role,position")]).then(function (r) {
       var pos = {}, role = {};
       (r[2] || []).forEach(function (o) { pos[o.vivencia_id] = o.position; role[o.vivencia_id] = o.role; });   /* shared with me */
@@ -1416,14 +1416,14 @@
     BioOffline.sync(state.vivs, function (v) {
       return Promise.all([itemsOf(v.id), api("/rest/v1/rpc/vivencia_members", { method: "POST", json: { v: v.id } })]).then(function (r) {
         var items = r[0] || [];
-        return { id: v.id, row: { id: v.id, title: v.title, updated_at: v.updated_at, vivencia_items: [{ count: items.length }] }, role: v.role, pos: v.pos, items: items, members: r[1] || [], reception: recvRows(v.id) };
+        return { id: v.id, row: { id: v.id, title: v.title, updated_at: v.updated_at, vivencia_items: [{ count: items.filter(function (i) { return !i.backlog; }).length }] }, role: v.role, pos: v.pos, items: items, members: r[1] || [], reception: recvRows(v.id) };
       });
     });
   }
   function refreshOffline(v) {   /* an open vivencia is already read: its copy is made current from that, quietly */
     if (state.offline || !window.BioOffline) return;
     api("/rest/v1/rpc/vivencia_members", { method: "POST", json: { v: v.id } }).then(function (mm) {
-      return BioOffline.update({ id: v.id, row: { id: v.id, title: v.title, updated_at: v.updated_at, vivencia_items: [{ count: state.items.length }] }, role: v.role, pos: v.pos, items: state.items, members: mm || [], reception: recvRows(v.id) });
+      return BioOffline.update({ id: v.id, row: { id: v.id, title: v.title, updated_at: v.updated_at, vivencia_items: [{ count: state.items.filter(function (i) { return !i.backlog; }).length }] }, role: v.role, pos: v.pos, items: state.items, members: mm || [], reception: recvRows(v.id) });
     }, function () { /* the old copy stays */ });
   }
   /* coming back to the app, or the internet coming back, is another comparison (not more than once a minute) */
@@ -1461,7 +1461,7 @@
   function paint() {
     refreshPrevLabel();
     var l = document.getElementById("list"); if (!l || !l.hasAttribute("data-fab-room")) return;   /* only the vivencia's own list: the catalog picker has a list too */
-    var cnt = state.viv && pl.querySelector('[data-n="' + state.viv.id + '"]'); if (cnt) cnt.textContent = state.items.length + " תרגילים";
+    var cnt = state.viv && pl.querySelector('[data-n="' + state.viv.id + '"]'); if (cnt) cnt.textContent = state.items.filter(function (i) { return !i.backlog; }).length + " תרגילים";
     var vis = state.items;   /* the order of the list IS the curve: no phase is kept on an item */
     if (!vis.length) {
       /* an empty vivencia: the words, and an arrow from them down to the + button (only for somebody who can add) */
