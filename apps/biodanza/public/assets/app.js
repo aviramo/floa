@@ -2200,7 +2200,7 @@
       var cnt = r.querySelector("#amc"); if (cnt) cnt.textContent = "חיפוש " + (words.length ? (sl.length + lk.length + ot.length) + " מתוך " : "בין ") + (linked.length + rest.length) + " שירים";   /* as the music page says it */
       var grid = function (arr) { return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(18rem,1fr));gap:var(--sp-1)">' + arr.map(function (m) { return cardHtml(m, !!has[m.id]); }).join("") + '</div>'; };
       var head = function (t, n) { return '<div class="rrow__sub" style="padding:var(--sp-2) 0 var(--sp-1)">' + esc(t) + ' (' + n + ')</div>'; };
-      listEl.innerHTML = (sl.length ? head(it.__preview ? "נבחרו" : "בתרגיל", sl.length) + grid(sl) : '') + (lk.length ? head("מקושרות לתרגיל בקטלוג", lk.length) + grid(lk) : '') + (cut.length ? head("שירים אחרים", ot.length) + grid(cut) : '') + (!sl.length && !lk.length && !cut.length ? ph("לא נמצא", "") : '');
+      listEl.innerHTML = (sl.length ? head(it.__preview ? "נבחרו" : "בתרגיל", sl.length) + grid(sl) : '') + (lk.length ? head("מוסיקה מתרגילים חופפים", lk.length) + grid(lk) : '') + (cut.length ? head("שירים אחרים", ot.length) + grid(cut) : '') + (!sl.length && !lk.length && !cut.length ? ph("לא נמצא", "") : '');
     }
     var upb = r.querySelector("#amup");
     if (upb) upb.addEventListener("click", function () {
