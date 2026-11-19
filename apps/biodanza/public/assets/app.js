@@ -1864,8 +1864,9 @@
     var lead = o.lead ? (o.bigLead
       ? '<span aria-hidden="true" style="flex:none;display:flex;align-items:flex-start;justify-content:center;min-width:var(--ctl);font:var(--fw-black) calc(2.75 * var(--fs-m))/.95 var(--font);color:var(--text);font-variant-numeric:tabular-nums">' + o.lead + '</span>'   /* the number as tall as the two lines beside it, no tile */
       : '<span aria-hidden="true" style="flex:none;display:flex;align-items:center;justify-content:center;width:var(--ctl);height:var(--ctl);border-radius:var(--r-ctl);background:var(--surface-2);font:var(--fw-bold) var(--fs-m)/1 var(--font)">' + o.lead + '</span>') : '';
+    if (!o.pill && !o.chip && !o.time) foot = '';   /* nothing to put in the bottom row: it does not add room under the text */
     var body = '<div style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px;' + (o.lead ? '' : 'width:100%') + '">' + title + sub + foot + '</div>';
-    return '<div class="rcard rcard--compact bio-card' + (o.cls ? ' ' + o.cls : '') + '" ' + (o.attrs || '') + (o.selected ? ' aria-current="true"' : '') + ' style="margin:0;min-width:0;display:flex;' + (o.lead ? 'flex-direction:row;align-items:flex-start;gap:var(--sp-2);' : 'flex-direction:column;') + 'cursor:pointer;position:relative;background:var(--on-primary)">' + lead + body + (o.corner || '') + '</div>';
+    return '<div class="rcard rcard--compact bio-card' + (o.cls ? ' ' + o.cls : '') + '" ' + (o.attrs || '') + (o.selected ? ' aria-current="true"' : '') + ' style="margin:0;min-width:0;display:flex;' + (o.lead ? 'flex-direction:row;align-items:flex-start;gap:var(--sp-2);' : 'flex-direction:column;') + 'padding:var(--sp-2);cursor:pointer;position:relative;background:var(--on-primary)">' + lead + body + (o.corner || '') + '</div>';   /* the same room on all four sides */
   }
   var CARD_PILL = "width:46px;height:var(--tag-s);min-height:var(--tag-s);padding:0;border-radius:999px;background:var(--surface-2);";
   function cardPill(m, listKey) {
