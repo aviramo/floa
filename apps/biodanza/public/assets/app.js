@@ -518,6 +518,13 @@
             if (lb && lb.textContent !== nmE) { lb.textContent = nmE; ac.title = exOpen ? "הוספת השיר שבנגן ל" + nmE : "הוספת השיר שבנגן לוויוונסיה " + nmE + " כתרגיל חדש"; }
           }
         }
+        var tmE = document.getElementById("itimer");
+        if (tmE) {
+          var itX = liveItem && state.items ? state.items.filter(function (x) { return x.id === liveItem.id; })[0] : null;
+          var tOn = !!(playing && loaded && curD > 0 && itX && optList(itX).some(function (m) { return m.audio_object === curName; }));
+          if (tOn) { var tTxt = clk(Math.max(0, Math.ceil(curD - curT))); if (tmE.textContent !== tTxt) tmE.textContent = tTxt; }
+          if (tmE.hidden === tOn) tmE.hidden = !tOn;
+        }
         document.documentElement.classList.toggle("bio-docked", on);   /* the page ends above the footer */
         var b = d.querySelector("button"), t = d.querySelector(".bio-dock__time"), r = d.querySelector(".bio-dock__bar"), s = clk(curT) + " / " + clk(loaded ? curD : (last ? last.d : 0)), nm = d.querySelector(".bio-dock__name");
         b.disabled = !loaded && !last; r.disabled = !loaded || !(curD > 0); b.dataset.st = playing ? "playing" : "paused";
@@ -784,7 +791,7 @@
     return '<header class="rhead">' + (nav ? arrow("prevW", I.back, "הקודם", !hasPrev) : "") + (ro && roLabel ? '<button type="button" class="rbtn" style="flex:none;gap:var(--sp-1);margin-inline-end:var(--gutter)" data-act="doswap"' + (roPlus ? ' aria-label="הוספה לוויוונסיה ' + esc(roLabel) + '" title="הוספה לוויוונסיה"' : '') + '>' + (roPlus ? '<span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span><span style="max-width:14rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(roLabel) + '</span>' : esc(roLabel)) + '</button>' : "") +   /* the add button is at the start, right of the exercise's name, always there */
       '<div class="rhead__text" style="flex-direction:row;align-items:center;gap:var(--sp-2);padding-inline-start:0;justify-content:flex-start">' + (numText ? '<span aria-hidden="true" style="flex:none;font:var(--fw-black) calc(2.75 * var(--fs-m))/.95 var(--font);font-variant-numeric:tabular-nums">' + esc(numText) + '</span>' : "") + '<input id="ina" class="rhead__title" placeholder="ללא שם" autocomplete="off" aria-label="שם התרגיל"' + (ro ? ' readonly' : '') + ' value="' + esc(nameText || "") + '" style="flex:1 1 0;width:auto;min-width:0;border:0;background:transparent;padding-inline:0;margin:0;color:inherit;text-align:start;outline:0;text-overflow:ellipsis;text-box:normal;line-height:1.4;padding-block:4px"></div>' +
       "" +   /* the heart of a catalog exercise is on its card in the catalog, on hover */
-      "" + "" + (nav ? arrow("nextW", I.fwd, "הבא", !hasNext) : "") + '</header>';
+      "" + "" + (ro ? "" : '<span id="itimer" hidden aria-live="off" style="flex:none;font:var(--fw-black) calc(2.75 * var(--fs-m))/.95 var(--font);font-variant-numeric:tabular-nums;color:var(--text);direction:ltr"></span>') + (nav ? arrow("nextW", I.fwd, "הבא", !hasNext) : "") + '</header>';
   }
   (function () {
     var st = document.createElement("style");
