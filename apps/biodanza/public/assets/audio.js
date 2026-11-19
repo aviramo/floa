@@ -108,7 +108,7 @@
   function crossTo(t) {   /* a copy of the player stays on the old place and fades out; the player itself goes to the new place and fades in */
     if (!el.duration) return;
     t = Math.max(0, Math.min(el.duration, t));
-    if (el.paused || fadingOut || !el.src) { el.currentTime = t; return; }
+    if (el.paused || fadingOut || !el.src) { el.currentTime = t; tell(now, t, el.duration || 0); return; }
     if (ghosts.length > 2) killGhosts();
     var a = new Audio(), g = { a: a, t: 0 };
     a.src = el.src; a.volume = el.volume; a.currentTime = el.currentTime;
@@ -120,8 +120,9 @@
       if (k >= 1) { clearInterval(g.t); try { a.pause(); a.removeAttribute("src"); } catch (e) { /* gone */ } var i = ghosts.indexOf(g); if (i >= 0) ghosts.splice(i, 1); }
     }, 30);
     el.currentTime = t; el.volume = 0; ramp(target(), function () { el.volume = target(); }, SEEK_FADE);
+    tell(now, t, el.duration || 0);   /* the bar shows the new place at once: only the sound has the second of crossfade */
   }
-  function wantSeek(t) { pendT = t; clearTimeout(pendTimer); pendTimer = setTimeout(commitSeek, 250); }   /* a drag or a few key presses: the place is set when it stops */
+  function wantSeek(t) { pendT = t; tell(now, t, el.duration || 0); clearTimeout(pendTimer); pendTimer = setTimeout(commitSeek, 250); }   /* a drag or a few key presses: the place is set when it stops */
   function commitSeek() { clearTimeout(pendTimer); if (pendT == null) return; var t = pendT; pendT = null; crossTo(t); }
   function playToggle() { if (fadingOut || el.paused) fadeIn(); else fadeOut(); }
   function paint() {
