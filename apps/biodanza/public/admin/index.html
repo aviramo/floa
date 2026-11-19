@@ -37,7 +37,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
   }
   function shell() {
     app.innerHTML = '<header class="rhead"><div class="rhead__text"><h1 class="rhead__title">ניהול</h1><span class="rhead__sub" id="cnt"></span></div></header>' +
-      '<div class="pad"><label class="rfield"><span>חיפוש שיר, מבצע או קוד</span><input id="q" type="search" placeholder=" " autocomplete="off"></label><button type="button" class="rbtn rbtn--outline" id="cp">העתקת הרשימה המוצגת</button></div>' +
+      '<div class="pad"><label class="rfield"><span>חיפוש שיר או מבצע</span><input id="q" type="search" placeholder=" " autocomplete="off"></label><button type="button" class="rbtn rbtn--outline" id="cp">העתקת הרשימה המוצגת</button></div>' +
       '<div class="rlist" id="out"></div>';
     app.querySelector("#q").addEventListener("input", function () { clearTimeout(timer); timer = setTimeout(draw, 200); });
     app.querySelector("#cp").addEventListener("click", copyAll);
@@ -48,7 +48,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
   }
   /* every song that matches the search (not only the rows drawn), one per line: name, performer, length, code, file */
   function copyAll() {
-    var b = document.getElementById("cp"), txt = found().hit.map(function (m) { return [m.title || m.name, m.artist, mmss(m.duration_sec), m.collection, m.audio_object ? "יש קובץ" : "ללא קובץ"].join(String.fromCharCode(9)); }).join(String.fromCharCode(10));
+    var b = document.getElementById("cp"), txt = found().hit.map(function (m) { return [m.title || m.name, m.artist, mmss(m.duration_sec), m.audio_object ? "יש קובץ" : "ללא קובץ"].join(String.fromCharCode(9)); }).join(String.fromCharCode(10));
     function done(ok) { b.textContent = ok ? "הועתק" : "ההעתקה נחסמה, אפשר לסמן ולהעתיק ידנית"; setTimeout(function () { b.textContent = "העתקת הרשימה המוצגת"; }, 2000); }
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(function () { done(true); }, function () { done(false); }); else done(false);
   }
@@ -57,8 +57,8 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
     document.getElementById("cnt").textContent = (words.length ? hit.length + " מתוך " : "") + songs.length + " שירים";
     if (!hit.length) { out.innerHTML = '<div class="rempty"><b>לא נמצא כלום</b><span>נסו מילה אחרת</span></div>'; return; }
     out.innerHTML = hit.slice(0, MAXROWS).map(function (m) {
-      var sub = [m.artist, mmss(m.duration_sec), m.collection].filter(Boolean).map(esc).join(" · ");
-      return '<div class="rrow"><div class="rrow__main"><span class="rrow__title">' + esc(m.title || m.name) + '</span>' + (sub ? '<span class="rrow__sub">' + sub + '</span>' : '') + '</div>' +
+      return '<div class="rrow"><div class="rrow__main"><span class="rrow__title">' + esc(m.title || m.name) + '</span>' + (m.artist ? '<span class="rrow__sub">' + esc(m.artist) + '</span>' : '') + '</div>' +
+        (m.duration_sec ? '<span class="rchip rchip--s">' + mmss(m.duration_sec) + '</span>' : '') +
         '<span class="rchip rchip--s' + (m.audio_object ? ' rchip--ok' : '') + '">' + (m.audio_object ? "יש קובץ" : "ללא קובץ") + '</span></div>';
     }).join("") + (hit.length > MAXROWS ? '<div class="rhint" style="padding:var(--gutter)">מוצגים ' + MAXROWS + ' הראשונים. מצמצמים בחיפוש כדי לראות את השאר.</div>' : '');
   }
