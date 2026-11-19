@@ -43,6 +43,7 @@ import { measure } from "./ocr.js";          // temporary, for /boxes
 import { sendPush } from "./webpush.js";
 import { handleRoster, isRosterPath, runRosterScheduled } from "./roster/routes.js";
 import { handleRosterAuth, isRosterAuthPath } from "./roster-auth.js";
+import { handleRosterWa, isRosterWaPath } from "./roster-wa.js";
 
 /* A lead sent before the sites were rebuilt carries no `business` field. It can
    only have come from FLOA, because FLOA is the only business that existed then. */
@@ -541,6 +542,7 @@ export default {
        CORS, its own tests (src/roster/). Nothing below applies to it. */
     if (isRosterPath(new URL(request.url).pathname)) return handleRoster(request, env, ctx);
     if (isRosterAuthPath(new URL(request.url).pathname)) return handleRosterAuth(request, env);
+    if (isRosterWaPath(new URL(request.url).pathname)) return handleRosterWa(request, env);
 
     /* the Biodanza app's music: a private R2 bucket behind sign-in and the allowlist */
     if (isAudioPath(new URL(request.url).pathname)) return handleAudio(request, env, ALLOWED_ORIGINS);
