@@ -545,7 +545,7 @@
           if (vOn) { var vTxt = clk(Math.max(0, Math.ceil(curD - curT))); if (vtE.textContent !== vTxt) vtE.textContent = vTxt; }
           if (vtE.hidden === vOn) vtE.hidden = !vOn;
           var vgE = document.getElementById("vgo");   /* the button is for going to the exercise that plays: gone while that exercise is the one that is open */
-          if (vgE) { var itO = liveItem && state.items ? state.items.filter(function (x) { return x.id === liveItem.id; })[0] : null, vShow = vOn && !(itO && optList(itO).some(function (m) { return m.audio_object === curName; })); if (vgE.hidden === vShow) vgE.hidden = !vShow; }
+          if (vgE) { var itO = liveItem && state.items ? state.items.filter(function (x) { return x.id === liveItem.id; })[0] : null, vShow = vOn && !(itO && optList(itO).some(function (m) { return m.audio_object === curName; })); if (vgE.hidden === vShow) vgE.hidden = !vShow; var dsp = vShow ? "" : "none"; if (vgE.style.display !== dsp) vgE.style.display = dsp; }
         }
         var tmE = document.getElementById("itimer");
         if (tmE) {
@@ -1393,7 +1393,7 @@
   }
   function editor() {
     var v = state.viv; setUrl(BASE + v.id); curJoin(v.id); refreshPrevLabel();
-    show(head(v.title || "ויוונסיה חדשה", "", true, wide() ? '<button type="button" id="vgo" class="rbtn rbtn--icon" hidden aria-label="לתרגיל שמתנגן" title="לתרגיל שמתנגן" style="flex:none;color:var(--danger)">' + I.curve + '</button><span id="vtimer" hidden aria-live="off" style="flex:none;font:var(--fw-black) calc(2.75 * var(--fs-m))/.95 var(--font);font-variant-numeric:tabular-nums;color:var(--text);direction:ltr"></span>' : '') +   /* the way to the catalog is a word in the header, not a floating button */
+    show(head(v.title || "ויוונסיה חדשה", "", true, wide() ? '<button type="button" id="vgo" class="rbtn rbtn--icon" hidden aria-label="לתרגיל שמתנגן" title="לתרגיל שמתנגן" style="display:none;flex:none;color:var(--danger);background:transparent;border-color:transparent">' + I.curve + '</button><span id="vtimer" hidden aria-live="off" style="flex:none;font:var(--fw-black) calc(2.75 * var(--fs-m))/.95 var(--font);font-variant-numeric:tabular-nums;color:var(--text);direction:ltr"></span>' : '') +   /* the way to the catalog is a word in the header, not a floating button */
       '<div class="rlist" data-fab-room id="list"><div class="rskel rskel--title"></div></div>' +
       '', function (r) {   /* on a wide screen the way to the catalog is a green banner down the side, added by show() */
       on(r, "back", back); on(r, "add", function () { resetPk(); if (wide()) goSub(picker); else pickerSheet(); });
