@@ -482,7 +482,7 @@
       });
       var r = d.querySelector(".bio-dock__bar");
       r.addEventListener("pointerdown", function () { seekDrag = true; });
-      ["pointerup", "pointercancel", "change"].forEach(function (n) { r.addEventListener(n, function () { seekDrag = false; if (window.BioAudio && BioAudio.commitSeek) BioAudio.commitSeek(); }); });   /* let go of the bar: the new place is set now, with its half second of crossfade */
+      ["pointerup", "pointercancel", "change"].forEach(function (n) { r.addEventListener(n, function () { seekDrag = false; if (window.BioAudio && BioAudio.commitSeek) BioAudio.commitSeek(); }); });   /* let go of the bar: the new place is set now, with its second of crossfade */
       r.addEventListener("input", function () { if (window.BioAudio && BioAudio.seek) BioAudio.seek(r.value / 1000); });
       return d;
     }

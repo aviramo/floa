@@ -103,7 +103,7 @@
     fadingOut = true; paint(); document.dispatchEvent(new CustomEvent("bioaudio", { detail: { name: now, t: el.currentTime, d: el.duration || 0, playing: false, title: (infos[now] || {}).title || "", artist: (infos[now] || {}).artist || "" } }));
     ramp(0, function () { el.pause(); fadingOut = false; el.volume = target(); });
   }
-  var SEEK_FADE = 500, ghosts = [], pendT = null, pendTimer = 0;
+  var SEEK_FADE = 1000, ghosts = [], pendT = null, pendTimer = 0;
   function killGhosts() { ghosts.forEach(function (g) { clearInterval(g.t); try { g.a.pause(); g.a.removeAttribute("src"); } catch (e) { /* gone */ } }); ghosts = []; }
   function crossTo(t) {   /* a copy of the player stays on the old place and fades out; the player itself goes to the new place and fades in */
     if (!el.duration) return;
