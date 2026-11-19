@@ -1040,9 +1040,10 @@
     }
     paintM();
     document.body.appendChild(m);
+    btn.setAttribute("aria-expanded", "true");   /* the button that opened the menu stays shown while it is open */
     var r = btn.getBoundingClientRect();
     m.style.top = Math.round(r.bottom + 4) + "px"; m.style.left = Math.max(8, Math.min(Math.round(r.left), window.innerWidth - m.offsetWidth - 8)) + "px";
-    function close() { m.remove(); document.removeEventListener("click", away, true); document.removeEventListener("keydown", onKey, true); }
+    function close() { m.remove(); btn.removeAttribute("aria-expanded"); document.removeEventListener("click", away, true); document.removeEventListener("keydown", onKey, true); }
     function away(e) { if (!m.contains(e.target) && e.target !== btn) close(); }
     function onKey(e) { if (e.key === "Escape") close(); }
     setTimeout(function () { document.addEventListener("click", away, true); document.addEventListener("keydown", onKey, true); }, 0);
@@ -1065,9 +1066,10 @@
     var m = document.createElement("div"); m.id = "moreMenu"; m.className = "rmenu rmenu--fixed"; m.setAttribute("role", "menu");
     m.innerHTML = items.map(function (it, k) { return '<button type="button" class="rmenu__item" role="menuitem" data-k="' + k + '"' + (it.tone ? ' data-tone="' + it.tone + '"' : '') + '>' + it.icon + '<span>' + esc(it.label) + '</span></button>'; }).join("");
     document.body.appendChild(m);
+    btn.setAttribute("aria-expanded", "true");   /* the button that opened the menu stays shown while it is open */
     var r = btn.getBoundingClientRect();
     m.style.top = Math.round(r.bottom + 4) + "px"; m.style.left = Math.max(8, Math.round(r.left)) + "px";
-    function close() { m.remove(); document.removeEventListener("click", away, true); document.removeEventListener("keydown", onKey, true); }
+    function close() { m.remove(); btn.removeAttribute("aria-expanded"); document.removeEventListener("click", away, true); document.removeEventListener("keydown", onKey, true); }
     function away(e) { if (!m.contains(e.target)) { e.preventDefault(); e.stopPropagation(); close(); } }
     function onKey(e) { if (e.key === "Escape") close(); }
     setTimeout(function () { document.addEventListener("click", away, true); document.addEventListener("keydown", onKey, true); }, 0);
