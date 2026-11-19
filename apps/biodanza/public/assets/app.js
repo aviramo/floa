@@ -2482,6 +2482,28 @@
     if (mid !== undefined) return Promise.resolve(mid ? [{ music_id: mid }] : []);
     return api("/rest/v1/exercise_music?exercise_id=eq." + exId + "&select=music_id&limit=1");
   }
+  /* in no vivencia: the three vivencias that were changed last, to put the exercise in one of them */
+  function vivPick(btn, e, mid, all) {
+    var last3 = (state.vivs || []).filter(function (v) { return v.role !== "view"; }).sort(function (a, b) { return Date.parse(b.updated_at || 0) - Date.parse(a.updated_at || 0); }).slice(0, 3);
+    if (!last3.length) return;
+    menu(btn, last3.map(function (v) { return { label: v.title || "ויוונסיה ללא שם", icon: I.plus, fn: function () { addExToViv(v, e, mid, all); } }; }));
+  }
+  function addExToViv(v, e, mid, all) {   /* the same as adding to the open vivencia, to the one that was picked: then it is opened, on the new exercise */
+    var newId = null;
+    api("/rest/v1/vivencia_items?vivencia_id=eq." + v.id + "&select=position&order=position.desc&limit=1").then(function (top) {
+      var pos = (top && top[0] ? top[0].position : 0) + 1;
+      return Promise.all([firstMusic(e.id, mid), detached(e.id)]).then(function (r) {
+        var m = r[0], d = r[1];
+        return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=representation", json: { vivencia_id: v.id, position: pos, backlog: true, exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, title: d.title || null, poetics: d.poetics || null, guidance: d.guidance || null } });
+      });
+    }).then(function (made) {
+      newId = made && made[0] ? made[0].id : null;
+      return newId ? optionsFor(newId, all) : null;
+    }).then(function () {
+      closeCatPrev(); closeCatPanel(true);
+      pending = newId ? { item: newId } : null; openViv(v.id);
+    }, fail);
+  }
   function previewEx(e, swapIt) {
     var useLayer = !!(catPanel && wide() && !swapIt);
     if (useLayer && catPrevId === e.id && catPrev && catPrev.classList.contains("is-open")) { previewTok++; closeCatPrev(); return; }   /* a second tap on the chosen one: it closes, with its animation */
@@ -2489,12 +2511,16 @@
     loadPreview(e.id).then(function (res) { var rows = res.rows, songs = res.songs;
       if (tok !== previewTok) return;   /* a later row was chosen meanwhile */
       var fake = itemFake(e, rows, songs);
-      var word = swapIt ? "החלפה בתרגיל הזה" : state.viv ? (state.viv.title || "הוויוונסיה") : "";   /* adding: a plus with the vivencia's name; with no vivencia open the catalog is only looked at */
+      var word = swapIt ? "החלפה בתרגיל הזה" : state.viv ? (state.viv.title || "הוויוונסיה") : "ויוונסיה";   /* adding: a plus with the vivencia's name; in no vivencia, a plus with the word, and a tap asks which of the last three */
       /* the same page as the exercise of a vivencia, only read: its header, its song cards, its texts; the action is the green button in the header, where the delete is in the vivencia */
       var phtml = itemHead(false, false, "", e.id, name(e), true, word, undefined, undefined, !swapIt) + itemPageHtml(fake, true);
       var pwire = function (r) {
         wireRoMusic(r, fake); sbSync(r); catPreview = true;
-        on(r, "doswap", function () { if (swapIt) confirmSwap(e, swapIt, undefined, fake.music_id, fake.sel); else addEx(e, undefined, undefined, fake.music_id, fake.sel); });
+        on(r, "doswap", function (btn) {
+          if (swapIt) confirmSwap(e, swapIt, undefined, fake.music_id, fake.sel);
+          else if (!state.viv) vivPick(btn, e, fake.music_id, fake.sel);
+          else addEx(e, undefined, undefined, fake.music_id, fake.sel);
+        });
       };
       if (useLayer && catPanel) { catPrev.innerHTML = phtml; pwire(catPrev); catPrevId = e.id; requestAnimationFrame(function () { catPrev.classList.add("is-open"); }); }
       else show(phtml, pwire, "d");
