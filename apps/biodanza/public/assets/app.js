@@ -286,9 +286,9 @@
     if (last && window.BioAudio && BioAudio.info) BioAudio.info(last.n, last.t, last.a);
     var HIST = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg>';
     var histName = "";
-    function remember(name, title, artist) {   /* one line per start of a song, newest first, the last 300 */
+    function remember(name, title, artist) {   /* one line per song: the last time it started, newest first, the last 300 songs */
       histName = name;
-      try { var h = JSON.parse(localStorage.getItem("biodanza.history") || "[]") || []; h.unshift({ n: name, t: title || "", a: artist || "", at: Date.now() }); localStorage.setItem("biodanza.history", JSON.stringify(h.slice(0, 300))); } catch (x) { /* not kept */ }
+      try { var h = (JSON.parse(localStorage.getItem("biodanza.history") || "[]") || []).filter(function (e) { return e && e.n !== name; }); h.unshift({ n: name, t: title || "", a: artist || "", at: Date.now() }); localStorage.setItem("biodanza.history", JSON.stringify(h.slice(0, 300))); } catch (x) { /* not kept */ }
     }
     function playName(n, t, a) {   /* a song of the history plays as its own button would play it */
       if (!n) return;
