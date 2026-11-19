@@ -696,7 +696,7 @@
     return '<header class="rhead">' + (nav ? arrow("prevW", I.back, "הקודם", !hasPrev) : "") +
       '<div class="rhead__text"><input id="ina" class="rhead__title" placeholder="ללא שם" autocomplete="off" aria-label="שם התרגיל"' + (ro ? ' readonly' : '') + ' value="' + esc(nameText || "") + '" style="width:100%;min-width:0;border:0;background:transparent;padding-inline:0;margin:0;color:inherit;text-align:start;outline:0;text-overflow:ellipsis;text-box:normal;line-height:1.4;padding-block:4px"></div>' +
       (exId ? heartBtnEx(exId, "bio-flat") : "") +   /* a catalog exercise: the heart first, then the action as a word to its left */
-      (ro && roLabel ? '<button type="button" class="rbtn" style="flex:none" data-act="doswap">' + esc(roLabel) + '</button>' : "") + (ro ? "" : arrow("backlog", I.inbox, inBack ? "החזרה לוויוונסיה" : "העברה ל-Backlog", false) + arrow("del", I.trash, "הסרה מהוויוונסיה", false)) + (nav ? arrow("nextW", I.fwd, "הבא", !hasNext) : "") + '</header>';
+      (ro && roLabel ? '<button type="button" class="rbtn" style="flex:none" data-act="doswap">' + esc(roLabel) + '</button>' : "") + (ro ? "" : arrow("del", I.trash, "הסרה מהוויוונסיה", false)) + (nav ? arrow("nextW", I.fwd, "הבא", !hasNext) : "") + '</header>';
   }
   (function () {
     var st = document.createElement("style");
@@ -1153,26 +1153,31 @@
       return '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-2)"' + (state.lastItem === i.id ? ' aria-current="true"' : '') + '><span aria-hidden="true" style="flex:none;display:flex;align-items:center;justify-content:center;width:var(--ctl);height:var(--ctl);border-radius:var(--r-ctl);background:var(--surface-2);font:var(--fw-bold) var(--fs-m)/1 var(--font)">' + tile + '</span><button type="button" class="rrow__main" data-edit="' + i.id + '" style="background:none;border:0;padding:0;margin-inline-start:var(--sp-1);text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(itemName(i)) + '</span>' +
         (i.music ? songLines(i.music) : '<span class="rrow__sub">בלי מוזיקה</span>') + '</span></button>' + pb + facChip(i, ' rrow__trail')   /* the same tile as the number's */ + '</div>';
     };
-    l.innerHTML = '<div id="mlist">' + main.map(function (i, k) { return rowOf(i, k + 1); }).join("") + '</div>' +
-      (back.length ? '<div class="rrow__sub" style="padding:var(--sp-3) var(--gutter) var(--sp-1);border-top:1px solid var(--line);margin-top:var(--sp-2)">Backlog (' + back.length + ')</div><div id="blist">' + back.map(function (i) { return rowOf(i, "•"); }).join("") + '</div>' : "");
+    l.innerHTML = '<div id="plist">' + main.map(function (i, k) { return rowOf(i, k + 1); }).join("") +
+      '<div data-div style="padding:var(--sp-3) var(--gutter) var(--sp-2);margin-top:var(--sp-2);border-top:1px solid var(--line);min-height:var(--ctl)"><div class="rrow__sub">נוספים</div>' + (back.length || !canEdit() ? '' : '<div class="rrow__sub" style="margin-top:var(--sp-1)">גררו לכאן תרגיל שעוד לא החלטתם עליו</div>') + '</div>' +
+      back.map(function (i) { return rowOf(i, "•"); }).join("") + '</div>';
     l.querySelectorAll("[data-edit]").forEach(function (b) { b.addEventListener("click", function () { var it = state.items.filter(function (x) { return x.id === b.dataset.edit; })[0]; if (wide()) itemScreen(it); else go(function () { itemScreen(it); }); }); });
     wireFac(l);
-    if (canEdit()) { var ml = l.querySelector("#mlist"), bl = l.querySelector("#blist"); if (ml && main.length) enableDrag(ml, "[data-edit]", function (f, t) { persistGroup(false, f, t); }); if (bl) enableDrag(bl, "[data-edit]", function (f, t) { persistGroup(true, f, t); }); }
+    if (canEdit()) enableDrag(l.querySelector("#plist"), "[data-edit]", persistCross);
   }
   /* beside the list the open exercise's strip is marked at once, wherever it was opened from (a click, the arrows, a swap) */
   function markItem() {
     var l = document.getElementById("list"); if (!l || !l.hasAttribute("data-fab-room")) return;
     l.querySelectorAll("[data-edit]").forEach(function (b) { b.closest(".rrow").setAttribute("aria-current", b.dataset.edit === state.lastItem ? "true" : "false"); });
   }
-  function persistGroup(isBack, from, to) {
-    var grp = state.items.filter(function (i) { return !!i.backlog === isBack; }), moved = grp.splice(from, 1)[0]; grp.splice(to, 0, moved);
-    var main = isBack ? state.items.filter(function (i) { return !i.backlog; }) : grp, back = isBack ? grp : state.items.filter(function (i) { return i.backlog; });
-    state.items = main.concat(back);
-    Promise.all(state.items.map(function (it, k) {
-      if (it.position === k + 1) return null;
-      it.position = k + 1;
-      return api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { position: k + 1 } });
-    })).then(loadItems).then(paint, fail);
+  function persistCross(from, to) {   /* from, to: places among the rows AND the divider "נוספים"; what ends up after the divider is "נוספים" */
+    var main = state.items.filter(function (i) { return !i.backlog; }), back = state.items.filter(function (i) { return i.backlog; });
+    var seq = main.concat([null], back), moved = seq.splice(from, 1)[0]; seq.splice(to, 0, moved);
+    var d = seq.indexOf(null), nm = seq.slice(0, d), nb = seq.slice(d + 1);
+    state.items = nm.concat(nb);
+    var jobs = [];
+    nm.concat(nb).forEach(function (it, k) {
+      var isBack = k >= nm.length;
+      if (it.position === k + 1 && !!it.backlog === isBack) return;
+      it.position = k + 1; it.backlog = isBack;
+      jobs.push(api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { position: k + 1, backlog: isBack } }));
+    });
+    Promise.all(jobs).then(loadItems).then(paint, fail);
   }
   function persistItems(from, to) {
     var moved = state.items.splice(from, 1)[0]; state.items.splice(to, 0, moved);
@@ -1197,10 +1202,11 @@
      Only transform is animated. Keyboard: Alt + Arrow up/down on the focused row title. The order of the list is the curve. */
   function enableDrag(l, keySel, onMove) {
     if (l._dragOff) l._dragOff();   /* the list element is reused: drop the previous paint's listeners */
-    var rows = [].slice.call(l.querySelectorAll(".rrow"));
+    var rows = [].slice.call(l.querySelectorAll(".rrow, [data-div]"));   /* a divider (data-div) is a place in the order, not a row to drag */
     var d = null, blockTouch = function (e) { if (d && d.live) e.preventDefault(); };
     l.addEventListener("touchmove", blockTouch, { passive: false });
     rows.forEach(function (row, k) {
+      if (row.hasAttribute("data-div")) return;
       var title = row.querySelector(keySel);
       title.addEventListener("keydown", function (e) {
         if (!e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
@@ -1431,14 +1437,6 @@
         layoutFields(); it = fresh;
       } };
       on(r, "del", function () { confirmRemoveItem(it); });
-      on(r, "backlog", function () {   /* undecided: the exercise stays in the vivencia, below the numbered ones; or it comes back among them */
-        var to = !it.backlog, pos = state.items.reduce(function (m, i) { return Math.max(m, i.position); }, 0) + 1;
-        api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { backlog: to, position: pos } }).then(function () {
-          it.backlog = to; it.position = pos;
-          state.items = state.items.filter(function (i) { return !i.backlog; }).concat(state.items.filter(function (i) { return i.backlog; }));
-          toast(to ? "הועבר ל-Backlog" : "הוחזר לוויוונסיה"); paint(); itemScreen(it);
-        }, fail);
-      });
       on(r, "swap", function () { resetPk(); if (wide()) goSub(function () { picker(it); }); else pickerSheet(it); });   /* the catalog, to put another exercise in this place */   /* the catalog, to put another exercise in this place */
     }, "d");
   }
