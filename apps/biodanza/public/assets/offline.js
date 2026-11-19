@@ -39,14 +39,20 @@
     (items || []).forEach(function (it) { add(it.music); (it.item_music_options || []).forEach(function (o) { add(o.music); }); });   /* the chosen song and all the options of every exercise */
     return out;
   }
-  function putSongs(names, step) {   /* one song at a time, so a phone is not asked for ten downloads at once */
-    var done = 0;
-    return names.reduce(function (p, name) {
-      return p.then(function () { return window.BioAudio.save(name); }).then(function () { done++; if (step) step(done, names.length); }, function (e) {
-        if (e && (e.status === 403 || e.status === 404)) { done++; if (step) step(done, names.length); return; }   /* a song with no file in the bucket is skipped, it never blocks the rest */
-        throw e;
-      });
-    }, Promise.resolve());
+  var prog = { done: 0, total: 0 };
+  function emit(state) { try { document.dispatchEvent(new CustomEvent("biooffline", { detail: { state: state || "run", done: prog.done, total: prog.total } })); } catch (e) { /* nobody listens */ } }
+  function putSongs(names, step) {   /* three songs at a time: faster than one, and a phone is not asked for ten downloads at once */
+    var i = 0, failed = null;
+    function ok() { if (step) step(); }
+    function next() {
+      if (i >= names.length || failed) return Promise.resolve();
+      var name = names[i++];
+      return window.BioAudio.save(name).then(ok, function (e) {
+        if (e && (e.status === 403 || e.status === 404)) ok();   /* a song with no file in the bucket is skipped, it never blocks the rest */
+        else failed = failed || e;
+      }).then(next);
+    }
+    return Promise.all([next(), next(), next()]).then(function () { if (failed) throw failed; });
   }
 
   window.BioOffline = {
@@ -91,6 +97,7 @@
        vivencia uses (also one only played once) is deleted, so nothing stays here that is not in the cloud. */
     sync: function (list, load) {
       if (syncing) { syncAgain = true; return syncing; }
+      prog = { done: 0, total: 0 }; emit("start");
       syncing = ready.then(function () { return all(); }).then(function (stored) {
         var have = {}; stored.forEach(function (r) { have[r.id] = r; });
         return list.reduce(function (p, v) {
@@ -100,7 +107,7 @@
             var same = old && sig(old) === sig(rec);
             return (same ? Promise.all(names.map(function (n) { return window.BioAudio.kept(n); })).then(function (k) { return k.every(Boolean) ? "same" : "songs"; }) : Promise.resolve("new")).then(function (what) {
               if (what === "same") return;
-              return putSongs(names).then(function () { rec.songs = names; rec.savedAt = Date.now(); return run("readwrite", function (s) { return s.put(rec); }); }).then(function () { ids[rec.id] = true; });
+              prog.total += names.length; emit(); return putSongs(names, function () { prog.done++; emit(); }).then(function () { rec.songs = names; rec.savedAt = Date.now(); return run("readwrite", function (s) { return s.put(rec); }); }).then(function () { ids[rec.id] = true; });
             }).catch(function () { /* the copy that was here stays until the next time */ });
           }, function () { /* this one could not be read now: its old copy stays */ });
         }, Promise.resolve());
@@ -114,7 +121,7 @@
         var used = {}; rows.forEach(function (r) { (r.songs || []).forEach(function (n) { used[n] = true; }); });
         if (!window.BioAudio || !BioAudio.names) return;
         return BioAudio.names().then(function (names) { names.forEach(function (n) { if (!used[n]) BioAudio.drop(n); }); });
-      }).catch(function () { /* the next open tries again */ }).then(function () {
+      }).then(function () { emit("done"); }, function () { emit("stopped"); }).then(function () {
         syncing = null;
         if (syncAgain) { syncAgain = false; }
       });

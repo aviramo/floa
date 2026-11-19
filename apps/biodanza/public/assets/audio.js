@@ -16,6 +16,7 @@
   };
 
   /* ---- kept in the browser ---- */
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) { /* the browser decides */ }   /* the songs are asked to stay when the phone runs short of room */
   var dbp = null;
   function db() {
     if (!dbp) dbp = new Promise(function (res) {
@@ -31,7 +32,7 @@
   /* a question to the device's store that never gets an answer (it happens on some phones) must not hold the song: after 2.5 seconds the song is fetched from the cloud */
   function kept(name) {
     return new Promise(function (res) {
-      var done = false, t = setTimeout(function () { if (!done) { done = true; res(null); } }, 2500);
+      var done = false, t = setTimeout(function () { if (!done) { done = true; res(null); } }, navigator.onLine === false ? 20000 : 2500);   /* with no internet there is nowhere else to ask: the device's store is waited for */
       kept0(name).then(function (b) { if (!done) { done = true; clearTimeout(t); res(b); } }, function () { if (!done) { done = true; clearTimeout(t); res(null); } });
     });
   }
