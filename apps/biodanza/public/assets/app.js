@@ -2311,7 +2311,7 @@
   var LEVELS_FALLBACK = [{ key: "all", name_he: "מתחילים (מתאים לכל הקבוצות)" }, { key: "exp3", name_he: "לקבוצות עם ניסיון של כמה חודשים" }, { key: "exp6", name_he: "לקבוצות עם ניסיון של חצי שנה ויותר" }, { key: "deep", name_he: "לקבוצות העמקה ומתקדמות" }];   /* the index of group levels (biodanza.levels), when it has not come from the cloud */
   /* the catalog picker: a search and the list of categories; a category opens like an accordion onto its exercises. On a wide screen it is a pane; on a narrow one it is a popup from the bottom. */
   function searchInput() {
-    return '<input id="q" class="rhead__title" type="text" placeholder="חיפוש תרגילים בקטלוג" autocomplete="off" aria-label="חיפוש תרגילים בקטלוג" style="width:100%;min-width:0;border:0;background:transparent;padding-inline:0;margin:0;color:inherit;text-align:start;outline:0;text-overflow:ellipsis;text-box:normal;line-height:1.4;padding-block:4px">';
+    return '<input id="q" class="rhead__title" type="text" placeholder="חיפוש תרגילים ומוסיקה בקטלוג" autocomplete="off" aria-label="חיפוש תרגילים ומוסיקה בקטלוג" style="width:100%;min-width:0;border:0;background:transparent;padding-inline:0;margin:0;color:inherit;text-align:start;outline:0;text-overflow:ellipsis;text-box:normal;line-height:1.4;padding-block:4px">';
   }
   function pickerBody(sheetMode) {
     return (sheetMode ? '<style>#catDlg .sheet-head { display: none }</style><div style="padding-block:var(--sp-2)">' + searchInput() + '</div>' : '') +
