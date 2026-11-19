@@ -286,8 +286,21 @@
     if (last && window.BioAudio && BioAudio.info) BioAudio.info(last.n, last.t, last.a);
     var HIST = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg>';
     var histName = "";
+    function histSave(name, title, artist) {
+      if (!(window.FLOA_AUTH && FLOA_AUTH.signedIn())) return;
+      api("/rest/v1/listen_history?on_conflict=user_id,audio_object", { method: "POST", prefer: "resolution=merge-duplicates,return=minimal", json: { audio_object: name, title: title || "", artist: artist || "", played_at: new Date().toISOString() } }).then(null, function () { /* the copy in this browser stays */ });
+    }
+    function histImport() {   /* once: what this browser kept before the database did goes up */
+      try {
+        if (localStorage.getItem("biodanza.history.synced") || !(window.FLOA_AUTH && FLOA_AUTH.signedIn())) return;
+        var h = JSON.parse(localStorage.getItem("biodanza.history") || "[]") || [];
+        if (!h.length) { localStorage.setItem("biodanza.history.synced", "1"); return; }
+        var rows = h.filter(function (e) { return e && e.n; }).map(function (e) { return { audio_object: e.n, title: e.t || "", artist: e.a || "", played_at: new Date(e.at || Date.now()).toISOString() }; });
+        api("/rest/v1/listen_history?on_conflict=user_id,audio_object", { method: "POST", prefer: "resolution=ignore-duplicates,return=minimal", json: rows }).then(function () { localStorage.setItem("biodanza.history.synced", "1"); }, function () { /* next time */ });
+      } catch (x) { /* next time */ }
+    }
     function remember(name, title, artist) {   /* one line per song: the last time it started, newest first, the last 300 songs */
-      histName = name;
+      histName = name; histSave(name, title, artist);
       try { var h = (JSON.parse(localStorage.getItem("biodanza.history") || "[]") || []).filter(function (e) { return e && e.n !== name; }); h.unshift({ n: name, t: title || "", a: artist || "", at: Date.now() }); localStorage.setItem("biodanza.history", JSON.stringify(h.slice(0, 300))); } catch (x) { /* not kept */ }
     }
     function playName(n, t, a) {   /* a song of the history plays as its own button would play it */
@@ -296,7 +309,14 @@
       var tb = document.createElement("button"); tb.dataset.audio = n; tb.style.display = "none"; document.body.appendChild(tb); tb.click(); tb.remove();
     }
     function openHistory() {
-      var h = []; try { h = JSON.parse(localStorage.getItem("biodanza.history") || "[]") || []; } catch (x) { h = []; }
+      var local = function () { try { return JSON.parse(localStorage.getItem("biodanza.history") || "[]") || []; } catch (x) { return []; } };
+      var fromDb = api("/rest/v1/listen_history?select=audio_object,title,artist,played_at&order=played_at.desc&limit=120").then(function (rows) {
+        return (rows || []).map(function (r) { return { n: r.audio_object, t: r.title, a: r.artist, at: Date.parse(r.played_at) }; });
+      });
+      var waited = new Promise(function (res) { setTimeout(function () { res(null); }, 2500); });
+      Promise.race([fromDb, waited]).then(function (rows) { renderHistory(rows || local()); }, function () { renderHistory(local()); });
+    }
+    function renderHistory(h) {
       var seen = {}, rows = []; h.forEach(function (e) { if (e && e.n && !seen[e.n]) { seen[e.n] = 1; rows.push(e); } });
       rows = rows.slice(0, 120);
       var dlg = document.getElementById("histDlg");
@@ -325,6 +345,7 @@
       };
     }
     document.addEventListener("click", function (ev) { var b = ev.target.closest && ev.target.closest("[data-hist]"); if (b) openHistory(); });
+    setTimeout(histImport, 3000);
     function clk(s) { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2); }
     function make(cls) {
       var d = document.createElement("div"); d.className = cls + " idle";
@@ -404,6 +425,7 @@
           api("/rest/v1/music?audio_object=eq." + encodeURIComponent(nm0) + "&select=title,name,artist&limit=1").then(function (rows) {
             var x = rows && rows[0]; if (!x) return;
             songInfo[nm0] = { t: x.title || x.name, a: x.artist || "" }; if (window.BioAudio && BioAudio.info) BioAudio.info(nm0, songInfo[nm0].t, songInfo[nm0].a);
+            api("/rest/v1/listen_history?audio_object=eq." + encodeURIComponent(nm0), { method: "PATCH", prefer: "return=minimal", json: { title: songInfo[nm0].t, artist: songInfo[nm0].a } }).then(null, function () { /* none */ });
             try { var h0 = JSON.parse(localStorage.getItem("biodanza.history") || "[]") || []; h0.forEach(function (e) { if (e.n === nm0 && !e.t) { e.t = songInfo[nm0].t; e.a = songInfo[nm0].a; } }); localStorage.setItem("biodanza.history", JSON.stringify(h0)); } catch (x3) { /* not kept */ }   /* the history line written before the name was known gets it */
             if (curName === nm0) { curTitle = songInfo[nm0].t; curArtist = songInfo[nm0].a; last = { n: nm0, t: curTitle, a: curArtist, d: curD > 0 ? Math.floor(curD) : 0 }; try { localStorage.setItem("biodanza.last", JSON.stringify(last)); } catch (x2) { /* not kept */ } sync(); }
           }, function () { /* the title stays the plain word */ });
@@ -606,15 +628,12 @@
       '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="nextW" aria-label="הבא" title="הבא"' + (hasNext ? "" : " disabled") + '>' + I.fwd + '</button></header>';
   }
   /* the header of one exercise: buttons only, each with its word. Previous and the list on the right, next on the left. The name is the field below. */
-  function itemHead(hasPrev, hasNext, where, exId) {
-    var b = function (act, ico, label, off, after) {
-      var shown = esc(label);
-      var m = act === "list" && where && String(where).match(/^(\d+)\/(\d+)$/);
-      if (m) shown = '<span style="display:inline-flex;align-items:baseline;gap:2px;direction:ltr"><b class="bio-num" style="display:inline-block;font:var(--fw-black) var(--fs-xl)/1 var(--font);--nx:' + ((state.slideFrom || 0) * 24) + 'px' + (state.slideFrom ? ';animation:bioNum .26s cubic-bezier(.2,.8,.2,1) both' : '') + '">' + m[1] + '</b><span style="color:var(--text-2);font:var(--fw-regular) var(--fs-s)/1 var(--font)">/' + m[2] + '</span></span>';   /* the number of this exercise is big, and rolls in from the side the page came from */
-      return '<button class="rbtn' + (act === "nextW" || act === "prevW" ? "" : " rbtn--ghost") + (act === "list" ? " bio-flat" : "") + '" data-act="' + act + '" title="' + esc(label) + '"' + (act === "list" ? ' style="flex:none;min-width:0;padding-inline:var(--sp-1)"' : "") + (off ? " disabled" : "") + '>' + (after ? '<span>' + shown + '</span>' + ico : ico + '<span>' + shown + '</span>') + '</button>';
-    };
+  function itemHead(hasPrev, hasNext, where, exId, nameText) {
     var nav = !wide();   /* beside the list there are no previous and next buttons: the list is the way around */
-    return '<header class="rhead">' + (nav ? b("prevW", I.back, "הקודם", !hasPrev) : "") + '<span class="bio-pair" style="flex:1 1 auto;min-width:0;display:flex;align-items:center;justify-content:center;gap:0">' + b("list", "", where || "לרשימה", false) + (exId ? heartBtnEx(exId, "bio-flat") : "") + '</span>' + (nav ? b("nextW", I.fwd, "הבא", !hasNext, true) : "") + '</header>';
+    var arrow = function (act, ico, label, off) { return '<button class="rbtn rbtn--icon" data-act="' + act + '" aria-label="' + label + '" title="' + label + '"' + (off ? " disabled" : "") + '>' + ico + '</button>'; };
+    return '<header class="rhead">' + (nav ? arrow("prevW", I.back, "הקודם", !hasPrev) : "") +
+      '<div class="rhead__text"><input id="ina" class="rhead__title" placeholder="ללא שם" autocomplete="off" aria-label="שם התרגיל" value="' + esc(nameText || "") + '" style="width:100%;min-width:0;border:0;background:transparent;padding:0;margin:0;color:inherit;text-align:start;outline:0;text-overflow:ellipsis;text-box:trim-both cap alphabetic"></div>' +
+      (exId ? heartBtnEx(exId, "bio-flat") : "") + (nav ? arrow("nextW", I.fwd, "הבא", !hasNext) : "") + '</header>';
   }
   (function () {
     var st = document.createElement("style");
@@ -1199,9 +1218,9 @@
     markItem();
     var k = state.items.indexOf(it), prevIt = state.items[k - 1], nextIt = state.items[k + 1];
     /* the header walks the sequence: the right button to the previous exercise, the left one to the next, the name between them */
-    var hd = itemHead(!!prevIt, !!nextIt, (k + 1) + "/" + state.items.length, it.exercise_id);   /* the middle button says where we are, and still opens the list */
+    var hd = itemHead(!!prevIt, !!nextIt, "", it.exercise_id, itemName(it));   /* the middle button says where we are, and still opens the list */
     show(hd + '<style>#ipg, #ipg * { touch-action: pan-y } #ipg textarea, #ipg .rf-rich { max-height: none } #ifields > .rfield { margin: 0 }</style><div id="ipg" style="display:flex;flex-direction:column;flex:1 1 auto;min-height:0"><div class="pad" style="padding-bottom:0">' +
-      '<div style="display:flex;align-items:flex-end;gap:var(--gap-button)">' + '<label class="rfield" style="flex:1 1 auto;margin:0"><span>שם התרגיל</span><input id="ina" style="font-weight: var(--fw-black); font-size: var(--fs-m)" placeholder=" " autocomplete="off" value="' + esc(itemName(it)) + '"></label>' + facChip(it) + '</div>' +
+      '<div style="display:flex;align-items:flex-end;gap:var(--gap-button)">' + facChip(it) + '</div>' +
       '</div>' +
       '<div id="iscroll" style="flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain">' +   /* everything under the name scrolls together; the texts are open to the end */
       '<div class="rrow rrow--link" data-act="pickMusic" role="button" tabindex="0" style="flex:none;padding-inline:var(--sp-2);padding-block:var(--sp-2);border-bottom:0;cursor:pointer"><div style="flex:1 1 auto;min-width:0">' +
@@ -1210,7 +1229,6 @@
       '<label class="rfield" style="flex:none"><span>הנחיה</span><div id="igu" class="rf-rich" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true"' + (isDraft(it, "guidance") ? DRAFT_FIELD : "") + '>' + rtHtml(txt(it, "guidance")) + '</div></label>' +
       '<label class="rfield" style="flex:none"><span>הערות</span><div id="it" class="rf-rich" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true">' + rtHtml(it.notes || "") + '</div></label></div>' +
       '<div id="ibtns" style="flex:none;height:calc(2 * var(--fab) + var(--sp-2) + 2 * var(--gutter) + var(--inset-b))"></div></div></div>' +
-      '<button class="rfab" data-act="swap" aria-label="החלפת תרגיל" title="החלפת תרגיל" style="bottom:calc(var(--gutter) + var(--dockh) + var(--fab) + var(--sp-2))">' + I.swap + '</button>' +   /* the two actions are buttons at the left, so the right is free for the music's */
       '<button class="rfab" data-act="del" aria-label="הסרה מהוויוונסיה" title="הסרה מהוויוונסיה" style="border-color:var(--surface-2);background:var(--surface-2);color:var(--text)">' + I.trash + '</button>', function (r) {
       var sf = state.slideFrom || 0, pg = r.querySelector("#ipg"); state.slideFrom = 0;
       r.style.overflowX = "clip";   /* a page sliding in from the side must not make the window scroll sideways */

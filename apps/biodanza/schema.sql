@@ -771,3 +771,37 @@ begin
 end $f$;
 drop trigger if exists file_in_use_guard on biodanza.music_files;
 create trigger file_in_use_guard before delete on biodanza.music_files for each row execute function biodanza.file_in_use_guard();
+-- MUSIC OPTIONS OF AN EXERCISE IN A VIVENCIA (2026-11-19). While a vivencia is built the facilitator is torn between a few songs: each song picked
+-- for an exercise stays here as an option, and ONE of them is the chosen one (vivencia_items.music_id) that plays. The chosen song is not
+-- required to be here (older exercises have only music_id); whoever may see the vivencia sees the options, whoever may edit it changes them.
+create table if not exists biodanza.item_music_options (
+  item_id    uuid not null references biodanza.vivencia_items(id) on delete cascade,
+  music_id   uuid not null references biodanza.music(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (item_id, music_id)
+);
+alter table biodanza.item_music_options enable row level security;
+drop policy if exists item_opts_read on biodanza.item_music_options;
+create policy item_opts_read on biodanza.item_music_options for select to authenticated
+  using (exists (select 1 from biodanza.vivencia_items i where i.id = item_id and biodanza.can_view(i.vivencia_id)));
+drop policy if exists item_opts_write on biodanza.item_music_options;
+create policy item_opts_write on biodanza.item_music_options for all to authenticated
+  using (exists (select 1 from biodanza.vivencia_items i where i.id = item_id and biodanza.can_edit(i.vivencia_id)))
+  with check (exists (select 1 from biodanza.vivencia_items i where i.id = item_id and biodanza.can_edit(i.vivencia_id)));
+grant select, insert, update, delete on biodanza.item_music_options to authenticated, service_role;
+-- THE LISTENING HISTORY (2026-11-19): the songs a person started to play, one line per song and person (the last time it started). Each person sees
+-- and changes only their own. The song is named by its file in the bucket (what the player knows), with the name and performer as they were shown.
+create table if not exists biodanza.listen_history (
+  user_id      uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  audio_object text not null,
+  title        text not null default '',
+  artist       text not null default '',
+  played_at    timestamptz not null default now(),
+  primary key (user_id, audio_object)
+);
+create index if not exists listen_history_recent_idx on biodanza.listen_history (user_id, played_at desc);
+alter table biodanza.listen_history enable row level security;
+drop policy if exists listen_history_own on biodanza.listen_history;
+create policy listen_history_own on biodanza.listen_history for all to authenticated
+  using (user_id = auth.uid() and biodanza.is_allowed()) with check (user_id = auth.uid() and biodanza.is_allowed());
+grant select, insert, update, delete on biodanza.listen_history to authenticated, service_role;
