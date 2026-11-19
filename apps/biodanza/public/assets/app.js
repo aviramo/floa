@@ -391,7 +391,7 @@
         return cardUi({ attrs: 'data-hi="' + i + '" role="button" tabindex="0"', selected: !!(nw.name && nw.name === e.n), ltr: true, title: e.t || "שיר", sub: e.a || "", pill: cardPill(m),
           time: '<span style="color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font)">' + esc(when(e.at)) + '</span>' });
       }).join("");
-      histLayer.innerHTML = head("היסטוריית האזנה", "", false, "") + '<div class="rlist">' + (rows.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);padding:var(--gutter)">' + cards + '</div>' : ph("אין עדיין היסטוריה", "שירים שהתחלתם להשמיע יופיעו כאן")) + '</div>';
+      histLayer.innerHTML = head("היסטוריית האזנה", "", false, "") + '<div class="rlist">' + (rows.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);padding:var(--gutter)">' + cards + '</div>' : ph("אין עדיין היסטוריה", "שירים שהתחלתם להשמיע יופיעו כאן")) + '</div>';
       placeHist(); histOpen = true; pl.classList.add("bio-dim");
       requestAnimationFrame(function () { histLayer.classList.add("is-open"); });
     }
@@ -417,7 +417,7 @@
           '<span style="color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + esc(when(e.at)) + '</span></div></div>';
       }).join("");
       RosterSheet.render(dlg, { title: "היסטוריית האזנה", from: "bottom", size: "l",
-        body: '<div style="padding:var(--sp-2) var(--gutter) var(--gutter)">' + (rows.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch">' + cards + '</div>' : ph("אין עדיין היסטוריה", "שירים שהתחילו להתנגן יופיעו כאן")) + '</div>' });
+        body: '<div style="padding:var(--sp-2) 0 var(--gutter)">' + (rows.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);align-items:stretch">' + cards + '</div>' : ph("אין עדיין היסטוריה", "שירים שהתחילו להתנגן יופיעו כאן")) + '</div>' });
       dlg.onclick = function (ev) {
         var c = ev.target.closest && ev.target.closest("[data-hi]"); if (!c) return;
         var e = rows[+c.dataset.hi]; if (!e) return;
@@ -1310,7 +1310,7 @@
     var play = list.length > 1 ? '<button type="button" class="rchip rchip--s" data-recvloop="' + kind + '" aria-pressed="' + loopOn(kind) + '" title="כשמנגנים שיר מהקטע, השירים ממשיכים אחד אחרי השני ובסוף חוזרים להתחלה" style="cursor:pointer;border:0">בלולאה</button>' : '';
     var add = edit ? '<div class="rcard rcard--compact" data-addm role="button" tabindex="0" style="margin:0;min-width:0;display:flex;align-items:center;justify-content:center;gap:var(--sp-1);cursor:pointer;min-height:var(--tag-s);border:1px dashed var(--line-strong);background:transparent;box-shadow:none;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>הוספת מוזיקה</div>' : '';
     return '<div data-recv="' + kind + '" style="' + (kind === "start" ? '' : 'margin-top:var(--sp-2)') + '"><div style="display:flex;align-items:center;justify-content:space-between;padding:var(--gutter) var(--gutter) 0"><span class="rrow__title" style="font-weight:var(--fw-black)">' + label + '</span><span style="display:flex;align-items:center;gap:var(--sp-1)">' + play + (edit ? '<button type="button" class="rbtn rbtn--icon" data-addm aria-label="הוספת מוזיקה" title="הוספת מוזיקה">' + I.plus + '</button>' : '') + '</span></div>' +
-      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);padding:var(--gutter)">' + list.map(function (m) { var nw = window.__bioNow || {}; return optCardHtml(m, !!(nw.playing && m.audio_object && nw.name === m.audio_object), edit, true, key); }).join("") + '</div></div>';
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);padding:var(--gutter)">' + list.map(function (m) { var nw = window.__bioNow || {}; return optCardHtml(m, !!(nw.playing && m.audio_object && nw.name === m.audio_object), edit, true, key); }).join("") + '</div></div>';
   }
   function loadItems() {
     return itemsOf(state.viv.id).then(function (r) { r = r || []; state.items = r.filter(function (i) { return !i.backlog; }).concat(r.filter(function (i) { return i.backlog; })); if (state.viv) refreshOffline(state.viv); });   /* every change is also in the device copy, so the next open draws it at once */   /* the numbered exercises, then the backlog */
@@ -1427,7 +1427,7 @@
         actions: (canEdit() ? '<button type="button" class="rbtn rbtn--icon bio-ha" data-idel="' + i.id + '" aria-label="הסרה מהוויוונסיה" title="הסרה מהוויוונסיה">' + I.trash + '</button>' : '') + (i.exercise_id ? heartBtnEx(i.exercise_id, "bio-ha") : '') });   /* on hover: the bin at the right, the heart at its left */
     };
     var exHead = '<div style="display:flex;align-items:center;justify-content:space-between;padding:var(--gutter) var(--gutter) 0"><span class="rrow__title" style="font-weight:var(--fw-black)">ויוונסיה</span>' + (canEdit() ? '<button type="button" class="rbtn rbtn--icon" data-addex aria-haspopup="menu" aria-label="הוספת תרגיל" title="הוספת תרגיל">' + I.plus + '</button>' : '') + '</div>';   /* the exercises have a title like the songs of the start, with a plus at its other end */
-    l.innerHTML = recvHtml("start") + exHead + '<div id="plist" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch;padding:var(--gutter)">' + main.map(function (i, k) { return rowOf(i, k + 1); }).join("") +
+    l.innerHTML = recvHtml("start") + exHead + '<div id="plist" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);align-items:stretch;padding:var(--gutter)">' + main.map(function (i, k) { return rowOf(i, k + 1); }).join("") +
       '<div data-div style="grid-column:1 / -1;padding:var(--sp-2) 0 var(--sp-1);margin-top:var(--sp-1);min-height:var(--ctl)"><div class="rrow__sub">נוספים</div>' + (back.length || !canEdit() ? '' : '<div class="rrow__sub" style="margin-top:var(--sp-1)">גררו לכאן תרגיל שעוד לא החלטתם עליו</div>') + '</div>' +
       back.map(function (i) { return rowOf(i, "•"); }).join("") + '</div>' + recvHtml("end");
     /* the list has a scrollbar at its left edge that takes room from the cards: the header above gives its left side the same room, so its button is over the cards' edge */
@@ -2027,14 +2027,14 @@
     var list = optList(it), cur = it.music_id;
     var cards = list.map(function (m) { return optCardHtml(m, m.id === cur, !ro); }).join("");
     var addCard = '<div class="rcard rcard--compact" data-addm role="button" tabindex="0" style="margin:0;min-width:0;display:flex;align-items:center;justify-content:center;gap:var(--sp-1);cursor:pointer;min-height:var(--tag-s);border:1px dashed var(--line-strong);background:transparent;box-shadow:none;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>הוספת מוזיקה</div>';
-    if (ro) { var base = (it.item_music_options || []).map(function (o) { return o.music; }).filter(Boolean); return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch">' + base.map(function (m) { return optCardHtml(m, !!(it.sel && it.sel.indexOf(m.id) >= 0), false, true); }).join("") + addCard + '</div>'; }
+    if (ro) { var base = (it.item_music_options || []).map(function (o) { return o.music; }).filter(Boolean); return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);align-items:stretch">' + base.map(function (m) { return optCardHtml(m, !!(it.sel && it.sel.indexOf(m.id) >= 0), false, true); }).join("") + addCard + '</div>'; }
     var add = '<div class="rcard rcard--compact" data-addm role="button" tabindex="0" style="margin:0;min-width:0;display:flex;align-items:center;justify-content:center;gap:var(--sp-1);cursor:pointer;min-height:var(--tag-s);border:1px dashed var(--line-strong);background:transparent;box-shadow:none;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>' + (list.length ? "הוספת מוזיקה" : "בחירת מוזיקה") + '</div>';
-    return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch">' + cards + add + '</div>';
+    return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);align-items:stretch">' + cards + add + '</div>';
   }
   /* the catalog's preview of an exercise: the songs it comes with, as the same cards, at the same place (above the texts), without the add card */
   function prevMusic(songs, sel, inset) {
     if (!songs.length) return "";
-    return '<div id="pvmus" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch;margin-bottom:var(--sp-2)' + (inset ? ';margin-inline:var(--gutter)' : '') + '">' + songs.map(function (m) { return optCardHtml(m, m.id === sel, false); }).join("") + '</div>';
+    return '<div id="pvmus" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);align-items:stretch;margin-bottom:var(--sp-2)' + (inset ? ';margin-inline:var(--gutter)' : '') + '">' + songs.map(function (m) { return optCardHtml(m, m.id === sel, false); }).join("") + '</div>';
   }
   /* a song joins the options of the exercise; if the exercise has no chosen song yet, it is the chosen one */
   function dropOpt(it, m) {
@@ -2338,7 +2338,7 @@
       r.querySelector("#q").value = pk.q;
       var catBy = {};
       function catCards(k) {
-        return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);padding:var(--gutter)">' + (catBy[k] || []).map(function (e) {
+        return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);padding:var(--gutter)">' + (catBy[k] || []).map(function (e) {
           return cardUi({ attrs: 'data-ex="' + e.id + '" role="button" tabindex="0"', title: name(e), sub: (e.exercise_lines || []).map(function (x) { return lineName(x.line_key); }).filter(Boolean).join(" · "), subLtr: false, actions: heartBtnEx(e.id, "bio-ha bio-ha--tl") });
         }).join("") + '</div>';
       }
@@ -2394,7 +2394,7 @@
             var shown = songs.slice(0, 60);
             var on0 = open.__songs != null ? open.__songs : true;
             box.innerHTML = '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-1);min-height:0;border-bottom-color:' + (on0 ? "transparent" : "var(--line)") + '"><button type="button" class="rrow__main" data-songs aria-expanded="' + on0 + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit;display:flex;align-items:center;gap:var(--sp-2)"><span style="flex:1 1 auto;min-width:0"><span class="rrow__title" style="font-weight:var(--fw-black)">מוזיקות</span></span><span style="flex:none;width:20px;height:20px;transition:transform .25s var(--ease);' + (on0 ? 'transform:rotate(180deg)' : '') + '">' + I.down + '</span></button></div>' +
-              '<div data-songsb style="border-bottom:1px solid ' + (on0 ? "var(--line)" : "transparent") + ';display:grid;grid-template-rows:' + (on0 ? '1fr' : '0fr') + ';transition:grid-template-rows .25s var(--ease)"><div style="overflow:hidden;min-height:0"><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);padding:var(--gutter)">' + shown.map(function (m) {
+              '<div data-songsb style="border-bottom:1px solid ' + (on0 ? "var(--line)" : "transparent") + ';display:grid;grid-template-rows:' + (on0 ? '1fr' : '0fr') + ';transition:grid-template-rows .25s var(--ease)"><div style="overflow:hidden;min-height:0"><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);padding:var(--gutter)">' + shown.map(function (m) {
                 return cardUi({ attrs: 'data-sgc="' + esc(m.id) + '"', ltr: true, title: songName(m), sub: songBy(m), pill: cardPill(m), time: clkSpan(m), chip: '<button type="button" class="rchip rchip--s" data-sg="' + esc(m.id) + '" style="cursor:pointer;border:0">הוספה</button>' });
               }).join("") + '</div></div></div>';
             box.addEventListener("click", function (ev) {
