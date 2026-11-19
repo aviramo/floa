@@ -839,6 +839,12 @@
     if (!wide() || !catLayer) return;
     try { var pks = catLayer.querySelector("#pks"); localStorage.setItem(CAT_KEY, JSON.stringify({ open: !!catPanel, prev: catPrevId || null, q: pk.q || "", cats: pk.open || {}, sc: pks ? pks.scrollTop : 0 })); } catch (e) { /* not kept */ }
   }
+  function refreshPrevLabel() {   /* the add button of the exercise from the catalog always says the vivencia that is open now */
+    if (!catPrev) return;
+    var b = catPrev.querySelector('[data-act="doswap"][aria-label^="הוספה לוויוונסיה"]'); if (!b) return;
+    var t = state.viv ? (state.viv.title || "הוויוונסיה") : "ויוונסיה", sp = b.querySelector("span:last-child");
+    if (sp) sp.textContent = t; b.setAttribute("aria-label", "הוספה לוויוונסיה " + t);
+  }
   function loadCatSnap() { try { return JSON.parse(localStorage.getItem(CAT_KEY) || "null"); } catch (e) { return null; } }
   function ensureCatPrev() { /* the left part is built with the layer */ }
   function closeCatPrev() {   /* the left part slides back in under the right one */
@@ -882,7 +888,7 @@
     placeCatLayer(); catLayer.classList.add("is-open"); catLayer.querySelector(".catbody").removeAttribute("inert");
     document.querySelectorAll("[data-catopen]").forEach(function (b) { b.setAttribute("aria-pressed", "true"); });
     catPanel = catLayer; state.pickerShow = true; catPreview = !!catPrevId;
-    pd.classList.add("bio-dim"); saveCat();
+    pd.classList.add("bio-dim"); refreshPrevLabel(); saveCat();
   }
   document.addEventListener("click", function (ev) { var ab = ev.target.closest && ev.target.closest("[data-addex]"); if (ab) {   /* the plus beside the exercises' title: an empty exercise at the end of the numbered ones, opened to be filled in */
       if (!state.viv || !state.items || ab.disabled) return;
@@ -1277,7 +1283,7 @@
     return itemsOf(state.viv.id).then(function (r) { r = r || []; state.items = r.filter(function (i) { return !i.backlog; }).concat(r.filter(function (i) { return i.backlog; })); if (state.viv) refreshOffline(state.viv); });   /* every change is also in the device copy, so the next open draws it at once */   /* the numbered exercises, then the backlog */
   }
   function editor() {
-    var v = state.viv; setUrl(BASE + v.id); curJoin(v.id);
+    var v = state.viv; setUrl(BASE + v.id); curJoin(v.id); refreshPrevLabel();
     show(head(v.title || "ויוונסיה חדשה", "", true, (v.role === "view" || wide() ? '' : '<button type="button" class="rbtn" data-act="add" style="flex:none" title="הוספת תרגיל מהקטלוג">לקטלוג</button>')) +   /* the way to the catalog is a word in the header, not a floating button */
       '<div class="rlist" data-fab-room id="list"><div class="rskel rskel--title"></div></div>' +
       '', function (r) {   /* on a wide screen the way to the catalog is a green banner down the side, added by show() */
@@ -1368,6 +1374,7 @@
     });
   }
   function paint() {
+    refreshPrevLabel();
     var l = document.getElementById("list"); if (!l || !l.hasAttribute("data-fab-room")) return;   /* only the vivencia's own list: the catalog picker has a list too */
     var cnt = state.viv && pl.querySelector('[data-n="' + state.viv.id + '"]'); if (cnt) cnt.textContent = state.items.length + " תרגילים";
     var vis = state.items;   /* the order of the list IS the curve: no phase is kept on an item */
