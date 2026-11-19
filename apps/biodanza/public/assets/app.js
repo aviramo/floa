@@ -822,13 +822,15 @@
     if (!catPanel) return;
     catPanel = null; state.pickerShow = false; pd.classList.remove("bio-dim");
     document.querySelectorAll("[data-catopen]").forEach(function (b) { b.setAttribute("aria-pressed", "false"); });
-    catLayer.classList.remove("is-open"); catLayer.querySelector(".catbody").setAttribute("inert", "");   /* the layer and its banner slide back off to the right together */
+    catLayer.classList.remove("is-open");
+    if (catPrev) catPrev.classList.remove("is-open");   /* the catalog and the exercise that came out of it are one layer: they go back together (the exercise is remembered) */ catLayer.querySelector(".catbody").setAttribute("inert", "");   /* the layer and its banner slide back off to the right together */
   }
   function openCatPanel() {   /* the layer and its banner slide left together; the exercise on the left goes dark */
     if (catPanel || !catLayer || catLayer.hidden) return;
     placeCatLayer(); catLayer.classList.add("is-open"); catLayer.querySelector(".catbody").removeAttribute("inert");
     document.querySelectorAll("[data-catopen]").forEach(function (b) { b.setAttribute("aria-pressed", "true"); });
-    catPanel = catLayer; state.pickerShow = true; catPreview = !!(catPrev && catPrev.classList.contains("is-open"));   /* what is on the left right now: only a catalog exercise (it has the add button) stays lit; anything else goes behind the half dark backdrop, as behind every popup */
+    catPanel = catLayer; state.pickerShow = true; catPreview = !!catPrevId;
+    if (catPrevId && catPrev) requestAnimationFrame(function () { catPrev.classList.add("is-open"); });   /* and come back together */   /* what is on the left right now: only a catalog exercise (it has the add button) stays lit; anything else goes behind the half dark backdrop, as behind every popup */
     pd.classList.add("bio-dim");   /* the left goes behind the half dark backdrop, as behind every popup */
   }
   document.addEventListener("click", function (ev) { var ab = ev.target.closest && ev.target.closest("[data-addex]"); if (ab) {   /* the plus beside the exercises' title: an empty exercise at the end of the numbered ones, opened to be filled in */
