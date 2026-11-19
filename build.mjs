@@ -26,7 +26,7 @@ import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createServer } from "node:http";
 import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
-import { readFileSync, watch } from "node:fs";
+import { existsSync, readFileSync, watch } from "node:fs";
 import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -406,6 +406,8 @@ function serve(port = 5173, test = false) {
     if (path.endsWith("/")) path += "index.html";
     const file = resolve(DIST, "." + path);
     if (!file.startsWith(DIST)) return res.writeHead(403).end();
+    /* a folder with a page of its own, asked for without the slash (/biodanza/music): the host adds the slash, rather than the app's front page answering */
+    if (!extname(path) && !path.endsWith("/") && existsSync(join(file, "index.html"))) return res.writeHead(301, { location: path + "/" + new URL(req.url, "http://x").search }).end();
     try {
       let body = await readFile(file);
       if (test && extname(file) === ".html") body = Buffer.from(body.toString("utf8").replace(/<head[^>]*>/i, (m) => m + '<script src="/__test-env.js"></script>'));
