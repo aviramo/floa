@@ -1835,7 +1835,7 @@
   /* the popup that adds songs to an exercise: the music page's cards and search, in two parts: the songs the catalog links to the exercise, and all the others */
   function openAddMusic(it, changed) {
     var me = FLOA_AUTH.userId(), vid = state.viv && state.viv.id;
-    var r = sheetOf("addMusDlg", "", '<style>#addMusDlg .sheet-head { display: none } html.bio-docked #addMusDlg .sheet-body { padding-bottom: 0 }</style><div><label class="rfield"><span id="amc">חיפוש בין שירים</span><input id="amq" placeholder=" " autocomplete="off"></label></div><div style="padding-top:var(--sp-1)"><button type="button" class="rbtn rbtn--block rbtn--ghost" id="amup">העלאת קובץ מוזיקה</button></div><div id="amlist" style="flex:1 1 auto;min-height:0;overflow-y:auto;margin-top:var(--sp-2);padding-bottom:calc(var(--dockfull) + var(--gutter))"><div class="rskel rskel--title"></div></div>');
+    var r = sheetOf("addMusDlg", "", '<style>#addMusDlg .sheet-head { display: none } html.bio-docked #addMusDlg .sheet-body { padding-bottom: 0 }</style><div style="display:flex;align-items:flex-end;gap:var(--gap-button)"><label class="rfield" style="flex:1 1 auto;margin:0"><span id="amc">חיפוש בין שירים</span><input id="amq" placeholder=" " autocomplete="off"></label><button type="button" class="rbtn rbtn--icon" id="amup" aria-label="העלאת קובץ מוזיקה" title="העלאת קובץ מוזיקה">' + I.up + '</button></div><div id="amlist" style="flex:1 1 auto;min-height:0;overflow-y:auto;margin-top:var(--sp-2);padding-bottom:calc(var(--dockfull) + var(--gutter))"><div class="rskel rskel--title"></div></div>');
     r.style.overflowY = "hidden";   /* the search stays, only the cards scroll */
     var listEl = r.querySelector("#amlist"), qi = r.querySelector("#amq");
     var linked = null, rest = null, shown = 90, fresh = true;
@@ -1859,8 +1859,8 @@
       var inp = document.createElement("input"); inp.type = "file"; inp.accept = "audio/*,.flac,.m4a,.aiff,.aif,.wav,.mp3";
       inp.addEventListener("change", function () {
         var f = inp.files && inp.files[0]; if (!f) return;
-        var label = upb.textContent; upb.dataset.busy = "1"; upb.textContent = "0%";
-        var back = function (t, ms) { upb.textContent = t; setTimeout(function () { upb.textContent = label; delete upb.dataset.busy; }, ms || 0); };
+        var label = upb.innerHTML; upb.dataset.busy = "1"; upb.textContent = "0%";
+        var back = function (t, ms) { if (t !== label) upb.textContent = t; setTimeout(function () { upb.innerHTML = label; delete upb.dataset.busy; }, ms || 0); };
         putAudio(f, function (pc) { upb.textContent = pc + "%"; }).then(function (o) {
           var title = f.name.replace(/\.[^.]+$/, "").replace(/[_]+/g, " ").trim();
           return api("/rest/v1/rpc/add_upload", { method: "POST", json: { p_object: o.object, p_format: o.format, p_size: o.size, p_title: title, p_artist: "", p_vivencia: state.viv ? state.viv.id : null } });
