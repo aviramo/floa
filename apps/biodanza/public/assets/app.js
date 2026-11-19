@@ -1846,7 +1846,7 @@
       r.querySelector("#q").value = pk.q;
       var catBy = {};
       function catCards(k) {
-        return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);padding:var(--sp-1) var(--gutter) var(--sp-2)">' + (catBy[k] || []).map(function (e) {
+        return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);padding:var(--gutter)">' + (catBy[k] || []).map(function (e) {
           return cardUi({ attrs: 'data-ex="' + e.id + '" role="button" tabindex="0"', title: name(e), sub: (e.exercise_lines || []).map(function (x) { return lineName(x.line_key); }).filter(Boolean).join(" · "), subLtr: false });
         }).join("") + '</div>';
       }
@@ -1899,7 +1899,7 @@
             var shown = songs.slice(0, 60);
             var on0 = open.__songs != null ? open.__songs : true;
             box.innerHTML = '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-1);min-height:0"><button type="button" class="rrow__main" data-songs aria-expanded="' + on0 + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit;display:flex;align-items:center;gap:var(--sp-2)"><span style="flex:1 1 auto;min-width:0"><span class="rrow__title" style="font-weight:var(--fw-black)">מוזיקות</span></span><span style="flex:none;width:20px;height:20px;transition:transform .25s var(--ease);' + (on0 ? 'transform:rotate(180deg)' : '') + '">' + I.down + '</span></button></div>' +
-              '<div data-songsb style="display:grid;grid-template-rows:' + (on0 ? '1fr' : '0fr') + ';transition:grid-template-rows .25s var(--ease)"><div style="overflow:hidden;min-height:0"><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);padding:var(--sp-1) var(--gutter) var(--sp-2)">' + shown.map(function (m) {
+              '<div data-songsb style="display:grid;grid-template-rows:' + (on0 ? '1fr' : '0fr') + ';transition:grid-template-rows .25s var(--ease)"><div style="overflow:hidden;min-height:0"><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);padding:var(--gutter)">' + shown.map(function (m) {
                 return cardUi({ attrs: 'data-sgc="' + esc(m.id) + '"', ltr: true, title: songName(m), sub: songBy(m), pill: cardPill(m), time: clkSpan(m), chip: '<button type="button" class="rchip rchip--s" data-sg="' + esc(m.id) + '" style="cursor:pointer;border:0">הוספה</button>' });
               }).join("") + '</div></div></div>';
             box.addEventListener("click", function (ev) {
