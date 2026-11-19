@@ -125,7 +125,7 @@
     el.addEventListener("ended", function () { ms.playbackState = "none"; });
   }
 
-  var queue = [], nextFor = "", nextUrl = "";
+  var queue = [], nextFor = "", nextUrl = "", lists = {};   /* lists: the page tells which lists are loops (a key and the songs), a button with data-list takes its song's list */
   function dropNext() { if (nextUrl) { try { URL.revokeObjectURL(nextUrl); } catch (e) { /* gone */ } } nextUrl = ""; nextFor = ""; }
   function following() { var i = queue.indexOf(now); return i < 0 || !queue.length ? "" : queue[(i + 1) % queue.length]; }
   function preloadNext() {   /* the song after this one is brought ahead of time */
@@ -157,7 +157,10 @@
   }
   document.addEventListener("click", function (e) {
     var b = e.target.closest && e.target.closest("[data-audio]"); if (!b) return;
-    e.preventDefault(); e.stopPropagation(); toggle(b.dataset.audio);
+    e.preventDefault(); e.stopPropagation();
+    var lk = b.dataset.list;
+    if (lk != null) { var l = lists[lk]; queue = l && l.length ? l.slice() : []; dropNext(); }   /* in a loop: what follows is the list; not in a loop: nothing follows */
+    toggle(b.dataset.audio);
   }, true);
 
   window.BioAudio = {
@@ -179,6 +182,7 @@
       queue = (names || []).filter(Boolean); dropNext(); if (!queue.length) return;
       if (now === queue[0] && url) { el.currentTime = 0; el.play(); preloadNext(); } else toggle(queue[0]);
     },
+    setLists: function (o) { lists = o || {}; },
     queueNames: function () { return queue.slice(); },   /* the songs of the list that is playing, if one is */
     stopList: function () { queue = []; dropNext(); el.pause(); },   /* the list is switched off: what plays is paused and nothing follows it */
     stop: function () { queue = []; dropNext(); el.pause(); now = ""; try { el.removeAttribute("src"); el.load(); } catch (e) { /* nothing to let go */ } if (url) { URL.revokeObjectURL(url); url = ""; } tell("", 0, 0); paint(); },

@@ -317,7 +317,7 @@
       ".bio-dock__btn { flex: none; display: grid; place-items: center; width: var(--fab); height: var(--fab); padding: 0; border: 0; border-radius: var(--r-fab); background: var(--danger); color: var(--on-primary); cursor: pointer } " +
       ".bio-dock__btn[data-st=\"paused\"] { background: var(--surface-2); color: var(--text) } .bio-dock__btn:disabled { background: var(--surface-2); color: var(--text-3); cursor: default } " +
       ".bio-bar input, .bio-dock__bar { -webkit-appearance: none; appearance: none; background: transparent; height: 20px; margin: 0; cursor: pointer; --p: 0%; --c: var(--primary) } .bio-bar input:hover, .bio-dock__bar:hover { --c: var(--danger) } .bio-bar input::-webkit-slider-runnable-track, .bio-dock__bar::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--c) var(--p), var(--surface-2) var(--p)) } .bio-bar input::-webkit-slider-thumb, .bio-dock__bar::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border: 0; border-radius: 50%; background: var(--c) } .bio-bar input::-moz-range-track, .bio-dock__bar::-moz-range-track { height: 4px; border-radius: 2px; background: var(--surface-2) } .bio-bar input::-moz-range-progress, .bio-dock__bar::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--c) } .bio-bar input::-moz-range-thumb, .bio-dock__bar::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: var(--c) } .bio-bar input:focus, .bio-bar input:focus-visible, .bio-dock__bar:focus, .bio-dock__bar:focus-visible, .bio-dock__btn:focus, .bio-dock__btn:focus-visible, .bio-dock__x:focus, .bio-dock__x:focus-visible { outline: none } .bio-dock .bio-vol { margin: 0 } @media (max-width: 1023px) { .bio-dock .bio-vol, .bio-dock .bio-volume { display: none !important } } .bio-volume { flex: none; display: flex; align-items: center; gap: var(--gap-tight); --c: var(--primary) } .bio-volume input { -webkit-appearance: none; appearance: none; background: transparent; width: 7rem; height: 20px; margin: 0; cursor: pointer; direction: ltr; --p: 0% } .bio-volume { direction: ltr; margin-left: var(--sp-3) } .bio-volume input::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--c) var(--p), var(--on-primary) var(--p)) } .bio-volume input::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border: 0; border-radius: 50%; background: var(--c) } .bio-volume input::-moz-range-track { height: 4px; border-radius: 2px; background: var(--on-primary) } .bio-volume input::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--c) } .bio-volume input::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: var(--c) } .bio-volume input:focus, .bio-volume input:focus-visible { outline: none } .bio-volume > .rbtn > svg { width: var(--icon-m); height: var(--icon-m) } .bio-dock__x { flex: none; display: grid; place-items: center; width: var(--icon-m, 20px); height: var(--ctl); padding: 0; border: 0; border-radius: var(--r-ctl); background: transparent; color: var(--text-2); cursor: pointer } .bio-dock__x > svg { width: var(--icon-m, 20px); height: var(--icon-m, 20px); stroke-width: var(--icon-w) } .bio-dock.idle .bio-dock__x { display: none } " +
-      ".bio-dock [data-addcur][hidden] { display: none } .bio-dock .rbtn > svg { width: var(--icon-l); height: var(--icon-l) } @media (min-width: 760px) { html.bio-docked #addMusDlg, html.bio-docked #histDlg { inset-block-end: var(--dockfull); max-height: calc(100dvh - var(--dockfull) - 48px) } html.bio-docked #addMusDlg #amlist { padding-bottom: var(--gutter) } html.bio-docked #histDlg .sheet-body { padding-bottom: var(--gutter) } } .bio-card [data-fac] { font-size: var(--fs-xs); min-height: 0; padding-block: 2px } .bio-card [data-fac][aria-pressed=\"true\"] { background: var(--surface-2); color: var(--text); border-color: var(--surface-2) } #pd.bio-dim { opacity: .35; pointer-events: none } #pl .rhead, #pd .rhead { padding-inline-end: calc(var(--gutter) + var(--sbw, 0px)) } [data-recvplay][aria-pressed=\"true\"] { background: var(--primary); color: var(--on-primary) } .bio-card[aria-current=\"true\"] { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary) } .bio-card [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important } [data-opt] [data-audio] svg, [data-am] [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important } .bio-dock > .rbtn:first-child:not(:disabled) { background: var(--primary); border-color: var(--primary); color: var(--on-primary) } .bio-dock.playing .bio-dock__bar { --c: var(--danger) } .bio-dock > .rbtn:first-child[data-st=\"playing\"]:not(:disabled) { background: var(--danger); border-color: var(--danger) } " +
+      ".bio-dock [data-addcur][hidden] { display: none } .bio-dock .rbtn > svg { width: var(--icon-l); height: var(--icon-l) } @media (min-width: 760px) { html.bio-docked #addMusDlg, html.bio-docked #histDlg { inset-block-end: var(--dockfull); max-height: calc(100dvh - var(--dockfull) - 48px) } html.bio-docked #addMusDlg #amlist { padding-bottom: var(--gutter) } html.bio-docked #histDlg .sheet-body { padding-bottom: var(--gutter) } } .bio-card [data-fac] { font-size: var(--fs-xs); min-height: 0; padding-block: 2px } .bio-card [data-fac][aria-pressed=\"true\"] { background: var(--surface-2); color: var(--text); border-color: var(--surface-2) } #pd.bio-dim { opacity: .35; pointer-events: none } #pl .rhead, #pd .rhead { padding-inline-end: calc(var(--gutter) + var(--sbw, 0px)) } [data-recvloop][aria-pressed=\"true\"] { background: var(--primary); color: var(--on-primary) } .bio-card[aria-current=\"true\"] { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary) } .bio-card [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important } [data-opt] [data-audio] svg, [data-am] [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important } .bio-dock > .rbtn:first-child:not(:disabled) { background: var(--primary); border-color: var(--primary); color: var(--on-primary) } .bio-dock.playing .bio-dock__bar { --c: var(--danger) } .bio-dock > .rbtn:first-child[data-st=\"playing\"]:not(:disabled) { background: var(--danger); border-color: var(--danger) } " +
       ".bio-dock .bio-dockbar { flex: 1 1 8rem; min-width: 0; padding: 0; touch-action: none } .bio-dock .bio-dockbar .bio-dock__bar { width: 100%; display: block; direction: ltr } .bio-dock .bio-dockbar input::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--c) var(--p), var(--on-primary) var(--p)) } .bio-dock .bio-dockbar input::-moz-range-track { background: var(--on-primary) } " +
       ".bio-dock__name { flex: 0 1 28rem; min-width: 8rem; direction: ltr; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis } .bio-dock__name span { color: var(--text-2) } .bio-dock__name span:not(:empty)::before { content: \"· \" } " +
       "@media (max-width: 700px) { .bio-dock { flex-wrap: wrap } .bio-dock__name { flex: 1 1 100%; order: 4 } .bio-dock .bio-dockbar { flex: 0 0 100%; order: 3 } } " +
@@ -1070,6 +1070,12 @@
     var out = []; ["start", "end"].forEach(function (k) { (recvCache[id + "|" + k] || []).forEach(function (x) { out.push({ kind: k, music_id: x.music_id, created_at: x.created_at, music: x.music }); }); });
     return out;
   }
+  function loopOn(kind) { try { return localStorage.getItem("biodanza.loop." + (state.viv && state.viv.id) + "." + kind) !== "0"; } catch (e) { return true; } }   /* default: on */
+  function registerLists() {   /* which sections are loops, and their songs, to the player */
+    if (!window.BioAudio || !BioAudio.setLists || !state.viv) return;
+    var o = {}; ["start", "end"].forEach(function (k) { o[state.viv.id + "|" + k] = loopOn(k) ? optList(recvItem(k)).map(function (m) { return m.audio_object; }).filter(Boolean) : []; });
+    BioAudio.setLists(o);
+  }
   function recvItem(kind) {   /* a vivencia's start or end songs, as an "exercise" that only has options */
     var id = state.viv && state.viv.id, key = id + "|" + kind;
     return { __recv: kind, id: id, exercise_id: null, music_id: null, music: null, item_music_options: recvCache[key] || (recvCache[key] = []) };
@@ -1080,11 +1086,11 @@
     var list = optList(recvItem(kind)), edit = canEdit();
     if (!edit && !list.length) return "";
     var label = kind === "start" ? "מוסיקת התחלה" : "מוסיקת סיום";
-    var names = list.map(function (m) { return m.audio_object; }).filter(Boolean), qn = window.BioAudio && BioAudio.queueNames ? BioAudio.queueNames().join("|") : "";
-    var play = names.length ? '<button type="button" class="rchip rchip--s" data-recvplay data-names="' + esc(names.join("|")) + '" aria-pressed="' + !!(qn && qn === names.join("|") && window.__bioNow && window.__bioNow.playing) + '" title="מנגן את השירים אחד אחרי השני, בלולאה" style="cursor:pointer;border:0;display:inline-flex;align-items:center;gap:var(--sp-1)"><span aria-hidden="true" style="display:grid;width:var(--icon-s);height:var(--icon-s)">' + PLAYSVG + '</span>השמעה ברצף</button>' : '';
+    var key = state.viv.id + "|" + kind;
+    var play = list.length > 1 ? '<button type="button" class="rchip rchip--s" data-recvloop="' + kind + '" aria-pressed="' + loopOn(kind) + '" title="כשמנגנים שיר מהקטע, השירים ממשיכים אחד אחרי השני ובסוף חוזרים להתחלה" style="cursor:pointer;border:0">בלולאה</button>' : '';
     var add = edit ? '<div class="rcard rcard--compact" data-addm role="button" tabindex="0" style="margin:0;min-width:0;display:flex;align-items:center;justify-content:center;gap:var(--sp-1);cursor:pointer;min-height:var(--tag-s);border:1px dashed var(--line-strong);background:transparent;box-shadow:none;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>הוספת מוזיקה</div>' : '';
     return '<div data-recv="' + kind + '" style="' + (kind === "start" ? 'border-bottom:1px solid var(--line)' : 'border-top:1px solid var(--line);margin-top:var(--sp-2)') + '"><div style="display:flex;align-items:center;justify-content:space-between;padding:var(--gutter) var(--gutter) 0"><span class="rrow__title" style="font-weight:var(--fw-black)">' + label + '</span>' + play + '</div>' +
-      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);padding:var(--gutter)">' + list.map(function (m) { return optCardHtml(m, false, edit, true); }).join("") + add + '</div></div>';
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);padding:var(--gutter)">' + list.map(function (m) { return optCardHtml(m, false, edit, true, key); }).join("") + add + '</div></div>';
   }
   function loadItems() {
     return itemsOf(state.viv.id).then(function (r) { r = r || []; state.items = r.filter(function (i) { return !i.backlog; }).concat(r.filter(function (i) { return i.backlog; })); });   /* the numbered exercises, then the backlog */
@@ -1220,10 +1226,11 @@
       rc.addEventListener("click", function (ev) {
         if (ev.target.closest("[data-audio], a")) return;
         var it = recvItem(kind);
-        var rpb = ev.target.closest("[data-recvplay]");
-        if (rpb) {   /* a switch: lit, the songs play one after the other round and round; off, they stop */
-          if (!window.BioAudio) return;
-          if (rpb.getAttribute("aria-pressed") === "true") BioAudio.stopList(); else BioAudio.playList(rpb.dataset.names.split("|"));
+        var rpb = ev.target.closest("[data-recvloop]");
+        if (rpb) {   /* a setting, not a player: lit, the songs of this part go on one after the other, round and round; off, a song plays alone */
+          var now = rpb.getAttribute("aria-pressed") !== "true";
+          try { localStorage.setItem("biodanza.loop." + state.viv.id + "." + kind, now ? "1" : "0"); } catch (e) { /* kept for this visit only */ }
+          rpb.setAttribute("aria-pressed", String(now)); registerLists();
           return;
         }
         if (ev.target.closest("[data-addm]")) { openAddMusic(it, function () { paint(); }); return; }
@@ -1233,6 +1240,7 @@
         var pb = c.querySelector("[data-audio]"); if (pb) pb.click();
       });
     });
+    registerLists();
     if (canEdit()) enableGroupDrag(l.querySelector("#plist"), persistGroups);
   }
   /* beside the list the open exercise's strip is marked at once, wherever it was opened from (a click, the arrows, a swap) */
@@ -1736,9 +1744,6 @@
   }
   document.addEventListener("bioaudio", function (ev) {
     var d = ev.detail || {}; window.__bioNow = { name: d.name || "", t: d.t || 0, d: d.d || 0 };
-    window.__bioNow.playing = !!d.playing;
-    var qn = window.BioAudio && BioAudio.queueNames ? BioAudio.queueNames().join("|") : "";
-    document.querySelectorAll("[data-recvplay]").forEach(function (b) { var on = !!d.playing && !!qn && qn === b.dataset.names; if (b.getAttribute("aria-pressed") !== String(on)) b.setAttribute("aria-pressed", String(on)); });
     document.querySelectorAll(".bio-clk").forEach(function (sp) {
       var dur = parseInt(sp.dataset.dur, 10) || 0, mine = d.name && sp.dataset.for === d.name;
       var tot = mine && d.d > 0 ? Math.floor(d.d) : dur, txt2 = mine ? clock(Math.floor(d.t || 0)) + (tot ? " / " + clock(tot) : "") : (tot ? clock(tot) : "");   /* only the song that has the player shows where it is */
@@ -1762,11 +1767,14 @@
     return '<div class="rcard rcard--compact bio-card' + (o.cls ? ' ' + o.cls : '') + '" ' + (o.attrs || '') + (o.selected ? ' aria-current="true"' : '') + ' style="margin:0;min-width:0;display:flex;' + (o.lead ? 'flex-direction:row;align-items:flex-start;gap:var(--sp-2);' : 'flex-direction:column;') + 'cursor:pointer;position:relative;background:var(--on-primary)">' + lead + body + (o.corner || '') + '</div>';
   }
   var CARD_PILL = "width:46px;height:var(--tag-s);min-height:var(--tag-s);padding:0;border-radius:999px;background:var(--surface-2);";
-  function cardPill(m) { return songBtn(m, false).replace(/width:var\(--fab\);height:var\(--fab\);min-height:var\(--fab\);/g, CARD_PILL); }
+  function cardPill(m, listKey) {
+    var b = songBtn(m, false).replace(/width:var\(--fab\);height:var\(--fab\);min-height:var\(--fab\);/g, CARD_PILL);
+    return listKey ? b.replace('data-audio="', 'data-list="' + esc(listKey) + '" data-audio="') : b;
+  }
   var CARD_BIN = 'style="position:absolute;top:2px;right:2px;color:var(--text-3);min-height:var(--ctl);height:var(--ctl);width:var(--ctl);padding:0"';
   /* the card of a music option: the song, its performer, the play tile, the chip that chooses it, the time, the bin */
-  function optCardHtml(m, sel, withRm, plain) {   /* plain: the catalog's exercise, only its songs: no chip to choose, no green frame */
-    return cardUi({ attrs: 'data-opt="' + esc(m.id) + '" role="button" tabindex="0"', selected: sel, ltr: true, title: songName(m), sub: songBy(m), pill: cardPill(m),
+  function optCardHtml(m, sel, withRm, plain, listKey) {   /* plain: the catalog's exercise, only its songs: no chip to choose, no green frame */
+    return cardUi({ attrs: 'data-opt="' + esc(m.id) + '" role="button" tabindex="0"', selected: sel, ltr: true, title: songName(m), sub: songBy(m), pill: cardPill(m, listKey),
       chip: sel || plain ? '' : '<button type="button" class="rchip rchip--s" data-choose="' + esc(m.id) + '" title="לבחור אותה לתרגיל בוויוונסיה" style="cursor:pointer;border:0">בחירה</button>',
       time: clkSpan(m), corner: withRm ? '<button type="button" class="rbtn rbtn--icon" data-orm="' + esc(m.id) + '" aria-label="מחיקה מהתרגיל" title="מחיקה מהתרגיל" ' + CARD_BIN + '>' + I.trash + '</button>' : '' });
   }
