@@ -1551,11 +1551,11 @@
       if (!linked || !rest) return;
       var s0 = fold(qi.value.trim()), words = s0.split(/\s+/).filter(Boolean);
       var hit = function (m) { var f = fold(songName(m) + " " + songBy(m)); return words.every(function (w) { return f.indexOf(w) >= 0; }); };
-      var has = {}; optList(it).forEach(function (m) { has[m.id] = 1; });
-      var lk = linked.filter(hit), ot = rest.filter(hit), cut = ot.slice(0, shown);
+      var cur = optList(it), has = {}; cur.forEach(function (m) { has[m.id] = 1; });
+      var sl = cur.filter(hit), lk = linked.filter(function (m) { return hit(m) && !has[m.id]; }), ot = rest.filter(function (m) { return hit(m) && !has[m.id]; }), cut = ot.slice(0, shown);
       var grid = function (arr) { return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(18rem,1fr));gap:var(--sp-1)">' + arr.map(function (m) { return cardHtml(m, !!has[m.id]); }).join("") + '</div>'; };
       var head = function (t, n) { return '<div class="rrow__sub" style="padding:var(--sp-2) 0 var(--sp-1)">' + esc(t) + ' (' + n + ')</div>'; };
-      listEl.innerHTML = (lk.length ? head("מקושרות לתרגיל בקטלוג", lk.length) + grid(lk) : '') + (cut.length ? head("שירים אחרים", ot.length) + grid(cut) : '') + (!lk.length && !cut.length ? ph("לא נמצא", "") : '');
+      listEl.innerHTML = (sl.length ? head("בתרגיל", sl.length) + grid(sl) : '') + (lk.length ? head("מקושרות לתרגיל בקטלוג", lk.length) + grid(lk) : '') + (cut.length ? head("שירים אחרים", ot.length) + grid(cut) : '') + (!sl.length && !lk.length && !cut.length ? ph("לא נמצא", "") : '');
     }
     qi.addEventListener("input", function () { shown = 90; listEl.scrollTop = 0; draw(); });
     listEl.addEventListener("scroll", function () { if (listEl.scrollTop + listEl.clientHeight > listEl.scrollHeight - 600 && rest && shown < rest.length) { shown += 90; draw(); } }, { passive: true });
@@ -1563,7 +1563,17 @@
       if (ev.target.closest("[data-audio], a")) return;
       var c = ev.target.closest("[data-am]"); if (!c) return;
       var all = (linked || []).concat(rest || []), m = all.filter(function (x) { return x.id === c.dataset.am; })[0]; if (!m) return;
-      if (optList(it).some(function (x) { return x.id === m.id; })) return;
+      if (optList(it).some(function (x) { return x.id === m.id; })) {   /* a marked song: the mark comes off and it is disconnected from the exercise */
+        var chosen = m.id === it.music_id;
+        api("/rest/v1/item_music_options?item_id=eq." + it.id + "&music_id=eq." + m.id, { method: "DELETE" }).then(function () {
+          return chosen ? api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { music_id: null } }) : null;
+        }).then(function () {
+          it.item_music_options = (it.item_music_options || []).filter(function (o) { return o.music_id !== m.id; });
+          if (chosen) { it.music_id = null; it.music = null; }
+          draw(); if (changed) changed();
+        }, fail);
+        return;
+      }
       addOpt(it, m).then(function () { draw(); if (changed) changed(); }, fail);
     });
     var linkedP = it.exercise_id ? api("/rest/v1/exercise_music?exercise_id=eq." + it.exercise_id + "&select=music(id,name,title,artist,duration_sec,audio_object,in_catalog)").then(function (rows) {
