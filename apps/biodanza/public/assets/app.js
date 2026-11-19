@@ -317,7 +317,7 @@
       ".bio-dock__btn { flex: none; display: grid; place-items: center; width: var(--fab); height: var(--fab); padding: 0; border: 0; border-radius: var(--r-fab); background: var(--danger); color: var(--on-primary); cursor: pointer } " +
       ".bio-dock__btn[data-st=\"paused\"] { background: var(--surface-2); color: var(--text) } .bio-dock__btn:disabled { background: var(--surface-2); color: var(--text-3); cursor: default } " +
       ".bio-bar input, .bio-dock__bar { -webkit-appearance: none; appearance: none; background: transparent; height: 20px; margin: 0; cursor: pointer; --p: 0%; --c: var(--primary) } .bio-bar input:hover, .bio-dock__bar:hover { --c: var(--danger) } .bio-bar input::-webkit-slider-runnable-track, .bio-dock__bar::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--c) var(--p), var(--surface-2) var(--p)) } .bio-bar input::-webkit-slider-thumb, .bio-dock__bar::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border: 0; border-radius: 50%; background: var(--c) } .bio-bar input::-moz-range-track, .bio-dock__bar::-moz-range-track { height: 4px; border-radius: 2px; background: var(--surface-2) } .bio-bar input::-moz-range-progress, .bio-dock__bar::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--c) } .bio-bar input::-moz-range-thumb, .bio-dock__bar::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: var(--c) } .bio-bar input:focus, .bio-bar input:focus-visible, .bio-dock__bar:focus, .bio-dock__bar:focus-visible, .bio-dock__btn:focus, .bio-dock__btn:focus-visible, .bio-dock__x:focus, .bio-dock__x:focus-visible { outline: none } .bio-dock .bio-vol { margin: 0 } @media (max-width: 1023px) { .bio-dock .bio-vol, .bio-dock .bio-volume { display: none !important } } .bio-volume { flex: none; display: flex; align-items: center; gap: var(--gap-tight); --c: var(--primary) } .bio-volume input { -webkit-appearance: none; appearance: none; background: transparent; width: 7rem; height: 20px; margin: 0; cursor: pointer; direction: ltr; --p: 0% } .bio-volume { direction: ltr; margin-left: var(--sp-3) } .bio-volume input::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--c) var(--p), var(--on-primary) var(--p)) } .bio-volume input::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border: 0; border-radius: 50%; background: var(--c) } .bio-volume input::-moz-range-track { height: 4px; border-radius: 2px; background: var(--on-primary) } .bio-volume input::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--c) } .bio-volume input::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: var(--c) } .bio-volume input:focus, .bio-volume input:focus-visible { outline: none } .bio-volume > .rbtn > svg { width: var(--icon-m); height: var(--icon-m) } .bio-dock__x { flex: none; display: grid; place-items: center; width: var(--icon-m, 20px); height: var(--ctl); padding: 0; border: 0; border-radius: var(--r-ctl); background: transparent; color: var(--text-2); cursor: pointer } .bio-dock__x > svg { width: var(--icon-m, 20px); height: var(--icon-m, 20px); stroke-width: var(--icon-w) } .bio-dock.idle .bio-dock__x { display: none } " +
-      ".bio-dock [data-addcur][hidden] { display: none } .bio-dock .rbtn > svg { width: var(--icon-l); height: var(--icon-l) } @media (min-width: 760px) { html.bio-docked #addMusDlg, html.bio-docked #histDlg { inset-block-end: var(--dockfull); max-height: calc(100dvh - var(--dockfull) - 48px) } html.bio-docked #addMusDlg #amlist { padding-bottom: var(--gutter) } html.bio-docked #histDlg .sheet-body { padding-bottom: var(--gutter) } } [data-opt] [data-audio] svg, [data-am] [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important } .bio-dock > .rbtn:first-child:not(:disabled) { background: var(--primary); border-color: var(--primary); color: var(--on-primary) } .bio-dock.playing .bio-dock__bar { --c: var(--danger) } .bio-dock > .rbtn:first-child[data-st=\"playing\"]:not(:disabled) { background: var(--danger); border-color: var(--danger) } " +
+      ".bio-dock [data-addcur][hidden] { display: none } .bio-dock .rbtn > svg { width: var(--icon-l); height: var(--icon-l) } @media (min-width: 760px) { html.bio-docked #addMusDlg, html.bio-docked #histDlg { inset-block-end: var(--dockfull); max-height: calc(100dvh - var(--dockfull) - 48px) } html.bio-docked #addMusDlg #amlist { padding-bottom: var(--gutter) } html.bio-docked #histDlg .sheet-body { padding-bottom: var(--gutter) } } .bio-icard[aria-current=\"true\"] { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary) } .bio-icard [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important } [data-opt] [data-audio] svg, [data-am] [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important } .bio-dock > .rbtn:first-child:not(:disabled) { background: var(--primary); border-color: var(--primary); color: var(--on-primary) } .bio-dock.playing .bio-dock__bar { --c: var(--danger) } .bio-dock > .rbtn:first-child[data-st=\"playing\"]:not(:disabled) { background: var(--danger); border-color: var(--danger) } " +
       ".bio-dock .bio-dockbar { flex: 1 1 8rem; min-width: 0; padding: 0; touch-action: none } .bio-dock .bio-dockbar .bio-dock__bar { width: 100%; display: block; direction: ltr } .bio-dock .bio-dockbar input::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--c) var(--p), var(--on-primary) var(--p)) } .bio-dock .bio-dockbar input::-moz-range-track { background: var(--on-primary) } " +
       ".bio-dock__name { flex: 0 1 28rem; min-width: 8rem; direction: ltr; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis } .bio-dock__name span { color: var(--text-2) } .bio-dock__name span:not(:empty)::before { content: \"· \" } " +
       "@media (max-width: 700px) { .bio-dock { flex-wrap: wrap } .bio-dock__name { flex: 1 1 100%; order: 4 } .bio-dock .bio-dockbar { flex: 0 0 100%; order: 3 } } " +
@@ -1148,22 +1148,34 @@
     }
     var main = state.items.filter(function (i) { return !i.backlog; }), back = state.items.filter(function (i) { return i.backlog; });
     var rowOf = function (i, tile) {
-      var e = i.exercises || {};
-      var pb = i.music ? playCol(i.music, true) : "";
-      return '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-2)"' + (state.lastItem === i.id ? ' aria-current="true"' : '') + '><span aria-hidden="true" style="flex:none;display:flex;align-items:center;justify-content:center;width:var(--ctl);height:var(--ctl);border-radius:var(--r-ctl);background:var(--surface-2);font:var(--fw-bold) var(--fs-m)/1 var(--font)">' + tile + '</span><button type="button" class="rrow__main" data-edit="' + i.id + '" style="background:none;border:0;padding:0;margin-inline-start:var(--sp-1);text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(itemName(i)) + '</span>' +
-        (i.music ? songLines(i.music) : '<span class="rrow__sub">בלי מוזיקה</span>') + '</span></button>' + pb + facChip(i, ' rrow__trail')   /* the same tile as the number's */ + '</div>';
+      var m = i.music, cur = state.lastItem === i.id;
+      var pill = m ? songBtn(m, false).replace(/width:var\(--fab\);height:var\(--fab\);min-height:var\(--fab\);/g, "width:46px;height:var(--tag-s);min-height:var(--tag-s);padding:0;border-radius:999px;background:var(--surface-2);") : "";
+      return '<div class="rcard rcard--compact bio-icard" data-icard="' + i.id + '"' + (cur ? ' aria-current="true"' : '') + ' style="margin:0;min-width:0;display:flex;align-items:flex-start;gap:var(--sp-2);cursor:pointer;background:var(--on-primary);position:relative">' +
+        '<span aria-hidden="true" style="flex:none;display:flex;align-items:center;justify-content:center;width:var(--ctl);height:var(--ctl);border-radius:var(--r-ctl);background:var(--surface-2);font:var(--fw-bold) var(--fs-m)/1 var(--font)">' + tile + '</span>' +
+        '<div style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px">' +
+          '<button type="button" class="rrow__main" data-edit="' + i.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font);color:inherit;padding-inline-end:var(--ctl)">' + esc(itemName(i)) + '</button>' +
+          '<span style="direction:ltr;text-align:left;overflow-wrap:anywhere;color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font)">' + (m ? esc(songName(m)) : 'בלי מוזיקה') + '</span>' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-1);margin-top:auto;padding-top:var(--gap-tight)"><div style="display:flex;align-items:center;gap:var(--sp-1)">' + pill + facChip(i, '') + '</div>' + (m ? clkSpan(m) : '') + '</div>' +
+        '</div>' +
+        '<button type="button" class="rbtn rbtn--icon" data-idel="' + i.id + '" aria-label="הסרה מהוויוונסיה" title="הסרה מהוויוונסיה" style="position:absolute;top:2px;right:2px;color:var(--text-3);min-height:var(--ctl);height:var(--ctl);width:var(--ctl);padding:0">' + I.trash + '</button>' +
+      '</div>';
     };
-    l.innerHTML = '<div id="plist">' + main.map(function (i, k) { return rowOf(i, k + 1); }).join("") +
-      '<div data-div style="padding:var(--sp-3) var(--gutter) var(--sp-2);margin-top:var(--sp-2);border-top:1px solid var(--line);min-height:var(--ctl)"><div class="rrow__sub">נוספים</div>' + (back.length || !canEdit() ? '' : '<div class="rrow__sub" style="margin-top:var(--sp-1)">גררו לכאן תרגיל שעוד לא החלטתם עליו</div>') + '</div>' +
+    l.innerHTML = '<div id="plist" style="display:flex;flex-direction:column;gap:var(--sp-1);padding:var(--sp-2) var(--gutter) var(--gutter)">' + main.map(function (i, k) { return rowOf(i, k + 1); }).join("") +
+      '<div data-div style="padding:var(--sp-2) 0 var(--sp-1);margin-top:var(--sp-1);border-top:1px solid var(--line);min-height:var(--ctl)"><div class="rrow__sub">נוספים</div>' + (back.length || !canEdit() ? '' : '<div class="rrow__sub" style="margin-top:var(--sp-1)">גררו לכאן תרגיל שעוד לא החלטתם עליו</div>') + '</div>' +
       back.map(function (i) { return rowOf(i, "•"); }).join("") + '</div>';
-    l.querySelectorAll("[data-edit]").forEach(function (b) { b.addEventListener("click", function () { var it = state.items.filter(function (x) { return x.id === b.dataset.edit; })[0]; if (wide()) itemScreen(it); else go(function () { itemScreen(it); }); }); });
+    var openIt = function (id) { var it = state.items.filter(function (x) { return x.id === id; })[0]; if (!it) return; if (wide()) itemScreen(it); else go(function () { itemScreen(it); }); };
+    l.querySelectorAll("[data-icard]").forEach(function (c) { c.addEventListener("click", function (ev) {
+      if (ev.target.closest("[data-audio], a, [data-fac], [data-idel]")) return;
+      openIt(c.dataset.icard);
+    }); });
+    l.querySelectorAll("[data-idel]").forEach(function (b) { b.addEventListener("click", function (ev) { ev.stopPropagation(); var it = state.items.filter(function (x) { return x.id === b.dataset.idel; })[0]; if (it) confirmRemoveItem(it); }); });
     wireFac(l);
-    if (canEdit()) enableDrag(l.querySelector("#plist"), "[data-edit]", persistCross);
+    if (canEdit()) enableDrag(l.querySelector("#plist"), "[data-edit]", persistCross, ".bio-icard, [data-div]");
   }
   /* beside the list the open exercise's strip is marked at once, wherever it was opened from (a click, the arrows, a swap) */
   function markItem() {
     var l = document.getElementById("list"); if (!l || !l.hasAttribute("data-fab-room")) return;
-    l.querySelectorAll("[data-edit]").forEach(function (b) { b.closest(".rrow").setAttribute("aria-current", b.dataset.edit === state.lastItem ? "true" : "false"); });
+    l.querySelectorAll("[data-edit]").forEach(function (b) { (b.closest(".bio-icard") || b.closest(".rrow")).setAttribute("aria-current", b.dataset.edit === state.lastItem ? "true" : "false"); });
   }
   function persistCross(from, to) {   /* from, to: places among the rows AND the divider "נוספים"; what ends up after the divider is "נוספים" */
     var main = state.items.filter(function (i) { return !i.backlog; }), back = state.items.filter(function (i) { return i.backlog; });
@@ -1200,9 +1212,9 @@
 
   /* Reorder by dragging a row (no arrows). A mouse drags after a few pixels; a finger after a short hold, so scrolling still works.
      Only transform is animated. Keyboard: Alt + Arrow up/down on the focused row title. The order of the list is the curve. */
-  function enableDrag(l, keySel, onMove) {
+  function enableDrag(l, keySel, onMove, rowSel) {
     if (l._dragOff) l._dragOff();   /* the list element is reused: drop the previous paint's listeners */
-    var rows = [].slice.call(l.querySelectorAll(".rrow, [data-div]"));   /* a divider (data-div) is a place in the order, not a row to drag */
+    var rows = [].slice.call(l.querySelectorAll(rowSel || ".rrow, [data-div]")), gapPx = parseFloat(getComputedStyle(l).rowGap) || 0;   /* a divider (data-div) is a place in the order, not a row to drag */
     var d = null, blockTouch = function (e) { if (d && d.live) e.preventDefault(); };
     l.addEventListener("touchmove", blockTouch, { passive: false });
     rows.forEach(function (row, k) {
@@ -1216,7 +1228,7 @@
       });
       row.addEventListener("pointerdown", function (e) {
         if (e.button > 0) return;
-        d = { grip: !!e.target.closest("[data-grip]"), row: row, k: k, y0: e.clientY, pid: e.pointerId, live: false, timer: null, tops: rows.map(function (r) { var b = r.getBoundingClientRect(); return b.top + b.height / 2; }), h: row.getBoundingClientRect().height, to: k };
+        d = { grip: !!e.target.closest("[data-grip]"), row: row, k: k, y0: e.clientY, pid: e.pointerId, live: false, timer: null, tops: rows.map(function (r) { var b = r.getBoundingClientRect(); return b.top + b.height / 2; }), h: row.getBoundingClientRect().height + gapPx, to: k };
         if (e.pointerType === "touch" && !d.grip) d.timer = setTimeout(function () { if (d && !d.live) begin(); }, 160);
       });
     });
