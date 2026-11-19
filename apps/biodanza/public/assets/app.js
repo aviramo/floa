@@ -713,6 +713,7 @@
   /* on a wide screen the volume lives in the player pill, between the bar and the X */
   var SPK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
   var SPK0 = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m16 9 5 6"/><path d="m21 9-5 6"/></svg>';
+  document.querySelectorAll(".bio-volume [data-vmute]").forEach(function (b) { b.removeAttribute("data-mu"); }); paintVol();   /* the player is drawn before these icons exist: its speaker is drawn again now they do */
   var volBack = 0.5;   /* the level a press on the speaker brings back after it was muted */
   /* the volume of the player: a speaker (press it to mute and to unmute) and a slider, on a wide screen only */
   function volDock() { var v = typeof volState === "object" ? volState.v : 1; return '<div class="bio-volume" style="--p:' + Math.round(v * 100) + '%"><button type="button" class="rbtn rbtn--icon" data-vmute aria-label="השתקה" title="השתקה">' + (v ? SPK : SPK0) + '</button><input type="range" min="0" max="100" step="1" value="' + Math.round(v * 100) + '" aria-label="עוצמת שמע"></div>'; }
