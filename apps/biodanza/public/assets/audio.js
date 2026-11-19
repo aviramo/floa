@@ -221,7 +221,7 @@
     volume: function (d) { if (!wideNow()) { if (!fadeT) el.volume = 1; return 1; }   /* a phone has its own volume keys: the page always plays at full */
       vol = Math.max(0, Math.min(1, Math.round((vol + d) * 100) / 100)); if (!fadeT) el.volume = vol; try { localStorage.setItem("biodanza.volume", String(vol)); } catch (e) { /* not kept */ } return vol; },
     /* move the playing song by seconds (negative: back) */
-    skip: function (sec) { if (el.duration) wantSeek((pendT != null ? pendT : el.currentTime) + sec); },
+    skip: function (sec) { if (el.duration) { pendT = null; clearTimeout(pendTimer); crossTo(el.currentTime + sec); } },   /* a key press moves at once: the bar shows it, and each press is its own crossfade */
     commitSeek: function () { commitSeek(); },
     pause: function () { fadeOut(); },
     /* the player's one button: the loaded song plays or pauses */
