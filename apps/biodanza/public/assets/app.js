@@ -834,10 +834,16 @@
   (function () { var st = document.createElement("style"); st.textContent = "#catLayer { position: fixed; z-index: 20; transform: translateX(100%); transition: transform .25s var(--ease); display: flex; flex-direction: column; min-height: 0 } #catLayer[hidden] { display: none } #catLayer.is-open { transform: none } #catLayer > .bio-banner { position: absolute; inset-block: 0; inset-inline-start: auto; left: -44px; width: 44px; height: 100% } #catLayer > .catbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; box-shadow: -1px 0 0 var(--line) } #catLayer > .catbody > .rlist { flex: 1 1 auto; min-height: 0 } @media (prefers-reduced-motion: reduce) { #catLayer { transition: none } }"; document.head.appendChild(st); })();
   /* The catalog is ONE popup, a single body that slides as a whole: it is as wide as the left and the right sides together; its right part is the catalog's list, its left part is the exercise opened from it. Closing moves the whole body; the left part only slides out from under the right one when an exercise is chosen. */
   var catPrev = null, catPrevId = null;
+  var CAT_KEY = "biodanza.catalog";
+  function saveCat() {   /* a snapshot of the catalog: open or closed, the exercise looked at, the categories, the search, the scroll */
+    if (!wide() || !catLayer) return;
+    try { var pks = catLayer.querySelector("#pks"); localStorage.setItem(CAT_KEY, JSON.stringify({ open: !!catPanel, prev: catPrevId || null, q: pk.q || "", cats: pk.open || {}, sc: pks ? pks.scrollTop : 0 })); } catch (e) { /* not kept */ }
+  }
+  function loadCatSnap() { try { return JSON.parse(localStorage.getItem(CAT_KEY) || "null"); } catch (e) { return null; } }
   function ensureCatPrev() { /* the left part is built with the layer */ }
   function closeCatPrev() {   /* the left part slides back in under the right one */
     if (!catPrev) return;
-    catPrev.classList.remove("is-open"); catPrevId = null; catPreview = false;
+    catPrev.classList.remove("is-open"); catPrevId = null; catPreview = false; saveCat();
     if (catLayer) catLayer.querySelectorAll(".bio-card[aria-current]").forEach(function (c) { c.removeAttribute("aria-current"); });
   }
   (function () { var st = document.createElement("style"); st.textContent = "#catLayer { position: fixed; z-index: 20; pointer-events: none; transform: translateX(100%); transition: transform .25s var(--ease) } #catLayer[hidden] { display: none } #catLayer.is-open { transform: none } #catLayer > .catmain { position: absolute; z-index: 1; inset-block: 0; right: 0; width: var(--plw); display: flex; flex-direction: column; min-height: 0; pointer-events: auto; box-shadow: -1px 0 0 var(--line) } #catLayer .catbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column } #catLayer .catbody > .rlist { flex: 1 1 auto; min-height: 0 } #catLayer > .catprev { position: absolute; z-index: 0; inset-block: 0; left: 0; width: var(--pdw); display: flex; flex-direction: column; min-height: 0; overflow: hidden; pointer-events: auto; visibility: hidden; transform: translateX(100%); transition: transform .25s var(--ease), visibility 0s linear .25s } #catLayer > .catprev.is-open { visibility: visible; transform: none; transition: transform .25s var(--ease), visibility 0s } #catLayer > .catprev > .rlist { flex: 1 1 auto; min-height: 0 } @media (prefers-reduced-motion: reduce) { #catLayer, #catLayer > .catprev { transition: none } }"; document.head.appendChild(st); })();
@@ -849,10 +855,18 @@
   function ensureCatLayer() {   /* built once, closed, waiting off the right edge of the screen */
     if (catLayer) return;
     resetPk();   /* the search box reads the catalog's state: it must exist before the layer is drawn */
+    var snap = loadCatSnap(); if (snap) { pk.q = snap.q || ""; pk.open = snap.cats || {}; }   /* back to where it was before the refresh */
     var bg = getComputedStyle(document.body).backgroundColor;
     var d = document.createElement("div"); d.id = "catLayer";
     d.innerHTML = '<div class="catprev" style="background:' + bg + '"></div><div class="catmain" style="background:' + bg + '"><div class="catbody" inert><header class="rhead"><div class="rhead__text">' + searchInput() + '</div></header>' + pickerBody(false) + '</div></div>';
-    document.body.appendChild(d); catLayer = d; catPrev = d.querySelector(".catprev"); pickerWire(d.querySelector(".catbody"), undefined, false); placeCatLayer();
+    document.body.appendChild(d); catLayer = d; catPrev = d.querySelector(".catprev"); var drawn = pickerWire(d.querySelector(".catbody"), undefined, false); placeCatLayer();
+    if (snap && snap.open) drawn.then(function () {   /* it was open: it opens again, on the same place and on the same exercise */
+      if (catPanel || catLayer.hidden || !wide()) return;
+      openCatPanel();
+      var pks = catLayer.querySelector("#pks"); if (pks) pks.scrollTop = snap.sc || 0;
+      var ex = snap.prev && (state.cat || []).filter(function (x) { return x.id === snap.prev; })[0];
+      if (ex) { var cardEl = catLayer.querySelector('[data-ex="' + ex.id + '"]'); if (cardEl) (cardEl.closest(".bio-card") || cardEl).setAttribute("aria-current", "true"); previewEx(ex); }
+    });
     window.addEventListener("resize", placeCatLayer);
     if (window.ResizeObserver) { var ro = new ResizeObserver(placeCatLayer); ro.observe(pl); ro.observe(pd); }
   }
@@ -860,7 +874,7 @@
     if (!catPanel) return;
     catPanel = null; state.pickerShow = false; pd.classList.remove("bio-dim");
     document.querySelectorAll("[data-catopen]").forEach(function (b) { b.setAttribute("aria-pressed", "false"); });
-    catLayer.classList.remove("is-open"); catLayer.querySelector(".catbody").setAttribute("inert", "");   /* the whole body slides back off to the right, as one piece; the exercise opened from it is remembered */
+    catLayer.classList.remove("is-open"); catLayer.querySelector(".catbody").setAttribute("inert", ""); saveCat();   /* the whole body slides back off to the right, as one piece; the exercise opened from it is remembered */
   }
   function openCatPanel() {   /* the whole body slides left; the exercise on the left side goes dark */
     if (catPanel || !catLayer || catLayer.hidden) return;
@@ -868,7 +882,7 @@
     placeCatLayer(); catLayer.classList.add("is-open"); catLayer.querySelector(".catbody").removeAttribute("inert");
     document.querySelectorAll("[data-catopen]").forEach(function (b) { b.setAttribute("aria-pressed", "true"); });
     catPanel = catLayer; state.pickerShow = true; catPreview = !!catPrevId;
-    pd.classList.add("bio-dim");
+    pd.classList.add("bio-dim"); saveCat();
   }
   document.addEventListener("click", function (ev) { var ab = ev.target.closest && ev.target.closest("[data-addex]"); if (ab) {   /* the plus beside the exercises' title: an empty exercise at the end of the numbered ones, opened to be filled in */
       if (!state.viv || !state.items || ab.disabled) return;
@@ -2293,7 +2307,7 @@
         if (ev.target.closest("[data-likex]")) return;   /* the heart on a card marks, it does not open */
         var l = r.querySelector("#list"), cb = ev.target.closest("[data-cat]");
         if (cb) {
-          var k = cb.dataset.cat, nowOn = cb.getAttribute("aria-expanded") !== "true"; open[k] = nowOn; cb.setAttribute("aria-expanded", String(nowOn));
+          var k = cb.dataset.cat, nowOn = cb.getAttribute("aria-expanded") !== "true"; open[k] = nowOn; cb.setAttribute("aria-expanded", String(nowOn)); saveCat();
           var chev = cb.lastElementChild; if (chev) chev.style.transform = nowOn ? "rotate(180deg)" : "";
           var acc = l.querySelector('[data-accb="' + (window.CSS && CSS.escape ? CSS.escape(k) : k) + '"]');
           var hrow = cb.closest(".rrow"); if (hrow) hrow.style.borderBottomColor = nowOn ? "transparent" : "var(--line)";   /* no line between an open header and its cards: the line is under the cards */
@@ -2310,7 +2324,7 @@
       });
       function paintCat() {
         var q = fold(r.querySelector("#q").value.trim()), l = r.querySelector("#list");
-        pk.q = r.querySelector("#q").value;
+        pk.q = r.querySelector("#q").value; saveCat();
         var by = {}, top = {};
         nearest(state.cat || [], function (e) { return name(e) + " " + e.title_en + " " + catName(e.category); }, q).forEach(function (e) {
           var k = e.category || ""; (by[k] = by[k] || []).push(e);   /* nearest first inside a category */
@@ -2360,8 +2374,9 @@
           }, function () { box.remove(); });
         }
       }
+      var scEl = r.querySelector("#pks"); if (scEl) scEl.addEventListener("scroll", function () { clearTimeout(scEl._t); scEl._t = setTimeout(saveCat, 250); });
       r.querySelector("#q").addEventListener("input", function () { var sc = r.querySelector("#pks"); if (sc) sc.scrollTop = 0; paintCat(); });
-      (state.cats ? Promise.resolve() : api("/rest/v1/categories?select=key,name_he&order=sort").then(function (c) {
+      return (state.cats ? Promise.resolve() : api("/rest/v1/categories?select=key,name_he&order=sort").then(function (c) {
         state.cats = c || [];
       })).then(function () { return state.cat ? null : loadCatalog().then(function (c) { state.cat = c; }); }).then(paintCat, fail);
   }
@@ -2523,7 +2538,7 @@
           else addEx(e, undefined, undefined, fake.music_id, fake.sel);
         });
       };
-      if (useLayer && catPanel) { catPrev.innerHTML = phtml; pwire(catPrev); catPrevId = e.id; requestAnimationFrame(function () { catPrev.classList.add("is-open"); }); }
+      if (useLayer && catPanel) { catPrev.innerHTML = phtml; pwire(catPrev); catPrevId = e.id; saveCat(); requestAnimationFrame(function () { catPrev.classList.add("is-open"); }); }
       else show(phtml, pwire, "d");
     }, fail);
   }
