@@ -28,7 +28,14 @@
     });
     return dbp;
   }
+  /* a question to the device's store that never gets an answer (it happens on some phones) must not hold the song: after 2.5 seconds the song is fetched from the cloud */
   function kept(name) {
+    return new Promise(function (res) {
+      var done = false, t = setTimeout(function () { if (!done) { done = true; res(null); } }, 2500);
+      kept0(name).then(function (b) { if (!done) { done = true; clearTimeout(t); res(b); } }, function () { if (!done) { done = true; clearTimeout(t); res(null); } });
+    });
+  }
+  function kept0(name) {
     return db().then(function (d) {
       if (!d) return null;
       return new Promise(function (res) { try { var g = d.transaction("files").objectStore("files").get(name); g.onsuccess = function () { res(g.result || null); }; g.onerror = function () { res(null); }; } catch (e) { res(null); } });
@@ -53,10 +60,11 @@
     return kept(name).then(function (b) {
       if (b) return b;
       return FLOA_AUTH.token().then(function (t) {
-        return fetch(API + name, { headers: { authorization: "Bearer " + t } });
-      }).then(function (r) {
-        if (!r.ok) { var e = new Error("audio " + r.status); e.status = r.status; throw e; }
-        return r.blob();
+        var ac = window.AbortController ? new AbortController() : null, to = ac ? setTimeout(function () { ac.abort(); }, 60000) : 0;   /* a download that does not finish in a minute is given up, not waited for forever */
+        return fetch(API + name, { headers: { authorization: "Bearer " + t }, signal: ac ? ac.signal : undefined }).then(function (r) {
+          if (!r.ok) { var e = new Error("audio " + r.status); e.status = r.status; throw e; }
+          return r.blob().then(function (b) { clearTimeout(to); return b; });
+        }, function (er) { clearTimeout(to); throw er; });
       }).then(function (b) { keep(name, b); return b; });
     });
   }
