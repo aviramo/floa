@@ -43,6 +43,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   function fold(t) { return String(t == null ? "" : t).normalize("NFD").replace(new RegExp("[" + String.fromCharCode(0x300) + "-" + String.fromCharCode(0x36f) + String.fromCharCode(0x591) + "-" + String.fromCharCode(0x5c7) + "]", "g"), "").toLowerCase(); }
   function mmss(s) { return s ? Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2) : ""; }
+  function clk(s) { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2); }   /* the player's times: 0:00 is shown, not left empty */
   function msg(title, text, btn) {
     app.innerHTML = '<div class="rempty" style="margin-block:auto"><b>' + esc(title) + '</b><span>' + esc(text) + '</span>' + (btn || "") + '</div>';
   }
@@ -99,7 +100,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
     document.getElementById("pa").textContent = on && m ? (m.artist || "") : "";
     pp.disabled = !on; pb.disabled = !on || !(cur.d > 0);
     pp.innerHTML = cur.playing ? ICO.pause : ICO.play; pp.setAttribute("aria-label", cur.playing ? "השהיה" : "השמעה");
-    document.getElementById("pc").textContent = mmss(Math.floor(cur.t)) + " / " + mmss(Math.round(cur.d || 0));
+    document.getElementById("pc").textContent = clk(cur.t) + " / " + clk(cur.d);
     if (!dragging) { pb.value = cur.d > 0 ? Math.round(cur.t / cur.d * 1000) : 0; pb.style.setProperty("--p", pb.value / 10 + "%"); }
   }
   document.addEventListener("bioaudio", function (ev) { var d = ev.detail || {}; cur = { name: d.name || "", t: d.t || 0, d: d.d || 0, playing: !!d.playing }; paintPlayer(); });
@@ -109,7 +110,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
   document.addEventListener("input", function (e) {
     if (e.target.id !== "pb" || !window.BioAudio) return;
     e.target.style.setProperty("--p", e.target.value / 10 + "%"); BioAudio.seek(e.target.value / 1000);
-    var t = cur.d * e.target.value / 1000; document.getElementById("pc").textContent = mmss(Math.floor(t)) + " / " + mmss(Math.round(cur.d || 0));
+    var t = cur.d * e.target.value / 1000; document.getElementById("pc").textContent = clk(t) + " / " + clk(cur.d);
   });
   function start() {
     if (!window.FLOA_AUTH || !FLOA_AUTH.signedIn()) return msg("ניהול", "צריך להיכנס קודם דרך האפליקציה.", '<a class="rbtn" href="' + HOME + '">לאפליקציה</a>');
