@@ -1551,7 +1551,7 @@
   /* the popup that adds songs to an exercise: the music page's cards and search, in two parts: the songs the catalog links to the exercise, and all the others */
   function openAddMusic(it, changed) {
     var me = FLOA_AUTH.userId(), vid = state.viv && state.viv.id;
-    var r = sheetOf("addMusDlg", "הוספת מוזיקה", '<style>html.bio-docked #addMusDlg .sheet-body { padding-bottom: 0 } @media (min-width: 1024px) { html.bio-docked #addMusDlg, html.bio-docked #histDlg { --rs-kb: calc(var(--dockfull) + var(--gutter)); max-height: calc(100dvh - var(--dockfull) - var(--gutter) * 3) } html.bio-docked #addMusDlg #amlist { padding-bottom: var(--gutter) } html.bio-docked #histDlg .sheet-body { padding-bottom: var(--gutter) } }</style><div><label class="rfield"><span>חיפוש</span><input id="amq" placeholder=" " autocomplete="off"></label></div><div id="amlist" style="flex:1 1 auto;min-height:0;overflow-y:auto;margin-top:var(--sp-2);padding-bottom:calc(var(--dockfull) + var(--gutter))"><div class="rskel rskel--title"></div></div>');
+    var r = sheetOf("addMusDlg", "", '<style>html.bio-docked #addMusDlg .sheet-body { padding-bottom: 0 } @media (min-width: 1024px) { html.bio-docked #addMusDlg, html.bio-docked #histDlg { --rs-kb: calc(var(--dockfull) + var(--gutter)); max-height: calc(100dvh - var(--dockfull) - var(--gutter) * 3) } html.bio-docked #addMusDlg #amlist { padding-bottom: var(--gutter) } html.bio-docked #histDlg .sheet-body { padding-bottom: var(--gutter) } }</style><div><label class="rfield"><span id="amc">חיפוש בין שירים</span><input id="amq" placeholder=" " autocomplete="off"></label></div><div id="amlist" style="flex:1 1 auto;min-height:0;overflow-y:auto;margin-top:var(--sp-2);padding-bottom:calc(var(--dockfull) + var(--gutter))"><div class="rskel rskel--title"></div></div>');
     r.style.overflowY = "hidden";   /* the search stays, only the cards scroll */
     var listEl = r.querySelector("#amlist"), qi = r.querySelector("#amq");
     var linked = null, rest = null, shown = 90, fresh = true;
@@ -1569,6 +1569,7 @@
       var hit = function (m) { var f = fold(songName(m) + " " + songBy(m)); return words.every(function (w) { return f.indexOf(w) >= 0; }); };
       var cur = optList(it), has = {}; cur.forEach(function (m) { has[m.id] = 1; });
       var sl = cur.filter(hit), lk = linked.filter(function (m) { return hit(m) && !has[m.id]; }), ot = rest.filter(function (m) { return hit(m) && !has[m.id]; }), cut = ot.slice(0, shown);
+      var cnt = r.querySelector("#amc"); if (cnt) cnt.textContent = "חיפוש " + (words.length ? (sl.length + lk.length + ot.length) + " מתוך " : "בין ") + (linked.length + rest.length) + " שירים";   /* as the music page says it */
       var grid = function (arr) { return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(18rem,1fr));gap:var(--sp-1)">' + arr.map(function (m) { return cardHtml(m, !!has[m.id]); }).join("") + '</div>'; };
       var head = function (t, n) { return '<div class="rrow__sub" style="padding:var(--sp-2) 0 var(--sp-1)">' + esc(t) + ' (' + n + ')</div>'; };
       listEl.innerHTML = (sl.length ? head("בתרגיל", sl.length) + grid(sl) : '') + (lk.length ? head("מקושרות לתרגיל בקטלוג", lk.length) + grid(lk) : '') + (cut.length ? head("שירים אחרים", ot.length) + grid(cut) : '') + (!sl.length && !lk.length && !cut.length ? ph("לא נמצא", "") : '');
