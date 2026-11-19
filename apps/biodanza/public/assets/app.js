@@ -1150,8 +1150,7 @@
     var rowOf = function (i, tile) {
       var m = i.music;
       return cardUi({ cls: "bio-icard", attrs: 'data-icard="' + i.id + '"', selected: state.lastItem === i.id, lead: tile, title: itemName(i), titleAttr: 'data-edit="' + i.id + '"',
-        sub: m ? songName(m) : "בלי מוזיקה", subRight: !!m, footEnd: true, pill: m ? cardPill(m) : "", chip: facChip(i, ""), time: m ? clkSpan(m) : "",
-        corner: '<button type="button" class="rbtn rbtn--icon" data-idel="' + i.id + '" aria-label="הסרה מהוויוונסיה" title="הסרה מהוויוונסיה" ' + CARD_BIN.replace("right:2px", "left:2px") + '>' + I.trash + '</button>' });
+        sub: m ? songName(m) : "בלי מוזיקה", subRight: !!m, footEnd: true, pill: m ? cardPill(m) : "", chip: facChip(i, ""), time: m ? clkSpan(m) : "" });
     };
     l.innerHTML = '<div id="plist" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch;padding:var(--sp-2) var(--gutter) var(--gutter)">' + main.map(function (i, k) { return rowOf(i, k + 1); }).join("") +
       '<div data-div style="grid-column:1 / -1;padding:var(--sp-2) 0 var(--sp-1);margin-top:var(--sp-1);border-top:1px solid var(--line);min-height:var(--ctl)"><div class="rrow__sub">נוספים</div>' + (back.length || !canEdit() ? '' : '<div class="rrow__sub" style="margin-top:var(--sp-1)">גררו לכאן תרגיל שעוד לא החלטתם עליו</div>') + '</div>' +
