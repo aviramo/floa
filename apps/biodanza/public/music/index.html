@@ -17,7 +17,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
 #app > .rlist { flex: 1 1 auto; }
 #out, #out * { user-select: text; -webkit-user-select: text; }   /* the text can be selected and copied */
 .pad { padding: var(--gutter); display: flex; flex-direction: column; gap: var(--gap-field); }
-#out { display: grid; grid-template-columns: repeat(auto-fill, minmax(21rem, 1fr)); gap: var(--sp-1); padding: var(--sp-1) var(--gutter) var(--gutter); align-content: start; align-items: stretch; }   /* the cards of a row are one height, so every gap is the same */
+#out { display: grid; grid-template-columns: repeat(auto-fill, minmax(21rem, 1fr)); gap: var(--sp-1); padding: 0 var(--gutter) var(--gutter); align-content: start; align-items: stretch; }   /* the cards of a row are one height, so every gap is the same */
 #out > .rempty, #out > .rhint, #out > .rskel { grid-column: 1 / -1; }
 #out > .rcard { background: var(--on-primary); margin: 0;   /* white, lying on the page with the kit's card shadow (no white surface token yet: awaiting the owner's approval) */ min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .song__t, .song__a { direction: ltr; text-align: left; overflow-wrap: anywhere; }   /* every title is in a Latin script: it reads left to right and sits against the left edge */
@@ -67,7 +67,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
     app.innerHTML = '<div class="rempty" style="margin-block:auto"><b>' + esc(title) + '</b><span>' + esc(text) + '</span>' + (btn || "") + '</div>';
   }
   function shell() {
-    app.innerHTML = '<div class="pad" style="flex-direction:row;align-items:flex-end"><label class="rfield" style="flex:1 1 auto"><span id="cnt">חיפוש שיר או מבצע</span><input id="q" type="search" placeholder=" " autocomplete="off"></label><button type="button" class="rbtn rbtn--icon rbtn--outline" id="cp" aria-label="העתקת הרשימה המוצגת" title="העתקת הרשימה המוצגת">' + ICO.copy + '</button></div>' +
+    app.innerHTML = '<div class="pad" style="flex-direction:row;align-items:flex-end;padding-bottom:0"><label class="rfield" style="flex:1 1 auto"><span id="cnt">חיפוש שיר או מבצע</span><input id="q" type="search" placeholder=" " autocomplete="off"></label><button type="button" class="rbtn rbtn--icon rbtn--outline" id="cp" aria-label="העתקת הרשימה המוצגת" title="העתקת הרשימה המוצגת">' + ICO.copy + '</button></div>' +
       '<div class="rlist" id="out"></div>' +
       '<div class="pad" id="pw">' + playerHtml() + '</div>';   /* the player is fixed under the list: only the list scrolls */
     app.querySelector("#q").addEventListener("input", function () { clearTimeout(timer); timer = setTimeout(draw, 200); });
