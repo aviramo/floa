@@ -317,7 +317,7 @@
       ".bio-dock__btn { flex: none; display: grid; place-items: center; width: var(--fab); height: var(--fab); padding: 0; border: 0; border-radius: var(--r-fab); background: var(--danger); color: var(--on-primary); cursor: pointer } " +
       ".bio-dock__btn[data-st=\"paused\"] { background: var(--surface-2); color: var(--text) } .bio-dock__btn:disabled { background: var(--surface-2); color: var(--text-3); cursor: default } " +
       ".bio-bar input, .bio-dock__bar { -webkit-appearance: none; appearance: none; background: transparent; height: 20px; margin: 0; cursor: pointer; --p: 0%; --c: var(--primary) } .bio-bar input:hover, .bio-dock__bar:hover { --c: var(--danger) } .bio-bar input::-webkit-slider-runnable-track, .bio-dock__bar::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--c) var(--p), var(--surface-2) var(--p)) } .bio-bar input::-webkit-slider-thumb, .bio-dock__bar::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border: 0; border-radius: 50%; background: var(--c) } .bio-bar input::-moz-range-track, .bio-dock__bar::-moz-range-track { height: 4px; border-radius: 2px; background: var(--surface-2) } .bio-bar input::-moz-range-progress, .bio-dock__bar::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--c) } .bio-bar input::-moz-range-thumb, .bio-dock__bar::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: var(--c) } .bio-bar input:focus, .bio-bar input:focus-visible, .bio-dock__bar:focus, .bio-dock__bar:focus-visible, .bio-dock__btn:focus, .bio-dock__btn:focus-visible, .bio-dock__x:focus, .bio-dock__x:focus-visible { outline: none } .bio-dock .bio-vol { margin: 0 } @media (max-width: 1023px) { .bio-dock .bio-vol, .bio-dock .bio-volume { display: none !important } } .bio-volume { flex: none; display: flex; align-items: center; gap: var(--gap-tight); --c: var(--primary) } .bio-volume input { -webkit-appearance: none; appearance: none; background: transparent; width: 7rem; height: 20px; margin: 0; cursor: pointer; direction: ltr; --p: 0% } .bio-volume { direction: ltr; margin-left: var(--sp-3) } .bio-volume input::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--c) var(--p), var(--on-primary) var(--p)) } .bio-volume input::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border: 0; border-radius: 50%; background: var(--c) } .bio-volume input::-moz-range-track { height: 4px; border-radius: 2px; background: var(--on-primary) } .bio-volume input::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--c) } .bio-volume input::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: var(--c) } .bio-volume input:focus, .bio-volume input:focus-visible { outline: none } .bio-volume > .rbtn > svg { width: var(--icon-m); height: var(--icon-m) } .bio-dock__x { flex: none; display: grid; place-items: center; width: var(--icon-m, 20px); height: var(--ctl); padding: 0; border: 0; border-radius: var(--r-ctl); background: transparent; color: var(--text-2); cursor: pointer } .bio-dock__x > svg { width: var(--icon-m, 20px); height: var(--icon-m, 20px); stroke-width: var(--icon-w) } .bio-dock.idle .bio-dock__x { display: none } " +
-      ".bio-dock [data-addcur][hidden] { display: none } .bio-dock .rbtn > svg { width: var(--icon-l); height: var(--icon-l) } @media (min-width: 760px) { html.bio-docked #addMusDlg, html.bio-docked #histDlg { inset-block-end: var(--dockfull); max-height: calc(100dvh - var(--dockfull) - 48px) } html.bio-docked #addMusDlg #amlist { padding-bottom: var(--gutter) } html.bio-docked #histDlg .sheet-body { padding-bottom: var(--gutter) } } #plist > .bio-card, #plist > [data-div] { width: 100%; max-width: 28rem } .bio-card[aria-current=\"true\"] { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary) } .bio-icard [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important } [data-opt] [data-audio] svg, [data-am] [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important } .bio-dock > .rbtn:first-child:not(:disabled) { background: var(--primary); border-color: var(--primary); color: var(--on-primary) } .bio-dock.playing .bio-dock__bar { --c: var(--danger) } .bio-dock > .rbtn:first-child[data-st=\"playing\"]:not(:disabled) { background: var(--danger); border-color: var(--danger) } " +
+      ".bio-dock [data-addcur][hidden] { display: none } .bio-dock .rbtn > svg { width: var(--icon-l); height: var(--icon-l) } @media (min-width: 760px) { html.bio-docked #addMusDlg, html.bio-docked #histDlg { inset-block-end: var(--dockfull); max-height: calc(100dvh - var(--dockfull) - 48px) } html.bio-docked #addMusDlg #amlist { padding-bottom: var(--gutter) } html.bio-docked #histDlg .sheet-body { padding-bottom: var(--gutter) } } .bio-card[aria-current=\"true\"] { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary) } .bio-icard [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important } [data-opt] [data-audio] svg, [data-am] [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important } .bio-dock > .rbtn:first-child:not(:disabled) { background: var(--primary); border-color: var(--primary); color: var(--on-primary) } .bio-dock.playing .bio-dock__bar { --c: var(--danger) } .bio-dock > .rbtn:first-child[data-st=\"playing\"]:not(:disabled) { background: var(--danger); border-color: var(--danger) } " +
       ".bio-dock .bio-dockbar { flex: 1 1 8rem; min-width: 0; padding: 0; touch-action: none } .bio-dock .bio-dockbar .bio-dock__bar { width: 100%; display: block; direction: ltr } .bio-dock .bio-dockbar input::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--c) var(--p), var(--on-primary) var(--p)) } .bio-dock .bio-dockbar input::-moz-range-track { background: var(--on-primary) } " +
       ".bio-dock__name { flex: 0 1 28rem; min-width: 8rem; direction: ltr; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis } .bio-dock__name span { color: var(--text-2) } .bio-dock__name span:not(:empty)::before { content: \"· \" } " +
       "@media (max-width: 700px) { .bio-dock { flex-wrap: wrap } .bio-dock__name { flex: 1 1 100%; order: 4 } .bio-dock .bio-dockbar { flex: 0 0 100%; order: 3 } } " +
@@ -1153,8 +1153,8 @@
         sub: m ? songName(m) : "בלי מוזיקה", subLtr: !!m, pill: m ? cardPill(m) : "", chip: facChip(i, ""), time: m ? clkSpan(m) : "",
         corner: '<button type="button" class="rbtn rbtn--icon" data-idel="' + i.id + '" aria-label="הסרה מהוויוונסיה" title="הסרה מהוויוונסיה" ' + CARD_BIN.replace("right:2px", "left:2px") + '>' + I.trash + '</button>' });
     };
-    l.innerHTML = '<div id="plist" style="display:flex;flex-direction:column;gap:var(--sp-1);padding:var(--sp-2) var(--gutter) var(--gutter)">' + main.map(function (i, k) { return rowOf(i, k + 1); }).join("") +
-      '<div data-div style="padding:var(--sp-2) 0 var(--sp-1);margin-top:var(--sp-1);border-top:1px solid var(--line);min-height:var(--ctl)"><div class="rrow__sub">נוספים</div>' + (back.length || !canEdit() ? '' : '<div class="rrow__sub" style="margin-top:var(--sp-1)">גררו לכאן תרגיל שעוד לא החלטתם עליו</div>') + '</div>' +
+    l.innerHTML = '<div id="plist" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch;padding:var(--sp-2) var(--gutter) var(--gutter)">' + main.map(function (i, k) { return rowOf(i, k + 1); }).join("") +
+      '<div data-div style="grid-column:1 / -1;padding:var(--sp-2) 0 var(--sp-1);margin-top:var(--sp-1);border-top:1px solid var(--line);min-height:var(--ctl)"><div class="rrow__sub">נוספים</div>' + (back.length || !canEdit() ? '' : '<div class="rrow__sub" style="margin-top:var(--sp-1)">גררו לכאן תרגיל שעוד לא החלטתם עליו</div>') + '</div>' +
       back.map(function (i) { return rowOf(i, "•"); }).join("") + '</div>';
     var openIt = function (id) { var it = state.items.filter(function (x) { return x.id === id; })[0]; if (!it) return; if (wide()) itemScreen(it); else go(function () { itemScreen(it); }); };
     l.querySelectorAll("[data-icard]").forEach(function (c) { c.addEventListener("click", function (ev) {
@@ -1221,7 +1221,7 @@
       });
       row.addEventListener("pointerdown", function (e) {
         if (e.button > 0) return;
-        d = { grip: !!e.target.closest("[data-grip]"), row: row, k: k, y0: e.clientY, pid: e.pointerId, live: false, timer: null, tops: rows.map(function (r) { var b = r.getBoundingClientRect(); return b.top + b.height / 2; }), h: row.getBoundingClientRect().height + gapPx, to: k };
+        d = { grip: !!e.target.closest("[data-grip]"), row: row, k: k, y0: e.clientY, pid: e.pointerId, live: false, timer: null, x0: e.clientX, tops: rows.map(function (r) { var b = r.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; }), to: k };   /* the middle of every place, across and down: a list is one column, a grid of cards is several */
         if (e.pointerType === "touch" && !d.grip) d.timer = setTimeout(function () { if (d && !d.live) begin(); }, 160);
       });
     });
@@ -1238,16 +1238,17 @@
         if (Math.abs(dy) < 6) return;
         begin();
       }
-      d.row.style.transform = "translateY(" + dy + "px)";
-      var c = d.tops[d.k] + dy, to = 0;
-      d.tops.forEach(function (t, i) { if (i !== d.k && t < c) to++; });
+      var dx = e.clientX - d.x0;
+      d.row.style.transform = "translate(" + dx + "px, " + dy + "px)";
+      var cx = d.tops[d.k].x + dx, cy = d.tops[d.k].y + dy, to = d.k, best = Infinity;   /* the place nearest to the card that is carried */
+      d.tops.forEach(function (t, i) { var dd = (t.x - cx) * (t.x - cx) + (t.y - cy) * (t.y - cy); if (dd < best) { best = dd; to = i; } });
       d.to = to;
-      rows.forEach(function (r, i) {
+      rows.forEach(function (r, i) {   /* each of the others goes to the place it would have */
         if (r === d.row) return;
-        var shift = 0;
-        if (d.k < to && i > d.k && i <= to) shift = -d.h;
-        if (d.k > to && i >= to && i < d.k) shift = d.h;
-        r.style.transform = shift ? "translateY(" + shift + "px)" : "";
+        var ni = i;
+        if (d.k < to && i > d.k && i <= to) ni = i - 1;
+        if (d.k > to && i >= to && i < d.k) ni = i + 1;
+        r.style.transform = ni !== i ? "translate(" + Math.round(d.tops[ni].x - d.tops[i].x) + "px, " + Math.round(d.tops[ni].y - d.tops[i].y) + "px)" : "";
       });
     }
     l.addEventListener("pointermove", move);
