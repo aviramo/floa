@@ -92,6 +92,11 @@ ${jsonLd ? html`
   <script type="application/ld+json">
 ${raw(JSON.stringify(jsonLd, null, 2))}
   </script>` : ""}
+${path === "" ? html`
+  <!-- the site's name for search results: without it a search engine shows the bare domain -->
+  <script type="application/ld+json">
+${raw(JSON.stringify({ "@context": "https://schema.org", "@type": "WebSite", name: site.brand, url: site.origin + "/" }))}
+  </script>` : ""}
 ${analyticsHead(site.analytics)}
 ${head ?? ""}
 </head>
