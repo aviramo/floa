@@ -643,12 +643,12 @@
       '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="nextW" aria-label="הבא" title="הבא"' + (hasNext ? "" : " disabled") + '>' + I.fwd + '</button></header>';
   }
   /* the header of one exercise: buttons only, each with its word. Previous and the list on the right, next on the left. The name is the field below. */
-  function itemHead(hasPrev, hasNext, where, exId, nameText, ro) {
+  function itemHead(hasPrev, hasNext, where, exId, nameText, ro, roLabel) {
     var nav = !wide() && !ro;   /* beside the list there are no previous and next buttons: the list is the way around */
     var arrow = function (act, ico, label, off) { return '<button class="rbtn rbtn--icon" data-act="' + act + '" aria-label="' + label + '" title="' + label + '"' + (off ? " disabled" : "") + '>' + ico + '</button>'; };
     return '<header class="rhead">' + (nav ? arrow("prevW", I.back, "הקודם", !hasPrev) : "") +
       '<div class="rhead__text"><input id="ina" class="rhead__title" placeholder="ללא שם" autocomplete="off" aria-label="שם התרגיל"' + (ro ? ' readonly' : '') + ' value="' + esc(nameText || "") + '" style="width:100%;min-width:0;border:0;background:transparent;padding-inline:0;margin:0;color:inherit;text-align:start;outline:0;text-overflow:ellipsis;text-box:normal;line-height:1.4;padding-block:4px"></div>' +
-      (exId ? heartBtnEx(exId, "bio-flat") : "") + (ro ? "" : arrow("del", I.trash, "הסרה מהוויוונסיה", false)) + (nav ? arrow("nextW", I.fwd, "הבא", !hasNext) : "") + '</header>';
+      (exId ? heartBtnEx(exId, "bio-flat") : "") + (ro ? (roLabel ? '<button type="button" class="rbtn" style="flex:none;width:var(--ctl);padding:0" data-act="doswap" aria-label="' + roLabel + '" title="' + roLabel + '">' + I.check + '</button>' : "") : arrow("del", I.trash, "הסרה מהוויוונסיה", false)) + (nav ? arrow("nextW", I.fwd, "הבא", !hasNext) : "") + '</header>';
   }
   (function () {
     var st = document.createElement("style");
@@ -1854,16 +1854,12 @@
     loadPreview(e.id).then(function (res) { var rows = res.rows, songs = res.songs;
       if (tok !== previewTok) return;
       var fake = itemFake(e, rows, songs);
-      var word = swapIt ? "החלפה בתרגיל הזה" : "הוספה";
+      var word = swapIt ? "החלפה בתרגיל הזה" : "הוספה לוויוונסיה";
       var dlg = document.getElementById("exDlg");
       if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "exDlg"; document.body.appendChild(dlg); }
-      RosterSheet.render(dlg, { title: name(e), from: "bottom",
+      RosterSheet.render(dlg, { title: name(e), from: "bottom", action: { label: word, icon: I.check, id: "exgo" },
         body: bleedCss("exDlg") + '<style>#exDlg .sheet-body { padding-bottom: calc(var(--fab) + var(--gutter) * 2 + var(--inset-b)) } html.rs-lock:not(.kb-open) #exDlg .rfab { opacity: 1; transform: none; pointer-events: auto }</style>' + itemPageHtml(fake, true) });
       bleedSet(dlg);
-      /* the action is the round button at the bottom left, where the add button of a list is (a popover inside the popup: drawn in the top layer, placed by the window) */
-      var fab = document.createElement("button"); fab.type = "button"; fab.id = "exgo"; fab.className = "rfab"; fab.innerHTML = I.check; fab.setAttribute("aria-label", word); fab.title = word;
-      fab.style.cssText = "inset:auto;margin:0;left:max(var(--gutter), var(--inset-l));bottom:calc(var(--gutter) + var(--dockh))";
-      fab.setAttribute("popover", "manual"); dlg.appendChild(fab); try { fab.showPopover(); } catch (x) { /* an old browser: an ordinary fixed button */ }
       wireRoMusic(dlg, fake);
       dlg.querySelector("#exgo").addEventListener("click", function () { if (swapIt) confirmSwap(e, swapIt, true, fake.music_id); else addEx(e, undefined, true, fake.music_id); });
     }, fail);
@@ -1935,9 +1931,9 @@
     loadPreview(e.id).then(function (res) { var rows = res.rows, songs = res.songs;
       if (tok !== previewTok) return;   /* a later row was chosen meanwhile */
       var fake = itemFake(e, rows, songs);
-      var word = swapIt ? "החלפה בתרגיל הזה" : "הוספה";
-      /* the same page as the exercise of a vivencia, only read: its header, its song cards, its texts; the action is the round button at the bottom left */
-      show(itemHead(false, false, "", e.id, name(e), true) + itemPageHtml(fake, true) + '<button class="rfab" type="button" data-act="doswap" aria-label="' + word + '" title="' + word + '">' + I.check + '</button>', function (r) {
+      var word = swapIt ? "החלפה בתרגיל הזה" : "הוספה לוויוונסיה";
+      /* the same page as the exercise of a vivencia, only read: its header, its song cards, its texts; the action is the green button in the header, where the delete is in the vivencia */
+      show(itemHead(false, false, "", e.id, name(e), true, word) + itemPageHtml(fake, true), function (r) {
         wireRoMusic(r, fake);
         on(r, "doswap", function () { if (swapIt) confirmSwap(e, swapIt, undefined, fake.music_id); else addEx(e, undefined, undefined, fake.music_id); });
       }, "d");
