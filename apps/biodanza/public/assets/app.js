@@ -378,7 +378,7 @@
         var mo = Math.floor(d / 30); if (mo === 1) return "לפני חודש"; if (mo === 2) return "לפני חודשיים"; if (mo < 12) return "לפני " + mo + " חודשים"; return "לפני יותר משנה";
       };
       var cards = rows.map(function (e, i) {
-        return '<div class="rcard rcard--compact" data-hi="' + i + '" role="button" tabindex="0" style="cursor:pointer;background:var(--on-primary);margin:0;min-width:0;display:flex;flex-direction:column;gap:2px">' +
+        return '<div class="rcard rcard--compact bio-card" data-hi="' + i + '"' + (e.n && window.__bioNow && window.__bioNow.name === e.n ? ' aria-current="true"' : '') + ' role="button" tabindex="0" style="cursor:pointer;background:var(--on-primary);margin:0;min-width:0;display:flex;flex-direction:column;gap:2px">' +
           '<span style="direction:ltr;text-align:left;overflow-wrap:anywhere;font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(e.t || "שיר") + '</span>' +
           '<span style="direction:ltr;text-align:left;overflow-wrap:anywhere;color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font)">' + (e.a ? esc(e.a) : "&nbsp;") + '</span>' +
           '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:var(--gap-tight)"><button type="button" class="rbtn rbtn--icon" data-hp="' + i + '" aria-label="השמעה" title="השמעה" style="background:var(--surface-2);border-color:var(--surface-2);width:var(--tag-s);min-height:var(--tag-s);height:var(--tag-s);padding:0;border-radius:999px">' + PLAY + '</button>' +
@@ -389,7 +389,8 @@
       dlg.onclick = function (ev) {
         var c = ev.target.closest && ev.target.closest("[data-hi]"); if (!c) return;
         var e = rows[+c.dataset.hi]; if (!e) return;
-        slideClose(dlg); playName(e.n, e.t, e.a);
+        dlg.querySelectorAll("[data-hi][aria-current]").forEach(function (x) { x.removeAttribute("aria-current"); });   /* the popup stays open: the song that plays is the marked one */
+        c.setAttribute("aria-current", "true"); playName(e.n, e.t, e.a);
       };
     }
     document.addEventListener("click", function (ev) { var b = ev.target.closest && ev.target.closest("[data-hist]"); if (b) openHistory(); });
