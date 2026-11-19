@@ -19,7 +19,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
 .pad { padding: var(--gutter); display: flex; flex-direction: column; gap: var(--gap-field); }
 #out { display: grid; grid-template-columns: repeat(auto-fill, minmax(21rem, 1fr)); gap: var(--sp-1); padding: 0 var(--gutter) var(--gutter); align-content: start; align-items: stretch; }   /* the cards of a row are one height, so every gap is the same */
 #out > .rempty, #out > .rhint, #out > .rskel { grid-column: 1 / -1; }
-#out > .rcard { background: var(--on-primary); margin: 0;   /* white, lying on the page with the kit's card shadow (no white surface token yet: awaiting the owner's approval) */ min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+#out > .rcard { cursor: pointer; background: var(--on-primary); margin: 0;   /* white, lying on the page with the kit's card shadow (no white surface token yet: awaiting the owner's approval) */ min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .song__t, .song__a { direction: ltr; text-align: left; overflow-wrap: anywhere; }   /* every title is in a Latin script: it reads left to right and sits against the left edge */
 .song__t { font: var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font); }
 .song__a { color: var(--text-2); font: var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font); }
@@ -121,6 +121,12 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
       }).catch(function (er) { console.error(er); say("ההעלאה נכשלה", 3000); });
     });
     inp.click();
+  });
+  /* the whole card is the button: a song with a file plays (or pauses), a song with none asks for its file; text being selected is left alone */
+  document.addEventListener("click", function (e) {
+    var c = e.target.closest && e.target.closest("#out > .rcard"); if (!c || e.target.closest("button, a")) return;
+    var sel = window.getSelection && String(window.getSelection()); if (sel) return;
+    var b = c.querySelector("[data-audio], [data-up]"); if (b) b.click();
   });
   function more() {   /* the next cards, when the list is scrolled near its end: the page draws a few dozen at a time, never all three thousand */
     var out = document.getElementById("out"); if (!out || shown >= hitList.length) return;
