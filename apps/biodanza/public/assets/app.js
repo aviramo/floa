@@ -816,8 +816,10 @@
   }
   document.addEventListener("click", function (ev) { var ab = ev.target.closest && ev.target.closest("[data-addex]"); if (ab) {   /* the plus beside the exercises' title: an empty exercise at the end of the numbered ones, opened to be filled in */
       if (!state.viv || !state.items || ab.disabled) return; ab.disabled = true;
-      var pos = state.items.reduce(function (x, k) { return Math.max(x, k.position); }, 0) + 1;
-      api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=representation", json: { vivencia_id: state.viv.id, position: pos, backlog: false, exercise_id: null, music_id: null } }).then(function (made) {
+      var cur = liveItem && state.items.filter(function (x) { return x.id === liveItem.id; })[0];   /* standing on an exercise: the new one comes right after it, in its group; otherwise at the end of the numbered ones */
+      var pos = cur ? cur.position + 1 : state.items.reduce(function (x, k) { return Math.max(x, k.position); }, 0) + 1;
+      var shift = cur ? state.items.filter(function (x) { return x.position > cur.position; }).map(function (x) { return api("/rest/v1/vivencia_items?id=eq." + x.id, { method: "PATCH", prefer: "return=minimal", json: { position: x.position + 1 } }); }) : [];
+      Promise.all(shift).then(function () { return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=representation", json: { vivencia_id: state.viv.id, position: pos, backlog: cur ? !!cur.backlog : false, exercise_id: null, music_id: null } }); }).then(function (made) {
         return loadItems().then(function () {
           paint(); ab.disabled = false;
           var it = made && made[0] && state.items.filter(function (x) { return x.id === made[0].id; })[0];
