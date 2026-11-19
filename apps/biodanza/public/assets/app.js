@@ -1484,10 +1484,10 @@
     });
   });
   /* the card of a music option, the same as the music page's: the name, the performer, and at the foot the play tile and the time; the chosen one has the green frame, the others a chip to choose them */
-  function optCardHtml(m, sel, withRm) {
+  function optCardHtml(m, sel, withRm, plain) {   /* plain: the catalog's exercise, only its songs: no chip to choose, no green frame */
     var tile = songBtn(m, false).replace(/width:var\(--fab\);height:var\(--fab\);min-height:var\(--fab\);/g, "width:46px;height:var(--tag-s);min-height:var(--tag-s);padding:0;border-radius:999px;background:var(--surface-2);");
     var tm = clkSpan(m);
-    var pickChip = sel ? '' : '<button type="button" class="rchip rchip--s" data-choose="' + esc(m.id) + '" title="לבחור אותה לתרגיל בוויוונסיה" style="cursor:pointer;border:0">בחירה</button>';
+    var pickChip = sel || plain ? '' : '<button type="button" class="rchip rchip--s" data-choose="' + esc(m.id) + '" title="לבחור אותה לתרגיל בוויוונסיה" style="cursor:pointer;border:0">בחירה</button>';
     var rm = !withRm ? '' : '<button type="button" class="rbtn rbtn--icon" data-orm="' + esc(m.id) + '" aria-label="מחיקה מהתרגיל" title="מחיקה מהתרגיל" style="position:absolute;top:2px;right:2px;color:var(--text-3);min-height:var(--ctl);height:var(--ctl);width:var(--ctl);padding:0">' + I.trash + '</button>';
     return '<div class="rcard rcard--compact" data-opt="' + esc(m.id) + '" role="button" tabindex="0"' + (sel ? ' aria-current="true"' : '') + ' style="margin:0;min-width:0;display:flex;flex-direction:column;gap:2px;cursor:pointer;background:var(--on-primary)' + (sel ? ';border-color:var(--primary);box-shadow:inset 0 0 0 1px var(--primary)' : '') + '">' +
       '<span style="display:block;direction:ltr;text-align:left;overflow-wrap:anywhere;padding-right:' + (withRm ? 'var(--ctl)' : '0') + ';font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(songName(m)) + '</span>' +
@@ -1518,7 +1518,7 @@
   function musCards(it, ro) {
     var list = optList(it), cur = it.music_id;
     var cards = list.map(function (m) { return optCardHtml(m, m.id === cur, !ro); }).join("");
-    if (ro) return cards ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch">' + cards + '</div>' : '';
+    if (ro) return list.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch">' + list.map(function (m) { return optCardHtml(m, false, false, true); }).join("") + '</div>' : '';
     var add = '<div class="rcard rcard--compact" data-addm role="button" tabindex="0" style="margin:0;min-width:0;display:flex;align-items:center;justify-content:center;gap:var(--sp-1);cursor:pointer;min-height:var(--tag-s);border:1px dashed var(--line-strong);background:transparent;box-shadow:none;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>' + (list.length ? "הוספת מוזיקה" : "בחירת מוזיקה") + '</div>';
     return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch">' + cards + add + '</div>';
   }
@@ -1882,8 +1882,6 @@
     var imus = root.querySelector("#imus"); if (!imus) return;
     imus.addEventListener("click", function (ev) {
       if (ev.target.closest("[data-audio], a")) return;
-      var ch = ev.target.closest("[data-choose]");
-      if (ch) { var m = optList(fake).filter(function (x) { return x.id === ch.dataset.choose; })[0]; if (m) { fake.music_id = m.id; fake.music = m; imus.innerHTML = musCards(fake, true); } return; }
       var c = ev.target.closest("[data-opt]"); if (!c) return;
       var pb = c.querySelector("[data-audio]"); if (pb) pb.click();
     });
@@ -2031,7 +2029,12 @@
     var pos = state.items.reduce(function (m, i) { return Math.max(m, i.position); }, 0) + 1;
     Promise.all([firstMusic(e.id, mid), detached(e.id)]).then(function (r) {
       var m = r[0], d = r[1];
-      return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=minimal", json: { vivencia_id: state.viv.id, position: pos, exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, title: d.title || null, poetics: d.poetics || null, guidance: d.guidance || null } });
+      return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=representation", json: { vivencia_id: state.viv.id, position: pos, exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, title: d.title || null, poetics: d.poetics || null, guidance: d.guidance || null } }).then(function (made) {
+        var item = made && made[0]; if (!item) return null;
+        return api("/rest/v1/exercise_music?exercise_id=eq." + e.id + "&select=music_id").then(function (rows) {   /* all the songs the catalog gives the exercise are its options */
+          return rows && rows.length ? api("/rest/v1/item_music_options?on_conflict=item_id,music_id", { method: "POST", prefer: "resolution=ignore-duplicates,return=minimal", json: rows.map(function (x) { return { item_id: item.id, music_id: x.music_id }; }) }) : null;
+        }, function () { return null; });
+      });
     }).then(function () { toast("התרגיל נוסף"); if (sheet) { closeSheets(); return loadItems().then(paint, fail); }
       if (wide()) show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); else stack().pop(); back(); }, fail);
   }
