@@ -1062,9 +1062,8 @@
   }
   function editor() {
     var v = state.viv; setUrl(BASE + v.id); curJoin(v.id);
-    show(head(v.title || "ויוונסיה חדשה", "", true, '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="more" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>') +
-      '<div class="rlist" data-fab-room id="list"><div class="rskel rskel--title"></div></div>' +
-      (v.role === "view" ? '' : '<button class="rfab" data-act="add" aria-label="הוספת תרגיל מהקטלוג" title="הוספת תרגיל מהקטלוג">' + I.catalog + '</button>'), function (r) {
+    show(head(v.title || "ויוונסיה חדשה", "", true, (v.role === "view" ? '' : '<button type="button" class="rbtn" data-act="add" style="flex:none" title="הוספת תרגיל מהקטלוג">לקטלוג</button>') + '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="more" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>') +   /* the way to the catalog is a word in the header, not a floating button */
+      '<div class="rlist" data-fab-room id="list"><div class="rskel rskel--title"></div></div>', function (r) {
       on(r, "back", back); on(r, "add", function () { resetPk(); if (wide()) goSub(picker); else pickerSheet(); });
       on(r, "more", function (b) {
         /* the owner: rename, share, delete; somebody it is shared with: rename (with edit rights) and taking themselves off it */
@@ -1163,7 +1162,7 @@
     var main = state.items.filter(function (i) { return !i.backlog; }), back = state.items.filter(function (i) { return i.backlog; });
     var rowOf = function (i, tile) {
       var m = i.music;
-      return cardUi({ cls: "bio-icard", attrs: 'data-icard="' + i.id + '"', selected: state.lastItem === i.id, lead: tile, bigLead: true, title: itemName(i), titleAttr: 'data-edit="' + i.id + '"',
+      return cardUi({ cls: "bio-icard", attrs: 'data-icard="' + i.id + '"' + (i.backlog ? ' data-back="1"' : ''), selected: state.lastItem === i.id, lead: tile, bigLead: true, title: itemName(i), titleAttr: 'data-edit="' + i.id + '"',
         sub: m ? songName(m) : "בלי מוזיקה", subRight: !!m, footEnd: true, pill: m ? cardPill(m) : "", chip: facChip(i, " rchip--s"), time: m ? clkSpan(m) : "" });
     };
     l.innerHTML = '<div id="plist" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch;padding:var(--gutter)">' + main.map(function (i, k) { return rowOf(i, k + 1); }).join("") +
@@ -1178,12 +1177,106 @@
     }); });
     l.querySelectorAll("[data-idel]").forEach(function (b) { b.addEventListener("click", function (ev) { ev.stopPropagation(); var it = state.items.filter(function (x) { return x.id === b.dataset.idel; })[0]; if (it) confirmRemoveItem(it); }); });
     wireFac(l);
-    if (canEdit()) enableDrag(l.querySelector("#plist"), "[data-edit]", persistCross, ".bio-icard, [data-div]");
+    if (canEdit()) enableGroupDrag(l.querySelector("#plist"), persistGroups);
   }
   /* beside the list the open exercise's strip is marked at once, wherever it was opened from (a click, the arrows, a swap) */
   function markItem() {
     var l = document.getElementById("list"); if (!l || !l.hasAttribute("data-fab-room")) return;
     l.querySelectorAll("[data-edit]").forEach(function (b) { (b.closest(".bio-icard") || b.closest(".rrow")).setAttribute("aria-current", b.dataset.edit === state.lastItem ? "true" : "false"); });
+  }
+  function persistGroups(mainIds, backIds) {
+    var by = {}; state.items.forEach(function (i) { by[i.id] = i; });
+    var nm = mainIds.map(function (id) { return by[id]; }).filter(Boolean), nb = backIds.map(function (id) { return by[id]; }).filter(Boolean);
+    state.items = nm.concat(nb);
+    var jobs = [];
+    state.items.forEach(function (it, k) {
+      var isBack = k >= nm.length;
+      if (it.position === k + 1 && !!it.backlog === isBack) return;
+      it.position = k + 1; it.backlog = isBack;
+      jobs.push(api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { position: k + 1, backlog: isBack } }));
+    });
+    Promise.all(jobs).then(loadItems).then(paint, fail);
+  }
+  /* The drag of the exercise cards: two groups, the numbered ones and "נוספים". The divider never moves; the group is the one the carried card is over
+     (below the divider's middle: "נוספים"), the place in it is where the card is in reading order, and the others go to the places they would have. */
+  function enableGroupDrag(l, onDrop) {
+    if (l._dragOff) l._dragOff();
+    var cards = [].slice.call(l.querySelectorAll(".bio-icard")), div = l.querySelector("[data-div]");
+    var d = null, blockTouch = function (e) { if (d && d.live) e.preventDefault(); };
+    l.addEventListener("touchmove", blockTouch, { passive: false });
+    var grpOf = function (c) { return c.hasAttribute("data-back") ? 1 : 0; };
+    var ids = function (arr) { return arr.map(function (i) { return cards[i].dataset.icard; }); };
+    function keyMove(c, delta) {   /* Alt + arrow: one place on, across the divider too */
+      var main = cards.filter(function (r) { return !grpOf(r); }).map(function (r) { return r.dataset.icard; }), back = cards.filter(grpOf).map(function (r) { return r.dataset.icard; });
+      var id = c.dataset.icard, inBack = grpOf(c) === 1, arr = inBack ? back : main, k = arr.indexOf(id), to = k + delta;
+      if (to < 0 || to >= arr.length) {
+        if (!inBack && delta > 0) { main.splice(k, 1); back.unshift(id); }
+        else if (inBack && delta < 0) { back.splice(k, 1); main.push(id); }
+        else return;
+      } else { arr.splice(k, 1); arr.splice(to, 0, id); }
+      onDrop(main, back);
+    }
+    cards.forEach(function (c) {
+      var title = c.querySelector("[data-edit]");
+      if (title) title.addEventListener("keydown", function (e) {
+        if (!e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
+        e.preventDefault(); keyMove(c, e.key === "ArrowUp" ? -1 : 1);
+      });
+      c.addEventListener("pointerdown", function (e) {
+        if (e.button > 0) return;
+        var rects = cards.map(function (r) { return r.getBoundingClientRect(); });
+        d = { c: c, k: cards.indexOf(c), x0: e.clientX, y0: e.clientY, pid: e.pointerId, live: false, timer: null, order: null,
+              sl: rects.map(function (b) { return { x: b.left + b.width / 2, y: b.top + b.height / 2, h: b.height }; }) };
+        if (e.pointerType === "touch") d.timer = setTimeout(function () { if (d && !d.live) begin(); }, 160);
+      });
+    });
+    function begin() {
+      d.live = true; d.c.setPointerCapture && d.c.setPointerCapture(d.pid);
+      d.c.style.transition = "none"; d.c.style.zIndex = "var(--z-raised)"; d.c.style.boxShadow = "var(--sh-card)";
+      cards.forEach(function (r) { if (r !== d.c) r.style.transition = "transform var(--t-base) var(--ease)"; });
+    }
+    function virtualSlot(g, sl, idxs) {   /* the place after the last one of a group, for the card that moves into it */
+      var last = sl[idxs[idxs.length - 1]], xs = sl.map(function (t) { return t.x; }), right = Math.max.apply(null, xs), left = Math.min.apply(null, xs);
+      var pitch = sl.length > 2 ? sl[2].y - sl[0].y : last.h + 8;
+      return Math.abs(last.x - right) < Math.abs(last.x - left) ? { x: left, y: last.y } : { x: right, y: last.y + pitch };
+    }
+    function move(e) {
+      if (!d) return;
+      var dx = e.clientX - d.x0, dy = e.clientY - d.y0;
+      if (!d.live) {
+        if (e.pointerType === "touch") { if (Math.abs(dy) > 8) { clearTimeout(d.timer); d = null; } return; }
+        if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+        begin();
+      }
+      d.c.style.transform = "translate(" + dx + "px, " + dy + "px)";
+      var cx = d.sl[d.k].x + dx, cy = d.sl[d.k].y + dy, dr = div.getBoundingClientRect(), back = cy > dr.top + dr.height / 2 ? 1 : 0;
+      var grp = [[], []], slots = [[], []];
+      cards.forEach(function (r, i) { slots[grpOf(r)].push(i); if (i !== d.k) grp[grpOf(r)].push(i); });
+      var ins = 0; grp[back].forEach(function (i, n) { var t = d.sl[i]; if (t.y < cy - t.h / 2 || (Math.abs(t.y - cy) <= t.h / 2 && t.x > cx)) ins = n + 1; });
+      var order = [grp[0].slice(), grp[1].slice()]; order[back].splice(ins, 0, d.k); d.order = order;
+      [0, 1].forEach(function (g) { order[g].forEach(function (ci, pos) {
+        if (ci === d.k) return;
+        var slot = pos < slots[g].length ? d.sl[slots[g][pos]] : (slots[g].length ? virtualSlot(g, d.sl, slots[g]) : null), r = cards[ci];
+        r.style.transform = slot && !(pos < slots[g].length && slots[g][pos] === ci) ? "translate(" + Math.round(slot.x - d.sl[ci].x) + "px, " + Math.round(slot.y - d.sl[ci].y) + "px)" : "";
+      }); });
+    }
+    l.addEventListener("pointermove", move);
+    function finish() {
+      if (!d) return;
+      clearTimeout(d.timer);
+      var was = d; d = null;
+      if (!was.live) return;
+      cards.forEach(function (r) { r.style.transform = ""; r.style.transition = ""; r.style.zIndex = ""; r.style.boxShadow = ""; });
+      var eat = function (ev) { ev.stopPropagation(); ev.preventDefault(); };
+      l.addEventListener("click", eat, true); setTimeout(function () { l.removeEventListener("click", eat, true); }, 80);
+      if (!was.order) return;
+      var nm = ids(was.order[0]), nb = ids(was.order[1]);
+      var om = cards.filter(function (r) { return !grpOf(r); }).map(function (r) { return r.dataset.icard; }), ob = cards.filter(grpOf).map(function (r) { return r.dataset.icard; });
+      if (nm.join() === om.join() && nb.join() === ob.join()) return;
+      onDrop(nm, nb);
+    }
+    l.addEventListener("pointerup", finish); l.addEventListener("pointercancel", finish);
+    l._dragOff = function () { l.removeEventListener("touchmove", blockTouch); l.removeEventListener("pointermove", move); l.removeEventListener("pointerup", finish); l.removeEventListener("pointercancel", finish); l._dragOff = null; };
   }
   function persistCross(from, to) {   /* from, to: places among the rows AND the divider "נוספים"; what ends up after the divider is "נוספים" */
     var main = state.items.filter(function (i) { return !i.backlog; }), back = state.items.filter(function (i) { return i.backlog; });
