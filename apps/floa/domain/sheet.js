@@ -236,6 +236,8 @@
         var atEdge = !s || (dir < 0 ? s.scrollTop + s.clientHeight >= s.scrollHeight - 1 : s.scrollTop <= 0);
         if (!atEdge) { t = null; return; }
         t.on = true; t.y = p.clientY; dlg.classList.add("rs-dragging");
+        if (t.sc) { t.sc._ov = t.sc.style.overflowY; t.sc.style.overflowY = "hidden"; }   /* the content inside is frozen for as long as the popup is held: moving the finger back up pulls the popup back, it never scrolls the content */
+        if (e.cancelable) e.preventDefault();
         return;
       }
       if (e.cancelable) e.preventDefault();
@@ -244,7 +246,7 @@
       var dt = Math.max(1, e.timeStamp - t.lastT); t.v = ((p.clientY - t.last) * dir) / dt; t.last = p.clientY; t.lastT = e.timeStamp;
       dlg.style.setProperty("--rs-dy", t.dy + "px");
     }, { passive: false });
-    function endTouch() { var d = t; t = null; if (d && d.on) finish(dlg, d.dy, d.v); }
+    function endTouch() { var d = t; t = null; if (d && d.on) { if (d.sc) d.sc.style.overflowY = d.sc._ov || ""; finish(dlg, d.dy, d.v); } }
     dlg.addEventListener("touchend", endTouch);
     dlg.addEventListener("touchcancel", endTouch);
   }
