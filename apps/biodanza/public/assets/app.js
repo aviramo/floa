@@ -1260,7 +1260,19 @@
         return rows.length === PAGE ? page(off + PAGE) : order;
       });
     }
-    exMusicP = page(0).then(function (o) { return o.sort(function (a, b) { return a.name.localeCompare(b.name, "he"); }); }, function (e) { exMusicP = null; throw e; });
+    /* songs of the catalog that no exercise lists (they were only ever on a collection): one more group at the end, so that no song is out of reach */
+    function loose(o) {
+      var seen = {}; o.forEach(function (g) { g.songs.forEach(function (m) { seen[m.id] = 1; }); });
+      var rest = [];
+      function lp(off) {
+        return api("/rest/v1/music?in_catalog=eq.true&select=id,name,title,artist,duration_sec,audio_object,in_catalog&order=name,id&limit=" + PAGE + "&offset=" + off).then(function (rows) {
+          rows = rows || []; rows.forEach(function (m) { if (!seen[m.id]) rest.push(m); });
+          return rows.length === PAGE ? lp(off + PAGE) : rest;
+        });
+      }
+      return lp(0).then(function (r) { if (r.length) o.push({ id: "_loose", name: "שירים ללא תרגיל", songs: r, seen: {} }); return o; }, function () { return o; });
+    }
+    exMusicP = page(0).then(function (o) { return loose(o.sort(function (a, b) { return a.name.localeCompare(b.name, "he"); })); }, function (e) { exMusicP = null; throw e; });
     return exMusicP;
   }
   /* the music chooser: one search over this exercise's songs, the exercises, and the songs inside them; each other exercise opens like an accordion onto its songs */
