@@ -739,3 +739,29 @@ begin
 end $$;
 revoke all on function biodanza.add_upload(text, text, bigint, text, text, uuid) from public, anon;
 grant execute on function biodanza.add_upload(text, text, bigint, text, text, uuid) to authenticated;
+
+-- ---------- the catalog is cut loose from the vivencias (2026-11-19, owner's law) ----------
+-- An item keeps its own copy of name, poetics and guidance (the app writes it when the exercise is placed). A catalog change or deletion never reaches a vivencia,
+-- and a catalog song or file a vivencia uses can not be deleted.
+-- deleting a catalog exercise leaves the item (with its own text) instead of being blocked
+alter table biodanza.vivencia_items drop constraint vivencia_items_exercise_id_fkey;
+alter table biodanza.vivencia_items add constraint vivencia_items_exercise_id_fkey foreign key (exercise_id) references biodanza.exercises(id) on delete set null;
+-- a catalog song or file that a vivencia uses can not be deleted from the catalog side
+create or replace function biodanza.music_in_use_guard() returns trigger language plpgsql as $f$
+begin
+  if old.vivencia_id is null and exists (select 1 from biodanza.vivencia_items where music_id = old.id) then
+    raise exception 'song is used by a vivencia' using errcode = 'P0001';
+  end if;
+  return old;
+end $f$;
+drop trigger if exists music_in_use_guard on biodanza.music;
+create trigger music_in_use_guard before delete on biodanza.music for each row execute function biodanza.music_in_use_guard();
+create or replace function biodanza.file_in_use_guard() returns trigger language plpgsql as $f$
+begin
+  if exists (select 1 from biodanza.music m join biodanza.vivencia_items vi on vi.music_id = m.id where m.audio_object = old.object) then
+    raise exception 'file is used by a vivencia' using errcode = 'P0001';
+  end if;
+  return old;
+end $f$;
+drop trigger if exists file_in_use_guard on biodanza.music_files;
+create trigger file_in_use_guard before delete on biodanza.music_files for each row execute function biodanza.file_in_use_guard();
