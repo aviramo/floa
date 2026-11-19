@@ -48,8 +48,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
   }
   /* every song that matches the search (not only the rows drawn), one per line: name, performer, length, code, file */
   function copyAll() {
-    var b = document.getElementById("cp"), txt = found().hit.map(function (m) { return [m.title || m.name, m.artist, mmss(m.duration_sec), m.collection, m.audio_object ? "יש קובץ" : "ללא קובץ"].join("	"); }).join("
-");
+    var b = document.getElementById("cp"), txt = found().hit.map(function (m) { return [m.title || m.name, m.artist, mmss(m.duration_sec), m.collection, m.audio_object ? "יש קובץ" : "ללא קובץ"].join(String.fromCharCode(9)); }).join(String.fromCharCode(10));
     function done(ok) { b.textContent = ok ? "הועתק" : "ההעתקה נחסמה, אפשר לסמן ולהעתיק ידנית"; setTimeout(function () { b.textContent = "העתקת הרשימה המוצגת"; }, 2000); }
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(function () { done(true); }, function () { done(false); }); else done(false);
   }
