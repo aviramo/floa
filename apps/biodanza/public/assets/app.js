@@ -1864,6 +1864,8 @@
           var k = cb.dataset.cat, nowOn = cb.getAttribute("aria-expanded") !== "true"; open[k] = nowOn; cb.setAttribute("aria-expanded", String(nowOn));
           var chev = cb.lastElementChild; if (chev) chev.style.transform = nowOn ? "rotate(180deg)" : "";
           var acc = l.querySelector('[data-accb="' + (window.CSS && CSS.escape ? CSS.escape(k) : k) + '"]');
+          var hrow = cb.closest(".rrow"); if (hrow) hrow.style.borderBottomColor = nowOn ? "transparent" : "var(--line)";   /* no line between an open header and its cards: the line is under the cards */
+          if (acc) acc.style.borderBottomColor = nowOn ? "var(--line)" : "transparent";
           if (acc) { if (nowOn && !acc.firstChild.firstChild) acc.firstChild.innerHTML = catCards(k); requestAnimationFrame(function () { acc.style.gridTemplateRows = nowOn ? "1fr" : "0fr"; }); }
           return;
         }
@@ -1891,8 +1893,8 @@
         catBy = by;
         l.innerHTML = cats.length ? cats.map(function (k) {
           var on = open[k] != null ? open[k] : !!q;   /* a search opens the categories that have something in it */
-          var head = '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-1);min-height:0"><button type="button" class="rrow__main" data-cat="' + esc(k) + '" aria-expanded="' + on + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit;display:flex;align-items:center;gap:var(--sp-2)"><span style="flex:1 1 auto;min-width:0"><span class="rrow__title" style="font-weight:var(--fw-black)">' + esc(catName(k) || "ללא קטגוריה") + '</span></span><span style="flex:none;width:20px;height:20px;transition:transform .25s var(--ease);' + (on ? 'transform:rotate(180deg)' : '') + '">' + I.down + '</span></button></div>';
-          return head + '<div data-accb="' + esc(k) + '" style="display:grid;grid-template-rows:' + (on ? '1fr' : '0fr') + ';transition:grid-template-rows .25s var(--ease)"><div style="overflow:hidden;min-height:0">' + (on ? catCards(k) : '') + '</div></div>';
+          var head = '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-1);min-height:0;border-bottom-color:' + (on ? "transparent" : "var(--line)") + '"><button type="button" class="rrow__main" data-cat="' + esc(k) + '" aria-expanded="' + on + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit;display:flex;align-items:center;gap:var(--sp-2)"><span style="flex:1 1 auto;min-width:0"><span class="rrow__title" style="font-weight:var(--fw-black)">' + esc(catName(k) || "ללא קטגוריה") + '</span></span><span style="flex:none;width:20px;height:20px;transition:transform .25s var(--ease);' + (on ? 'transform:rotate(180deg)' : '') + '">' + I.down + '</span></button></div>';
+          return head + '<div data-accb="' + esc(k) + '" style="border-bottom:1px solid ' + (on ? "var(--line)" : "transparent") + ';display:grid;grid-template-rows:' + (on ? '1fr' : '0fr') + ';transition:grid-template-rows .25s var(--ease)"><div style="overflow:hidden;min-height:0">' + (on ? catCards(k) : '') + '</div></div>';
         }).join("") : ph("לא נמצא תרגיל", "");
         /* a typed search also finds songs (any exercise's); choosing one adds an exercise with no name and that song */
         if (q && !swapIt) {
@@ -1905,8 +1907,8 @@
             if (!songs.length) { box.remove(); return; }
             var shown = songs.slice(0, 60);
             var on0 = open.__songs != null ? open.__songs : true;
-            box.innerHTML = '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-1);min-height:0"><button type="button" class="rrow__main" data-songs aria-expanded="' + on0 + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit;display:flex;align-items:center;gap:var(--sp-2)"><span style="flex:1 1 auto;min-width:0"><span class="rrow__title" style="font-weight:var(--fw-black)">מוזיקות</span></span><span style="flex:none;width:20px;height:20px;transition:transform .25s var(--ease);' + (on0 ? 'transform:rotate(180deg)' : '') + '">' + I.down + '</span></button></div>' +
-              '<div data-songsb style="display:grid;grid-template-rows:' + (on0 ? '1fr' : '0fr') + ';transition:grid-template-rows .25s var(--ease)"><div style="overflow:hidden;min-height:0"><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);padding:var(--gutter)">' + shown.map(function (m) {
+            box.innerHTML = '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-1);min-height:0;border-bottom-color:' + (on0 ? "transparent" : "var(--line)") + '"><button type="button" class="rrow__main" data-songs aria-expanded="' + on0 + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit;display:flex;align-items:center;gap:var(--sp-2)"><span style="flex:1 1 auto;min-width:0"><span class="rrow__title" style="font-weight:var(--fw-black)">מוזיקות</span></span><span style="flex:none;width:20px;height:20px;transition:transform .25s var(--ease);' + (on0 ? 'transform:rotate(180deg)' : '') + '">' + I.down + '</span></button></div>' +
+              '<div data-songsb style="border-bottom:1px solid ' + (on0 ? "var(--line)" : "transparent") + ';display:grid;grid-template-rows:' + (on0 ? '1fr' : '0fr') + ';transition:grid-template-rows .25s var(--ease)"><div style="overflow:hidden;min-height:0"><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);padding:var(--gutter)">' + shown.map(function (m) {
                 return cardUi({ attrs: 'data-sgc="' + esc(m.id) + '"', ltr: true, title: songName(m), sub: songBy(m), pill: cardPill(m), time: clkSpan(m), chip: '<button type="button" class="rchip rchip--s" data-sg="' + esc(m.id) + '" style="cursor:pointer;border:0">הוספה</button>' });
               }).join("") + '</div></div></div>';
             box.addEventListener("click", function (ev) {
@@ -1914,7 +1916,8 @@
               if (sb) {
                 var nowS = sb.getAttribute("aria-expanded") !== "true"; open.__songs = nowS; sb.setAttribute("aria-expanded", String(nowS));
                 if (sb.lastElementChild) sb.lastElementChild.style.transform = nowS ? "rotate(180deg)" : "";
-                var bodyS = box.querySelector("[data-songsb]"); if (bodyS) bodyS.style.gridTemplateRows = nowS ? "1fr" : "0fr";
+                var bodyS = box.querySelector("[data-songsb]"); if (bodyS) { bodyS.style.gridTemplateRows = nowS ? "1fr" : "0fr"; bodyS.style.borderBottomColor = nowS ? "var(--line)" : "transparent"; }
+                var hs = sb.closest(".rrow"); if (hs) hs.style.borderBottomColor = nowS ? "transparent" : "var(--line)";
                 return;
               }
               if (ev.target.closest("[data-audio], a")) return;
