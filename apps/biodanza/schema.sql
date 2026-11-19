@@ -846,3 +846,35 @@ grant select, insert, update, delete on biodanza.item_likes to authenticated, se
 create or replace function biodanza.item_no_catalog_link() returns trigger language plpgsql as $f$ begin new.exercise_id := null; return new; end $f$;
 drop trigger if exists item_no_catalog_link on biodanza.vivencia_items;
 create trigger item_no_catalog_link before insert or update of exercise_id on biodanza.vivencia_items for each row execute function biodanza.item_no_catalog_link();
+
+-- a side table to look at the 2014 catalog beside the catalog: nothing here is read by the app, and nothing in the catalog is touched
+create table if not exists biodanza.c14_exercises (
+  id uuid primary key, title_en text, title_he text, category text, raw_sources jsonb
+);
+create table if not exists biodanza.c14_music (
+  c14_id uuid not null references biodanza.c14_exercises(id) on delete cascade, music_id uuid not null, phase_hint text, note text,
+  primary key (c14_id, music_id)
+);
+create table if not exists biodanza.c14_matches (
+  c14_id uuid not null references biodanza.c14_exercises(id) on delete cascade, rank smallint not null, exercise_id uuid not null,
+  strength text not null, title_score numeric, shared_music int, jaccard numeric, primary key (c14_id, rank)
+);
+alter table biodanza.c14_exercises enable row level security; alter table biodanza.c14_music enable row level security; alter table biodanza.c14_matches enable row level security;
+revoke all on biodanza.c14_exercises, biodanza.c14_music, biodanza.c14_matches from anon, authenticated;
+grant all on biodanza.c14_exercises, biodanza.c14_music, biodanza.c14_matches to service_role;
+-- the admin page's one question: every 2014 exercise with its songs and the catalog exercises it was matched to (read only, admins only)
+create or replace function biodanza.c14_list() returns jsonb
+language plpgsql stable security definer set search_path = biodanza, public as $f$
+begin
+  if not biodanza.is_admin() then raise exception 'admins only'; end if;
+  return coalesce((select jsonb_agg(x order by x->>'title_en') from (
+    select jsonb_build_object(
+      'id', c.id, 'title_en', c.title_en, 'title_he', c.title_he, 'category', c.category,
+      'music', coalesce((select jsonb_agg(jsonb_build_object('id', m.id, 'name', m.name, 'object', m.audio_object) order by m.name)
+                         from biodanza.c14_music cm join biodanza.music m on m.id = cm.music_id where cm.c14_id = c.id), '[]'::jsonb),
+      'matches', coalesce((select jsonb_agg(jsonb_build_object('id', e.id, 'title_en', e.title_en, 'title_he', e.title_he, 'strength', k.strength, 'title', k.title_score, 'shared', k.shared_music, 'jaccard', k.jaccard) order by k.rank)
+                           from biodanza.c14_matches k join biodanza.exercises e on e.id = k.exercise_id where k.c14_id = c.id), '[]'::jsonb)
+    ) x from biodanza.c14_exercises c) s), '[]'::jsonb);
+end $f$;
+revoke all on function biodanza.c14_list() from public, anon;
+grant execute on function biodanza.c14_list() to authenticated, service_role;

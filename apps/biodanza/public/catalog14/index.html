@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>ביודנסה: קטלוג 2014</title>
+<script>document.write('<base href="' + (/^(localhost|127[.])/.test(location.hostname) ? '/biodanza/catalog14/' : '/catalog14/') + '">');</script>
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/kit.css">
+<style>
+/* The page is the window's height and never scrolls: the header, the search and the filter stay, only the list scrolls (kit elements only, tokens only). */
+html, body { height: 100%; }
+body { margin: 0; display: flex; flex-direction: column; height: 100dvh; background: var(--bg); color: var(--text); font: var(--fw-regular) var(--fs-m)/var(--lh-body) var(--font); }
+#app { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; width: 100%; }
+#app > .rlist { flex: 1 1 auto; }
+#out, #out * { user-select: text; -webkit-user-select: text; }
+.pad { padding: var(--gutter); display: flex; flex-direction: column; gap: var(--gap-field); }
+#out { display: grid; grid-template-columns: repeat(auto-fill, minmax(24rem, 1fr)); gap: var(--sp-1); padding: 0 var(--gutter) var(--gutter); align-content: start; align-items: stretch; }
+#out > .rempty, #out > .rhint, #out > .rskel { grid-column: 1 / -1; }
+#out > .rcard { background: var(--on-primary); margin: 0; min-width: 0; display: flex; flex-direction: column; gap: var(--sp-1); }
+#out > * { flex-shrink: 0; }
+.c__t, .c__s { direction: ltr; text-align: left; overflow-wrap: anywhere; }
+.c__t { font: var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font); }
+.c__s { color: var(--text-2); font: var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font); }
+.c__h { font: var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font); }
+.c__m { color: var(--text-2); font: var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font); direction: ltr; text-align: left; overflow-wrap: anywhere; }
+.c__match { border-top: 1px solid var(--line); padding-top: var(--sp-1); display: flex; flex-direction: column; gap: 2px; }
+.c__lbl { color: var(--text-2); font: var(--fw-medium) var(--fs-xs)/1 var(--font); }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="/supabase.js"></script>
+<script src="/auth.js"></script>
+<script>
+(function () {
+  "use strict";
+  var app = document.getElementById("app");
+  var HOME = /^(localhost|127[.])/.test(location.hostname) ? "/biodanza/" : "/";
+  var rows = [], timer = 0;
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function fold(t) { return String(t == null ? "" : t).normalize("NFD").replace(new RegExp("[" + String.fromCharCode(0x300) + "-" + String.fromCharCode(0x36f) + String.fromCharCode(0x591) + "-" + String.fromCharCode(0x5c7) + "]", "g"), "").toLowerCase(); }
+  /* a smart search: finds what is NEAR the words, not only what contains them. Every typed word must match some word of the text, by the
+     best of: the same word, a word that starts with it, a word that holds it, or a word one or two letters off (a slip, a missing or an
+     extra letter, two letters swapped; also for the start of a longer word). fzs() gives a score (0 = no match, more = nearer) so a list can
+     put the nearest first; fz() is the yes or no. */
+  var fzCache = {};
+  function fzTok(h) { return fzCache[h] || (fzCache[h] = h.split(/[^0-9a-z֐-׿]+/).filter(Boolean)); }
+  function fzDist(a, b, max) {
+    var n = a.length, m = b.length; if (Math.abs(n - m) > max) return max + 1;
+    var p2 = null, p1 = [], i, j;
+    for (j = 0; j <= m; j++) p1[j] = j;
+    for (i = 1; i <= n; i++) {
+      var c = [i], lo = i;
+      for (j = 1; j <= m; j++) {
+        var v = Math.min(p1[j] + 1, c[j - 1] + 1, p1[j - 1] + (a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1));
+        if (p2 && i > 1 && j > 1 && a.charAt(i - 1) === b.charAt(j - 2) && a.charAt(i - 2) === b.charAt(j - 1)) v = Math.min(v, p2[j - 2] + 1);
+        c[j] = v; if (v < lo) lo = v;
+      }
+      if (lo > max) return max + 1;
+      p2 = p1; p1 = c;
+    }
+    return p1[m];
+  }
+  function fzWord(h, toks, w) {
+    var best = 0, i, t, d, mx = w.length <= 2 ? 0 : w.length <= 4 ? 1 : 2;
+    for (i = 0; i < toks.length; i++) {
+      t = toks[i];
+      if (t === w) return 10;
+      if (t.indexOf(w) === 0) best = Math.max(best, 8);
+      else if (mx && t.length >= w.length) { d = fzDist(w, t.slice(0, w.length), mx); if (d <= mx) best = Math.max(best, 6 - d * 1.5); }
+      if (mx && best < 6) { d = fzDist(w, t, mx); if (d <= mx) best = Math.max(best, 7 - d * 1.5); }
+    }
+    if (!best && h.indexOf(w) >= 0) best = 5;
+    return best;
+  }
+  function fzs(text, q) {
+    var h = fold(text), words = fold(q).split(/\s+/).filter(Boolean), toks = fzTok(h), sum = 0, k, s;
+    if (!words.length) return 1;
+    for (k = 0; k < words.length; k++) { s = fzWord(h, toks, words[k]); if (!s) return 0; sum += s; }
+    return sum / words.length;
+  }
+  function fz(text, q) { return fzs(text, q) > 0; }
+  function nearest(list, text, q) {   /* the matches of a search, nearest first (a plain order when nothing is typed) */
+    if (!fold(q).trim()) return list;
+    return list.map(function (x, i) { return { x: x, s: fzs(text(x), q), i: i }; }).filter(function (o) { return o.s > 0; })
+      .sort(function (a, b) { return b.s - a.s || a.i - b.i; }).map(function (o) { return o.x; });
+  }
+  var STR = { exact: "זהה", strong: "חזקה", possible: "אפשרית" };
+  function msg(title, text, btn) {
+    app.innerHTML = '<div class="rempty" style="margin-block:auto"><b>' + esc(title) + '</b><span>' + esc(text) + '</span>' + (btn || "") + '</div>';
+  }
+  function shell() {
+    app.innerHTML = '<header class="rhead"><a class="rbtn rbtn--icon rbtn--edge-start" href="' + HOME + '" aria-label="חזרה לאפליקציה" title="חזרה לאפליקציה" style="text-decoration:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></a><div class="rhead__text"><h1 class="rhead__title">קטלוג 2014 מול הקטלוג</h1></div></header>' +
+      '<div class="pad" style="flex-direction:row;align-items:flex-end;padding-bottom:0"><label class="rfield" style="flex:1 1 auto"><span id="cnt">חיפוש תרגיל</span><input id="q" type="search" placeholder=" " autocomplete="off"></label>' +
+      '<label class="rfield" style="flex:0 0 12rem"><span>הצגה</span><select id="f"><option value="all">הכול</option><option value="match">יש התאמה</option><option value="good">התאמה זהה או חזקה</option><option value="possible">התאמה אפשרית</option><option value="none">אין התאמה</option><option value="music">יש שירים</option></select></label></div>' +
+      '<div class="rlist" id="out"></div>';
+    app.querySelector("#q").addEventListener("input", function () { clearTimeout(timer); timer = setTimeout(draw, 200); });
+    app.querySelector("#f").addEventListener("change", draw);
+  }
+  function best(r) { var m = r.matches[0]; return m && m.strength !== "candidate" && m.strength !== "none" ? m : null; }
+  function pass(r, f) {
+    var b = best(r);
+    return f === "all" || (f === "match" && b) || (f === "good" && b && (b.strength === "exact" || b.strength === "strong")) || (f === "possible" && b && b.strength === "possible") || (f === "none" && !b) || (f === "music" && r.music.length);
+  }
+  function card(r) {
+    var b = best(r), h = '<div class="rcard"><div><div class="c__t">' + esc(r.title_en) + '</div><div class="c__h">' + esc(r.title_he) + '</div>' + (r.category && r.category !== "unclassified" ? '<div class="c__s">' + esc(r.category) + '</div>' : '') + '</div>';
+    h += '<div class="c__m">' + (r.music.length ? r.music.slice(0, 4).map(function (m) { return esc(m.name); }).join("<br>") + (r.music.length > 4 ? '<br>+' + (r.music.length - 4) : '') : 'אין שירים משויכים') + '</div>';
+    h += '<div class="c__match">';
+    if (b) {
+      h += '<span class="c__lbl">התאמה ' + STR[b.strength] + (b.shared ? ' · ' + b.shared + ' שירים משותפים' : '') + '</span><span class="c__h">' + esc(b.title_he) + '</span><span class="c__s">' + esc(b.title_en) + '</span>';
+      r.matches.slice(1).filter(function (m) { return m.strength === "candidate"; }).forEach(function (m) { h += '<span class="c__s" style="margin-top:4px">' + esc(m.title_he) + ' · ' + esc(m.title_en) + '</span>'; });
+    } else {
+      h += '<span class="c__lbl">אין התאמה</span>';
+      if (r.matches[0]) h += '<span class="c__s">הקרוב ביותר: ' + esc(r.matches[0].title_he) + ' · ' + esc(r.matches[0].title_en) + '</span>';
+    }
+    return h + '</div></div>';
+  }
+  function draw() {
+    var out = document.getElementById("out"), q = document.getElementById("q").value.trim(), f = document.getElementById("f").value;
+    var list = nearest(rows.filter(function (r) { return pass(r, f); }), function (r) { return r.f; }, q);
+    document.getElementById("cnt").textContent = "חיפוש תרגיל · " + list.length + " מתוך " + rows.length;
+    out.innerHTML = list.length ? list.map(card).join("") : '<div class="rempty"><b>לא נמצא</b></div>';
+  }
+  function start() {
+    if (!window.FLOA_AUTH || !FLOA_AUTH.signedIn()) return msg("קטלוג 2014", "צריך להיכנס קודם דרך האפליקציה.", '<a class="rbtn" href="' + HOME + '">לאפליקציה</a>');
+    FLOA_AUTH.api("/rest/v1/rpc/me", { method: "POST", json: {} }).then(function (me) {
+      if (!me || !me.admin) return msg("קטלוג 2014", "הדף הזה למנהלים בלבד.");
+      shell();
+      document.getElementById("out").innerHTML = '<div class="rskel rskel--title"></div>';
+      return FLOA_AUTH.api("/rest/v1/rpc/c14_list", { method: "POST", json: {} }).then(function (r) {
+        rows = (r || []).map(function (x) { x.f = fold([x.title_en, x.title_he, x.category, x.music.map(function (m) { return m.name; }).join(" ")].join(" ")); return x; });
+        draw();
+      });
+    }).catch(function () { msg("קטלוג 2014", "לא הצלחנו לטעון. נסו שוב."); });
+  }
+  start();
+})();
+</script>
+</body>
+</html>

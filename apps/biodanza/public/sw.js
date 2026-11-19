@@ -79,7 +79,7 @@ self.addEventListener("fetch", function (event) {
   }
   if (!url.pathname.startsWith(new URL(SCOPE).pathname) && !/^\/(kit\.css|sheet\.js|auth\.js|supabase\.js|favicon\.(ico|png|svg)|apple-touch-icon\.png)$/.test(url.pathname)) return;
 
-  if (url.pathname.indexOf(new URL(SCOPE).pathname + "music") === 0) return;   /* the songs page is its own page: never the app shell, never kept as it */
+  if (/^(music|catalog14)(\/|$)/.test(url.pathname.slice(new URL(SCOPE).pathname.length))) return;   /* the songs page is its own page: never the app shell, never kept as it */
 
   if (req.mode === "navigate") {   /* any address of the app is the same page: the app reads the address itself */
     event.respondWith(withTimeout(fetch(req), 6000).then(function (r) {
