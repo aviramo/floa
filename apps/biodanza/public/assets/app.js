@@ -791,9 +791,23 @@
     if (wire) wire(t); }
   var catPanel = null, catLayer = null, catPreview = false;
   (function () { var st = document.createElement("style"); st.textContent = "#catLayer { position: fixed; z-index: 20; transform: translateX(100%); transition: transform .25s var(--ease); display: flex; flex-direction: column; min-height: 0 } #catLayer[hidden] { display: none } #catLayer.is-open { transform: none } #catLayer > .bio-banner { position: absolute; inset-block: 0; inset-inline-start: auto; left: -44px; width: 44px; height: 100% } #catLayer > .catbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; box-shadow: -1px 0 0 var(--line) } #catLayer > .catbody > .rlist { flex: 1 1 auto; min-height: 0 } @media (prefers-reduced-motion: reduce) { #catLayer { transition: none } }"; document.head.appendChild(st); })();
+  var catPrev = null, catPrevId = null;
+  function placeCatPrev() { if (!catPrev) return; var r = pd.getBoundingClientRect(); catPrev.style.top = r.top + "px"; catPrev.style.height = r.height + "px"; catPrev.style.left = r.left + "px"; catPrev.style.width = r.width + "px"; }
+  function ensureCatPrev() {
+    if (catPrev) return;
+    var d = document.createElement("div"); d.id = "catPrev"; d.style.background = getComputedStyle(document.body).backgroundColor;
+    document.body.appendChild(d); catPrev = d; placeCatPrev();
+  }
+  function closeCatPrev() {   /* it slides back in under the catalog's layer */
+    if (!catPrev) return;
+    catPrev.classList.remove("is-open"); catPrevId = null; catPreview = false;
+    if (catLayer) catLayer.querySelectorAll(".bio-card[aria-current]").forEach(function (c) { c.removeAttribute("aria-current"); });
+  }
+  (function () { var st = document.createElement("style"); st.textContent = "#catPrev { position: fixed; z-index: 19; display: flex; flex-direction: column; min-height: 0; overflow: hidden; visibility: hidden; transform: translateX(100%); transition: transform .25s var(--ease), visibility 0s linear .25s } #catPrev.is-open { visibility: visible; transform: none; transition: transform .25s var(--ease), visibility 0s } #catPrev > .rlist { flex: 1 1 auto; min-height: 0 } @media (prefers-reduced-motion: reduce) { #catPrev { transition: none } }"; document.head.appendChild(st); })();
   function placeCatLayer() {   /* over the right column, beside the divider; the banner is the 44px at its left edge */
     if (!catLayer) return; var r = pl.getBoundingClientRect();
     catLayer.style.top = r.top + "px"; catLayer.style.height = r.height + "px"; catLayer.style.left = r.left + "px"; catLayer.style.width = r.width + "px";
+    placeCatPrev();
   }
   function ensureCatLayer() {   /* built once, closed, waiting off the right edge of the screen: only its banner shows */
     if (catLayer) return;
@@ -814,8 +828,8 @@
     if (catPanel || !catLayer || catLayer.hidden) return;
     placeCatLayer(); catLayer.classList.add("is-open"); catLayer.querySelector(".catbody").removeAttribute("inert");
     document.querySelectorAll("[data-catopen]").forEach(function (b) { b.setAttribute("aria-pressed", "true"); });
-    catPanel = catLayer; state.pickerShow = true; catPreview = !!pd.querySelector('[data-act="doswap"]');   /* what is on the left right now: only a catalog exercise (it has the add button) stays lit; anything else goes behind the half dark backdrop, as behind every popup */
-    if (!catPreview) pd.classList.add("bio-dim");   /* an exercise of the catalog that is on the left stays lit when the layer comes back */
+    catPanel = catLayer; state.pickerShow = true; catPreview = !!(catPrev && catPrev.classList.contains("is-open"));   /* what is on the left right now: only a catalog exercise (it has the add button) stays lit; anything else goes behind the half dark backdrop, as behind every popup */
+    pd.classList.add("bio-dim");   /* the left goes behind the half dark backdrop, as behind every popup */
   }
   document.addEventListener("click", function (ev) { var ab = ev.target.closest && ev.target.closest("[data-addex]"); if (ab) {   /* the plus beside the exercises' title: an empty exercise at the end of the numbered ones, opened to be filled in */
       if (!state.viv || !state.items || ab.disabled) return; ab.disabled = true;
@@ -2390,16 +2404,21 @@
     return api("/rest/v1/exercise_music?exercise_id=eq." + exId + "&select=music_id&limit=1");
   }
   function previewEx(e, swapIt) {
+    var useLayer = !!(catPanel && wide() && !swapIt);
+    if (useLayer && catPrevId === e.id && catPrev && catPrev.classList.contains("is-open")) { previewTok++; closeCatPrev(); return; }   /* a second tap on the chosen one: it closes, with its animation */
     var tok = ++previewTok;
     loadPreview(e.id).then(function (res) { var rows = res.rows, songs = res.songs;
       if (tok !== previewTok) return;   /* a later row was chosen meanwhile */
       var fake = itemFake(e, rows, songs);
       var word = swapIt ? "החלפה בתרגיל הזה" : state.viv ? (state.viv.title || "הוויוונסיה") : "";   /* adding: a plus with the vivencia's name; with no vivencia open the catalog is only looked at */
       /* the same page as the exercise of a vivencia, only read: its header, its song cards, its texts; the action is the green button in the header, where the delete is in the vivencia */
-      show(itemHead(false, false, "", e.id, name(e), true, word, undefined, undefined, !swapIt) + itemPageHtml(fake, true), function (r) {
+      var phtml = itemHead(false, false, "", e.id, name(e), true, word, undefined, undefined, !swapIt) + itemPageHtml(fake, true);
+      var pwire = function (r) {
         wireRoMusic(r, fake); sbSync(r); catPreview = true;
         on(r, "doswap", function () { if (swapIt) confirmSwap(e, swapIt, undefined, fake.music_id, fake.sel); else addEx(e, undefined, undefined, fake.music_id, fake.sel); });
-      }, "d");
+      };
+      if (useLayer && catPanel) { ensureCatPrev(); placeCatPrev(); catPrev.innerHTML = phtml; pwire(catPrev); catPrevId = e.id; requestAnimationFrame(function () { catPrev.classList.add("is-open"); }); }
+      else show(phtml, pwire, "d");
     }, fail);
   }
   /* replacing is asked in the kit's popup, one action: closing it is the cancel */
@@ -2457,7 +2476,7 @@
       var m = r[0], d = r[1];
       return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=representation", json: { vivencia_id: state.viv.id, position: pos, backlog: true, exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, title: d.title || null, poetics: d.poetics || null, guidance: d.guidance || null } }).then(function (made) { newId = made && made[0] ? made[0].id : null; return newId ? optionsFor(newId, all) : null; });   /* the songs that were marked come with the exercise, the first as its own; none marked, none comes */
     }).then(function () { toast("התרגיל נוסף"); if (sheet) { closeSheets(); return loadItems().then(openNew, fail); }
-      if (catPreview || catPanel) { closeCatPanel(true); return loadItems().then(openNew, fail); }
+      if (catPreview || catPanel || catPrevId) { closeCatPrev(); closeCatPanel(true); return loadItems().then(openNew, fail); }
       if (wide()) show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); else stack().pop(); back(); }, fail);
   }
 
