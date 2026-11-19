@@ -17,6 +17,15 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
 #app > .rlist { flex: 1 1 auto; }
 #out, #out * { user-select: text; -webkit-user-select: text; }   /* the text can be selected and copied */
 .pad { padding: var(--gutter); display: flex; flex-direction: column; gap: var(--gap-field); }
+/* the song's bar, as in the app: a thin track filled up to the place, a round thumb, red on hover */
+.bio-bar input { -webkit-appearance: none; appearance: none; background: transparent; height: 20px; margin: 0; cursor: pointer; --p: 0%; --c: var(--primary); touch-action: none }
+.bio-bar input:hover { --c: var(--danger) }
+.bio-bar input::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--c) var(--p), var(--surface-2) var(--p)) }
+.bio-bar input::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border: 0; border-radius: 50%; background: var(--c) }
+.bio-bar input::-moz-range-track { height: 4px; border-radius: 2px; background: var(--surface-2) }
+.bio-bar input::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--c) }
+.bio-bar input::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: var(--c) }
+.bio-bar input:focus, .bio-bar input:focus-visible { outline: none }
 </style>
 </head>
 <body>
@@ -76,11 +85,12 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
   /* the bar of a song: a drag puts it at that place (it is loaded if it is not yet), and the bar of the song that plays follows it */
   document.addEventListener("input", function (e) {
     var bar = e.target.closest && e.target.closest(".bio-bar"); if (!bar || !window.BioAudio) return;
+    e.target.style.setProperty("--p", e.target.value / 10 + "%");
     BioAudio.seekTo(bar.dataset.for, e.target.value / 1000);
   });
   document.addEventListener("bioaudio", function (ev) {
     var d = ev.detail || {}; if (!d.name || !(d.d > 0)) return;
-    document.querySelectorAll('.bio-bar[data-for="' + d.name + '"] input').forEach(function (r) { if (document.activeElement !== r) r.value = Math.round(d.t / d.d * 1000); });
+    document.querySelectorAll('.bio-bar[data-for="' + d.name + '"] input').forEach(function (r) { if (document.activeElement !== r) { r.value = Math.round(d.t / d.d * 1000); r.style.setProperty("--p", r.value / 10 + "%"); } });
   });
   function start() {
     if (!window.FLOA_AUTH || !FLOA_AUTH.signedIn()) return msg("ניהול", "צריך להיכנס קודם דרך האפליקציה.", '<a class="rbtn" href="' + HOME + '">לאפליקציה</a>');
