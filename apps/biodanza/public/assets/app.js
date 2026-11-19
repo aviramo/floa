@@ -1255,9 +1255,14 @@
             api("/rest/v1/item_music_options?item_id=eq." + it.id + "&music_id=eq." + mid, { method: "DELETE" }).then(function () { it.item_music_options = (it.item_music_options || []).filter(function (o) { return o.music_id !== mid; }); repaintMus(); }, fail);
             return;
           }
-          var c = ev.target.closest("[data-opt]"); if (!c) return;
-          var m = optList(it).filter(function (x) { return x.id === c.dataset.opt; })[0]; if (!m || m.id === it.music_id) return;
-          setChosen(it, m).then(function () { repaintMus(); if (wide()) paint(); }, fail);
+          var ch = ev.target.closest("[data-choose]");
+          if (ch) {   /* the one that plays in the vivencia */
+            var m = optList(it).filter(function (x) { return x.id === ch.dataset.choose; })[0]; if (!m || m.id === it.music_id) return;
+            setChosen(it, m).then(function () { repaintMus(); if (wide()) paint(); }, fail);
+            return;
+          }
+          var c = ev.target.closest("[data-opt]"); if (!c) return;   /* a tap on the card plays the song, as on the music page */
+          var pb = c.querySelector("[data-audio]"); if (pb) pb.click();
         });
       }
       r.querySelectorAll('[data-act="pickMusic"]').forEach(function (c) { c.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toMusic(); } }); });
@@ -1466,11 +1471,12 @@
       var sel = m.id === cur;
       var tile = songBtn(m, false).replace(/width:var\(--fab\);height:var\(--fab\);min-height:var\(--fab\);/g, "width:46px;height:var(--tag-s);min-height:var(--tag-s);padding:0;border-radius:999px;background:var(--surface-2);");
       var tm = '<span class="bio-time" data-dur="' + (m.duration_sec || "") + '"' + (m.audio_object ? ' data-for="' + esc(m.audio_object) + '"' : '') + ' style="color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + (durOf(m) ? clock(durOf(m)) : '') + '</span>';
+      var pickChip = sel ? '<span class="rchip rchip--s">נבחרה</span>' : '<button type="button" class="rchip rchip--s" data-choose="' + esc(m.id) + '" title="לבחור אותה לתרגיל בוויוונסיה" style="cursor:pointer;border:0">בחירה</button>';
       var rm = sel ? '' : '<button type="button" class="rbtn rbtn--icon" data-orm="' + esc(m.id) + '" aria-label="הסרת האפשרות" title="הסרת האפשרות" style="color:var(--text-3);min-height:var(--tag-s);height:var(--tag-s);width:var(--tag-s);padding:0">' + I.x + '</button>';
       return '<div class="rcard rcard--compact" data-opt="' + esc(m.id) + '" role="button" tabindex="0"' + (sel ? ' aria-current="true"' : '') + ' style="margin:0;min-width:0;display:flex;flex-direction:column;gap:2px;cursor:pointer;background:var(--on-primary)' + (sel ? ';border-color:var(--primary);box-shadow:inset 0 0 0 1px var(--primary)' : '') + '">' +
         '<span style="direction:ltr;text-align:left;overflow-wrap:anywhere;font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(songName(m)) + '</span>' +
         '<span style="direction:ltr;text-align:left;overflow-wrap:anywhere;color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font)">' + (songBy(m) ? esc(songBy(m)) : '&nbsp;') + '</span>' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:var(--gap-tight)">' + tile + rm + tm + '</div></div>';
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:var(--gap-tight)">' + tile + pickChip + rm + tm + '</div></div>';
     }).join("");
     var add = '<div class="rcard rcard--compact" data-addm role="button" tabindex="0" style="margin:0;min-width:0;display:flex;align-items:center;justify-content:center;gap:var(--sp-1);cursor:pointer;min-height:var(--tag-s);border:1px dashed var(--line-strong);background:transparent;box-shadow:none;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>' + (list.length ? "הוספת מוזיקה" : "בחירת מוזיקה") + '</div>';
     return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch">' + cards + add + '</div>';
