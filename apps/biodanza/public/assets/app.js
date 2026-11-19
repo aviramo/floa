@@ -2019,14 +2019,26 @@
   /* narrow screen: choosing the song is a popup from the bottom; "other music" is a second popup on top of it, closing it is back */
   /* the songs an exercise of a vivencia is torn between, oldest first; the chosen one is among them even when it was chosen before the options existed */
   /* similar songs: the songs that sit, in the catalog, in the same exercises as the songs this exercise already has (that is what "similar" means for now).
+     Each song is scored by the number of those exercises it shares with the exercise's songs (and, when equal, by how many of its songs sit there): the nearest first.
      The exercise of a vivencia is a copy and has no link to a catalog exercise: the songs are the only thing that finds its likes. */
   function similarRows(it) {
-    var ids = optList(it).map(function (m) { return m.id; }).filter(Boolean);
+    var own = {}, ids = optList(it).map(function (m) { own[m.id] = 1; return m.id; }).filter(Boolean);
     if (!ids.length) return Promise.resolve([]);
     return api("/rest/v1/exercise_music?music_id=in.(" + ids.join(",") + ")&select=exercise_id&limit=1000").then(function (rows) {
       var ex = {}; (rows || []).forEach(function (x) { ex[x.exercise_id] = 1; });
       var exs = Object.keys(ex); if (!exs.length) return [];
-      return api("/rest/v1/exercise_music?exercise_id=in.(" + exs.join(",") + ")&select=music(id,name,title,artist,duration_sec,audio_object,in_catalog)&limit=2000");
+      return api("/rest/v1/exercise_music?exercise_id=in.(" + exs.join(",") + ")&select=exercise_id,music(id,name,title,artist,duration_sec,audio_object,in_catalog)&limit=3000").then(function (all) {
+        var inEx = {}, sc = {}, order = [];   /* inEx: the songs of the item found in each exercise */
+        (all || []).forEach(function (x) { if (x.music && own[x.music.id]) inEx[x.exercise_id] = (inEx[x.exercise_id] || 0) + 1; });
+        (all || []).forEach(function (x) {
+          if (!x.music) return; var m = x.music.id, o = sc[m];
+          if (!o) { o = sc[m] = { music: x.music, n: 0, w: 0, ex: {} }; order.push(o); }
+          if (!o.ex[x.exercise_id]) { o.ex[x.exercise_id] = 1; o.n++; o.w += inEx[x.exercise_id] || 0; }
+        });
+        order.forEach(function (o, i) { o.i = i; o.own = !!own[o.music.id]; });
+        order.sort(function (a, b) { return (b.own - a.own) || (b.n - a.n) || (b.w - a.w) || (a.i - b.i); });
+        return order.map(function (o) { return { music: o.music }; });
+      });
     });
   }
   function optList(it) {
