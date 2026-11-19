@@ -2499,11 +2499,21 @@
       var word = swapIt ? "החלפה בתרגיל הזה" : "הוספה לוויוונסיה";
       var dlg = document.getElementById("exDlg");
       if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "exDlg"; document.body.appendChild(dlg); }
-      RosterSheet.render(dlg, { title: name(e), from: "bottom", action: { label: word, icon: I.check, id: "exgo" },
+      RosterSheet.render(dlg, { title: name(e), from: "bottom",
         body: bleedCss("exDlg") + '<style>#exDlg .sheet-body { padding-bottom: calc(var(--fab) + var(--gutter) * 2 + var(--inset-b)) } html.rs-lock:not(.kb-open) #exDlg .rfab { opacity: 1; transform: none; pointer-events: auto }</style>' + itemPageHtml(fake, true) });
       bleedSet(dlg);
       wireRoMusic(dlg, fake);
-      dlg.querySelector("#exgo").addEventListener("click", function () { if (swapIt) confirmSwap(e, swapIt, true, fake.music_id, fake.sel); else addEx(e, undefined, true, fake.music_id, fake.sel); });
+      /* the action is a button with its words, as on a computer: a plus and the name of the vivencia (or the word, and a menu of the last three, when none is open); a swap says so */
+      var vname = state.viv ? (state.viv.title || "הוויוונסיה") : "ויוונסיה", ico = (swapIt ? I.swap : I.plus).replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ');
+      var gob = document.createElement("button"); gob.type = "button"; gob.id = "exgo"; gob.className = "rbtn"; gob.setAttribute("aria-label", swapIt ? word : "הוספה לוויוונסיה " + vname);
+      gob.style.cssText = "order:98;flex:none;gap:var(--sp-1);max-width:55%";
+      gob.innerHTML = '<span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m);flex:none">' + ico + '</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(swapIt ? "החלפה" : vname) + '</span>';
+      var shd = dlg.querySelector(".sheet-head"); if (shd) shd.appendChild(gob);
+      gob.addEventListener("click", function () {
+        if (swapIt) confirmSwap(e, swapIt, true, fake.music_id, fake.sel);
+        else if (!state.viv) vivPick(gob, e, fake.music_id, fake.sel);
+        else addEx(e, undefined, true, fake.music_id, fake.sel);
+      });
     }, fail);
   }
   /* the catalog is over a thousand exercises and the server hands out at most a thousand rows at a time: read it page by page */
