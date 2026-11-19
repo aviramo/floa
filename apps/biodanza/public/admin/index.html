@@ -13,11 +13,26 @@
 /* The page is the window's height and never scrolls: the header and the search stay, only the list scrolls (kit elements only, tokens only). */
 html, body { height: 100%; }
 body { margin: 0; display: flex; flex-direction: column; height: 100dvh; background: var(--bg); color: var(--text); font: var(--fw-regular) var(--fs-m)/var(--lh-body) var(--font); }
-#app { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; max-width: 56rem; width: 100%; margin-inline: auto; }
+#app { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; width: 100%; }
 #app > .rlist { flex: 1 1 auto; }
 #out, #out * { user-select: text; -webkit-user-select: text; }   /* the text can be selected and copied */
 .pad { padding: var(--gutter); display: flex; flex-direction: column; gap: var(--gap-field); }
-#out > * { flex-shrink: 0; }   /* the list is a column that scrolls: its rows keep their height (a row with a bar was squeezed to the minimum and the bar cut off) */
+#out { display: grid; grid-template-columns: repeat(auto-fill, minmax(21rem, 1fr)); gap: var(--sp-1); padding: var(--sp-1) var(--gutter) var(--gutter); align-content: start; }
+#out > .rempty, #out > .rhint, #out > .rskel { grid-column: 1 / -1; }
+#out > .rcard { margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.song__t, .song__a { direction: ltr; text-align: right; overflow-wrap: anywhere; }   /* every title is in a Latin script: it reads left to right and sits against the right edge */
+.song__t { font: var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font); }
+.song__a { color: var(--text-2); font: var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font); }
+.song__f { display: flex; align-items: center; justify-content: space-between; margin-top: var(--gap-tight); }   /* the play button on the right, the time on the left */
+#out [data-audio] { background: var(--surface-2); border-color: var(--surface-2); width: 46px; min-height: var(--tag-s); height: var(--tag-s); padding: 0; border-radius: 999px; }   /* the size of the time chip */
+#out [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important; }
+#out > * { flex-shrink: 0; }
+#pl { flex-wrap: nowrap; }
+#pl .rrow__main { flex: 0 1 28rem; direction: ltr; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#pl #pa { color: var(--text-2); font-weight: var(--fw-regular); }
+#pl #pa:not(:empty)::before { content: "· "; }
+#pl .bio-bar { flex: 1 1 8rem; min-width: 0; padding: 0; }
+@media (max-width: 700px) { #pl { flex-wrap: wrap; } #pl .rrow__main { flex: 1 1 100%; order: 4; } #pl .bio-bar { flex: 0 0 100%; order: 3; } }   /* the list is a column that scrolls: its rows keep their height (a row with a bar was squeezed to the minimum and the bar cut off) */
 /* the song's bar, as in the app: a thin track filled up to the place, a round thumb, red on hover */
 .bio-bar input { -webkit-appearance: none; appearance: none; background: transparent; height: 20px; margin: 0; cursor: pointer; --p: 0%; --c: var(--primary); touch-action: none }
 .bio-bar input:hover { --c: var(--danger) }
@@ -49,7 +64,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
   }
   function shell() {
     app.innerHTML = '<header class="rhead"><div class="rhead__text"><h1 class="rhead__title">ניהול</h1><span class="rhead__sub" id="cnt"></span></div></header>' +
-      '<div class="pad" style="padding-bottom:0">' + playerHtml() + '</div><div class="pad"><label class="rfield"><span>חיפוש שיר או מבצע</span><input id="q" type="search" placeholder=" " autocomplete="off"></label><button type="button" class="rbtn rbtn--outline" id="cp">העתקת הרשימה המוצגת</button></div>' +
+      '<div class="pad" style="padding-bottom:0">' + playerHtml() + '</div><div class="pad" style="flex-direction:row;align-items:flex-end"><label class="rfield" style="flex:1 1 auto"><span>חיפוש שיר או מבצע</span><input id="q" type="search" placeholder=" " autocomplete="off"></label><button type="button" class="rbtn rbtn--icon rbtn--outline" id="cp" aria-label="העתקת הרשימה המוצגת" title="העתקת הרשימה המוצגת">' + ICO.copy + '</button></div>' +
       '<div class="rlist" id="out"></div>';
     app.querySelector("#q").addEventListener("input", function () { clearTimeout(timer); timer = setTimeout(draw, 200); });
     app.querySelector("#cp").addEventListener("click", copyAll);
@@ -61,37 +76,45 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
   /* every song that matches the search (not only the rows drawn), one per line: name, performer, length, code, file */
   function copyAll() {
     var b = document.getElementById("cp"), txt = found().hit.map(function (m) { return [m.title || m.name, m.artist, mmss(m.duration_sec), m.audio_object ? "יש קובץ" : "ללא קובץ"].join(String.fromCharCode(9)); }).join(String.fromCharCode(10));
-    function done(ok) { b.textContent = ok ? "הועתק" : "ההעתקה נחסמה, אפשר לסמן ולהעתיק ידנית"; setTimeout(function () { b.textContent = "העתקת הרשימה המוצגת"; }, 2000); }
+    function done(ok) { b.innerHTML = ok ? ICO.done : ICO.copy; b.title = ok ? "הועתק" : "ההעתקה נחסמה, אפשר לסמן ולהעתיק ידנית"; setTimeout(function () { b.innerHTML = ICO.copy; b.title = "העתקת הרשימה המוצגת"; }, 2000); }
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(function () { done(true); }, function () { done(false); }); else done(false);
   }
-  function draw() {
-    var f = found(), words = f.words, hit = f.hit, out = document.getElementById("out");
-    document.getElementById("cnt").textContent = (words.length ? hit.length + " מתוך " : "") + songs.length + " שירים";
-    if (!hit.length) { out.innerHTML = '<div class="rempty"><b>לא נמצא כלום</b><span>נסו מילה אחרת</span></div>'; return; }
-    out.innerHTML = hit.slice(0, MAXROWS).map(function (m) {
-      var has = m.audio_object && window.BioAudio;
-      if (has) BioAudio.info(m.audio_object, m.title || m.name, m.artist);
-      return '<div class="rrow"><div class="rrow__main"><span class="rrow__title">' + esc(m.title || m.name) + '</span>' + (m.artist ? '<span class="rrow__sub">' + esc(m.artist) + '</span>' : '') + '</div>' +
-        (m.duration_sec ? '<span class="rchip rchip--s">' + mmss(m.duration_sec) + '</span>' : '') +
-        '<span class="rchip rchip--s' + (m.audio_object ? ' rchip--ok' : '') + '">' + (m.audio_object ? "יש קובץ" : "ללא קובץ") + '</span>' +
-        (has ? BioAudio.button(m.audio_object, true) : '') + '</div>';
-    }).join("") + (hit.length > MAXROWS ? '<div class="rhint" style="padding:var(--gutter)">מוצגים ' + MAXROWS + ' הראשונים. מצמצמים בחיפוש כדי לראות את השאר.</div>' : '');
+  var CHUNK = 90, hitList = [], shown = 0;
+  function card(m) {
+    var has = m.audio_object && window.BioAudio;
+    if (has) BioAudio.info(m.audio_object, m.title || m.name, m.artist);
+    return '<div class="rcard rcard--flat rcard--compact"><span class="song__t">' + esc(m.title || m.name) + '</span><span class="song__a">' + (m.artist ? esc(m.artist) : '&nbsp;') + '</span>' +
+      '<div class="song__f">' + (has ? '<button type="button" class="rbtn rbtn--icon" data-audio="' + esc(m.audio_object) + '" aria-label="השמעה" title="השמעה"></button>' : '<span class="rchip rchip--s">ללא קובץ</span>') +
+      (m.duration_sec ? '<span class="rchip rchip--s">' + mmss(m.duration_sec) + '</span>' : '<span></span>') + '</div></div>';
   }
-  function load(offset, all) {
-    return FLOA_AUTH.api("/rest/v1/music?select=id,name,title,artist,duration_sec,collection,audio_object&order=name,id&limit=1000&offset=" + offset).then(function (rows) {
-      all = all.concat(rows);
-      return rows.length === 1000 ? load(offset + 1000, all) : all;
+  function more() {   /* the next cards, when the list is scrolled near its end: the page draws a few dozen at a time, never all three thousand */
+    var out = document.getElementById("out"); if (!out || shown >= hitList.length) return;
+    out.insertAdjacentHTML("beforeend", hitList.slice(shown, shown + CHUNK).map(card).join("")); shown = Math.min(hitList.length, shown + CHUNK);
+  }
+  function draw() {
+    var f = found(), words = f.words, out = document.getElementById("out");
+    hitList = f.hit; shown = 0; out.scrollTop = 0;
+    document.getElementById("cnt").textContent = (words.length ? hitList.length + " מתוך " : "") + songs.length + " שירים";
+    if (!hitList.length) { out.innerHTML = '<div class="rempty"><b>לא נמצא כלום</b><span>נסו מילה אחרת</span></div>'; return; }
+    out.innerHTML = ""; more();
+    if (!out.dataset.scr) { out.dataset.scr = "1"; out.addEventListener("scroll", function () { if (out.scrollTop + out.clientHeight > out.scrollHeight - 600) more(); }, { passive: true }); }
+  }
+  function page(n) { return FLOA_AUTH.api("/rest/v1/music?select=id,name,title,artist,duration_sec,collection,audio_object&order=name,id&limit=1000&offset=" + n * 1000); }
+  function load() {   /* three pages at once, and a fourth only if the third was full */
+    return Promise.all([page(0), page(1), page(2)]).then(function (r) {
+      var all = r[0].concat(r[1], r[2]);
+      return r[2].length === 1000 ? page(3).then(function (x) { return all.concat(x); }) : all;
     });
   }
   /* ONE player, fixed above the search: play or pause, a bar to any place in the song, the place and the length in time, the song's name and performer.
      The song's buttons in the rows start it; audio.js tells this page (event "bioaudio") what plays and where it is. */
   var cur = { name: "", t: 0, d: 0, playing: false }, dragging = false;
-  var ICO = { play: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="width:var(--icon-l);height:var(--icon-l)"><path d="M7 4.5v15l13-7.5z"/></svg>', pause: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="width:var(--icon-l);height:var(--icon-l)"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>' };
+  var ICO = { copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:var(--icon-m);height:var(--icon-m)"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>', done: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:var(--icon-m);height:var(--icon-m)"><path d="M5 12.5l4.5 4.5L19 7"/></svg>', play: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="width:var(--icon-l);height:var(--icon-l)"><path d="M7 4.5v15l13-7.5z"/></svg>', pause: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="width:var(--icon-l);height:var(--icon-l)"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>' };
   function playerHtml() {
-    return '<div class="rrow" id="pl" style="flex-wrap:wrap;gap:var(--sp-1) var(--gap-button)"><button type="button" class="rbtn rbtn--icon" id="pp" aria-label="השמעה" disabled>' + ICO.play + '</button>' +
-      '<div class="rrow__main"><span class="rrow__title" id="pt">לא נבחר שיר</span><span class="rrow__sub" id="pa"></span></div>' +
+    return '<div class="rrow" id="pl" style="gap:var(--gap-button)"><button type="button" class="rbtn rbtn--icon" id="pp" aria-label="השמעה" disabled>' + ICO.play + '</button>' +
       '<span class="rchip rchip--s" id="pc" style="direction:ltr;font-variant-numeric:tabular-nums">0:00 / 0:00</span>' +
-      '<div class="bio-bar" style="flex:0 0 100%;padding-top:var(--sp-1)"><input type="range" id="pb" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר" disabled style="display:block;width:100%;margin:0;direction:ltr;accent-color:var(--primary)"></div></div>';
+      '<div class="bio-bar"><input type="range" id="pb" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר" disabled style="display:block;width:100%;margin:0;direction:ltr;accent-color:var(--primary)"></div>' +
+      '<div class="rrow__main" id="pn"><b id="pt">לא נבחר שיר</b> <span id="pa"></span></div></div>';
   }
   function paintPlayer() {
     var pp = document.getElementById("pp"), pb = document.getElementById("pb"); if (!pp) return;
@@ -114,11 +137,13 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
   });
   function start() {
     if (!window.FLOA_AUTH || !FLOA_AUTH.signedIn()) return msg("ניהול", "צריך להיכנס קודם דרך האפליקציה.", '<a class="rbtn" href="' + HOME + '">לאפליקציה</a>');
+    var songsAsk = load();   /* started now, not after the permission answer: the two travel together */
+    songsAsk.catch(function () { /* handled below */ });
     FLOA_AUTH.api("/rest/v1/rpc/me", { method: "POST", json: {} }).then(function (me) {
       if (!me || !me.admin) return msg("ניהול", "הדף הזה למנהלים בלבד.");
       shell();
       document.getElementById("out").innerHTML = '<div class="rskel rskel--title"></div>';
-      return load(0, []).then(function (rows) {
+      return songsAsk.then(function (rows) {
         songs = rows.map(function (m) { m.f = fold([m.name, m.title, m.artist, m.collection].join(" ")); return m; });
         byObj = {}; songs.forEach(function (m) { if (m.audio_object) byObj[m.audio_object] = m; });
         draw();
