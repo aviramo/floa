@@ -990,7 +990,7 @@
     if (state.offline) items.length = 0;   /* with no internet nothing changes: only the copy on the device can be taken off it */
     if (items.length) menu(b, items);
   }
-  (function () { var st = document.createElement("style"); st.textContent = ".bio-card .bio-ha { position: absolute; opacity: 0; flex: none; width: var(--tag-s); height: var(--tag-s); min-height: var(--tag-s); padding: 0; background: transparent; border-color: transparent; transition: opacity var(--t-base) var(--ease) } .bio-card [data-orm] { opacity: 0; transition: opacity var(--t-base) var(--ease) } .bio-card [data-orm] > svg { width: var(--icon-m); height: var(--icon-m) } .bio-card:hover [data-orm], .bio-card [data-orm]:focus-visible { opacity: 1 } @media (hover: none) { .bio-card [data-orm] { opacity: 1 } } .bio-card .bio-ha > svg { width: var(--icon-m); height: var(--icon-m) } .bio-card .bio-ha[data-idel] { right: calc(var(--sp-2) + (var(--ctl) - var(--icon-m)) / 2 - (var(--tag-s) - var(--icon-m)) / 2); bottom: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2) } .bio-card .bio-ha[data-likex] { left: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2); top: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2) }   /* the icon itself is a full card step from the card's edges */ .bio-card:hover .bio-ha, .bio-card .bio-ha:focus-visible, .bio-card .bio-ha[aria-pressed=\"true\"] { opacity: 1 } @media (hover: none) { .bio-card .bio-ha { opacity: 1 } } #list[data-fab-room] { padding-bottom: 0 } .bio-vm { opacity: 0; transition: opacity var(--t-base) var(--ease) } .rrow:hover .bio-vm, .bio-vm:focus-visible, .bio-vm[aria-expanded=\"true\"] { opacity: 1 } @media (hover: none) { .bio-vm { opacity: 1 } }"; document.head.appendChild(st); })();
+  (function () { var st = document.createElement("style"); st.textContent = ".bio-card .bio-ha { position: absolute; opacity: 0; flex: none; width: var(--tag-s); height: var(--tag-s); min-height: var(--tag-s); padding: 0; background: transparent; border-color: transparent; transition: opacity var(--t-base) var(--ease) } .bio-card [data-orm] { opacity: 0; transition: opacity var(--t-base) var(--ease) } .bio-card [data-orm] > svg { width: var(--icon-m); height: var(--icon-m) } .bio-card:hover [data-orm], .bio-card [data-orm]:focus-visible { opacity: 1 } @media (hover: none) { .bio-card [data-orm] { opacity: 1 } } .bio-card .bio-ha > svg { width: var(--icon-m); height: var(--icon-m) } .bio-card .bio-ha[data-likex] { right: calc(var(--sp-2) + (var(--ctl) - var(--icon-m)) / 2 - (var(--tag-s) - var(--icon-m)) / 2); bottom: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2) } .bio-card .bio-ha[data-idel] { left: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2); top: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2) }   /* the icon itself is a full card step from the card's edges */ .bio-card:hover .bio-ha, .bio-card .bio-ha:focus-visible, .bio-card .bio-ha[aria-pressed=\"true\"] { opacity: 1 } @media (hover: none) { .bio-card .bio-ha { opacity: 1 } } #list[data-fab-room] { padding-bottom: 0 } .bio-vm { opacity: 0; transition: opacity var(--t-base) var(--ease) } .rrow:hover .bio-vm, .bio-vm:focus-visible, .bio-vm[aria-expanded=\"true\"] { opacity: 1 } @media (hover: none) { .bio-vm { opacity: 1 } }"; document.head.appendChild(st); })();
   function renderVivs() {
     var l = document.getElementById("hl"); if (!l) return;
     l.innerHTML = state.vivs.length ? state.vivs.map(function (v) {
@@ -1065,11 +1065,12 @@
       });
     }
     paintM();
-    document.body.appendChild(m);
+    var sh = document.createElement("div"); sh.style.cssText = "position:fixed;inset:0;z-index:var(--z-menu);background:transparent;touch-action:none";   /* an open menu blocks everything outside it: a touch there only closes the menu */
+    document.body.appendChild(sh); document.body.appendChild(m);
     btn.setAttribute("aria-expanded", "true");   /* the button that opened the menu stays shown while it is open */
     var r = btn.getBoundingClientRect();
     m.style.top = Math.round(r.bottom + 4) + "px"; m.style.left = Math.max(8, Math.min(Math.round(r.left), window.innerWidth - m.offsetWidth - 8)) + "px";
-    function close() { m.remove(); btn.removeAttribute("aria-expanded"); document.removeEventListener("click", away, true); document.removeEventListener("keydown", onKey, true); }
+    function close() { m.remove(); sh.remove(); btn.removeAttribute("aria-expanded"); document.removeEventListener("click", away, true); document.removeEventListener("keydown", onKey, true); }
     function away(e) { if (!m.contains(e.target) && e.target !== btn) close(); }
     function onKey(e) { if (e.key === "Escape") close(); }
     setTimeout(function () { document.addEventListener("click", away, true); document.addEventListener("keydown", onKey, true); }, 0);
@@ -1091,11 +1092,12 @@
     var old = document.getElementById("moreMenu"); if (old) old.remove();
     var m = document.createElement("div"); m.id = "moreMenu"; m.className = "rmenu rmenu--fixed"; m.setAttribute("role", "menu");
     m.innerHTML = items.map(function (it, k) { return '<button type="button" class="rmenu__item" role="menuitem" data-k="' + k + '"' + (it.tone ? ' data-tone="' + it.tone + '"' : '') + '>' + it.icon + '<span>' + esc(it.label) + '</span></button>'; }).join("");
-    document.body.appendChild(m);
+    var sh = document.createElement("div"); sh.style.cssText = "position:fixed;inset:0;z-index:var(--z-menu);background:transparent;touch-action:none";   /* an open menu blocks everything outside it: a touch there only closes the menu */
+    document.body.appendChild(sh); document.body.appendChild(m);
     btn.setAttribute("aria-expanded", "true");   /* the button that opened the menu stays shown while it is open */
     var r = btn.getBoundingClientRect();
     m.style.top = Math.round(r.bottom + 4) + "px"; m.style.left = Math.max(8, Math.round(r.left)) + "px";
-    function close() { m.remove(); btn.removeAttribute("aria-expanded"); document.removeEventListener("click", away, true); document.removeEventListener("keydown", onKey, true); }
+    function close() { m.remove(); sh.remove(); btn.removeAttribute("aria-expanded"); document.removeEventListener("click", away, true); document.removeEventListener("keydown", onKey, true); }
     function away(e) { if (!m.contains(e.target)) { e.preventDefault(); e.stopPropagation(); close(); } }
     function onKey(e) { if (e.key === "Escape") close(); }
     setTimeout(function () { document.addEventListener("click", away, true); document.addEventListener("keydown", onKey, true); }, 0);
@@ -2144,7 +2146,11 @@
         foot: '<button class="rbtn rbtn--danger rbtn--block" type="button" id="csdel">מחיקה</button>' });
       c.querySelector("#csdel").addEventListener("click", function () {
         c.close();
-        api("/rest/v1/music?id=eq." + m.id, { method: "DELETE", prefer: "return=minimal" }).then(function () {
+        var said = function (text) {   /* the answer is on the screen, not only in the console */
+          RosterSheet.render(c, { kind: "confirm", title: "המחיקה לא בוצעה", from: "bottom", size: "s", body: '<div class="pad"><span>' + esc(text) + '</span></div>' });
+        };
+        api("/rest/v1/music?id=eq." + m.id, { method: "DELETE", prefer: "return=representation" }).then(function (gone) {
+          if (!gone || !gone.length) { said("אין הרשאה למחוק את השיר הזה. רק מי שהעלה אותו יכול למחוק אותו."); return; }
           m.__gone = true;
           (state.items || []).forEach(function (x) {
             if (x.music && x.music.id === m.id) { x.music = null; x.music_id = null; }
@@ -2155,7 +2161,7 @@
           if (done) done();
           if (document.getElementById("list") && document.getElementById("list").hasAttribute("data-fab-room") && state.items) paint();
           var im = document.getElementById("imus"); if (im && liveItem && liveItem.id) { var li = state.items.filter(function (x) { return x.id === liveItem.id; })[0]; if (li) im.innerHTML = musCards(li); }
-        }, fail);
+        }, function (e) { console.error(e); said("השרת לא אישר את המחיקה" + (e && e.message ? ": " + e.message : ".")); });
       });
     });
     function save() {
