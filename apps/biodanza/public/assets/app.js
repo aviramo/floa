@@ -894,7 +894,7 @@
     curLeave();
     if (!wide()) { stack().length = 0; stack().push(home); setUrl(BASE); }
     show(head("הוויוונסיות שלי", "", false,
-      '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="homemore" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>',
+      '<button class="rbtn rbtn--icon rbtn--edge-end bio-flat" data-act="homemore" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>',
       '<img src="favicon.png" alt="" style="flex:none;width:var(--ctl);height:var(--ctl);border-radius:var(--r-ctl)">') +
       '<div class="rlist" data-fab-room id="hl"><div class="rskel rskel--title"></div></div>' +
       '<button class="rfab" data-act="new" aria-label="ויוונסיה חדשה" title="ויוונסיה חדשה">' + I.plus + '</button>', function (r) {
