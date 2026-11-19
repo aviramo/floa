@@ -2329,7 +2329,7 @@
     var pos = state.items.reduce(function (m, i) { return Math.max(m, i.position); }, 0) + 1;
     Promise.all([firstMusic(e.id, mid), detached(e.id)]).then(function (r) {
       var m = r[0], d = r[1];
-      return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=minimal", json: { vivencia_id: state.viv.id, position: pos, backlog: true, exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, title: d.title || null, poetics: d.poetics || null, guidance: d.guidance || null } });   /* only the song that was marked comes with the exercise, or none
+      return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=minimal", json: { vivencia_id: state.viv.id, position: pos, backlog: true, exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, title: d.title || null, poetics: d.poetics || null, guidance: d.guidance || null } });   /* only the song that was marked comes with the exercise, or none */
     }).then(function () { toast("התרגיל נוסף"); if (sheet) { closeSheets(); return loadItems().then(paint, fail); }
       if (wide()) show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); else stack().pop(); back(); }, fail);
   }
