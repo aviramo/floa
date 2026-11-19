@@ -19,13 +19,15 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
 .pad { padding: var(--gutter); display: flex; flex-direction: column; gap: var(--gap-field); }
 #out { display: grid; grid-template-columns: repeat(auto-fill, minmax(21rem, 1fr)); gap: var(--sp-1); padding: var(--sp-1) var(--gutter) var(--gutter); align-content: start; align-items: start; }   /* each card is as tall as its own content, not as the tallest in its row */
 #out > .rempty, #out > .rhint, #out > .rskel { grid-column: 1 / -1; }
-#out > .rcard { margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.song__t, .song__a { direction: ltr; text-align: right; overflow-wrap: anywhere; }   /* every title is in a Latin script: it reads left to right and sits against the right edge */
+#out > .rcard { background: var(--on-primary); margin: 0;   /* white, lying on the page with the kit's card shadow (no white surface token yet: awaiting the owner's approval) */ min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.song__t, .song__a { direction: ltr; text-align: left; overflow-wrap: anywhere; }   /* every title is in a Latin script: it reads left to right and sits against the left edge */
 .song__t { font: var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font); }
 .song__a { color: var(--text-2); font: var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font); }
 .song__d { color: var(--text-2); font: var(--fw-medium) var(--fs-s)/1 var(--font); font-variant-numeric: tabular-nums; }   /* the time: plain text, no chip */
 .song__f { display: flex; align-items: center; justify-content: space-between; margin-top: var(--gap-tight); }   /* the play button on the right, the time on the left */
 #out [data-audio] { background: var(--surface-2); border-color: var(--surface-2); width: 46px; min-height: var(--tag-s); height: var(--tag-s); padding: 0; border-radius: 999px; }   /* the size of the time chip */
+#out [data-audio][data-st="sound"] svg { display: none; }
+#out [data-audio][data-st="sound"]::before { content: ""; width: var(--icon-s); height: var(--icon-s); background: currentColor; clip-path: polygon(22% 10%, 22% 90%, 92% 50%); }
 #out [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important; }
 #out > * { flex-shrink: 0; }
 #pl { flex-wrap: nowrap; }
@@ -64,8 +66,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
     app.innerHTML = '<div class="rempty" style="margin-block:auto"><b>' + esc(title) + '</b><span>' + esc(text) + '</span>' + (btn || "") + '</div>';
   }
   function shell() {
-    app.innerHTML = '<header class="rhead"><div class="rhead__text"><h1 class="rhead__title">ניהול</h1><span class="rhead__sub" id="cnt"></span></div></header>' +
-      '<div class="pad" style="padding-bottom:0">' + playerHtml() + '</div><div class="pad" style="flex-direction:row;align-items:flex-end"><label class="rfield" style="flex:1 1 auto"><span>חיפוש שיר או מבצע</span><input id="q" type="search" placeholder=" " autocomplete="off"></label><button type="button" class="rbtn rbtn--icon rbtn--outline" id="cp" aria-label="העתקת הרשימה המוצגת" title="העתקת הרשימה המוצגת">' + ICO.copy + '</button></div>' +
+    app.innerHTML = '<div class="pad" style="padding-bottom:0">' + playerHtml() + '</div><div class="pad" style="flex-direction:row;align-items:flex-end"><label class="rfield" style="flex:1 1 auto"><span id="cnt">חיפוש שיר או מבצע</span><input id="q" type="search" placeholder=" " autocomplete="off"></label><button type="button" class="rbtn rbtn--icon rbtn--outline" id="cp" aria-label="העתקת הרשימה המוצגת" title="העתקת הרשימה המוצגת">' + ICO.copy + '</button></div>' +
       '<div class="rlist" id="out"></div>';
     app.querySelector("#q").addEventListener("input", function () { clearTimeout(timer); timer = setTimeout(draw, 200); });
     app.querySelector("#cp").addEventListener("click", copyAll);
@@ -84,7 +85,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
   function card(m) {
     var has = m.audio_object && window.BioAudio;
     if (has) BioAudio.info(m.audio_object, m.title || m.name, m.artist);
-    return '<div class="rcard rcard--flat rcard--compact"><span class="song__t">' + esc(m.title || m.name) + '</span>' + (m.artist ? '<span class="song__a">' + esc(m.artist) + '</span>' : '') +
+    return '<div class="rcard rcard--compact"><span class="song__t">' + esc(m.title || m.name) + '</span>' + (m.artist ? '<span class="song__a">' + esc(m.artist) + '</span>' : '') +
       '<div class="song__f">' + (has ? '<button type="button" class="rbtn rbtn--icon" data-audio="' + esc(m.audio_object) + '" aria-label="השמעה" title="השמעה"></button>' : '<span class="rchip rchip--s">ללא קובץ</span>') +
       (m.duration_sec ? '<span class="song__d">' + mmss(m.duration_sec) + '</span>' : '<span></span>') + '</div></div>';
   }
@@ -95,7 +96,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
   function draw() {
     var f = found(), words = f.words, out = document.getElementById("out");
     hitList = f.hit; shown = 0; out.scrollTop = 0;
-    document.getElementById("cnt").textContent = (words.length ? hitList.length + " מתוך " : "") + songs.length + " שירים";
+    document.getElementById("cnt").textContent = "חיפוש " + (words.length ? hitList.length + " מתוך " : "בין ") + songs.length + " שירים";
     if (!hitList.length) { out.innerHTML = '<div class="rempty"><b>לא נמצא כלום</b><span>נסו מילה אחרת</span></div>'; return; }
     out.innerHTML = ""; more();
     if (!out.dataset.scr) { out.dataset.scr = "1"; out.addEventListener("scroll", function () { if (out.scrollTop + out.clientHeight > out.scrollHeight - 600) more(); }, { passive: true }); }
