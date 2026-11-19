@@ -302,22 +302,27 @@ create table if not exists biodanza.categories (
   name_he  text not null,
   sort     int  not null default 0
 );
+-- the category's name in the catalog's original language (and which language that is); name_he stays the display name
+alter table biodanza.categories add column if not exists name_orig text not null default '';
+alter table biodanza.categories add column if not exists lang_orig text not null default 'en';
 alter table biodanza.categories enable row level security;
 drop policy if exists categories_read on biodanza.categories;
 create policy categories_read on biodanza.categories for select to authenticated using (biodanza.is_allowed());
-insert into biodanza.categories (key, name_he, sort) values
-  ('Circles', 'מעגלים', 1), ('Walking', 'הליכות', 2), ('Games', 'משחקים', 3), ('Breathing In Biodanza', 'נשימה בביודנסה', 4),
-  ('Fluidity', 'זרימה', 5), ('Eutony', 'יוטוניה', 6), ('Segmentary Movements', 'תנועות סגמנטריות', 7),
-  ('Integration Of The Three Centers', 'אינטגרציה של שלושת המרכזים', 8), ('The Encounter', 'המפגש', 9),
-  ('Contact And Caresses', 'מגע וליטוף', 10), ('Undifferenciated Contact', 'מגע לא מובחן', 11),
-  ('Yin Dance And Yang Dance', 'ריקוד יין וריקוד יאנג', 12), ('Dances Of The Four Animals', 'ריקודי ארבע החיות', 13),
-  ('Dances Of Shiva, Brahma And Vishnu', 'ריקודי שיווה, ברהמה ווישנו', 14), ('Exercices Without Music', 'תרגילים ללא מוזיקה', 15),
-  ('Danses Specifiques', 'ריקודים ייחודיים', 16), ('Generative Postures', 'תנוחות מכוננות', 17), ('Sequential Dances', 'ריקודי רצף', 18),
-  ('Dances Of The Angels', 'ריקודי המלאכים', 19), ('Elements', 'יסודות', 20), ('Procedures Of Facilitation', 'פרוצדורות של אפשור', 21),
-  -- from the 2014 catalog and the Buenos Aires CD table (their own groupings)
-  ('Dance In Pairs', 'ריקוד בזוגות', 22), ('Synchronization', 'סינכרוניזציה', 23), ('Activation', 'אקטיבציה', 24),
-  ('Rhythmic Dances', 'ריקודי קצב', 25), ('Expressive Dances', 'ריקודים אקספרסיביים', 26)
-on conflict (key) do update set name_he = excluded.name_he, sort = excluded.sort;
+-- The old category seed (the 2012/2014/2018 groupings) was removed on 2026-11-19: the catalog was rebuilt from the 2012 catalog and the categories now live in
+-- the database (24 rows, with name_orig). Re-running this file must NOT re-create the deleted categories, so there is no seed here.
+-- insert into biodanza.categories (key, name_he, sort) values
+--   ('Circles', 'מעגלים', 1), ('Walking', 'הליכות', 2), ('Games', 'משחקים', 3), ('Breathing In Biodanza', 'נשימה בביודנסה', 4),
+--   ('Fluidity', 'זרימה', 5), ('Eutony', 'יוטוניה', 6), ('Segmentary Movements', 'תנועות סגמנטריות', 7),
+--   ('Integration Of The Three Centers', 'אינטגרציה של שלושת המרכזים', 8), ('The Encounter', 'המפגש', 9),
+--   ('Contact And Caresses', 'מגע וליטוף', 10), ('Undifferenciated Contact', 'מגע לא מובחן', 11),
+--   ('Yin Dance And Yang Dance', 'ריקוד יין וריקוד יאנג', 12), ('Dances Of The Four Animals', 'ריקודי ארבע החיות', 13),
+--   ('Dances Of Shiva, Brahma And Vishnu', 'ריקודי שיווה, ברהמה ווישנו', 14), ('Exercices Without Music', 'תרגילים ללא מוזיקה', 15),
+--   ('Danses Specifiques', 'ריקודים ייחודיים', 16), ('Generative Postures', 'תנוחות מכוננות', 17), ('Sequential Dances', 'ריקודי רצף', 18),
+--   ('Dances Of The Angels', 'ריקודי המלאכים', 19), ('Elements', 'יסודות', 20), ('Procedures Of Facilitation', 'פרוצדורות של אפשור', 21),
+--   -- from the 2014 catalog and the Buenos Aires CD table (their own groupings)
+--   ('Dance In Pairs', 'ריקוד בזוגות', 22), ('Synchronization', 'סינכרוניזציה', 23), ('Activation', 'אקטיבציה', 24),
+--   ('Rhythmic Dances', 'ריקודי קצב', 25), ('Expressive Dances', 'ריקודים אקספרסיביים', 26)
+-- on conflict (key) do update set name_he = excluded.name_he, sort = excluded.sort;
 grant select on biodanza.categories to authenticated, service_role;
 
 -- ---------- sharing a vivencia: view or edit, with accounts of the allowlist only ----------
@@ -590,8 +595,9 @@ insert into biodanza.lines (key, name_he, sort) values ('unclassified', 'לא מ
 insert into biodanza.exercise_lines (exercise_id, line_key, main)
   select e.id, 'unclassified', true from biodanza.exercises e where e.owner_id is null and not exists (select 1 from biodanza.exercise_lines l where l.exercise_id = e.id)
   on conflict do nothing;
-insert into biodanza.categories (key, name_he, sort) values ('unclassified', 'לא מסווג', 99) on conflict (key) do update set name_he = excluded.name_he, sort = excluded.sort;
-update biodanza.exercises set category = 'unclassified' where owner_id is null and category = 'Danses Specifiques' and source in ('catalog2014', 'cimeb2018');
+-- (neutralized 2026-11-19: the 'unclassified' category was deleted with the old catalog; do not re-create it or re-point old rows at it)
+-- insert into biodanza.categories (key, name_he, sort) values ('unclassified', 'לא מסווג', 99) on conflict (key) do update set name_he = excluded.name_he, sort = excluded.sort;
+-- update biodanza.exercises set category = 'unclassified' where owner_id is null and category = 'Danses Specifiques' and source in ('catalog2014', 'cimeb2018');
 
 -- ---------- permission levels: member, admin, super admin ----------
 -- member: enters and builds vivencias. admin: also manages the allowlist (members only). super admin: also sets who is an admin or a super admin, and
