@@ -989,7 +989,7 @@
     if (wide()) show(ph("בחרו ויוונסיה", "התרגילים שלה יופיעו כאן"), null, "d");
     state.viv = null; paintSel(); setUrl(BASE);
   }
-  function paintSel() { pl.querySelectorAll("[data-id]").forEach(function (b) { b.closest(".rrow").setAttribute("aria-current", state.viv && b.dataset.id === state.viv.id ? "true" : "false"); }); }
+  function paintSel() { pl.querySelectorAll("[data-id]").forEach(function (b) { b.closest(".rrow").setAttribute("aria-current", wide() && state.viv && b.dataset.id === state.viv.id ? "true" : "false"); }); }
   function on(root, act, fn) { root.querySelectorAll('[data-act="' + act + '"]').forEach(function (b) { b.addEventListener("click", function (ev) { fn(b, ev); }); }); }
   function stack() { return stack.s || (stack.s = []); }
   function go(fn) { stack().push(fn); fn(); }
