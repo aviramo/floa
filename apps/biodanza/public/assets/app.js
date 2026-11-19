@@ -978,7 +978,7 @@
 
   /* ---------- the vivencia: plan along the curve ---------- */
   function openViv(id) { if (!state.viv || state.viv.id !== id) state.lastItem = null; state.filter = ""; state.viv = state.vivs.filter(function (v) { return v.id === id; })[0] || { id: id, title: "" }; if (wide()) { stack().length = 0; show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); } go(editor); paintSel(); }
-  var ITEM_SELECT = "&select=id,position,exercise_id,music_id,notes,title,poetics,guidance,exercises(title_he,title_en,poetics,guidance,objective,exercise_texts(lang,poetics,guidance,level,curve,level_basis,curve_basis,source)),music(id,name,title,artist,duration_sec,audio_object,in_catalog),vivencia_item_facilitators(email),item_music_options(music_id,created_at,music(id,name,title,artist,duration_sec,audio_object,in_catalog))&order=position";
+  var ITEM_SELECT = "&select=id,position,exercise_id,music_id,notes,title,poetics,guidance,exercises(title_he,title_en,poetics,guidance,objective,exercise_texts(lang,poetics,guidance,level,curve,level_basis,curve_basis,source)),music!music_id(id,name,title,artist,duration_sec,audio_object,in_catalog),vivencia_item_facilitators(email),item_music_options(music_id,created_at,music(id,name,title,artist,duration_sec,audio_object,in_catalog))&order=position";
   function itemsOf(id) { return api("/rest/v1/vivencia_items?vivencia_id=eq." + id + ITEM_SELECT); }
   function loadItems() {
     return itemsOf(state.viv.id).then(function (r) { state.items = r || []; });
@@ -1219,7 +1219,7 @@
     var k = state.items.indexOf(it), prevIt = state.items[k - 1], nextIt = state.items[k + 1];
     /* the header walks the sequence: the right button to the previous exercise, the left one to the next, the name between them */
     var hd = itemHead(!!prevIt, !!nextIt, "", it.exercise_id, itemName(it));   /* the middle button says where we are, and still opens the list */
-    show(hd + '<style>#ipg, #ipg * { touch-action: pan-y } #ipg textarea, #ipg .rf-rich { max-height: none } #ifields > .rfield { margin: 0 }</style><div id="ipg" style="display:flex;flex-direction:column;flex:1 1 auto;min-height:0"><div class="pad" style="padding-bottom:0">' +
+    show(hd + '<style>#ipg, #ipg * { touch-action: pan-y } #ipg textarea, #ipg .rf-rich { max-height: none } #ifields > .rfield { margin: 0 } #imus [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important }</style><div id="ipg" style="display:flex;flex-direction:column;flex:1 1 auto;min-height:0"><div class="pad" style="padding-bottom:0">' +
       '<div style="display:flex;align-items:flex-end;gap:var(--gap-button)">' + facChip(it) + '</div>' +
       '</div>' +
       '<div id="iscroll" style="flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain">' +   /* everything under the name scrolls together; the texts are open to the end */
@@ -1459,15 +1459,21 @@
     });
     return chain.then(function () { return api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { music_id: m ? m.id : null } }); }).then(function () { it.music_id = m ? m.id : null; it.music = m; });
   }
+  /* the options as cards, the same as the music page's: the name, the performer, and at the foot the play tile and the time; the chosen one has the green frame */
   function musCards(it) {
     var list = optList(it), cur = it.music_id;
     var cards = list.map(function (m) {
       var sel = m.id === cur;
-      return '<div class="rcard rcard--compact" data-opt="' + esc(m.id) + '" role="button" tabindex="0"' + (sel ? ' aria-current="true"' : '') + ' style="margin:0;min-width:0;display:flex;align-items:flex-start;gap:var(--sp-2);cursor:pointer;background:var(--on-primary)' + (sel ? ';border-color:var(--primary);box-shadow:inset 0 0 0 1px var(--primary)' : '') + '"><div style="flex:1 1 auto;min-width:0">' + songLines(m) + '</div>' + playCol(m, true) +
-        (sel ? '' : '<button type="button" class="rbtn rbtn--icon" data-orm="' + esc(m.id) + '" aria-label="הסרת האפשרות" title="הסרת האפשרות" style="position:absolute;inset-block-start:2px;inset-inline-start:2px;width:var(--ctl);min-height:0;height:var(--ctl);color:var(--text-3)">' + I.x + '</button>') + '</div>';
+      var tile = songBtn(m, false).replace(/width:var\(--fab\);height:var\(--fab\);min-height:var\(--fab\);/g, "width:46px;height:var(--tag-s);min-height:var(--tag-s);padding:0;border-radius:999px;background:var(--surface-2);");
+      var tm = '<span class="bio-time" data-dur="' + (m.duration_sec || "") + '"' + (m.audio_object ? ' data-for="' + esc(m.audio_object) + '"' : '') + ' style="color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + (durOf(m) ? clock(durOf(m)) : '') + '</span>';
+      var rm = sel ? '' : '<button type="button" class="rbtn rbtn--icon" data-orm="' + esc(m.id) + '" aria-label="הסרת האפשרות" title="הסרת האפשרות" style="color:var(--text-3);min-height:var(--tag-s);height:var(--tag-s);width:var(--tag-s);padding:0">' + I.x + '</button>';
+      return '<div class="rcard rcard--compact" data-opt="' + esc(m.id) + '" role="button" tabindex="0"' + (sel ? ' aria-current="true"' : '') + ' style="margin:0;min-width:0;display:flex;flex-direction:column;gap:2px;cursor:pointer;background:var(--on-primary)' + (sel ? ';border-color:var(--primary);box-shadow:inset 0 0 0 1px var(--primary)' : '') + '">' +
+        '<span style="direction:ltr;text-align:left;overflow-wrap:anywhere;font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(songName(m)) + '</span>' +
+        '<span style="direction:ltr;text-align:left;overflow-wrap:anywhere;color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font)">' + (songBy(m) ? esc(songBy(m)) : '&nbsp;') + '</span>' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:var(--gap-tight)">' + tile + rm + tm + '</div></div>';
     }).join("");
-    return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(18rem,1fr));gap:var(--sp-1);align-items:stretch">' + cards +
-      '<div class="rcard rcard--compact" data-addm role="button" tabindex="0" style="margin:0;display:flex;align-items:center;justify-content:center;gap:var(--sp-1);cursor:pointer;min-height:var(--fab);border-style:dashed;background:transparent;box-shadow:none;color:var(--text-2)">' + I.plus + '<span>' + (list.length ? 'הוספת אפשרות מוזיקה' : 'לחצו לבחירת מוזיקה') + '</span></div></div>';
+    return (list.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch">' + cards + '</div>' : '') +
+      '<button type="button" class="rbtn rbtn--block rbtn--ghost" data-addm style="margin-top:' + (list.length ? 'var(--sp-2)' : '0') + '">' + (list.length ? 'הוספת אפשרות מוזיקה' : 'בחירת מוזיקה') + '</button>';
   }
   function chooseSong(it, m) {
     return setChosen(it, m).then(function () {
