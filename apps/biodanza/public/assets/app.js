@@ -269,7 +269,7 @@
       ".bio-dock__btn { flex: none; display: grid; place-items: center; width: var(--fab); height: var(--fab); padding: 0; border: 0; border-radius: var(--r-fab); background: var(--danger); color: var(--on-primary); cursor: pointer } " +
       ".bio-dock__btn[data-st=\"paused\"] { background: var(--surface-2); color: var(--text) } .bio-dock__btn:disabled { background: var(--surface-2); color: var(--text-3); cursor: default } " +
       ".bio-bar input, .bio-dock__bar { -webkit-appearance: none; appearance: none; background: transparent; height: 20px; margin: 0; cursor: pointer; --p: 0%; --c: var(--primary) } .bio-bar input:hover, .bio-dock__bar:hover { --c: var(--danger) } .bio-bar input::-webkit-slider-runnable-track, .bio-dock__bar::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--c) var(--p), var(--surface-2) var(--p)) } .bio-bar input::-webkit-slider-thumb, .bio-dock__bar::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border: 0; border-radius: 50%; background: var(--c) } .bio-bar input::-moz-range-track, .bio-dock__bar::-moz-range-track { height: 4px; border-radius: 2px; background: var(--surface-2) } .bio-bar input::-moz-range-progress, .bio-dock__bar::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--c) } .bio-bar input::-moz-range-thumb, .bio-dock__bar::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: var(--c) } .bio-bar input:focus, .bio-bar input:focus-visible, .bio-dock__bar:focus, .bio-dock__bar:focus-visible, .bio-dock__btn:focus, .bio-dock__btn:focus-visible, .bio-dock__x:focus, .bio-dock__x:focus-visible { outline: none } .bio-dock .bio-vol { margin: 0 } @media (max-width: 1023px) { .bio-dock .bio-vol, .bio-dock .bio-volume { display: none !important } } .bio-volume { flex: none; display: flex; align-items: center; gap: var(--gap-tight); --c: var(--primary) } .bio-volume input { -webkit-appearance: none; appearance: none; background: transparent; width: 7rem; height: 20px; margin: 0; cursor: pointer; direction: ltr; --p: 0% } .bio-volume { direction: ltr; margin-left: var(--sp-3) } .bio-volume input::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--c) var(--p), var(--on-primary) var(--p)) } .bio-volume input::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border: 0; border-radius: 50%; background: var(--c) } .bio-volume input::-moz-range-track { height: 4px; border-radius: 2px; background: var(--on-primary) } .bio-volume input::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--c) } .bio-volume input::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: var(--c) } .bio-volume input:focus, .bio-volume input:focus-visible { outline: none } .bio-volume > .rbtn > svg { width: var(--icon-m); height: var(--icon-m) } .bio-dock__x { flex: none; display: grid; place-items: center; width: var(--icon-m, 20px); height: var(--ctl); padding: 0; border: 0; border-radius: var(--r-ctl); background: transparent; color: var(--text-2); cursor: pointer } .bio-dock__x > svg { width: var(--icon-m, 20px); height: var(--icon-m, 20px); stroke-width: var(--icon-w) } .bio-dock.idle .bio-dock__x { display: none } " +
-      ".bio-dock .rbtn > svg { width: var(--icon-l); height: var(--icon-l) } .bio-dock > .rbtn:not(:disabled) { background: var(--primary); border-color: var(--primary); color: var(--on-primary) } " +
+      ".bio-dock .rbtn > svg { width: var(--icon-l); height: var(--icon-l) } .bio-dock > .rbtn:first-child:not(:disabled) { background: var(--primary); border-color: var(--primary); color: var(--on-primary) } " +
       ".bio-dock .bio-dockbar { flex: 1 1 8rem; min-width: 0; padding: 0; touch-action: none } .bio-dock .bio-dockbar .bio-dock__bar { width: 100%; display: block; direction: ltr } .bio-dock .bio-dockbar input::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--c) var(--p), var(--on-primary) var(--p)) } .bio-dock .bio-dockbar input::-moz-range-track { background: var(--on-primary) } " +
       ".bio-dock__name { flex: 0 1 28rem; min-width: 8rem; direction: ltr; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis } .bio-dock__name span { color: var(--text-2) } .bio-dock__name span:not(:empty)::before { content: \"· \" } " +
       "@media (max-width: 700px) { .bio-dock { flex-wrap: wrap } .bio-dock__name { flex: 1 1 100%; order: 4 } .bio-dock .bio-dockbar { flex: 0 0 100%; order: 3 } } " +
@@ -284,16 +284,45 @@
     var playing = false, loaded = false, closed = false, seekDrag = false, leftNow = 0, frac = 0, curT = 0, curD = 0, curTitle = "", curArtist = "", lastH = 0, last = null, curName = "", asked = {};
     try { last = JSON.parse(localStorage.getItem("biodanza.last") || "null"); if (last && !last.n) last = null; } catch (x) { last = null; }   /* the song that played last: the footer keeps it, also after a reload */
     if (last && window.BioAudio && BioAudio.info) BioAudio.info(last.n, last.t, last.a);
+    var HIST = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg>';
     var histName = "";
     function remember(name, title, artist) {   /* one line per start of a song, newest first, the last 300 */
       histName = name;
       try { var h = JSON.parse(localStorage.getItem("biodanza.history") || "[]") || []; h.unshift({ n: name, t: title || "", a: artist || "", at: Date.now() }); localStorage.setItem("biodanza.history", JSON.stringify(h.slice(0, 300))); } catch (x) { /* not kept */ }
     }
+    function playName(n, t, a) {   /* a song of the history plays as its own button would play it */
+      if (!n) return;
+      if (window.BioAudio && BioAudio.info) BioAudio.info(n, t, a);
+      var tb = document.createElement("button"); tb.dataset.audio = n; tb.style.display = "none"; document.body.appendChild(tb); tb.click(); tb.remove();
+    }
+    function openHistory() {
+      var h = []; try { h = JSON.parse(localStorage.getItem("biodanza.history") || "[]") || []; } catch (x) { h = []; }
+      var seen = {}, rows = []; h.forEach(function (e) { if (e && e.n && !seen[e.n]) { seen[e.n] = 1; rows.push(e); } });
+      rows = rows.slice(0, 120);
+      var dlg = document.getElementById("histDlg");
+      if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "histDlg"; document.body.appendChild(dlg); }
+      var when = function (at) { try { return new Date(at).toLocaleString("he-IL", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" }); } catch (x) { return ""; } };
+      var cards = rows.map(function (e, i) {
+        return '<div class="rcard rcard--compact" data-hi="' + i + '" role="button" tabindex="0" style="cursor:pointer;background:var(--on-primary);margin:0;min-width:0;display:flex;flex-direction:column;gap:2px">' +
+          '<span style="direction:ltr;text-align:left;overflow-wrap:anywhere;font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(e.t || "שיר") + '</span>' +
+          '<span style="direction:ltr;text-align:left;overflow-wrap:anywhere;color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font)">' + (e.a ? esc(e.a) : "&nbsp;") + '</span>' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:var(--gap-tight)"><button type="button" class="rbtn rbtn--icon" data-hp="' + i + '" aria-label="השמעה" title="השמעה" style="background:var(--surface-2);border-color:var(--surface-2);width:46px;min-height:var(--tag-s);height:var(--tag-s);padding:0;border-radius:999px">' + PLAY + '</button>' +
+          '<span style="color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + esc(when(e.at)) + '</span></div></div>';
+      }).join("");
+      RosterSheet.render(dlg, { title: "היסטוריית האזנה", from: "bottom", size: "l",
+        body: '<div style="padding:var(--sp-2) var(--gutter) var(--gutter)">' + (rows.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch">' + cards + '</div>' : ph("אין עדיין היסטוריה", "שירים שהתחילו להתנגן יופיעו כאן")) + '</div>' });
+      dlg.onclick = function (ev) {
+        var c = ev.target.closest && ev.target.closest("[data-hi]"); if (!c) return;
+        var e = rows[+c.dataset.hi]; if (!e) return;
+        slideClose(dlg); playName(e.n, e.t, e.a);
+      };
+    }
+    document.addEventListener("click", function (ev) { var b = ev.target.closest && ev.target.closest("[data-hist]"); if (b) openHistory(); });
     function clk(s) { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2); }
     function make(cls) {
       var d = document.createElement("div"); d.className = cls + " idle";
       d.innerHTML = '<button type="button" class="rbtn rbtn--icon" disabled aria-label="השמעה">' + PLAY + '</button><span class="rchip rchip--s bio-dock__time" style="direction:ltr;font-variant-numeric:tabular-nums">0:00 / 0:00</span>' + volDock() +
-        '<div class="bio-dockbar"><input class="bio-dock__bar" type="range" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר" disabled></div><div class="rrow__main bio-dock__name"><b>לא נבחר שיר</b> <span></span></div>';
+        '<div class="bio-dockbar"><input class="bio-dock__bar" type="range" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר" disabled></div><div class="rrow__main bio-dock__name"><b>לא נבחר שיר</b> <span></span></div><button type="button" class="rbtn rbtn--icon" data-hist aria-label="היסטוריית האזנה" title="היסטוריית האזנה">' + HIST + '</button>';
       d.querySelector("button").addEventListener("click", function () {
         if (loaded) { if (window.BioAudio && BioAudio.playPause) BioAudio.playPause(); return; }
         if (!last) return;   /* nothing loaded: the last song is loaded and played, as its own button does */
