@@ -1369,7 +1369,7 @@
     var rowOf = function (i, tile) {
       var m = i.music;
       return cardUi({ cls: "bio-icard", attrs: 'data-icard="' + i.id + '"' + (i.backlog ? ' data-back="1"' : ''), selected: state.lastItem === i.id, lead: tile, bigLead: true, title: itemName(i), titleAttr: 'data-edit="' + i.id + '"',
-        sub: m ? songName(m) : "בלי מוזיקה", subRight: !!m, footEnd: true, pill: m ? cardPill(m) : "", chip: facChip(i, " rchip--s"), time: m ? clkSpan(m) : "",
+        sub: m ? songName(m) : "בלי מוזיקה", subRight: !!m, subLtr: m ? undefined : false, footEnd: true, pill: m ? cardPill(m) : "", chip: facChip(i, " rchip--s"), time: m ? clkSpan(m) : "",
         actions: (canEdit() ? '<button type="button" class="rbtn rbtn--icon bio-ha" data-idel="' + i.id + '" aria-label="הסרה מהוויוונסיה" title="הסרה מהוויוונסיה">' + I.trash + '</button>' : '') + (i.exercise_id ? heartBtnEx(i.exercise_id, "bio-ha") : '') });   /* on hover: the bin at the right, the heart at its left */
     };
     var exHead = '<div style="display:flex;align-items:center;justify-content:space-between;padding:var(--gutter) var(--gutter) 0"><span class="rrow__title" style="font-weight:var(--fw-black)">ויוונסיה</span>' + (canEdit() ? '<button type="button" class="rbtn rbtn--icon" data-addex aria-haspopup="menu" aria-label="הוספת תרגיל" title="הוספת תרגיל">' + I.plus + '</button>' : '') + '</div>';   /* the exercises have a title like the songs of the start, with a plus at its other end */
