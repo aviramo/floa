@@ -846,6 +846,15 @@
   var catPanel = null, catLayer = null, catPreview = false;
   (function () { var st = document.createElement("style"); st.textContent = "#catLayer { position: fixed; z-index: 20; transform: translateX(100%); transition: transform .25s var(--ease); display: flex; flex-direction: column; min-height: 0 } #catLayer[hidden] { display: none } #catLayer.is-open { transform: none } #catLayer > .bio-banner { position: absolute; inset-block: 0; inset-inline-start: auto; left: -44px; width: 44px; height: 100% } #catLayer > .catbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; box-shadow: -1px 0 0 var(--line) } #catLayer > .catbody > .rlist { flex: 1 1 auto; min-height: 0 } @media (prefers-reduced-motion: reduce) { #catLayer { transition: none } }"; document.head.appendChild(st); })();
   /* The catalog is ONE popup, a single body that slides as a whole: it is as wide as the left and the right sides together; its right part is the catalog's list, its left part is the exercise opened from it. Closing moves the whole body; the left part only slides out from under the right one when an exercise is chosen. */
+  /* the on-screen keyboard: while it is up, the player (hidden behind it anyway) keeps no room at the bottom of a popup, so the list reaches the keyboard */
+  (function () {
+    var st = document.createElement("style");
+    st.textContent = "html.bio-kb .bio-dock { display: none !important } html.bio-kb.bio-docked dialog:not(:has(.sheet-foot)) .sheet-body { padding-bottom: var(--gutter) }";
+    document.head.appendChild(st);
+    var vv = window.visualViewport; if (!vv) return;
+    function upd() { document.documentElement.classList.toggle("bio-kb", Math.max(0, window.innerHeight - vv.height - vv.offsetTop) > 120); }
+    vv.addEventListener("resize", upd); vv.addEventListener("scroll", upd); upd();
+  })();
   var catPrev = null, catPrevId = null;
   var CAT_KEY = "biodanza.catalog";
   function saveCat() {   /* a snapshot of the catalog: open or closed, the exercise looked at, the categories, the search, the scroll */
