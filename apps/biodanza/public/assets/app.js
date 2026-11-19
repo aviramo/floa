@@ -1149,8 +1149,8 @@
     var main = state.items.filter(function (i) { return !i.backlog; }), back = state.items.filter(function (i) { return i.backlog; });
     var rowOf = function (i, tile) {
       var m = i.music;
-      return cardUi({ cls: "bio-icard", attrs: 'data-icard="' + i.id + '"', selected: state.lastItem === i.id, lead: tile, bigLead: true, title: itemName(i), titleAttr: 'data-edit="' + i.id + '"',
-        sub: m ? songName(m) : "בלי מוזיקה", subRight: !!m, footEnd: true, pill: m ? cardPill(m) : "", chip: facChip(i, ""), time: m ? clkSpan(m) : "" });
+      return cardUi({ cls: "bio-icard", attrs: 'data-icard="' + i.id + '"', selected: state.lastItem === i.id, lead: tile, bigLead: true, big: true, title: itemName(i), titleAttr: 'data-edit="' + i.id + '"',
+        sub: m ? songName(m) : "בלי מוזיקה", subRight: !!m, footEnd: true, pill: m ? cardPill(m) : "", chip: facChip(i, ""), time: m ? clkSpan(m, true) : "" });
     };
     l.innerHTML = '<div id="plist" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch;padding:calc(var(--gutter) + var(--sp-2)) var(--gutter) var(--gutter)">' + main.map(function (i, k) { return rowOf(i, k + 1); }).join("") +
       '<div data-div style="grid-column:1 / -1;padding:var(--sp-2) 0 var(--sp-1);margin-top:var(--sp-1);border-top:1px solid var(--line);min-height:var(--ctl)"><div class="rrow__sub">נוספים</div>' + (back.length || !canEdit() ? '' : '<div class="rrow__sub" style="margin-top:var(--sp-1)">גררו לכאן תרגיל שעוד לא החלטתם עליו</div>') + '</div>' +
@@ -1557,10 +1557,10 @@
     return chain.then(function () { return api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { music_id: m ? m.id : null } }); }).then(function () { it.music_id = m ? m.id : null; it.music = m; });
   }
   /* the time of a music card: the place in the song and its whole length, "1:23 / 3:40"; the player keeps it up to date (the bioaudio event) */
-  function clkSpan(m) {
+  function clkSpan(m, big) {
     var nw = window.__bioNow || {}, d = durOf(m), isMine = !!(nw.name && m.audio_object && nw.name === m.audio_object), t = isMine ? Math.floor(nw.t || 0) : 0;
     var tot = nw.name && nw.name === m.audio_object && nw.d > 0 ? Math.floor(nw.d) : d;
-    return '<span class="bio-clk" data-dur="' + (d || "") + '"' + (m.audio_object ? ' data-for="' + esc(m.audio_object) + '"' : '') + ' style="direction:ltr;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + (isMine ? clock(t) + (tot ? " / " + clock(tot) : "") : (tot ? clock(tot) : "")) + '</span>';
+    return '<span class="bio-clk" data-dur="' + (d || "") + '"' + (m.audio_object ? ' data-for="' + esc(m.audio_object) + '"' : '') + ' style="direction:ltr;color:var(--text-2);font:var(--fw-medium) ' + (big ? 'var(--fs-m)' : 'var(--fs-s)') + '/1 var(--font);font-variant-numeric:tabular-nums">' + (isMine ? clock(t) + (tot ? " / " + clock(tot) : "") : (tot ? clock(tot) : "")) + '</span>';
   }
   document.addEventListener("bioaudio", function (ev) {
     var d = ev.detail || {}; window.__bioNow = { name: d.name || "", t: d.t || 0, d: d.d || 0 };
@@ -1575,9 +1575,9 @@
   function cardUi(o) {
     var dir = o.ltr ? "direction:ltr;text-align:left;" : "";
     var title = o.titleAttr
-      ? '<button type="button" class="rrow__main" ' + o.titleAttr + ' style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font);color:inherit;' + dir + (o.corner ? 'padding-inline-end:var(--ctl)' : '') + '">' + esc(o.title) + '</button>'
+      ? '<button type="button" class="rrow__main" ' + o.titleAttr + ' style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:var(--fw-bold) ' + (o.big ? 'var(--fs-l)' : 'var(--fs-s)') + '/var(--lh-tight) var(--font);color:inherit;' + dir + (o.corner ? 'padding-inline-end:var(--ctl)' : '') + '">' + esc(o.title) + '</button>'
       : '<span style="display:block;' + dir + 'overflow-wrap:anywhere;' + (o.corner ? 'padding-right:var(--ctl);' : '') + 'font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(o.title) + '</span>';
-    var sub = '<span style="display:block;' + (o.subRight ? 'direction:ltr;text-align:right;' : o.subLtr !== false ? 'direction:ltr;text-align:left;' : '') + 'overflow-wrap:anywhere;color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font)">' + (o.sub ? esc(o.sub) : '&nbsp;') + '</span>';
+    var sub = '<span style="display:block;' + (o.subRight ? 'direction:ltr;text-align:right;' : o.subLtr !== false ? 'direction:ltr;text-align:left;' : '') + 'overflow-wrap:anywhere;color:var(--text-2);font:var(--fw-regular) ' + (o.big ? 'var(--fs-m)' : 'var(--fs-xs)') + '/var(--lh-tight) var(--font)">' + (o.sub ? esc(o.sub) : '&nbsp;') + '</span>';
     var foot = o.footEnd ? '<div style="display:flex;align-items:center;justify-content:flex-end;gap:var(--sp-1);margin-top:auto;padding-top:var(--gap-tight)">' + (o.chip || '') + (o.time || '') + (o.pill || '') + '</div>'   /* the play tile at the left end, its time on its right */
       : '<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-1);margin-top:auto;padding-top:var(--gap-tight)"><div style="display:flex;align-items:center;gap:var(--sp-1)">' + (o.pill || '') + (o.chip || '') + '</div>' + (o.time || '') + '</div>';
     var lead = o.lead ? (o.bigLead
