@@ -115,6 +115,7 @@
     play: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg>',
     heart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.500s-7.500-4.600-9.500-9.200A5.300 5.300 0 0 1 12 6.200a5.300 5.300 0 0 1 9.500 5.100c-2 4.600-9.500 9.200-9.500 9.200z"/></svg>',
     up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>',
+    upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4"/><path d="M7.5 8.5 12 4l4.5 4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>',   /* an arrow up out of a tray: upload */
     down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>',
     users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M16 5a3 3 0 010 6M18 15c2 .6 3 2.2 3 5"/></svg>',
     swap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></svg>',
@@ -248,7 +249,7 @@
     if (m.in_catalog === false || m.owner_id || state.offline || !m.id) return ytLink(m, trail);   /* only a song of the catalog can be given a file */
     /* the upload button, to the right of the YouTube one: a file from this device takes the YouTube button's place for everybody */
     return '<span data-upl-wrap="' + esc(m.id) + '" style="display:flex;gap:var(--gap-tight);align-items:center">' +
-      '<button type="button" class="rbtn rbtn--icon' + (trail ? ' rrow__trail' : '') + '" data-upl="' + esc(m.id) + '" aria-label="העלאת קובץ" title="העלאת קובץ שיחליף את היוטיוב" style="width:var(--fab);height:var(--fab);min-height:var(--fab);color:var(--text-3);font:var(--fw-bold) var(--fs-xs)/1 var(--font)">' + I.up + '</button>' + ytLink(m, trail) + '</span>';
+      '<button type="button" class="rbtn rbtn--icon' + (trail ? ' rrow__trail' : '') + '" data-upl="' + esc(m.id) + '" aria-label="העלאת קובץ" title="העלאת קובץ שיחליף את היוטיוב" style="width:var(--fab);height:var(--fab);min-height:var(--fab);color:var(--text-3);font:var(--fw-bold) var(--fs-xs)/1 var(--font)">' + I.upload + '</button>' + ytLink(m, trail) + '</span>';
   }
   var songReg = {};
   var UPL_FORMATS = { mp3: 1, flac: 1, wav: 1, aiff: 1, aif: 1, m4a: 1 };
@@ -257,7 +258,7 @@
     e.preventDefault(); e.stopPropagation();
     if (b.dataset.busy) return;
     var id = b.dataset.upl, inp = document.createElement("input"); inp.type = "file"; inp.accept = "audio/*,.flac,.m4a,.aiff,.aif,.wav,.mp3";
-    var say = function (t, ms) { b.innerHTML = '<span>' + esc(t) + '</span>'; if (ms) setTimeout(function () { if (b.isConnected) { b.innerHTML = I.up; } }, ms); };
+    var say = function (t, ms) { b.innerHTML = '<span>' + esc(t) + '</span>'; if (ms) setTimeout(function () { if (b.isConnected) { b.innerHTML = I.upload; } }, ms); };
     inp.addEventListener("change", function () {
       var f = inp.files && inp.files[0]; if (!f) return;
       var fmt = (f.name.split(".").pop() || "").toLowerCase();
@@ -2085,7 +2086,7 @@
   /* the popup that adds songs to an exercise: the music page's cards and search, in two parts: the songs the catalog links to the exercise, and all the others */
   function openAddMusic(it, changed) {
     var me = FLOA_AUTH.userId(), vid = state.viv && state.viv.id;
-    var r = sheetOf("addMusDlg", "", '<style>#addMusDlg .sheet-head { display: none } html.bio-docked #addMusDlg .sheet-body { padding-bottom: 0 }</style><div style="display:flex;align-items:flex-end;gap:var(--gap-button)"><label class="rfield" style="flex:1 1 auto;margin:0"><span id="amc">חיפוש בין שירים</span><input id="amq" placeholder=" " autocomplete="off"></label><button type="button" class="rbtn rbtn--icon" id="amup" aria-label="העלאת קובץ מוזיקה" title="העלאת קובץ מוזיקה">' + I.up + '</button></div><div id="amlist" style="flex:1 1 auto;min-height:0;overflow-y:auto;margin-top:var(--sp-2);padding-bottom:calc(var(--dockfull) + var(--gutter))"><div class="rskel rskel--title"></div></div>');
+    var r = sheetOf("addMusDlg", "", '<style>#addMusDlg .sheet-head { display: none } html.bio-docked #addMusDlg .sheet-body { padding-bottom: 0 }</style><div style="display:flex;align-items:flex-end;gap:var(--gap-button)"><label class="rfield" style="flex:1 1 auto;margin:0"><span id="amc">חיפוש בין שירים</span><input id="amq" placeholder=" " autocomplete="off"></label><button type="button" class="rbtn rbtn--icon" id="amup" aria-label="העלאת קובץ מוזיקה" title="העלאת קובץ מוזיקה">' + I.upload + '</button></div><div id="amlist" style="flex:1 1 auto;min-height:0;overflow-y:auto;margin-top:var(--sp-2);padding-bottom:calc(var(--dockfull) + var(--gutter))"><div class="rskel rskel--title"></div></div>');
     r.style.overflowY = "hidden";   /* the search stays, only the cards scroll */
     var listEl = r.querySelector("#amlist"), qi = r.querySelector("#amq");
     var linked = null, rest = null, shown = 90, fresh = true;
