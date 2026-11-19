@@ -23,6 +23,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
 .song__t, .song__a { direction: ltr; text-align: right; overflow-wrap: anywhere; }   /* every title is in a Latin script: it reads left to right and sits against the right edge */
 .song__t { font: var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font); }
 .song__a { color: var(--text-2); font: var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font); }
+.song__d { color: var(--text-2); font: var(--fw-medium) var(--fs-s)/1 var(--font); font-variant-numeric: tabular-nums; }   /* the time: plain text, no chip */
 .song__f { display: flex; align-items: center; justify-content: space-between; margin-top: var(--gap-tight); }   /* the play button on the right, the time on the left */
 #out [data-audio] { background: var(--surface-2); border-color: var(--surface-2); width: 46px; min-height: var(--tag-s); height: var(--tag-s); padding: 0; border-radius: 999px; }   /* the size of the time chip */
 #out [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important; }
@@ -85,7 +86,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
     if (has) BioAudio.info(m.audio_object, m.title || m.name, m.artist);
     return '<div class="rcard rcard--flat rcard--compact"><span class="song__t">' + esc(m.title || m.name) + '</span><span class="song__a">' + (m.artist ? esc(m.artist) : '&nbsp;') + '</span>' +
       '<div class="song__f">' + (has ? '<button type="button" class="rbtn rbtn--icon" data-audio="' + esc(m.audio_object) + '" aria-label="השמעה" title="השמעה"></button>' : '<span class="rchip rchip--s">ללא קובץ</span>') +
-      (m.duration_sec ? '<span class="rchip rchip--s">' + mmss(m.duration_sec) + '</span>' : '<span></span>') + '</div></div>';
+      (m.duration_sec ? '<span class="song__d">' + mmss(m.duration_sec) + '</span>' : '<span></span>') + '</div></div>';
   }
   function more() {   /* the next cards, when the list is scrolled near its end: the page draws a few dozen at a time, never all three thousand */
     var out = document.getElementById("out"); if (!out || shown >= hitList.length) return;
