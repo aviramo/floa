@@ -39,7 +39,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
   "use strict";
   var app = document.getElementById("app");
   var HOME = /^(localhost|127[.])/.test(location.hostname) ? "/biodanza/" : "/";
-  var songs = [], timer = 0, MAXROWS = 300;
+  var songs = [], byObj = {}, timer = 0, MAXROWS = 300;
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   function fold(t) { return String(t == null ? "" : t).normalize("NFD").replace(new RegExp("[" + String.fromCharCode(0x300) + "-" + String.fromCharCode(0x36f) + String.fromCharCode(0x591) + "-" + String.fromCharCode(0x5c7) + "]", "g"), "").toLowerCase(); }
   function mmss(s) { return s ? Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2) : ""; }
@@ -48,7 +48,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
   }
   function shell() {
     app.innerHTML = '<header class="rhead"><div class="rhead__text"><h1 class="rhead__title">ניהול</h1><span class="rhead__sub" id="cnt"></span></div></header>' +
-      '<div class="pad"><label class="rfield"><span>חיפוש שיר או מבצע</span><input id="q" type="search" placeholder=" " autocomplete="off"></label><button type="button" class="rbtn rbtn--outline" id="cp">העתקת הרשימה המוצגת</button></div>' +
+      '<div class="pad" style="padding-bottom:0">' + playerHtml() + '</div><div class="pad"><label class="rfield"><span>חיפוש שיר או מבצע</span><input id="q" type="search" placeholder=" " autocomplete="off"></label><button type="button" class="rbtn rbtn--outline" id="cp">העתקת הרשימה המוצגת</button></div>' +
       '<div class="rlist" id="out"></div>';
     app.querySelector("#q").addEventListener("input", function () { clearTimeout(timer); timer = setTimeout(draw, 200); });
     app.querySelector("#cp").addEventListener("click", copyAll);
@@ -70,11 +70,10 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
     out.innerHTML = hit.slice(0, MAXROWS).map(function (m) {
       var has = m.audio_object && window.BioAudio;
       if (has) BioAudio.info(m.audio_object, m.title || m.name, m.artist);
-      return '<div class="rrow" style="flex-wrap:wrap"><div class="rrow__main"><span class="rrow__title">' + esc(m.title || m.name) + '</span>' + (m.artist ? '<span class="rrow__sub">' + esc(m.artist) + '</span>' : '') + '</div>' +
+      return '<div class="rrow"><div class="rrow__main"><span class="rrow__title">' + esc(m.title || m.name) + '</span>' + (m.artist ? '<span class="rrow__sub">' + esc(m.artist) + '</span>' : '') + '</div>' +
         (m.duration_sec ? '<span class="rchip rchip--s">' + mmss(m.duration_sec) + '</span>' : '') +
         '<span class="rchip rchip--s' + (m.audio_object ? ' rchip--ok' : '') + '">' + (m.audio_object ? "יש קובץ" : "ללא קובץ") + '</span>' +
-        (has ? BioAudio.button(m.audio_object, true) +
-          '<div class="bio-bar" data-for="' + esc(m.audio_object) + '" style="flex:0 0 100%;order:3;padding-top:var(--sp-1)"><input type="range" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר" style="display:block;width:100%;margin:0;direction:ltr;accent-color:var(--primary)"></div>' : '') + '</div>';
+        (has ? BioAudio.button(m.audio_object, true) : '') + '</div>';
     }).join("") + (hit.length > MAXROWS ? '<div class="rhint" style="padding:var(--gutter)">מוצגים ' + MAXROWS + ' הראשונים. מצמצמים בחיפוש כדי לראות את השאר.</div>' : '');
   }
   function load(offset, all) {
@@ -83,15 +82,34 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
       return rows.length === 1000 ? load(offset + 1000, all) : all;
     });
   }
-  /* the bar of a song: a drag puts it at that place (it is loaded if it is not yet), and the bar of the song that plays follows it */
+  /* ONE player, fixed above the search: play or pause, a bar to any place in the song, the place and the length in time, the song's name and performer.
+     The song's buttons in the rows start it; audio.js tells this page (event "bioaudio") what plays and where it is. */
+  var cur = { name: "", t: 0, d: 0, playing: false }, dragging = false;
+  var ICO = { play: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="width:var(--icon-l);height:var(--icon-l)"><path d="M7 4.5v15l13-7.5z"/></svg>', pause: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="width:var(--icon-l);height:var(--icon-l)"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>' };
+  function playerHtml() {
+    return '<div class="rrow" id="pl" style="flex-wrap:wrap;gap:var(--sp-1) var(--gap-button)"><button type="button" class="rbtn rbtn--icon" id="pp" aria-label="השמעה" disabled>' + ICO.play + '</button>' +
+      '<div class="rrow__main"><span class="rrow__title" id="pt">לא נבחר שיר</span><span class="rrow__sub" id="pa"></span></div>' +
+      '<span class="rchip rchip--s" id="pc" style="direction:ltr;font-variant-numeric:tabular-nums">0:00 / 0:00</span>' +
+      '<div class="bio-bar" style="flex:0 0 100%;padding-top:var(--sp-1)"><input type="range" id="pb" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר" disabled style="display:block;width:100%;margin:0;direction:ltr;accent-color:var(--primary)"></div></div>';
+  }
+  function paintPlayer() {
+    var pp = document.getElementById("pp"), pb = document.getElementById("pb"); if (!pp) return;
+    var m = byObj[cur.name], on = !!cur.name;
+    document.getElementById("pt").textContent = on ? (m ? (m.title || m.name) : "שיר") : "לא נבחר שיר";
+    document.getElementById("pa").textContent = on && m ? (m.artist || "") : "";
+    pp.disabled = !on; pb.disabled = !on || !(cur.d > 0);
+    pp.innerHTML = cur.playing ? ICO.pause : ICO.play; pp.setAttribute("aria-label", cur.playing ? "השהיה" : "השמעה");
+    document.getElementById("pc").textContent = mmss(Math.floor(cur.t)) + " / " + mmss(Math.round(cur.d || 0));
+    if (!dragging) { pb.value = cur.d > 0 ? Math.round(cur.t / cur.d * 1000) : 0; pb.style.setProperty("--p", pb.value / 10 + "%"); }
+  }
+  document.addEventListener("bioaudio", function (ev) { var d = ev.detail || {}; cur = { name: d.name || "", t: d.t || 0, d: d.d || 0, playing: !!d.playing }; paintPlayer(); });
+  document.addEventListener("click", function (e) { if (e.target.closest && e.target.closest("#pp") && window.BioAudio) BioAudio.playPause(); });
+  document.addEventListener("pointerdown", function (e) { if (e.target.id === "pb") dragging = true; });
+  document.addEventListener("pointerup", function () { dragging = false; });
   document.addEventListener("input", function (e) {
-    var bar = e.target.closest && e.target.closest(".bio-bar"); if (!bar || !window.BioAudio) return;
-    e.target.style.setProperty("--p", e.target.value / 10 + "%");
-    BioAudio.seekTo(bar.dataset.for, e.target.value / 1000);
-  });
-  document.addEventListener("bioaudio", function (ev) {
-    var d = ev.detail || {}; if (!d.name || !(d.d > 0)) return;
-    document.querySelectorAll('.bio-bar[data-for="' + d.name + '"] input').forEach(function (r) { if (document.activeElement !== r) { r.value = Math.round(d.t / d.d * 1000); r.style.setProperty("--p", r.value / 10 + "%"); } });
+    if (e.target.id !== "pb" || !window.BioAudio) return;
+    e.target.style.setProperty("--p", e.target.value / 10 + "%"); BioAudio.seek(e.target.value / 1000);
+    var t = cur.d * e.target.value / 1000; document.getElementById("pc").textContent = mmss(Math.floor(t)) + " / " + mmss(Math.round(cur.d || 0));
   });
   function start() {
     if (!window.FLOA_AUTH || !FLOA_AUTH.signedIn()) return msg("ניהול", "צריך להיכנס קודם דרך האפליקציה.", '<a class="rbtn" href="' + HOME + '">לאפליקציה</a>');
@@ -101,6 +119,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
       document.getElementById("out").innerHTML = '<div class="rskel rskel--title"></div>';
       return load(0, []).then(function (rows) {
         songs = rows.map(function (m) { m.f = fold([m.name, m.title, m.artist, m.collection].join(" ")); return m; });
+        byObj = {}; songs.forEach(function (m) { if (m.audio_object) byObj[m.audio_object] = m; });
         draw();
       });
     }).catch(function () { msg("ניהול", "לא הצלחנו לטעון. נסו שוב."); });
