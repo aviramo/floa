@@ -1090,7 +1090,7 @@
     var play = list.length > 1 ? '<button type="button" class="rchip rchip--s" data-recvloop="' + kind + '" aria-pressed="' + loopOn(kind) + '" title="כשמנגנים שיר מהקטע, השירים ממשיכים אחד אחרי השני ובסוף חוזרים להתחלה" style="cursor:pointer;border:0">בלולאה</button>' : '';
     var add = edit ? '<div class="rcard rcard--compact" data-addm role="button" tabindex="0" style="margin:0;min-width:0;display:flex;align-items:center;justify-content:center;gap:var(--sp-1);cursor:pointer;min-height:var(--tag-s);border:1px dashed var(--line-strong);background:transparent;box-shadow:none;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>הוספת מוזיקה</div>' : '';
     return '<div data-recv="' + kind + '" style="' + (kind === "start" ? 'border-bottom:1px solid var(--line)' : 'border-top:1px solid var(--line);margin-top:var(--sp-2)') + '"><div style="display:flex;align-items:center;justify-content:space-between;padding:var(--gutter) var(--gutter) 0"><span class="rrow__title" style="font-weight:var(--fw-black)">' + label + '</span>' + play + '</div>' +
-      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);padding:var(--gutter)">' + list.map(function (m) { return optCardHtml(m, false, edit, true, key); }).join("") + add + '</div></div>';
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);padding:var(--gutter)">' + list.map(function (m) { var nw = window.__bioNow || {}; return optCardHtml(m, !!(nw.playing && m.audio_object && nw.name === m.audio_object), edit, true, key); }).join("") + add + '</div></div>';
   }
   function loadItems() {
     return itemsOf(state.viv.id).then(function (r) { r = r || []; state.items = r.filter(function (i) { return !i.backlog; }).concat(r.filter(function (i) { return i.backlog; })); });   /* the numbered exercises, then the backlog */
@@ -1744,6 +1744,11 @@
   }
   document.addEventListener("bioaudio", function (ev) {
     var d = ev.detail || {}; window.__bioNow = { name: d.name || "", t: d.t || 0, d: d.d || 0 };
+    window.__bioNow.playing = !!d.playing;
+    document.querySelectorAll("[data-recv] .bio-card").forEach(function (c) {   /* in the start and end music the song that plays has the green frame */
+      var pb = c.querySelector("[data-audio]"), on = !!d.playing && !!pb && pb.dataset.audio === d.name;
+      if ((c.getAttribute("aria-current") === "true") !== on) { if (on) c.setAttribute("aria-current", "true"); else c.removeAttribute("aria-current"); }
+    });
     document.querySelectorAll(".bio-clk").forEach(function (sp) {
       var dur = parseInt(sp.dataset.dur, 10) || 0, mine = d.name && sp.dataset.for === d.name;
       var tot = mine && d.d > 0 ? Math.floor(d.d) : dur, txt2 = mine ? clock(Math.floor(d.t || 0)) + (tot ? " / " + clock(tot) : "") : (tot ? clock(tot) : "");   /* only the song that has the player shows where it is */
