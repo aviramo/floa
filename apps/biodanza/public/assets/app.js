@@ -594,7 +594,7 @@
   }, true);
   /* a song as a row to choose from: the same element, a row of its own */
   function songRow(m, cur, attr, extra) {
-    return '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-2);flex-wrap:wrap"' + (cur ? ' aria-current="true"' : '') + '>' + heartBtn(m) + '<button type="button" class="rrow__main" ' + attr + '="' + m.id + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit">' + songLines(m) + '</button>' + (extra || '') + playCol(m, true) + songBar(m) + '</div>';   /* the text takes what is left, so a long name never pushes the play tile to a line of its own */
+    return '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-2);flex-wrap:wrap"' + (cur ? ' aria-current="true"' : '') + '>' + heartBtn(m) + '<button type="button" class="rrow__main" ' + attr + '="' + m.id + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit">' + songLines(m) + '</button>' + (extra || '') + playCol(m, true) + '</div>';   /* the text takes what is left, so a long name never pushes the play tile to a line of its own */
   }
   window.toast = window.toast || toast;
   document.addEventListener("click", function (e) {
@@ -1859,8 +1859,8 @@
         l.innerHTML = cats.length ? cats.map(function (k) {
           var on = open[k] != null ? open[k] : !!q;   /* a search opens the categories that have something in it */
           var head = '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-2);background:var(--surface)"><button type="button" class="rrow__main" data-cat="' + esc(k) + '" aria-expanded="' + on + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit;display:flex;align-items:center;gap:var(--sp-2)"><span style="flex:1 1 auto;min-width:0"><span class="rrow__title" style="font-weight:var(--fw-black)">' + esc(catName(k) || "ללא קטגוריה") + '</span><span class="rrow__sub">' + by[k].length + ' תרגילים</span></span><span style="flex:none;width:20px;height:20px;transition:transform .2s;' + (on ? 'transform:rotate(180deg)' : '') + '">' + I.down + '</span></button></div>';
-          return head + (on ? '<div style="margin-inline-start:var(--gutter);border-inline-start:3px solid var(--primary)">' + by[k].map(function (e) {
-            return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-ex="' + e.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title" style="font-weight:var(--fw-regular)">' + esc(name(e)) + '</span><span class="rrow__sub">' + esc((e.exercise_lines || []).map(function (x) { return lineName(x.line_key); }).filter(Boolean).join(" · ")) + '</span></button></div>';
+          return head + (on ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);padding:var(--sp-1) var(--gutter) var(--sp-2)">' + by[k].map(function (e) {
+            return cardUi({ attrs: 'data-ex="' + e.id + '" role="button" tabindex="0"', title: name(e), sub: (e.exercise_lines || []).map(function (x) { return lineName(x.line_key); }).filter(Boolean).join(" · "), subLtr: false });
           }).join("") + '</div>' : "");
         }).join("") : ph("לא נמצא תרגיל", "");
         l.querySelectorAll("[data-cat]").forEach(function (b) { b.addEventListener("click", function () {
@@ -1868,23 +1868,36 @@
         }); });
         l.querySelectorAll("[data-ex]").forEach(function (b) { b.addEventListener("click", function () {
           var ex = state.cat.filter(function (x) { return x.id === b.dataset.ex; })[0];
-          l.querySelectorAll(".rrow").forEach(function (w) { w.removeAttribute("aria-current"); });
-          b.closest(".rrow").setAttribute("aria-current", "true");
+          l.querySelectorAll(".rrow, .bio-card").forEach(function (w) { w.removeAttribute("aria-current"); });
+          (b.closest(".bio-card") || b.closest(".rrow")).setAttribute("aria-current", "true");
           if (sheet) previewSheet(ex, swapIt);   /* adding or replacing: the exercise is shown first, and the action is its own button in its header: on the left on a wide screen, in a second popup on a narrow one */
           else previewEx(ex, swapIt);
         }); });
         /* a typed search also finds songs (any exercise's); choosing one adds an exercise with no name and that song */
         if (q && !swapIt) {
-          var box = document.createElement("div"); box.innerHTML = '<div class="rrow__title" style="padding:var(--sp-3) var(--gutter) var(--sp-1)">מוזיקות</div><div data-sgs></div>'; l.appendChild(box);
+          var box = document.createElement("div"); l.appendChild(box);
           var tok = ++sgTok;
           loadExMusic().then(function (gs) {
             if (tok !== sgTok || !box.isConnected) return;
             var seen = {}, songs = [];
             gs.forEach(function (g) { g.songs.forEach(function (m) { if (!seen[m.id] && fz(songName(m) + " " + songBy(m), q)) { seen[m.id] = 1; songs.push(m); } }); });
-            var sl = box.querySelector("[data-sgs]");
             if (!songs.length) { box.remove(); return; }
-            sl.innerHTML = songs.slice(0, 60).map(function (m) { return songRow(m, false, "data-sg"); }).join("");
-            sl.addEventListener("click", function (ev) { var bt = ev.target.closest("[data-sg]"); if (!bt) return; var m = songs.filter(function (x) { return x.id === bt.dataset.sg; })[0]; if (m) addSongOnly(m, sheet); });
+            var shown = songs.slice(0, 60);
+            function drawSongs() {
+              var on = open.__songs != null ? open.__songs : true;
+              box.innerHTML = '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-2);background:var(--surface)"><button type="button" class="rrow__main" data-songs aria-expanded="' + on + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit;display:flex;align-items:center;gap:var(--sp-2)"><span style="flex:1 1 auto;min-width:0"><span class="rrow__title" style="font-weight:var(--fw-black)">מוזיקות</span><span class="rrow__sub">' + songs.length + ' שירים</span></span><span style="flex:none;width:20px;height:20px;transition:transform .2s;' + (on ? 'transform:rotate(180deg)' : '') + '">' + I.down + '</span></button></div>' +
+                (on ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);padding:var(--sp-1) var(--gutter) var(--sp-2)">' + shown.map(function (m) {
+                  return cardUi({ attrs: 'data-sgc="' + esc(m.id) + '"', ltr: true, title: songName(m), sub: songBy(m), pill: cardPill(m), time: clkSpan(m), chip: '<button type="button" class="rchip rchip--s" data-sg="' + esc(m.id) + '" style="cursor:pointer;border:0">הוספה</button>' });
+                }).join("") + '</div>' : '');
+            }
+            drawSongs();
+            box.addEventListener("click", function (ev) {
+              if (ev.target.closest("[data-songs]")) { open.__songs = !(open.__songs != null ? open.__songs : true); drawSongs(); return; }
+              if (ev.target.closest("[data-audio], a")) return;
+              var bt = ev.target.closest("[data-sg]");
+              if (!bt) { var cd = ev.target.closest("[data-sgc]"), pb = cd && cd.querySelector("[data-audio]"); if (pb) pb.click(); return; }
+              var m = songs.filter(function (x) { return x.id === bt.dataset.sg; })[0]; if (m) addSongOnly(m, sheet);
+            });
           }, function () { box.remove(); });
         }
       }
