@@ -490,7 +490,7 @@
     function top() {   /* while a popup is open the page behind it is inert, the pill with it: it moves INTO the topmost open popup (as a popover, so it is drawn over it) and back to the page when none is open */
       var dl = document.querySelectorAll("dialog[open]"), target = dl.length ? dl[dl.length - 1] : document.body;
       try { dock.hidePopover(); } catch (x) { /* not shown yet */ }
-      dock.classList.toggle("away", !!document.querySelector("dialog[open] .sheet-foot"));
+      dock.classList.toggle("away", !wide() && !!document.querySelector("dialog[open] .sheet-foot"));
       if (dock.parentNode !== target) target.appendChild(dock);
       try { dock.showPopover(); } catch (x) { /* an old browser: the pill is an ordinary fixed element */ }
     }
