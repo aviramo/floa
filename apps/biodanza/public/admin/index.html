@@ -17,7 +17,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
 #app > .rlist { flex: 1 1 auto; }
 #out, #out * { user-select: text; -webkit-user-select: text; }   /* the text can be selected and copied */
 .pad { padding: var(--gutter); display: flex; flex-direction: column; gap: var(--gap-field); }
-#out { display: grid; grid-template-columns: repeat(auto-fill, minmax(21rem, 1fr)); gap: var(--sp-1); padding: var(--sp-1) var(--gutter) var(--gutter); align-content: start; }
+#out { display: grid; grid-template-columns: repeat(auto-fill, minmax(21rem, 1fr)); gap: var(--sp-1); padding: var(--sp-1) var(--gutter) var(--gutter); align-content: start; align-items: start; }   /* each card is as tall as its own content, not as the tallest in its row */
 #out > .rempty, #out > .rhint, #out > .rskel { grid-column: 1 / -1; }
 #out > .rcard { margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .song__t, .song__a { direction: ltr; text-align: right; overflow-wrap: anywhere; }   /* every title is in a Latin script: it reads left to right and sits against the right edge */
@@ -84,7 +84,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
   function card(m) {
     var has = m.audio_object && window.BioAudio;
     if (has) BioAudio.info(m.audio_object, m.title || m.name, m.artist);
-    return '<div class="rcard rcard--flat rcard--compact"><span class="song__t">' + esc(m.title || m.name) + '</span><span class="song__a">' + (m.artist ? esc(m.artist) : '&nbsp;') + '</span>' +
+    return '<div class="rcard rcard--flat rcard--compact"><span class="song__t">' + esc(m.title || m.name) + '</span>' + (m.artist ? '<span class="song__a">' + esc(m.artist) + '</span>' : '') +
       '<div class="song__f">' + (has ? '<button type="button" class="rbtn rbtn--icon" data-audio="' + esc(m.audio_object) + '" aria-label="השמעה" title="השמעה"></button>' : '<span class="rchip rchip--s">ללא קובץ</span>') +
       (m.duration_sec ? '<span class="song__d">' + mmss(m.duration_sec) + '</span>' : '<span></span>') + '</div></div>';
   }
