@@ -43,7 +43,12 @@
     });
   }
   function keep(name, blob) {
-    return db().then(function (d) { if (!d) return; try { d.transaction("files", "readwrite").objectStore("files").put(blob, name); } catch (e) { /* the file still plays; it is only not kept */ } });
+    return db().then(function (d) {   /* resolves when the song is really stored; fails when the device has no room, so that nobody believes it is there */
+      if (!d) return;
+      return new Promise(function (res, rej) {
+        try { var tx = d.transaction("files", "readwrite"); tx.objectStore("files").put(blob, name); tx.oncomplete = function () { res(); }; tx.onerror = tx.onabort = function () { rej(tx.error || new Error("store")); }; } catch (e) { rej(e); }
+      });
+    });
   }
   function isKept(name) { return kept(name).then(function (b) { return !!b; }); }
   function drop(name) {
@@ -66,7 +71,7 @@
           if (!r.ok) { var e = new Error("audio " + r.status); e.status = r.status; throw e; }
           return r.blob().then(function (b) { clearTimeout(to); return b; });
         }, function (er) { clearTimeout(to); throw er; });
-      }).then(function (b) { keep(name, b); return b; });
+      }).then(function (b) { keep(name, b).then(null, function () { /* played now, not kept: save() tells the sync */ }); return b; });
     });
   }
 
@@ -209,7 +214,10 @@
     kept: isKept,
     /* put the song on this device (downloaded now if it is not here yet): resolves when it is stored */
     save: function (name) {
-      return bytes(name).then(function (b) { return keep(name, b); });
+      return kept(name).then(function (have) {   /* a song already on the device is not written again (a sync that rewrote 150MB every time would be slow and wear the phone) */
+        if (have) return;
+        return bytes(name).then(function (b) { return keep(name, b); });
+      });
     },
     drop: drop,
     names: keptNames,

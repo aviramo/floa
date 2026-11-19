@@ -330,7 +330,7 @@
     var PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
     var PLAY = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>';
     var playing = false, loaded = false, closed = false, seekDrag = false, leftNow = 0, frac = 0, curT = 0, curD = 0, curTitle = "", curArtist = "", lastH = 0, last = null, curName = "", asked = {};
-    try { last = JSON.parse(localStorage.getItem("biodanza.last") || "null"); if (last && !last.n) last = null; } catch (x) { last = null; }   /* the song that played last: the footer keeps it, also after a reload */
+    try { last = JSON.parse(localStorage.getItem("biodanza.lastsong") || "null"); if (last && !last.n) last = null; } catch (x) { last = null; }   /* the song that played last: the footer keeps it, also after a reload */
     if (last && window.BioAudio && BioAudio.info) BioAudio.info(last.n, last.t, last.a);
     var HIST = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg>';
     var histName = "";
@@ -398,7 +398,7 @@
       var d2 = ev.detail || {}, el2 = dock.querySelector(".bio-dock__sync"); if (!el2) return;
       clearTimeout(syncHide);
       if (d2.state === "done") { el2.textContent = d2.total ? "✓ הכול במכשיר" : ""; el2.hidden = !d2.total; syncHide = setTimeout(function () { el2.hidden = true; }, 8000); return; }
-      if (d2.state === "stopped") { el2.textContent = "ההורדה למכשיר נעצרה"; el2.hidden = false; syncHide = setTimeout(function () { el2.hidden = true; }, 8000); return; }
+      if (d2.state === "stopped") { el2.textContent = d2.reason === "QuotaExceededError" ? "אין מקום במכשיר לשירים" : "ההורדה למכשיר נעצרה"; el2.hidden = false; syncHide = setTimeout(function () { el2.hidden = true; }, 8000); return; }
       if (!d2.total) { el2.hidden = true; return; }
       el2.textContent = "מוריד למכשיר " + d2.done + "/" + d2.total; el2.hidden = false;
     });
@@ -498,12 +498,12 @@
             songInfo[nm0] = { t: x.title || x.name, a: x.artist || "" }; if (window.BioAudio && BioAudio.info) BioAudio.info(nm0, songInfo[nm0].t, songInfo[nm0].a);
             api("/rest/v1/listen_history?audio_object=eq." + encodeURIComponent(nm0), { method: "PATCH", prefer: "return=minimal", json: { title: songInfo[nm0].t, artist: songInfo[nm0].a } }).then(null, function () { /* none */ });
             try { var h0 = JSON.parse(localStorage.getItem("biodanza.history") || "[]") || []; h0.forEach(function (e) { if (e.n === nm0 && !e.t) { e.t = songInfo[nm0].t; e.a = songInfo[nm0].a; } }); localStorage.setItem("biodanza.history", JSON.stringify(h0)); } catch (x3) { /* not kept */ }   /* the history line written before the name was known gets it */
-            if (curName === nm0) { curTitle = songInfo[nm0].t; curArtist = songInfo[nm0].a; last = { n: nm0, t: curTitle, a: curArtist, d: curD > 0 ? Math.floor(curD) : 0 }; try { localStorage.setItem("biodanza.last", JSON.stringify(last)); } catch (x2) { /* not kept */ } sync(); }
+            if (curName === nm0) { curTitle = songInfo[nm0].t; curArtist = songInfo[nm0].a; last = { n: nm0, t: curTitle, a: curArtist, d: curD > 0 ? Math.floor(curD) : 0 }; try { localStorage.setItem("biodanza.lastsong", JSON.stringify(last)); } catch (x2) { /* not kept */ } sync(); }
           }, function () { /* the title stays the plain word */ });
         }
       }
       if (started) remember(dd.name, curTitle, curArtist);
-      if (loaded && curTitle && (!last || last.n !== dd.name || last.t !== curTitle || last.a !== curArtist || (dd.d > 0 && last.d !== Math.floor(dd.d)))) { last = { n: dd.name, t: curTitle, a: curArtist, d: dd.d > 0 ? Math.floor(dd.d) : (last && last.n === dd.name ? last.d : 0) }; try { localStorage.setItem("biodanza.last", JSON.stringify(last)); } catch (x) { /* not kept */ } }
+      if (loaded && curTitle && (!last || last.n !== dd.name || last.t !== curTitle || last.a !== curArtist || (dd.d > 0 && last.d !== Math.floor(dd.d)))) { last = { n: dd.name, t: curTitle, a: curArtist, d: dd.d > 0 ? Math.floor(dd.d) : (last && last.n === dd.name ? last.d : 0) }; try { localStorage.setItem("biodanza.lastsong", JSON.stringify(last)); } catch (x) { /* not kept */ } }
       if (loaded && dd.d > 0) { leftNow = Math.max(0, Math.ceil(dd.d - dd.t)); frac = dd.t / dd.d; } else { leftNow = 0; frac = 0; }
       if (window.BioAudio && BioAudio.volume) volState.v = BioAudio.volume(0); paintVol();
       ensureIn(); sync();

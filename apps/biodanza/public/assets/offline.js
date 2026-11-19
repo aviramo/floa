@@ -40,7 +40,7 @@
     return out;
   }
   var prog = { done: 0, total: 0 };
-  function emit(state) { try { document.dispatchEvent(new CustomEvent("biooffline", { detail: { state: state || "run", done: prog.done, total: prog.total } })); } catch (e) { /* nobody listens */ } }
+  function emit(state, reason) { try { document.dispatchEvent(new CustomEvent("biooffline", { detail: { state: state || "run", reason: reason || "", done: prog.done, total: prog.total } })); } catch (e) { /* nobody listens */ } }
   function putSongs(names, step) {   /* three songs at a time: faster than one, and a phone is not asked for ten downloads at once */
     var i = 0, failed = null;
     function ok() { if (step) step(); }
@@ -121,7 +121,7 @@
         var used = {}; rows.forEach(function (r) { (r.songs || []).forEach(function (n) { used[n] = true; }); });
         if (!window.BioAudio || !BioAudio.names) return;
         return BioAudio.names().then(function (names) { names.forEach(function (n) { if (!used[n]) BioAudio.drop(n); }); });
-      }).then(function () { emit("done"); }, function () { emit("stopped"); }).then(function () {
+      }).then(function () { emit("done"); }, function (e) { emit("stopped", e && e.name); }).then(function () {
         syncing = null;
         if (syncAgain) { syncAgain = false; }
       });
