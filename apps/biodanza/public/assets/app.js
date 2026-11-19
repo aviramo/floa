@@ -2003,7 +2003,7 @@
     show(head(itemName(it) || "מוזיקה", "", true, clr) + '<div class="rlist" id="mlist"><div class="rskel rskel--title"></div></div>', function (r) {
       on(r, "back", out);
       on(r, "mclear", function () { chooseSongHere(it, null, out); });
-      (it.exercise_id ? api("/rest/v1/exercise_music?exercise_id=eq." + it.exercise_id + "&select=music(id,name,title,artist,duration_sec,audio_object,in_catalog)") : Promise.resolve([])).then(function (rows) {
+      similarRows(it).then(function (rows) {
         var seen = {}, list = [];
         (rows || []).forEach(function (x) { if (x.music && !seen[x.music.id]) { seen[x.music.id] = 1; list.push(x.music); } });
         var row = function (id, t, sub, cur, m) { return '<div class="rrow rrow--link"' + (cur ? ' aria-current="true"' : '') + '><button type="button" class="rrow__main" data-m="' + id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(t) + '</span>' + (sub ? '<span class="rrow__sub">' + esc(sub) + '</span>' : '') + '</button>' + (m ? songBtn(m, true) : '') + '</div>'; };
@@ -2018,6 +2018,17 @@
   /* ---------- other music: files the catalogs do not list. Same rows as the songs, with a tag ---------- */
   /* narrow screen: choosing the song is a popup from the bottom; "other music" is a second popup on top of it, closing it is back */
   /* the songs an exercise of a vivencia is torn between, oldest first; the chosen one is among them even when it was chosen before the options existed */
+  /* similar songs: the songs that sit, in the catalog, in the same exercises as the songs this exercise already has (that is what "similar" means for now).
+     The exercise of a vivencia is a copy and has no link to a catalog exercise: the songs are the only thing that finds its likes. */
+  function similarRows(it) {
+    var ids = optList(it).map(function (m) { return m.id; }).filter(Boolean);
+    if (!ids.length) return Promise.resolve([]);
+    return api("/rest/v1/exercise_music?music_id=in.(" + ids.join(",") + ")&select=exercise_id&limit=1000").then(function (rows) {
+      var ex = {}; (rows || []).forEach(function (x) { ex[x.exercise_id] = 1; });
+      var exs = Object.keys(ex); if (!exs.length) return [];
+      return api("/rest/v1/exercise_music?exercise_id=in.(" + exs.join(",") + ")&select=music(id,name,title,artist,duration_sec,audio_object,in_catalog)&limit=2000");
+    });
+  }
   function optList(it) {
     var seen = {}, out = [];
     (it.item_music_options || []).slice().sort(function (a, b) { return String(a.created_at).localeCompare(String(b.created_at)); }).forEach(function (o) { if (o.music && !seen[o.music.id]) { seen[o.music.id] = 1; out.push(o.music); } });
@@ -2219,9 +2230,9 @@
       }
       confirmAddMusic(songName(m), it.__recv ? (it.__recv === "start" ? "מוסיקת ההתחלה" : "מוסיקת הסיום") : (itemName(it) || "התרגיל"), function () { addOpt(it, m).then(function () { draw(); if (changed) changed(); }, fail); });
     });
-    var linkedP = it.exercise_id ? api("/rest/v1/exercise_music?exercise_id=eq." + it.exercise_id + "&select=music(id,name,title,artist,duration_sec,audio_object,in_catalog)").then(function (rows) {
+    var linkedP = similarRows(it).then(function (rows) {
       var seen = {}, out = []; (rows || []).forEach(function (x) { if (x.music && !seen[x.music.id]) { seen[x.music.id] = 1; out.push(x.music); } }); return out;
-    }) : Promise.resolve([]);
+    });
     Promise.all([linkedP, loadAllSongs()]).then(function (res) {
       linked = res[0]; var lk = {}; linked.forEach(function (m) { lk[m.id] = 1; });
       rest = res[1].filter(function (m) { return !lk[m.id] && (m.in_catalog !== false || m.owner_id === me || (vid && m.vivencia_id === vid)); });
@@ -2268,7 +2279,7 @@
     var dlg0 = document.getElementById("musicDlg"), clr = dlg0.querySelector("#mclear");
     if (clr) { clr.classList.remove("rbtn--primary"); clr.style.cssText += ";background:var(--surface-2);border-color:var(--surface-2);color:var(--text)";   /* clearing is not the main action: the header's neutral tile, not the green one */
       if (!it.music_id) RosterSheet.setDirty(dlg0, false); else RosterSheet.setDirty(dlg0, true); clr.addEventListener("click", function () { chooseSong(it, null); }); }
-    (it.exercise_id ? api("/rest/v1/exercise_music?exercise_id=eq." + it.exercise_id + "&select=music(id,name,title,artist,duration_sec,audio_object,in_catalog)") : Promise.resolve([])).then(function (rows) {
+    similarRows(it).then(function (rows) {
       var seen = {}, list = [];
       (rows || []).forEach(function (x) { if (x.music && !seen[x.music.id]) { seen[x.music.id] = 1; list.push(x.music); } });
       var plain = function (attr, t, sub, cur) { return '<div class="rrow rrow--link"' + (cur ? ' aria-current="true"' : '') + '><button type="button" class="rrow__main" ' + attr + ' style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(t) + '</span>' + (sub ? '<span class="rrow__sub">' + esc(sub) + '</span>' : '') + '</button></div>'; };
@@ -2641,7 +2652,7 @@
       var pos = (top && top[0] ? top[0].position : 0) + 1;
       return Promise.all([firstMusic(e.id, mid), detached(e.id)]).then(function (r) {
         var m = r[0], d = r[1];
-        return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=representation", json: { vivencia_id: v.id, position: pos, backlog: true, exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, title: d.title || null, poetics: d.poetics || null, guidance: d.guidance || null } });
+        return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=representation", json: { vivencia_id: v.id, position: pos, backlog: true, exercise_id: null, music_id: m && m[0] ? m[0].music_id : null, title: d.title || null, poetics: d.poetics || null, guidance: d.guidance || null } });
       });
     }).then(function (made) {
       newId = made && made[0] ? made[0].id : null;
@@ -2728,7 +2739,7 @@
     if (swapIt) {   /* the same place in the curve, another exercise: its first song, and none of the old exercise's own wording */
       return Promise.all([firstMusic(e.id, mid), detached(e.id)]).then(function (r) {
         var m = r[0], d = r[1];
-        return api("/rest/v1/vivencia_items?id=eq." + swapIt.id, { method: "PATCH", prefer: "return=minimal", json: { exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, title: d.title || null, poetics: d.poetics || null, guidance: d.guidance || null } }).then(function () { return optionsFor(swapIt.id, all); });
+        return api("/rest/v1/vivencia_items?id=eq." + swapIt.id, { method: "PATCH", prefer: "return=minimal", json: { exercise_id: null, music_id: m && m[0] ? m[0].music_id : null, title: d.title || null, poetics: d.poetics || null, guidance: d.guidance || null } }).then(function () { return optionsFor(swapIt.id, all); });
       }).then(function () { toast("התרגיל הוחלף");
         if (sheet) {   /* the popups slide out and the same place opens again with the new exercise: no new address, so no entry */
           closeSheets();
@@ -2742,7 +2753,7 @@
     var openNew = function () { var it = newId && state.items.filter(function (x) { return x.id === newId; })[0]; if (it) { paint(); if (wide()) itemScreen(it); else go(function () { itemScreen(it); }); } else paint(); };   /* what was added is the open, chosen exercise */
     Promise.all([firstMusic(e.id, mid), detached(e.id)]).then(function (r) {
       var m = r[0], d = r[1];
-      return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=representation", json: { vivencia_id: state.viv.id, position: pos, backlog: true, exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, title: d.title || null, poetics: d.poetics || null, guidance: d.guidance || null } }).then(function (made) { newId = made && made[0] ? made[0].id : null; return newId ? optionsFor(newId, all) : null; });   /* the songs that were marked come with the exercise, the first as its own; none marked, none comes */
+      return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=representation", json: { vivencia_id: state.viv.id, position: pos, backlog: true, exercise_id: null, music_id: m && m[0] ? m[0].music_id : null, title: d.title || null, poetics: d.poetics || null, guidance: d.guidance || null } }).then(function (made) { newId = made && made[0] ? made[0].id : null; return newId ? optionsFor(newId, all) : null; });   /* the songs that were marked come with the exercise, the first as its own; none marked, none comes */
     }).then(function () { toast("התרגיל נוסף"); if (sheet) { closeSheets(); return loadItems().then(openNew, fail); }
       if (catPreview || catPanel || catPrevId) { closeCatPrev(); closeCatPanel(true); return loadItems().then(openNew, fail); }
       if (wide()) show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); else stack().pop(); back(); }, fail);

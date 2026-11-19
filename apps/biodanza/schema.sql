@@ -841,3 +841,8 @@ drop policy if exists item_likes_write on biodanza.item_likes;
 create policy item_likes_write on biodanza.item_likes for all to authenticated
   using (user_id = auth.uid() and biodanza.is_allowed()) with check (user_id = auth.uid() and biodanza.is_allowed());
 grant select, insert, update, delete on biodanza.item_likes to authenticated, service_role;
+
+-- a vivencia's exercise is a copy of what it was: it is never linked to a catalog exercise (the owner's rule, 2026-11-19)
+create or replace function biodanza.item_no_catalog_link() returns trigger language plpgsql as $f$ begin new.exercise_id := null; return new; end $f$;
+drop trigger if exists item_no_catalog_link on biodanza.vivencia_items;
+create trigger item_no_catalog_link before insert or update of exercise_id on biodanza.vivencia_items for each row execute function biodanza.item_no_catalog_link();
