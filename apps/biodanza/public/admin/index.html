@@ -15,6 +15,7 @@ html, body { height: 100%; }
 body { margin: 0; display: flex; flex-direction: column; height: 100dvh; background: var(--bg); color: var(--text); font: var(--fw-regular) var(--fs-m)/var(--lh-body) var(--font); }
 #app { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; max-width: 56rem; width: 100%; margin-inline: auto; }
 #app > .rlist { flex: 1 1 auto; }
+#out, #out * { user-select: text; -webkit-user-select: text; }   /* the text can be selected and copied */
 .pad { padding: var(--gutter); display: flex; flex-direction: column; gap: var(--gap-field); }
 </style>
 </head>
@@ -36,13 +37,24 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
   }
   function shell() {
     app.innerHTML = '<header class="rhead"><div class="rhead__text"><h1 class="rhead__title">ניהול</h1><span class="rhead__sub" id="cnt"></span></div></header>' +
-      '<div class="pad"><label class="rfield"><span>חיפוש שיר, מבצע או קוד</span><input id="q" type="search" placeholder=" " autocomplete="off"></label></div>' +
+      '<div class="pad"><label class="rfield"><span>חיפוש שיר, מבצע או קוד</span><input id="q" type="search" placeholder=" " autocomplete="off"></label><button type="button" class="rbtn rbtn--outline" id="cp">העתקת הרשימה המוצגת</button></div>' +
       '<div class="rlist" id="out"></div>';
     app.querySelector("#q").addEventListener("input", function () { clearTimeout(timer); timer = setTimeout(draw, 200); });
+    app.querySelector("#cp").addEventListener("click", copyAll);
+  }
+  function found() {
+    var words = fold(document.getElementById("q").value.trim()).split(/\s+/).filter(Boolean);
+    return { words: words, hit: songs.filter(function (m) { return words.every(function (w) { return m.f.indexOf(w) >= 0; }); }) };
+  }
+  /* every song that matches the search (not only the rows drawn), one per line: name, performer, length, code, file */
+  function copyAll() {
+    var b = document.getElementById("cp"), txt = found().hit.map(function (m) { return [m.title || m.name, m.artist, mmss(m.duration_sec), m.collection, m.audio_object ? "יש קובץ" : "ללא קובץ"].join("	"); }).join("
+");
+    function done(ok) { b.textContent = ok ? "הועתק" : "ההעתקה נחסמה, אפשר לסמן ולהעתיק ידנית"; setTimeout(function () { b.textContent = "העתקת הרשימה המוצגת"; }, 2000); }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(function () { done(true); }, function () { done(false); }); else done(false);
   }
   function draw() {
-    var words = fold(document.getElementById("q").value.trim()).split(/\s+/).filter(Boolean), out = document.getElementById("out");
-    var hit = songs.filter(function (m) { return words.every(function (w) { return m.f.indexOf(w) >= 0; }); });
+    var f = found(), words = f.words, hit = f.hit, out = document.getElementById("out");
     document.getElementById("cnt").textContent = (words.length ? hit.length + " מתוך " : "") + songs.length + " שירים";
     if (!hit.length) { out.innerHTML = '<div class="rempty"><b>לא נמצא כלום</b><span>נסו מילה אחרת</span></div>'; return; }
     out.innerHTML = hit.slice(0, MAXROWS).map(function (m) {
