@@ -1469,10 +1469,24 @@
     });
     return chain.then(function () { return api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { music_id: m ? m.id : null } }); }).then(function () { it.music_id = m ? m.id : null; it.music = m; });
   }
+  /* the time of a music card: the place in the song and its whole length, "1:23 / 3:40"; the player keeps it up to date (the bioaudio event) */
+  function clkSpan(m) {
+    var nw = window.__bioNow || {}, d = durOf(m), t = nw.name && m.audio_object && nw.name === m.audio_object ? Math.floor(nw.t || 0) : 0;
+    var tot = nw.name && nw.name === m.audio_object && nw.d > 0 ? Math.floor(nw.d) : d;
+    return '<span class="bio-clk" data-dur="' + (d || "") + '"' + (m.audio_object ? ' data-for="' + esc(m.audio_object) + '"' : '') + ' style="direction:ltr;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + clock(t) + (tot ? " / " + clock(tot) : "") + '</span>';
+  }
+  document.addEventListener("bioaudio", function (ev) {
+    var d = ev.detail || {}; window.__bioNow = { name: d.name || "", t: d.t || 0, d: d.d || 0 };
+    document.querySelectorAll(".bio-clk").forEach(function (sp) {
+      var dur = parseInt(sp.dataset.dur, 10) || 0, mine = d.name && sp.dataset.for === d.name;
+      var tot = mine && d.d > 0 ? Math.floor(d.d) : dur, txt2 = clock(mine ? Math.floor(d.t || 0) : 0) + (tot ? " / " + clock(tot) : "");
+      if (sp.textContent !== txt2) sp.textContent = txt2;
+    });
+  });
   /* the card of a music option, the same as the music page's: the name, the performer, and at the foot the play tile and the time; the chosen one has the green frame, the others a chip to choose them */
   function optCardHtml(m, sel, withRm) {
     var tile = songBtn(m, false).replace(/width:var\(--fab\);height:var\(--fab\);min-height:var\(--fab\);/g, "width:46px;height:var(--tag-s);min-height:var(--tag-s);padding:0;border-radius:999px;background:var(--surface-2);");
-    var tm = '<span class="bio-time" data-dur="' + (m.duration_sec || "") + '"' + (m.audio_object ? ' data-for="' + esc(m.audio_object) + '"' : '') + ' style="color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + (durOf(m) ? clock(durOf(m)) : '') + '</span>';
+    var tm = clkSpan(m);
     var pickChip = sel ? '' : '<button type="button" class="rchip rchip--s" data-choose="' + esc(m.id) + '" title="לבחור אותה לתרגיל בוויוונסיה" style="cursor:pointer;border:0">בחירה</button>';
     var rm = !withRm ? '' : '<button type="button" class="rbtn rbtn--icon" data-orm="' + esc(m.id) + '" aria-label="מחיקה מהתרגיל" title="מחיקה מהתרגיל" style="position:absolute;top:2px;right:2px;color:var(--text-3);min-height:var(--ctl);height:var(--ctl);width:var(--ctl);padding:0">' + I.trash + '</button>';
     return '<div class="rcard rcard--compact" data-opt="' + esc(m.id) + '" role="button" tabindex="0"' + (sel ? ' aria-current="true"' : '') + ' style="margin:0;min-width:0;display:flex;flex-direction:column;gap:2px;cursor:pointer;background:var(--on-primary)' + (sel ? ';border-color:var(--primary);box-shadow:inset 0 0 0 1px var(--primary)' : '') + '">' +
@@ -1543,7 +1557,7 @@
     var linked = null, rest = null, shown = 90, fresh = true;
     function cardHtml(m, added) {
       var tile = songBtn(m, false).replace(/width:var\(--fab\);height:var\(--fab\);min-height:var\(--fab\);/g, "width:46px;height:var(--tag-s);min-height:var(--tag-s);padding:0;border-radius:999px;background:var(--surface-2);");
-      var tm = '<span class="bio-time" data-dur="' + (m.duration_sec || "") + '"' + (m.audio_object ? ' data-for="' + esc(m.audio_object) + '"' : '') + ' style="color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + (durOf(m) ? clock(durOf(m)) : '') + '</span>';
+      var tm = clkSpan(m);
       return '<div class="rcard rcard--compact" data-am="' + esc(m.id) + '" role="button" tabindex="0"' + (added ? ' aria-current="true"' : '') + ' style="margin:0;min-width:0;display:flex;flex-direction:column;gap:2px;cursor:pointer;background:var(--on-primary)' + (added ? ';border-color:var(--primary)' : '') + '">' +
         '<span style="direction:ltr;text-align:left;overflow-wrap:anywhere;font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(songName(m)) + '</span>' +
         '<span style="direction:ltr;text-align:left;overflow-wrap:anywhere;color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font)">' + (songBy(m) ? esc(songBy(m)) : '&nbsp;') + '</span>' +
