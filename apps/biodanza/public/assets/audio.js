@@ -81,7 +81,7 @@
   }
   el.addEventListener("pause", paint); el.addEventListener("play", paint); el.addEventListener("ended", paint);
   /* the time left of the song that plays, told to the page (app.js counts it down under the song's button) */
-  function tell(name, t, d) { document.dispatchEvent(new CustomEvent("bioaudio", { detail: { name: name, t: t, d: d, playing: !el.paused && !el.ended } })); }
+  function tell(name, t, d) { document.dispatchEvent(new CustomEvent("bioaudio", { detail: { name: name, t: t, d: d, playing: !el.paused && !el.ended, title: (infos[name] || {}).title || "", artist: (infos[name] || {}).artist || "" } })); }
   el.addEventListener("timeupdate", function () { tell(now, el.currentTime, el.duration || 0); });
   el.addEventListener("play", function () { tell(now, el.currentTime, el.duration || 0); });
   el.addEventListener("pause", function () { tell(now, el.currentTime, el.duration || 0); });

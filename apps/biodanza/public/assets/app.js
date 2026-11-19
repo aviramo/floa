@@ -262,13 +262,16 @@
   (function () {
     var st = document.createElement("style");
     st.textContent = ":root { --dockfull: calc(var(--fab) + var(--gap-button) * 2 + var(--inset-b)); --dockh: var(--inset-b) } html.bio-docked { --dockh: var(--dockfull) } html.bio-docked body { box-sizing: border-box; padding-bottom: var(--dockh) } html.bio-docked .rfab:not(.rfab--in) { bottom: calc(var(--gutter) + var(--dockh)) } html.bio-docked .rmsg--toast { bottom: calc(var(--gutter) + var(--dockh)) !important } " +
-      ".bio-dock { position: fixed; inset: auto 0 0 0; margin: 0; width: auto; max-width: none; box-sizing: border-box; height: var(--dockfull); display: flex; align-items: center; gap: var(--sp-2); padding: 0 var(--gutter) var(--inset-b); overflow: visible; color: var(--text); background: var(--surface-2); border: 0; border-top: 1px solid var(--line); border-radius: 0; box-shadow: 0 -4px 14px -4px rgba(63, 47, 20, .16); z-index: var(--z-sticky); } " +   /* a square footer across the bottom: the page ends above it, the add button and the toasts sit above it */
+      ".bio-dock { position: fixed; inset: auto 0 0 0; margin: 0; width: auto; max-width: none; box-sizing: border-box; min-height: calc(var(--fab) + var(--gap-button) * 2 + var(--inset-b)); display: flex; align-items: center; gap: var(--gap-button); padding: var(--gap-button) var(--gutter) calc(var(--gap-button) + var(--inset-b)); overflow: visible; color: var(--text); background: var(--surface-2); border: 0; border-top: 1px solid var(--line); border-radius: 0; box-shadow: 0 -4px 14px -4px rgba(63, 47, 20, .16); z-index: var(--z-sticky); } " +   /* a square footer across the bottom: the page ends above it, the add button and the toasts sit above it */
       "@keyframes bio-dock-pop { from { opacity: 0; transform: translateY(calc(var(--fab) / 2)) } to { opacity: 1; transform: none } } .bio-dock.pop { animation: bio-dock-pop var(--t-base) var(--ease) } @keyframes bio-dock-out { from { opacity: 1; transform: none } to { opacity: 0; transform: translateY(calc(var(--fab) / 2)) } } .bio-dock.leaving { animation: bio-dock-out var(--t-base) var(--ease) forwards; pointer-events: none } @media (prefers-reduced-motion: reduce) { .bio-dock.leaving { animation: none } } @media (prefers-reduced-motion: reduce) { .bio-dock.pop { animation: none } } " +
       "@media (min-width: 1024px) { .rfab[data-act=\"swap\"] { left: auto !important; right: calc(var(--listw) + var(--gutter)) !important; bottom: calc(var(--gutter) + var(--dockh)) !important } } html.bio-docked dialog:not(:has(.sheet-foot)) .sheet-body { padding-bottom: calc(var(--dockfull) + var(--gutter)) } .bio-dock:not(.on), .bio-dock.closed { display: none } .bio-dock { transition: transform var(--t-base) var(--ease), opacity var(--t-base) var(--ease) } .bio-dock.away { opacity: 0; transform: translateY(calc(var(--fab) / 2)); pointer-events: none } @media (prefers-reduced-motion: reduce) { .bio-dock { transition: none } } " +
       ".bio-dock__btn { flex: none; display: grid; place-items: center; width: var(--fab); height: var(--fab); padding: 0; border: 0; border-radius: var(--r-fab); background: var(--danger); color: var(--on-primary); cursor: pointer } " +
       ".bio-dock__btn[data-st=\"paused\"] { background: var(--surface-2); color: var(--text) } .bio-dock__btn:disabled { background: var(--surface-2); color: var(--text-3); cursor: default } " +
       ".bio-bar input, .bio-dock__bar { -webkit-appearance: none; appearance: none; background: transparent; height: 20px; margin: 0; cursor: pointer; --p: 0%; --c: var(--primary) } .bio-bar input:hover, .bio-dock__bar:hover { --c: var(--danger) } .bio-bar input::-webkit-slider-runnable-track, .bio-dock__bar::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--c) var(--p), var(--surface-2) var(--p)) } .bio-bar input::-webkit-slider-thumb, .bio-dock__bar::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border: 0; border-radius: 50%; background: var(--c) } .bio-bar input::-moz-range-track, .bio-dock__bar::-moz-range-track { height: 4px; border-radius: 2px; background: var(--surface-2) } .bio-bar input::-moz-range-progress, .bio-dock__bar::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--c) } .bio-bar input::-moz-range-thumb, .bio-dock__bar::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: var(--c) } .bio-bar input:focus, .bio-bar input:focus-visible, .bio-dock__bar:focus, .bio-dock__bar:focus-visible, .bio-dock__btn:focus, .bio-dock__btn:focus-visible, .bio-dock__x:focus, .bio-dock__x:focus-visible { outline: none } .bio-dock .bio-vol { margin: 0 } @media (max-width: 1023px) { .bio-dock .bio-vol { display: none !important } } .bio-dock__x { flex: none; display: grid; place-items: center; width: var(--icon-m, 20px); height: var(--ctl); padding: 0; border: 0; border-radius: var(--r-ctl); background: transparent; color: var(--text-2); cursor: pointer } .bio-dock__x > svg { width: var(--icon-m, 20px); height: var(--icon-m, 20px); stroke-width: var(--icon-w) } .bio-dock.idle .bio-dock__x { display: none } " +
-      ".bio-dock__btn > svg { width: var(--icon-l); height: var(--icon-l) } " +
+      ".bio-dock .rbtn > svg { width: var(--icon-l); height: var(--icon-l) } " +
+      ".bio-dock .bio-bar { flex: 1 1 8rem; min-width: 0; padding: 0 } .bio-dock .bio-bar .bio-dock__bar { width: 100%; display: block; direction: ltr } .bio-dock .bio-bar input::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--c) var(--p), var(--on-primary) var(--p)) } .bio-dock .bio-bar input::-moz-range-track { background: var(--on-primary) } " +
+      ".bio-dock__name { flex: 0 1 28rem; min-width: 0; direction: ltr; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis } .bio-dock__name span { color: var(--text-2) } .bio-dock__name span:not(:empty)::before { content: \"· \" } " +
+      "@media (max-width: 700px) { .bio-dock { flex-wrap: wrap } .bio-dock__name { flex: 1 1 100%; order: 4 } .bio-dock .bio-bar { flex: 0 0 100%; order: 3 } } " +
       ".bio-dock__time { flex: none; min-width: 2.6em; text-align: center; font: var(--fw-bold) var(--fs-xs)/1 var(--font); font-variant-numeric: tabular-nums } " +
       ".bio-dock__bar { flex: 1 1 0; width: auto; max-width: none; min-width: 0; display: block; margin: 0; padding: 0; direction: ltr; accent-color: var(--primary); touch-action: none } " +
       ".bio-dock__none { flex: 1 1 auto; min-width: 0; text-align: center; color: var(--text-2); font: var(--fw-regular) var(--fs-xs)/1.2 var(--font) } " +
@@ -277,13 +280,13 @@
     document.head.appendChild(st);
     var PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
     var PLAY = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>';
-    var playing = false, loaded = false, closed = false, seekDrag = false, leftNow = 0, frac = 0;
+    var playing = false, loaded = false, closed = false, seekDrag = false, leftNow = 0, frac = 0, curT = 0, curD = 0, curTitle = "", curArtist = "", lastH = 0;
+    function clk(s) { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2); }
     function make(cls) {
       var d = document.createElement("div"); d.className = cls + " idle";
-      d.innerHTML = '<button type="button" class="bio-dock__btn" disabled aria-label="השמעה">' + PLAY + '</button><span class="bio-dock__time">0:00</span>' +
-        '<input class="bio-dock__bar" type="range" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר"><span class="bio-dock__none">לא נבחרה מוזיקה</span>' + volDock() + '<button type="button" class="bio-dock__x" aria-label="עצירה וסגירה" title="עצירה וסגירה">' + I.x + '</button>';
+      d.innerHTML = '<button type="button" class="rbtn rbtn--icon" disabled aria-label="השמעה">' + PLAY + '</button><span class="rchip rchip--s bio-dock__time" style="direction:ltr;font-variant-numeric:tabular-nums">0:00 / 0:00</span>' +
+        '<div class="bio-bar"><input class="bio-dock__bar" type="range" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר" disabled></div>' + volDock() + '<div class="rrow__main bio-dock__name"><b>לא נבחר שיר</b> <span></span></div>';
       d.querySelector("button").addEventListener("click", function () { if (window.BioAudio && BioAudio.playPause) BioAudio.playPause(); });
-      d.querySelector(".bio-dock__x").addEventListener("click", function () { closed = true; if (window.BioAudio && BioAudio.stop) BioAudio.stop(); sync(); });
       var r = d.querySelector("input");
       r.addEventListener("pointerdown", function () { seekDrag = true; });
       ["pointerup", "pointercancel", "change"].forEach(function (n) { r.addEventListener(n, function () { seekDrag = false; }); });
@@ -303,16 +306,15 @@
       var on = !!(window.FLOA_AUTH && FLOA_AUTH.signedIn());
       [dock].forEach(function (d) {
         d.classList.toggle("on", on); d.classList.toggle("away", !!document.querySelector("dialog[open] .sheet-foot"));   /* a popup with its own action button at the bottom (a name, a confirmation) is not covered: the pill slides away while it is open */
-        var wasClosed = d.classList.contains("closed"), leaving = d.classList.contains("leaving");
-        if (loaded) { d.classList.remove("leaving", "closed", "idle"); if (wasClosed) { d.classList.add("pop"); setTimeout(function () { d.classList.remove("pop"); }, 400); } }
-        else if (!wasClosed && !leaving) { d.classList.add("leaving"); setTimeout(function () { if (!loaded) { d.classList.remove("leaving"); d.classList.add("closed", "idle"); } }, 260); }   /* an X (or the end of the song) slides it away, then it is gone */
-        else if (wasClosed) d.classList.add("idle");
-        document.documentElement.classList.toggle("bio-docked", loaded && on);   /* a popup's list scrolls far enough that its last row ends above the pill */
-        var b = d.querySelector("button"), t = d.querySelector(".bio-dock__time"), r = d.querySelector("input"), s = clock(leftNow);
-        b.disabled = !loaded; b.dataset.st = playing ? "playing" : "paused";
+        d.classList.toggle("idle", !loaded);
+        document.documentElement.classList.toggle("bio-docked", on);   /* the page ends above the footer */
+        var b = d.querySelector("button"), t = d.querySelector(".bio-dock__time"), r = d.querySelector("input"), s = clk(curT) + " / " + clk(curD), nm = d.querySelector(".bio-dock__name");
+        b.disabled = !loaded; r.disabled = !loaded || !(curD > 0); b.dataset.st = playing ? "playing" : "paused";
         var lab = playing ? "השהיית השיר" : "השמעה"; if (b.getAttribute("aria-label") !== lab) { b.setAttribute("aria-label", lab); b.title = lab; b.innerHTML = playing ? PAUSE : PLAY; }
         if (t.textContent !== s) t.textContent = s;
+        var nh = '<b>' + esc(loaded ? (curTitle || "שיר") : "לא נבחר שיר") + '</b> <span>' + esc(loaded ? curArtist : "") + '</span>'; if (nm.dataset.h !== nh) { nm.dataset.h = nh; nm.innerHTML = nh; }
         if (!seekDrag) r.value = Math.round(frac * 1000);
+        var hh = d.offsetHeight; if (hh && hh !== lastH) { lastH = hh; document.documentElement.style.setProperty("--dockfull", hh + "px"); }   /* the footer's own height: what the page leaves under it */
       });
     }
     var topKey = "";
@@ -343,6 +345,7 @@
     document.addEventListener("bioaudio", function (ev) {
       var dd = ev.detail || {};
       playing = !!dd.playing; loaded = !!dd.name; if (loaded) closed = false;
+      curT = loaded ? dd.t || 0 : 0; curD = loaded ? dd.d || 0 : 0; curTitle = dd.title || ""; curArtist = dd.artist || "";
       if (loaded && dd.d > 0) { leftNow = Math.max(0, Math.ceil(dd.d - dd.t)); frac = dd.t / dd.d; } else { leftNow = 0; frac = 0; }
       if (window.BioAudio && BioAudio.volume) volState.v = BioAudio.volume(0); paintVol();
       ensureIn(); sync();
