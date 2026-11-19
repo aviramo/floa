@@ -397,7 +397,7 @@
         return cardUi({ attrs: 'data-hi="' + i + '" role="button" tabindex="0"', selected: !!(nw.name && nw.name === e.n), ltr: true, title: e.t || "שיר", sub: e.a || "", pill: cardPill(m),
           time: '<span style="color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font)">' + esc(when(e.at)) + '</span>' });
       }).join("");
-      histLayer.innerHTML = head("היסטוריית האזנה", "", false, "") + '<div class="rlist">' + (rows.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);padding:var(--gutter)">' + cards + '</div>' : ph("אין עדיין היסטוריה", "שירים שהתחלתם להשמיע יופיעו כאן")) + '</div>';
+      histLayer.innerHTML = head("היסטוריית האזנה", "", false, "") + '<div class="rlist">' + (rows.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);padding:var(--gutter)">' + cards + '</div>' : ph("אין עדיין היסטוריה", "מוסיקה שהתחלתם להשמיע תופיע כאן")) + '</div>';
       placeHist(); histOpen = true; pl.classList.add("bio-dim");
       requestAnimationFrame(function () { histLayer.classList.add("is-open"); });
     }
@@ -423,7 +423,7 @@
           '<span style="color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + esc(when(e.at)) + '</span></div></div>';
       }).join("");
       RosterSheet.render(dlg, { title: "היסטוריית האזנה", from: "bottom", size: "l",
-        body: '<div style="padding:var(--sp-2) 0 var(--gutter)">' + (rows.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);align-items:stretch">' + cards + '</div>' : ph("אין עדיין היסטוריה", "שירים שהתחילו להתנגן יופיעו כאן")) + '</div>' });
+        body: '<div style="padding:var(--sp-2) 0 var(--gutter)">' + (rows.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);align-items:stretch">' + cards + '</div>' : ph("אין עדיין היסטוריה", "מוסיקה שהתחילה להתנגן תופיע כאן")) + '</div>' });
       dlg.onclick = function (ev) {
         var c = ev.target.closest && ev.target.closest("[data-hi]"); if (!c) return;
         var e = rows[+c.dataset.hi]; if (!e) return;
@@ -470,7 +470,7 @@
       var d2 = ev.detail || {}, el2 = dock.querySelector(".bio-dock__sync"); if (!el2) return;
       clearTimeout(syncHide);
       if (d2.state === "done") { el2.textContent = d2.total ? "✓ הכול במכשיר" : ""; el2.hidden = !d2.total; syncHide = setTimeout(function () { el2.hidden = true; }, 8000); return; }
-      if (d2.state === "stopped") { el2.textContent = d2.reason === "QuotaExceededError" ? "אין מקום במכשיר לשירים" : "ההורדה למכשיר נעצרה"; el2.hidden = false; syncHide = setTimeout(function () { el2.hidden = true; }, 8000); return; }
+      if (d2.state === "stopped") { el2.textContent = d2.reason === "QuotaExceededError" ? "אין מקום במכשיר למוסיקה" : "ההורדה למכשיר נעצרה"; el2.hidden = false; syncHide = setTimeout(function () { el2.hidden = true; }, 8000); return; }
       if (!d2.total) { el2.hidden = true; return; }
       el2.textContent = "מוריד למכשיר " + d2.done + "/" + d2.total; el2.hidden = false;
     });
@@ -640,12 +640,12 @@
   /* the heart: the songs I loved. At the right edge of a song's row, in line with the play tile and with the back button above. */
   function heartBtn(m) {
     var on = !!likes[m.id];
-    return '<button type="button" class="rbtn rbtn--icon rrow__trail" data-like="' + m.id + '" aria-pressed="' + on + '" aria-label="' + (on ? "הסרה מהשירים שאהבתי" : "שיר שאהבתי") + '" title="' + (on ? "הסרה מהשירים שאהבתי" : "שיר שאהבתי") + '" style="flex:none;width:var(--ctl);height:var(--ctl);min-height:var(--ctl);color:' + (on ? "var(--danger)" : "var(--text-3)") + '">' + (on ? I.heart.replace('fill="none"', 'fill="currentColor"') : I.heart) + '</button>';
+    return '<button type="button" class="rbtn rbtn--icon rrow__trail" data-like="' + m.id + '" aria-pressed="' + on + '" aria-label="' + (on ? "הסרה מהמוסיקה שאהבתי" : "מוסיקה שאהבתי") + '" title="' + (on ? "הסרה מהמוסיקה שאהבתי" : "מוסיקה שאהבתי") + '" style="flex:none;width:var(--ctl);height:var(--ctl);min-height:var(--ctl);color:' + (on ? "var(--danger)" : "var(--text-3)") + '">' + (on ? I.heart.replace('fill="none"', 'fill="currentColor"') : I.heart) + '</button>';
   }
   function paintHearts(id) {
     document.querySelectorAll('[data-like="' + id + '"]').forEach(function (b) {
       var on = !!likes[id]; b.setAttribute("aria-pressed", on); b.style.color = on ? "var(--danger)" : "var(--text-3)";
-      b.title = b.ariaLabel = on ? "הסרה מהשירים שאהבתי" : "שיר שאהבתי"; b.setAttribute("aria-label", b.title);
+      b.title = b.ariaLabel = on ? "הסרה מהמוסיקה שאהבתי" : "מוסיקה שאהבתי"; b.setAttribute("aria-label", b.title);
       b.innerHTML = on ? I.heart.replace('fill="none"', 'fill="currentColor"') : I.heart;
     });
   }
@@ -1043,7 +1043,7 @@
       on(r, "back", back);
       api("/rest/v1/song_likes?select=music(id,name,title,artist,duration_sec,audio_object,in_catalog)&order=created_at.desc").then(function (rows) {
         var l = r.querySelector("#likl"), list = (rows || []).map(function (x) { return x.music; }).filter(Boolean);
-        l.innerHTML = list.length ? list.map(function (m) { return songRow(m, false, "data-liked"); }).join("") : ph("עוד אין שירים שאהבת", "לחצו על הלב ליד שיר כדי לשמור אותו כאן");
+        l.innerHTML = list.length ? list.map(function (m) { return songRow(m, false, "data-liked"); }).join("") : ph("עוד אין מוסיקה שאהבת", "לחצו על הלב ליד שיר כדי לשמור אותו כאן");
       }, fail);
     });
   }
@@ -1056,7 +1056,7 @@
       '<div class="rlist" data-fab-room id="hl"><div class="rskel rskel--title"></div></div>' +
       '', function (r) {
       on(r, "homemore", function (b) {   /* one menu: the songs I loved, who may enter (the manager), leaving */
-        var items = state.offline ? [] : [{ label: "ויוונסיות שאהבתי", icon: I.heart, fn: function () { goSub(likedVivScreen); } }, { label: "תרגילים שאהבתי", icon: I.heart, fn: function () { goSub(likedExScreen); } }, { label: "שירים שאהבתי", icon: I.heart, fn: function () { goSub(likedScreen); } }];   /* in the order of the app: vivencias, exercises, songs */
+        var items = state.offline ? [] : [{ label: "ויוונסיות שאהבתי", icon: I.heart, fn: function () { goSub(likedVivScreen); } }, { label: "תרגילים שאהבתי", icon: I.heart, fn: function () { goSub(likedExScreen); } }, { label: "מוסיקה שאהבתי", icon: I.heart, fn: function () { goSub(likedScreen); } }];   /* in the order of the app: vivencias, exercises, songs */
         if (state.me.admin) items.push({ label: "ניהול משתמשים", icon: I.users, fn: allowPopup });
         items.push({ label: "יציאה", icon: I.out, tone: "danger", fn: function () { Promise.resolve(FLOA_AUTH.signOut()).then(function () { location.reload(); }); } });
         menu(b, items);
@@ -1359,7 +1359,7 @@
     if (!edit && !list.length) return "";
     var label = kind === "start" ? "מוסיקת התחלה" : "מוסיקת סיום";
     var key = state.viv.id + "|" + kind;
-    var play = list.length > 1 ? '<button type="button" class="rbtn rbtn--icon' + (loopLive(kind) ? ' is-live' : '') + '" data-recvloop="' + kind + '" aria-pressed="' + loopOn(kind) + '" aria-label="לולאה" title="לולאה: כשמנגנים שיר מהקטע, השירים ממשיכים אחד אחרי השני ובסוף חוזרים להתחלה">' + I.loop + '</button>' : '';
+    var play = list.length > 1 ? '<button type="button" class="rbtn rbtn--icon' + (loopLive(kind) ? ' is-live' : '') + '" data-recvloop="' + kind + '" aria-pressed="' + loopOn(kind) + '" aria-label="לולאה" title="לולאה: כשמנגנים מוסיקה מהקטע, המוסיקה ממשיכה אחד אחרי השני ובסוף חוזרים להתחלה">' + I.loop + '</button>' : '';
     var add = edit ? '<div class="rcard rcard--compact" data-addm role="button" tabindex="0" style="margin:0;min-width:0;display:flex;align-items:center;justify-content:center;gap:var(--sp-1);cursor:pointer;min-height:var(--tag-s);border:1px dashed var(--line-strong);background:transparent;box-shadow:none;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>הוספת מוזיקה</div>' : '';
     return '<div data-recv="' + kind + '" style="' + (kind === "start" ? '' : 'margin-top:var(--sp-2)') + '"><div class="bio-sech" style="display:flex;align-items:center;justify-content:space-between;padding:var(--gutter) var(--gutter) 0"><span class="rrow__title" style="font-weight:var(--fw-black)">' + label + '</span><span style="display:flex;align-items:center;gap:var(--sp-1)">' + (edit ? '<button type="button" class="rbtn rbtn--icon" data-addm aria-label="הוספת מוזיקה" title="הוספת מוזיקה">' + I.plus + '</button>' : '') + play + '</span></div>' +
       '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);padding:var(--gutter)">' + list.map(function (m) { var nw = window.__bioNow || {}; return optCardHtml(m, !!(nw.playing && m.audio_object && nw.name === m.audio_object), edit, true, key); }).join("") + '</div></div>';
@@ -1956,7 +1956,7 @@
           return rows.length === PAGE ? lp(off + PAGE) : rest;
         });
       }
-      return lp(0).then(function (r) { if (r.length) o.push({ id: "_loose", name: "שירים ללא תרגיל", songs: r, seen: {} }); return o; }, function () { return o; });
+      return lp(0).then(function (r) { if (r.length) o.push({ id: "_loose", name: "מוסיקה ללא תרגיל", songs: r, seen: {} }); return o; }, function () { return o; });
     }
     exMusicP = page(0).then(function (o) { return loose(o.sort(function (a, b) { return a.name.localeCompare(b.name, "he"); })); }, function (e) { exMusicP = null; throw e; });
     return exMusicP;
@@ -2009,7 +2009,7 @@
         var row = function (id, t, sub, cur, m) { return '<div class="rrow rrow--link"' + (cur ? ' aria-current="true"' : '') + '><button type="button" class="rrow__main" data-m="' + id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(t) + '</span>' + (sub ? '<span class="rrow__sub">' + esc(sub) + '</span>' : '') + '</button>' + (m ? songBtn(m, true) : '') + '</div>'; };
         var l = r.querySelector("#mlist");
         musicBrowse(l, list, it, function (m) { chooseSongHere(it, m, out); },
-          '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-act="other" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">מוזיקות אחרות</span><span class="rrow__sub">שירים שאינם בקטלוג</span></button></div>');
+          '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-act="other" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">מוזיקות אחרות</span><span class="rrow__sub">מוסיקה שאינה בקטלוג</span></button></div>');
         on(l, "other", function () { otherMusic(it, out); subEnter(); });
       }, fail);
     }, "d");
@@ -2184,7 +2184,7 @@
   /* the popup that adds songs to an exercise: the music page's cards and search, in two parts: the songs the catalog links to the exercise, and all the others */
   function openAddMusic(it, changed) {
     var me = FLOA_AUTH.userId(), vid = state.viv && state.viv.id;
-    var r = sheetOf("addMusDlg", "", '<style>#addMusDlg .sheet-head { display: none } html.bio-docked #addMusDlg .sheet-body { padding-bottom: 0 }</style><div style="display:flex;align-items:flex-end;gap:var(--gap-button)"><label class="rfield" style="flex:1 1 auto;margin:0"><span id="amc">חיפוש בין שירים</span><input id="amq" placeholder=" " autocomplete="off"></label><button type="button" class="rbtn rbtn--ghost" id="amup" aria-label="העלאת קובץ מוזיקה" title="העלאת קובץ מוזיקה" style="flex:none;gap:var(--sp-1)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.upload.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span><span>העלאה</span></button></div><div id="amlist" style="flex:1 1 auto;min-height:0;overflow-y:auto;margin-top:var(--sp-2);padding-bottom:calc(var(--dockfull) + var(--gutter))"><div class="rskel rskel--title"></div></div>');
+    var r = sheetOf("addMusDlg", "", '<style>#addMusDlg .sheet-head { display: none } html.bio-docked #addMusDlg .sheet-body { padding-bottom: 0 }</style><div style="display:flex;align-items:flex-end;gap:var(--gap-button)"><label class="rfield" style="flex:1 1 auto;margin:0"><span id="amc">חיפוש בין מוסיקות</span><input id="amq" placeholder=" " autocomplete="off"></label><button type="button" class="rbtn rbtn--ghost" id="amup" aria-label="העלאת קובץ מוזיקה" title="העלאת קובץ מוזיקה" style="flex:none;gap:var(--sp-1)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.upload.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span><span>העלאה</span></button></div><div id="amlist" style="flex:1 1 auto;min-height:0;overflow-y:auto;margin-top:var(--sp-2);padding-bottom:calc(var(--dockfull) + var(--gutter))"><div class="rskel rskel--title"></div></div>');
     r.style.overflowY = "hidden";   /* the search stays, only the cards scroll */
     var listEl = r.querySelector("#amlist"), qi = r.querySelector("#amq");
     var linked = null, rest = null, shown = 90, fresh = true;
@@ -2197,10 +2197,10 @@
       var hit = function (m) { return fz(songName(m) + " " + songBy(m), s0); };
       var cur = it.__preview ? optList(it).filter(function (m) { return it.sel.indexOf(m.id) >= 0; }) : optList(it), has = {}; cur.forEach(function (m) { has[m.id] = 1; });   /* on the catalog's exercise only what was marked counts */
       var nmOf = function (m) { return songName(m) + " " + songBy(m); }, sl = nearest(cur, nmOf, s0), lk = nearest(linked.filter(function (m) { return !has[m.id]; }), nmOf, s0), ot = nearest(rest.filter(function (m) { return !has[m.id]; }), nmOf, s0), cut = ot.slice(0, shown);
-      var cnt = r.querySelector("#amc"); if (cnt) cnt.textContent = "חיפוש " + (words.length ? (sl.length + lk.length + ot.length) + " מתוך " : "בין ") + (linked.length + rest.length) + " שירים";   /* as the music page says it */
+      var cnt = r.querySelector("#amc"); if (cnt) cnt.textContent = "חיפוש " + (words.length ? (sl.length + lk.length + ot.length) + " מתוך " : "בין ") + (linked.length + rest.length) + " מוסיקות";   /* as the music page says it */
       var grid = function (arr) { return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(18rem,1fr));gap:var(--sp-1)">' + arr.map(function (m) { return cardHtml(m, !!has[m.id]); }).join("") + '</div>'; };
       var head = function (t, n) { return '<div class="rrow__sub" style="padding:var(--sp-2) 0 var(--sp-1)">' + esc(t) + ' (' + n + ')</div>'; };
-      listEl.innerHTML = (sl.length ? head(it.__preview ? "נבחרו" : "בתרגיל", sl.length) + grid(sl) : '') + (lk.length ? head("מוסיקה מתרגילים חופפים", lk.length) + grid(lk) : '') + (cut.length ? head("שירים אחרים", ot.length) + grid(cut) : '') + (!sl.length && !lk.length && !cut.length ? ph("לא נמצא", "") : '');
+      listEl.innerHTML = (sl.length ? head(it.__preview ? "נבחרו" : "בתרגיל", sl.length) + grid(sl) : '') + (lk.length ? head("מוסיקה מתרגילים חופפים", lk.length) + grid(lk) : '') + (cut.length ? head("מוסיקה אחרת", ot.length) + grid(cut) : '') + (!sl.length && !lk.length && !cut.length ? ph("לא נמצא", "") : '');
     }
     var upb = r.querySelector("#amup");
     if (upb) upb.addEventListener("click", function () {
@@ -2296,7 +2296,7 @@
       (rows || []).forEach(function (x) { if (x.music && !seen[x.music.id]) { seen[x.music.id] = 1; list.push(x.music); } });
       var plain = function (attr, t, sub, cur) { return '<div class="rrow rrow--link"' + (cur ? ' aria-current="true"' : '') + '><button type="button" class="rrow__main" ' + attr + ' style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(t) + '</span>' + (sub ? '<span class="rrow__sub">' + esc(sub) + '</span>' : '') + '</button></div>'; };
       var l = r.querySelector("#mlist");
-      musicBrowse(l, list, it, function (m) { chooseSong(it, m); }, plain('data-act="other"', "מוזיקות אחרות", "שירים שאינם בקטלוג", false));
+      musicBrowse(l, list, it, function (m) { chooseSong(it, m); }, plain('data-act="other"', "מוזיקות אחרות", "מוסיקה שאינה בקטלוג", false));
       on(l, "other", function () { otherSheet(it); });
     }, fail);
   }

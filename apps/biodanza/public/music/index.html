@@ -181,7 +181,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
   function draw() {
     var f = found(), words = f.words, out = document.getElementById("out");
     hitList = f.hit; shown = 0; out.scrollTop = 0;
-    document.getElementById("cnt").textContent = "חיפוש " + (words.length ? hitList.length + " מתוך " : "בין ") + songs.length + " שירים";
+    document.getElementById("cnt").textContent = "חיפוש " + (words.length ? hitList.length + " מתוך " : "בין ") + songs.length + " מוסיקות";
     if (!hitList.length) { out.innerHTML = '<div class="rempty"><b>לא נמצא כלום</b><span>נסו מילה אחרת</span></div>'; return; }
     out.innerHTML = ""; more();
     if (!out.dataset.scr) { out.dataset.scr = "1"; out.addEventListener("scroll", function () { if (out.scrollTop + out.clientHeight > out.scrollHeight - 600) more(); }, { passive: true }); }
