@@ -762,10 +762,13 @@
     }
     if (wire) wire(t); }
   var catPanel = null;
-  (function () { var st = document.createElement("style"); st.textContent = "#catPanel { position: absolute; inset: 0; z-index: 6; display: flex; flex-direction: column; min-height: 0; animation: bioPanel .25s var(--ease) } @keyframes bioPanel { from { transform: translateX(100%) } to { transform: none } } @media (prefers-reduced-motion: reduce) { #catPanel { animation: none } } #catPanel > .rlist { flex: 1 1 auto; min-height: 0 }"; document.head.appendChild(st); })();
+  (function () { var st = document.createElement("style"); st.textContent = "#catPanel { position: absolute; inset: 0; z-index: 6; display: flex; flex-direction: column; min-height: 0; animation: bioPanel .25s var(--ease) } @keyframes bioPanel { from { transform: translateX(100%) } to { transform: none } } #catPanel.is-out { animation: bioPanelOut .25s var(--ease) forwards } @keyframes bioPanelOut { from { transform: none } to { transform: translateX(100%) } } @media (prefers-reduced-motion: reduce) { #catPanel { animation: none } } #catPanel > .rlist { flex: 1 1 auto; min-height: 0 }"; document.head.appendChild(st); })();
   function closeCatPanel() {
     if (!catPanel) return;
-    catPanel.remove(); catPanel = null; state.pickerShow = false; pd.classList.remove("bio-dim");
+    var gone = catPanel; catPanel = null; state.pickerShow = false; pd.classList.remove("bio-dim");
+    if (!gone.isConnected || window.matchMedia("(prefers-reduced-motion: reduce)").matches) { gone.remove(); return; }
+    gone.style.pointerEvents = "none"; gone.classList.add("is-out");   /* it slides out to the right, the way it came in */
+    gone.addEventListener("animationend", function () { gone.remove(); }); setTimeout(function () { gone.remove(); }, 400);
   }
   function openCatPanel() {   /* wide screen: the catalog slides in from the right over the whole column, up to the divider */
     if (catPanel) return;
