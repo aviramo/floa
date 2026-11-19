@@ -1819,7 +1819,8 @@
   function musCards(it, ro) {
     var list = optList(it), cur = it.music_id;
     var cards = list.map(function (m) { return optCardHtml(m, m.id === cur, !ro); }).join("");
-    if (ro) { var base = (it.item_music_options || []).map(function (o) { return o.music; }).filter(Boolean); return base.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch">' + base.map(function (m) { return optCardHtml(m, m.id === cur, false, true); }).join("") + '</div>' : ''; }
+    var addCard = '<div class="rcard rcard--compact" data-addm role="button" tabindex="0" style="margin:0;min-width:0;display:flex;align-items:center;justify-content:center;gap:var(--sp-1);cursor:pointer;min-height:var(--tag-s);border:1px dashed var(--line-strong);background:transparent;box-shadow:none;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>הוספת מוזיקה</div>';
+    if (ro) { var base = (it.item_music_options || []).map(function (o) { return o.music; }).filter(Boolean); return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch">' + base.map(function (m) { return optCardHtml(m, m.id === cur, false, true); }).join("") + addCard + '</div>'; }
     var add = '<div class="rcard rcard--compact" data-addm role="button" tabindex="0" style="margin:0;min-width:0;display:flex;align-items:center;justify-content:center;gap:var(--sp-1);cursor:pointer;min-height:var(--tag-s);border:1px dashed var(--line-strong);background:transparent;box-shadow:none;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>' + (list.length ? "הוספת מוזיקה" : "בחירת מוזיקה") + '</div>';
     return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch">' + cards + add + '</div>';
   }
@@ -1829,7 +1830,12 @@
     return '<div id="pvmus" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch;margin-bottom:var(--sp-2)' + (inset ? ';margin-inline:var(--gutter)' : '') + '">' + songs.map(function (m) { return optCardHtml(m, m.id === sel, false); }).join("") + '</div>';
   }
   /* a song joins the options of the exercise; if the exercise has no chosen song yet, it is the chosen one */
-  function dropOpt(it, m) {   /* a song leaves an exercise's options, or the start or end songs; the chosen one of an exercise leaves it without music */
+  function dropOpt(it, m) {
+    if (it.__preview) {
+      it.item_music_options = (it.item_music_options || []).filter(function (o) { return o.music_id !== m.id; });
+      if (it.music_id === m.id) { it.music_id = null; it.music = null; }
+      return Promise.resolve();
+    }   /* a song leaves an exercise's options, or the start or end songs; the chosen one of an exercise leaves it without music */
     var rec = !!it.__recv, chosen = !rec && m.id === it.music_id;
     var url = rec ? "/rest/v1/vivencia_reception_music?vivencia_id=eq." + it.id + "&kind=eq." + it.__recv + "&music_id=eq." + m.id : "/rest/v1/item_music_options?item_id=eq." + it.id + "&music_id=eq." + m.id;
     return api(url, { method: "DELETE" }).then(function () {
@@ -1841,6 +1847,11 @@
     });
   }
   function addOpt(it, m) {
+    if (it.__preview) {   /* the catalog's exercise as it is shown: the song is added to what is shown, not to the catalog */
+      it.item_music_options = it.item_music_options || [];
+      if (!it.item_music_options.some(function (o) { return o.music_id === m.id; })) it.item_music_options.push({ music_id: m.id, created_at: String(2000 + it.item_music_options.length), music: m });
+      return Promise.resolve();
+    }
     if (it.__recv) return api("/rest/v1/vivencia_reception_music?on_conflict=vivencia_id,kind,music_id", { method: "POST", prefer: "resolution=ignore-duplicates,return=minimal", json: { vivencia_id: it.id, kind: it.__recv, music_id: m.id } }).then(function () {
       if (!optList(it).some(function (x) { return x.id === m.id; })) it.item_music_options.push({ music_id: m.id, created_at: new Date().toISOString(), music: m });
     });
@@ -2183,7 +2194,7 @@
   }
   /* the catalog's exercise as an item of the page: its texts, its songs as options, the first one chosen; nothing of it is written anywhere */
   function itemFake(e, rows, songs) {
-    return { id: "", exercise_id: e.id, exercises: Object.assign({}, e, { exercise_texts: rows || [] }), title: null, poetics: null, guidance: null, notes: "",
+    return { __preview: true, id: "", exercise_id: e.id, exercises: Object.assign({}, e, { exercise_texts: rows || [] }), title: null, poetics: null, guidance: null, notes: "",
       music_id: null, music: null,   /* no song is chosen until one is marked: only that one comes with the exercise */
       item_music_options: songs.map(function (m, i) { return { music_id: m.id, created_at: String(1000 + i), music: m }; }) };
   }
@@ -2192,6 +2203,7 @@
     var imus = root.querySelector("#imus"); if (!imus) return;
     imus.addEventListener("click", function (ev) {
       if (ev.target.closest("[data-audio], a")) return;
+      if (ev.target.closest("[data-addm]")) { openAddMusic(fake, function () { imus.innerHTML = musCards(fake, true); }); return; }   /* more songs for what is shown: not for the catalog */
       var c = ev.target.closest("[data-opt]"); if (!c) return;   /* a tap marks the song (green frame), a second tap takes the mark off; the play tile plays */
       var id = c.dataset.opt; if (fake.music_id === id) { fake.music_id = null; fake.music = null; }
       else { var m = (fake.item_music_options || []).map(function (o) { return o.music; }).filter(function (x) { return x && x.id === id; })[0]; fake.music_id = id; fake.music = m || null; }
