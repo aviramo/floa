@@ -406,7 +406,7 @@
     function clk(s) { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2); }
     function make(cls) {
       var d = document.createElement("div"); d.className = cls + " idle";
-      d.innerHTML = '<button type="button" class="rbtn rbtn--icon" disabled aria-label="השמעה">' + PLAY + '</button><span class="rchip rchip--s bio-dock__time" style="direction:ltr;font-variant-numeric:tabular-nums">0:00 / 0:00</span>' + volDock() + '<button type="button" class="rbtn rbtn--ghost" data-addcur hidden title="הוספת השיר שבנגן לתרגיל הפתוח" style="flex:none;gap:var(--sp-1)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>הוספה לתרגיל</button>' +
+      d.innerHTML = '<button type="button" class="rbtn rbtn--icon" disabled aria-label="השמעה">' + PLAY + '</button><span class="rchip rchip--s bio-dock__time" style="direction:ltr;font-variant-numeric:tabular-nums">0:00 / 0:00</span>' + volDock() + '<button type="button" class="rbtn rbtn--ghost" data-addcur hidden title="הוספת השיר שבנגן לתרגיל הפתוח" style="flex:none;gap:var(--sp-1)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span><span data-addcur-label style="max-width:14rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">הוספה לתרגיל</span></button>' +
         '<div class="bio-dockbar"><input class="bio-dock__bar" type="range" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר" disabled></div><div class="rrow__main bio-dock__name"><b>לא נבחר שיר</b> <span></span></div><span class="rchip rchip--s bio-dock__sync" hidden></span><button type="button" class="rbtn rbtn--icon" data-hist aria-label="היסטוריית האזנה" title="היסטוריית האזנה">' + HIST + '</button>';
       d.querySelector("button").addEventListener("click", function () {
         if (loaded) { if (window.BioAudio && BioAudio.playPause) BioAudio.playPause(); return; }
@@ -446,6 +446,7 @@
           var nmA = loaded ? curName : (last && last.n), idA = liveItem && liveItem.id, itA = idA && state.items && state.items.filter(function (x) { return x.id === idA; })[0];
           var show = !!(nmA && itA && document.querySelector("#imus [data-addm]") && !optList(itA).some(function (m) { return m.audio_object === nmA; }));   /* an exercise of a vivencia is open, and the song is not yet in it */
           if (ac.hidden === show) ac.hidden = !show;
+          if (show) { var lb = ac.querySelector("[data-addcur-label]"), nmE = itemName(itA) || "התרגיל"; if (lb && lb.textContent !== nmE) { lb.textContent = nmE; ac.title = "הוספת השיר שבנגן ל" + nmE; } }   /* the button says which exercise the song goes to */
         }
         document.documentElement.classList.toggle("bio-docked", on);   /* the page ends above the footer */
         var b = d.querySelector("button"), t = d.querySelector(".bio-dock__time"), r = d.querySelector(".bio-dock__bar"), s = clk(curT) + " / " + clk(loaded ? curD : (last ? last.d : 0)), nm = d.querySelector(".bio-dock__name");
