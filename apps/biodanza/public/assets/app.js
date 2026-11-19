@@ -487,9 +487,13 @@
         if (!nm || (!exOpen && !state.viv)) return;
         api("/rest/v1/music?audio_object=eq." + encodeURIComponent(nm) + "&select=id,name,title,artist,duration_sec,audio_object,in_catalog&limit=1").then(function (rows) {
           var m = rows && rows[0]; if (!m) { toast("השיר לא נמצא"); return; }
+          var go = function () {
           if (exOpen) return addOpt(it, m).then(function () { var im = document.getElementById("imus"); if (im) im.innerHTML = musCards(it); if (wide()) paint(); toast("נוסף לתרגיל"); });
           var pos = (state.items || []).reduce(function (x, k) { return Math.max(x, k.position); }, 0) + 1;   /* no exercise is open: a new exercise with no name and this song, in "נוספים" */
           return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=minimal", json: { vivencia_id: state.viv.id, position: pos, backlog: true, exercise_id: null, music_id: m.id } }).then(function () { return loadItems(); }).then(function () { paint(); toast("נוסף לוויוונסיה"); });
+          };
+          var toL = exOpen ? (itemName(it) || "התרגיל") : (state.viv.title || "הוויוונסיה");
+          confirmAddMusic(songName(m), toL, function () { var pr = go(); if (pr && pr.then) pr.then(null, fail); });
         }).then(null, fail);
       });
       var r = d.querySelector(".bio-dock__bar");
@@ -1341,7 +1345,7 @@
   }
   function editor() {
     var v = state.viv; setUrl(BASE + v.id); curJoin(v.id); refreshPrevLabel();
-    show(head(v.title || "ויוונסיה חדשה", "", true, (v.role === "view" || wide() ? '' : '<button type="button" class="rbtn" data-act="add" style="flex:none" title="הוספת תרגיל מהקטלוג">לקטלוג</button>')) +   /* the way to the catalog is a word in the header, not a floating button */
+    show(head(v.title || "ויוונסיה חדשה", "", true, '') +   /* the way to the catalog is a word in the header, not a floating button */
       '<div class="rlist" data-fab-room id="list"><div class="rskel rskel--title"></div></div>' +
       '', function (r) {   /* on a wide screen the way to the catalog is a green banner down the side, added by show() */
       on(r, "back", back); on(r, "add", function () { resetPk(); if (wide()) goSub(picker); else pickerSheet(); });
@@ -2189,7 +2193,7 @@
         dropOpt(it, m).then(function () { draw(); if (changed) changed(); }, fail);
         return;
       }
-      addOpt(it, m).then(function () { draw(); if (changed) changed(); }, fail);
+      confirmAddMusic(songName(m), it.__recv ? (it.__recv === "start" ? "מוסיקת ההתחלה" : "מוסיקת הסיום") : (itemName(it) || "התרגיל"), function () { addOpt(it, m).then(function () { draw(); if (changed) changed(); }, fail); });
     });
     var linkedP = it.exercise_id ? api("/rest/v1/exercise_music?exercise_id=eq." + it.exercise_id + "&select=music(id,name,title,artist,duration_sec,audio_object,in_catalog)").then(function (rows) {
       var seen = {}, out = []; (rows || []).forEach(function (x) { if (x.music && !seen[x.music.id]) { seen[x.music.id] = 1; out.push(x.music); } }); return out;
@@ -2457,7 +2461,7 @@
               if (ev.target.closest("[data-audio], a")) return;
               var bt = ev.target.closest("[data-sg]");
               if (!bt) { var cd = ev.target.closest("[data-sgc]"), pb = cd && cd.querySelector("[data-audio]"); if (pb) pb.click(); return; }
-              var m = songs.filter(function (x) { return x.id === bt.dataset.sg; })[0]; if (m) addSongOnly(m, sheet);
+              var m = songs.filter(function (x) { return x.id === bt.dataset.sg; })[0]; if (m) confirmAddMusic(songName(m), state.viv ? (state.viv.title || "הוויוונסיה") : "", function () { addSongOnly(m, sheet); });
             });
           }, function () { box.remove(); });
         }
@@ -2655,6 +2659,14 @@
   function closeSheets() { ["exDlg", "catDlg"].forEach(function (id) { slideClose(document.getElementById(id)); }); }
   var sgTok = 0;
   /* a song chosen in the catalog's search: an exercise with no name, only that song */
+  function confirmAddMusic(songLabel, toLabel, fn) {   /* every adding of a song asks first, in the kit's popup with ONE action */
+    var dlg = document.getElementById("confirmDlg");
+    if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
+    RosterSheet.render(dlg, { kind: "confirm", title: "הוספת מוזיקה", from: "bottom", size: "s",
+      body: '<div class="pad"><span>להוסיף את "' + esc(songLabel) + '" ל' + (toLabel ? '"' + esc(toLabel) + '"' : "") + '?</span></div>',
+      foot: '<button class="rbtn rbtn--block" type="button" id="cadd">הוספה</button>' });
+    dlg.querySelector("#cadd").addEventListener("click", function () { dlg.close(); fn(); });
+  }
   function addSongOnly(m, sheet) {
     var pos = state.items.reduce(function (x, i) { return Math.max(x, i.position); }, 0) + 1;
     api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=minimal", json: { vivencia_id: state.viv.id, position: pos, backlog: true, exercise_id: null, music_id: m.id } }).then(function () {
