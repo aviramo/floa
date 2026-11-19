@@ -786,8 +786,13 @@
       '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="nextW" aria-label="הבא" title="הבא"' + (hasNext ? "" : " disabled") + '>' + I.fwd + '</button></header>';
   }
   /* the header of one exercise: buttons only, each with its word. Previous and the list on the right, next on the left. The name is the field below. */
-  function itemHead(hasPrev, hasNext, where, exId, nameText, ro, roLabel, inBack, numText, roPlus) {
+  function itemHead(hasPrev, hasNext, where, exId, nameText, ro, roLabel, inBack, numText, roPlus, tabs) {
     var nav = !wide() && !ro;   /* beside the list there are no previous and next buttons: the list is the way around */
+    if (nav && tabs) {   /* a phone: no arrows and no name here, only the number and the countdown, and under them the tabs of the exercises around it (the name is the first field of the page) */
+      return '<header class="rhead bio-ihead bio-ihead--m"><span aria-hidden="true" style="flex:none;font:var(--fw-black) calc(2.75 * var(--fs-m))/.95 var(--font);font-variant-numeric:tabular-nums">' + esc(numText || "") + '</span>' +
+        '<span id="itimer" hidden aria-live="off" style="flex:none;margin-inline-start:auto;font:var(--fw-black) calc(2.75 * var(--fs-m))/.95 var(--font);font-variant-numeric:tabular-nums;color:var(--text);direction:ltr"></span>' +
+        '<nav class="bio-tabs" aria-label="התרגילים"><div class="bio-tabs__track">' + tabs.map(function (t, i) { return '<span class="bio-tab' + (i === 2 ? ' is-cur' : '') + '">' + esc(t || "") + '</span>'; }).join("") + '</div></nav></header>';
+    }
     var arrow = function (act, ico, label, off) { return '<button class="rbtn rbtn--icon" data-act="' + act + '" aria-label="' + label + '" title="' + label + '"' + (off ? " disabled" : "") + '>' + ico + '</button>'; };
     return '<header class="rhead' + (ro ? '' : ' bio-ihead') + '">' + (nav ? arrow("prevW", I.back, "הקודם", !hasPrev) : "") + (ro && roLabel ? '<button type="button" class="rbtn" style="flex:none;gap:var(--sp-1);margin-inline-end:var(--gutter)" data-act="doswap"' + (roPlus ? ' aria-label="הוספה לוויוונסיה ' + esc(roLabel) + '" title="הוספה לוויוונסיה"' : '') + '>' + (roPlus ? '<span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span><span style="max-width:14rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(roLabel) + '</span>' : esc(roLabel)) + '</button>' : "") +   /* the add button is at the start, right of the exercise's name, always there */
       '<div class="rhead__text" style="flex-direction:row;align-items:center;gap:var(--sp-2);padding-inline-start:0;justify-content:flex-start">' + (numText ? '<span aria-hidden="true" style="flex:none;font:var(--fw-black) calc(2.75 * var(--fs-m))/.95 var(--font);font-variant-numeric:tabular-nums">' + esc(numText) + '</span>' : "") + '<input id="ina" class="rhead__title" placeholder="ללא שם" autocomplete="off" aria-label="שם התרגיל"' + (ro ? ' readonly' : '') + ' value="' + esc(nameText || "") + '" style="flex:1 1 0;width:auto;min-width:0;border:0;background:transparent;padding-inline:0;margin:0;color:inherit;text-align:start;outline:0;text-overflow:ellipsis;text-box:normal;line-height:1.4;padding-block:4px"></div>' +
@@ -815,6 +820,7 @@
       }
       dx = mx;
       pg.style.transform = "translateX(" + ((dx > 0 ? to.next : to.prev) ? dx : dx * 0.3) + "px)";   /* no page that way: it only gives a little */
+      if (to.drag) to.drag((dx > 0 ? to.next : to.prev) ? dx : dx * 0.3, pg.getBoundingClientRect().width || 320);
     });
     function end() {
       if (mode !== 2) { mode = 0; return; }
@@ -822,8 +828,9 @@
       var w = pg.getBoundingClientRect().width || 320, v = Math.abs(dx) / Math.max(1, performance.now() - t0), go = dx > 0 ? to.next : to.prev;
       if (go && (Math.abs(dx) > w * 0.22 || v > 0.5)) {
         pg.style.transition = "transform .16s ease-in"; pg.style.transform = "translateX(" + (dx > 0 ? w : -w) + "px)";
+        if (to.drag) { var trk2 = document.querySelector("#itemDlg .bio-tabs__track"); if (trk2) { var tb2 = trk2.parentElement.getBoundingClientRect().width / 3; trk2.style.transition = "transform .16s ease-in"; trk2.style.transform = "translateX(calc(-20% + " + (dx > 0 ? tb2 : -tb2) + "px))"; } }
         setTimeout(go, 150);
-      } else { pg.style.transition = "transform .22s cubic-bezier(.2, .8, .2, 1)"; pg.style.transform = ""; }
+      } else { pg.style.transition = "transform .22s cubic-bezier(.2, .8, .2, 1)"; pg.style.transform = ""; if (to.settle) to.settle(); }
     }
     pg.addEventListener("pointerup", end); pg.addEventListener("pointercancel", end);
   }
@@ -850,7 +857,7 @@
   /* the on-screen keyboard: while it is up, the player (hidden behind it anyway) keeps no room at the bottom of a popup, so the list reaches the keyboard */
   (function () {
     var st = document.createElement("style");
-    st.textContent = "@media (max-width: 700px) { .bio-ihead { flex-wrap: wrap; row-gap: 0 } .bio-ihead > .rhead__text { display: contents } .bio-ihead #ina { order: 10; flex: 1 1 100% !important; width: 100% !important; margin-top: var(--sp-1) !important } .bio-ihead #itimer { margin-inline-start: auto } :root { --dockfull: calc(var(--ctl) + 20px + var(--sp-1) * 3 + var(--inset-b)) } .bio-dock { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; column-gap: var(--sp-1); row-gap: var(--sp-1); min-height: 0; padding-block: var(--sp-1) calc(var(--sp-1) + var(--inset-b)) } .bio-dock > .bio-dockbar { grid-column: 1 / -1; grid-row: 1 } .bio-dock > .rbtn:first-child { grid-column: 1; grid-row: 2; order: 0; margin-inline-end: 0; width: var(--ctl) !important; height: var(--ctl) !important; min-height: var(--ctl) !important } .bio-dock > .bio-dock__time { grid-column: 2; grid-row: 2; order: 0 } .bio-dock > .bio-dock__name { grid-column: 3; grid-row: 2; order: 0; min-width: 0 } .bio-dock > [data-hist] { grid-column: 4; grid-row: 2; order: 0 } .bio-dock > [data-addcur] { grid-column: 1 / -1; grid-row: 3; order: 0; flex: none !important; min-width: 0; justify-self: stretch; justify-content: center } .bio-dock > [data-addcur] [data-addcur-label] { max-width: 100% !important } .bio-dock > .bio-volume { display: none } } html.bio-kb .bio-dock { display: none !important } html.bio-kb dialog.rsheet:not(:has(.sheet-foot)) .sheet-body { padding-bottom: 0 !important } html.bio-kb dialog.rsheet:not(:has(.sheet-foot)) .sheet { padding-bottom: 0 !important }";
+    st.textContent = "@media (max-width: 700px) { html.bio-docked dialog.rsheet:not(:has(.sheet-foot)) .sheet { padding-bottom: 0 !important } html.bio-docked dialog.rsheet:not(:has(.sheet-foot)) .sheet-body { padding-bottom: var(--dockfull) !important } .bio-ihead--m { flex-wrap: wrap; row-gap: var(--sp-1) } .bio-ihead--m > .bio-tabs { flex: 1 1 100%; order: 10; overflow: hidden; direction: ltr; margin-inline: calc(var(--gutter) * -1); padding-block: 2px } .bio-tabs__track { display: flex; width: 166.667%; transform: translateX(-20%); transition: transform .22s cubic-bezier(.2, .8, .2, 1) } .bio-tab { flex: 0 0 20%; box-sizing: border-box; padding-inline: var(--sp-1); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font: var(--fw-medium) var(--fs-s)/var(--lh-tight) var(--font); color: var(--text-3); direction: rtl } .bio-tab.is-cur { color: var(--text); font-weight: var(--fw-bold) } .bio-ihead { flex-wrap: wrap; row-gap: 0 } .bio-ihead > .rhead__text { display: contents } .bio-ihead #ina { order: 10; flex: 1 1 100% !important; width: 100% !important; margin-top: var(--sp-1) !important } .bio-ihead #itimer { margin-inline-start: auto } :root { --dockfull: calc(var(--ctl) + 20px + var(--sp-1) * 3 + var(--inset-b)) } .bio-dock { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; column-gap: var(--sp-1); row-gap: var(--sp-1); min-height: 0; padding-block: var(--sp-1) calc(var(--sp-1) + var(--inset-b)) } .bio-dock > .bio-dockbar { grid-column: 1 / -1; grid-row: 1 } .bio-dock > .rbtn:first-child { grid-column: 1; grid-row: 2; order: 0; margin-inline-end: 0; width: var(--ctl) !important; height: var(--ctl) !important; min-height: var(--ctl) !important } .bio-dock > .bio-dock__time { grid-column: 2; grid-row: 2; order: 0 } .bio-dock > .bio-dock__name { grid-column: 3; grid-row: 2; order: 0; min-width: 0 } .bio-dock > [data-hist] { grid-column: 4; grid-row: 2; order: 0 } .bio-dock > [data-addcur] { grid-column: 1 / -1; grid-row: 3; order: 0; flex: none !important; min-width: 0; justify-self: stretch; justify-content: center } .bio-dock > [data-addcur] [data-addcur-label] { max-width: 100% !important } .bio-dock > .bio-volume { display: none } } html.bio-kb .bio-dock { display: none !important } html.bio-kb dialog.rsheet:not(:has(.sheet-foot)) .sheet-body { padding-bottom: 0 !important } html.bio-kb dialog.rsheet:not(:has(.sheet-foot)) .sheet { padding-bottom: 0 !important }";
     document.head.appendChild(st);
     var vv = window.visualViewport; if (!vv) return;
     function upd() { document.documentElement.classList.toggle("bio-kb", Math.max(0, window.innerHeight - vv.height - vv.offsetTop) > 120); }
@@ -1691,7 +1698,7 @@
       }
     }
     /* the sheet's own header IS the exercise's header (previous, where we are, heart, next): no title row above it */
-    var hm = html.match(/^<header class="rhead">[\s\S]*?<\/header>/), sh = dlg.querySelector(".sheet-head");
+    var hm = html.match(/^<header class="rhead[^"]*">[\s\S]*?<\/header>/), sh = dlg.querySelector(".sheet-head");
     if (hm) { sh.innerHTML = hm[0]; sh.setAttribute("data-rs-drag-all", ""); html = html.slice(hm[0].length); }
     var cnt = sh.querySelector('[data-act="list"]'); if (cnt) { cnt.tabIndex = -1; cnt.setAttribute("aria-hidden", "true"); }   /* here the counter only shows where we are: the list is already behind the popup */
     var host = dlg.querySelector("#itemHost"); host.innerHTML = html; if (wire) wire(dlg.querySelector(".sheet"));
@@ -1703,7 +1710,7 @@
       '</div>' +
       '<div id="iscroll" style="flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain">' +   /* everything under the name scrolls together; the texts are open to the end */
       '<div id="imus" style="flex:none;padding:0 var(--gutter)">' + musCards(it, ro) + '</div>' +   /* the songs this exercise is torn between, as cards: the chosen one plays in the vivencia */
-      '<div id="ifields"' + (ro ? ' data-ro' : '') + ' style="flex:none;display:flex;flex-direction:column;gap:var(--gap-field);padding:var(--gutter) var(--gutter) 0"><label class="rfield" style="flex:none"><span>פואטיקה</span><div id="ipo" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true"' + (isDraft(it, "poetics") ? DRAFT_FIELD : "") + '>' + rtHtml(txt(it, "poetics")) + '</div></label>' +
+      '<div id="ifields"' + (ro ? ' data-ro' : '') + ' style="flex:none;display:flex;flex-direction:column;gap:var(--gap-field);padding:var(--gutter) var(--gutter) 0">' + (!ro && !wide() ? '<label class="rfield" style="flex:none"><span>שם התרגיל</span><input id="ina" placeholder=" " autocomplete="off" value="' + esc(itemName(it) || "") + '"></label>' : '') + '<label class="rfield" style="flex:none"><span>פואטיקה</span><div id="ipo" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true"' + (isDraft(it, "poetics") ? DRAFT_FIELD : "") + '>' + rtHtml(txt(it, "poetics")) + '</div></label>' +
       '<label class="rfield" style="flex:none"><span>הנחיה</span><div id="igu" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true"' + (isDraft(it, "guidance") ? DRAFT_FIELD : "") + '>' + rtHtml(txt(it, "guidance")) + '</div></label>' +
       (ro ? '' : '<label class="rfield" style="flex:none"><span>הערות</span><div id="it" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true">' + rtHtml(it.notes || "") + '</div></label>') + '</div>' +
       '<div id="ibtns" style="flex:none;height:calc(2 * var(--fab) + var(--sp-2) + 2 * var(--gutter) + var(--inset-b))"></div></div></div>';
@@ -1721,7 +1728,7 @@
     markItem();
     var k = state.items.findIndex(function (x) { return x.id === it.id; }), prevIt = state.items[k - 1], nextIt = state.items[k + 1];   /* its place by its id: the list may have been read again, and its objects are new ones */
     /* the header walks the sequence: the right button to the previous exercise, the left one to the next, the name between them */
-    var hd = itemHead(!!prevIt, !!nextIt, "", it.exercise_id, itemName(it), false, "", !!it.backlog, it.backlog ? "•" : String(state.items.filter(function (i) { return !i.backlog; }).findIndex(function (i) { return i.id === it.id; }) + 1));   /* its number, the same as in the list, before its name */   /* the middle button says where we are, and still opens the list */
+    var hd = itemHead(!!prevIt, !!nextIt, "", it.exercise_id, itemName(it), false, "", !!it.backlog, it.backlog ? "•" : String(state.items.filter(function (i) { return !i.backlog; }).findIndex(function (i) { return i.id === it.id; }) + 1), undefined, [2, 1, 0, -1, -2].map(function (d) { var x = state.items[k + d]; return x ? itemName(x) : ""; }));   /* the tabs, from the left: the next ones, this one, the previous ones */   /* its number, the same as in the list, before its name */   /* the middle button says where we are, and still opens the list */
     show(hd + itemPageHtml(it, false), function (r) {
       var sf = state.slideFrom || 0, pg = r.querySelector("#ipg"); state.slideFrom = 0;
       sbSync(r);
@@ -1735,7 +1742,10 @@
       function walk(to) { repNext = true; state.slideFrom = to === nextIt ? -1 : 1; if (wide()) return itemScreen(to); stack().pop(); go(function () { itemScreen(to); }); }
       on(r, "prevW", function () { if (prevIt) walk(prevIt); });
       on(r, "nextW", function () { if (nextIt) walk(nextIt); });
-      if (pg) attachPager(pg, { next: nextIt ? function () { walk(nextIt); } : null, prev: prevIt ? function () { walk(prevIt); } : null });
+      var trk = document.querySelector("#itemDlg .bio-tabs__track");
+      if (pg) attachPager(pg, { next: nextIt ? function () { walk(nextIt); } : null, prev: prevIt ? function () { walk(prevIt); } : null,
+        drag: trk ? function (dx, w) { var tb = trk.parentElement.getBoundingClientRect().width / 3; trk.style.transition = "none"; trk.style.transform = "translateX(calc(-20% + " + Math.round(dx * tb / w) + "px))"; } : null,
+        settle: trk ? function () { trk.style.transition = ""; trk.style.transform = ""; } : null });   /* the tabs follow the finger, the same way the page does */
       function toMusic() { if (wide()) { musicScreen(it); subEnter(function () { musicScreen(it); }); } else musicSheet(it); }   /* beside the list, the pane; on a narrow screen, a popup from the bottom */
       on(r, "pickMusic", function (b, ev) { if (ev.target.closest("a,[data-audio]")) return; toMusic(); });
       var imus = r.querySelector("#imus");
