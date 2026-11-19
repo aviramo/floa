@@ -17,6 +17,7 @@ create table if not exists roster.wa_settings (
 alter table roster.wa_marks enable row level security;
 alter table roster.wa_settings enable row level security;
 revoke all on roster.wa_marks, roster.wa_settings from anon, authenticated;
+grant select, insert, update, delete on roster.wa_marks, roster.wa_settings to service_role;   -- the Worker's role: new tables in this schema do not get it by default
 
 create or replace function roster.wa_list(p_slug text)
 returns jsonb language sql stable set search_path = roster, public as $$
