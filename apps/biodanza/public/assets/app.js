@@ -415,10 +415,13 @@
       });
       d.querySelector("[data-addcur]").addEventListener("click", function () {
         var nm = loaded ? curName : (last && last.n), id = liveItem && liveItem.id, it = id && state.items && state.items.filter(function (x) { return x.id === id; })[0];
-        if (!nm || !it) return;
+        var exOpen = !!(it && document.querySelector("#imus [data-addm]"));
+        if (!nm || (!exOpen && !state.viv)) return;
         api("/rest/v1/music?audio_object=eq." + encodeURIComponent(nm) + "&select=id,name,title,artist,duration_sec,audio_object,in_catalog&limit=1").then(function (rows) {
           var m = rows && rows[0]; if (!m) { toast("השיר לא נמצא"); return; }
-          return addOpt(it, m).then(function () { var im = document.getElementById("imus"); if (im) im.innerHTML = musCards(it); if (wide()) paint(); toast("נוסף לתרגיל"); });
+          if (exOpen) return addOpt(it, m).then(function () { var im = document.getElementById("imus"); if (im) im.innerHTML = musCards(it); if (wide()) paint(); toast("נוסף לתרגיל"); });
+          var pos = (state.items || []).reduce(function (x, k) { return Math.max(x, k.position); }, 0) + 1;   /* no exercise is open: a new exercise with no name and this song, in "נוספים" */
+          return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=minimal", json: { vivencia_id: state.viv.id, position: pos, backlog: true, exercise_id: null, music_id: m.id } }).then(function () { return loadItems(); }).then(function () { paint(); toast("נוסף לוויוונסיה"); });
         }).then(null, fail);
       });
       var r = d.querySelector(".bio-dock__bar");
@@ -444,9 +447,14 @@
         var ac = d.querySelector("[data-addcur]");
         if (ac) {
           var nmA = loaded ? curName : (last && last.n), idA = liveItem && liveItem.id, itA = idA && state.items && state.items.filter(function (x) { return x.id === idA; })[0];
-          var show = !!(nmA && itA && document.querySelector("#imus [data-addm]") && !optList(itA).some(function (m) { return m.audio_object === nmA; }));   /* an exercise of a vivencia is open, and the song is not yet in it */
+          var exOpen = !!(nmA && itA && document.querySelector("#imus [data-addm]"));
+          var vivList = !exOpen && !!nmA && !!state.viv && !!state.items && canEdit() && !!document.querySelector("#list[data-fab-room]");
+          var show = exOpen ? !optList(itA).some(function (m) { return m.audio_object === nmA; }) : vivList;   /* an exercise is open and the song is not in it, or the vivencia is open with no exercise */
           if (ac.hidden === show) ac.hidden = !show;
-          if (show) { var lb = ac.querySelector("[data-addcur-label]"), nmE = itemName(itA) || "התרגיל"; if (lb && lb.textContent !== nmE) { lb.textContent = nmE; ac.title = "הוספת השיר שבנגן ל" + nmE; } }   /* the button says which exercise the song goes to */
+          if (show) {
+            var lb = ac.querySelector("[data-addcur-label]"), nmE = exOpen ? (itemName(itA) || "התרגיל") : (state.viv.title || "הוויוונסיה");
+            if (lb && lb.textContent !== nmE) { lb.textContent = nmE; ac.title = exOpen ? "הוספת השיר שבנגן ל" + nmE : "הוספת השיר שבנגן לוויוונסיה " + nmE + " כתרגיל חדש"; }
+          }
         }
         document.documentElement.classList.toggle("bio-docked", on);   /* the page ends above the footer */
         var b = d.querySelector("button"), t = d.querySelector(".bio-dock__time"), r = d.querySelector(".bio-dock__bar"), s = clk(curT) + " / " + clk(loaded ? curD : (last ? last.d : 0)), nm = d.querySelector(".bio-dock__name");
