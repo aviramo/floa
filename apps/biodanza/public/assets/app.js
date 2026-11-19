@@ -887,7 +887,7 @@
   function facEmails(it) { return (it.vivencia_item_facilitators || []).map(function (x) { return x.email; }); }
   function facLabel(it) {
     var es = facEmails(it);
-    return !es.length ? "מנחה" : es.length === 1 ? facName(es[0]) : facName(es[0]) + " +" + (es.length - 1);
+    return !es.length ? "מוביל" : es.length === 1 ? facName(es[0]) : facName(es[0]) + " +" + (es.length - 1);
   }
   function facChip(it, extra) {
     if (!facOn()) return "";
@@ -1578,7 +1578,7 @@
       ? '<button type="button" class="rrow__main" ' + o.titleAttr + ' style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:var(--fw-bold) ' + (o.big ? 'var(--fs-l)' : 'var(--fs-s)') + '/var(--lh-tight) var(--font);color:inherit;' + dir + (o.corner ? 'padding-inline-end:var(--ctl)' : '') + '">' + esc(o.title) + '</button>'
       : '<span style="display:block;' + dir + 'overflow-wrap:anywhere;' + (o.corner ? 'padding-right:var(--ctl);' : '') + 'font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(o.title) + '</span>';
     var sub = '<span style="display:block;' + (o.subRight ? 'direction:ltr;text-align:right;' : o.subLtr !== false ? 'direction:ltr;text-align:left;' : '') + 'overflow-wrap:anywhere;color:var(--text-2);font:var(--fw-regular) ' + (o.big ? 'var(--fs-m)' : 'var(--fs-xs)') + '/var(--lh-tight) var(--font)">' + (o.sub ? esc(o.sub) : '&nbsp;') + '</span>';
-    var foot = o.footEnd ? '<div style="display:flex;align-items:center;justify-content:flex-end;gap:var(--sp-1);margin-top:auto;padding-top:var(--gap-tight)">' + (o.chip || '') + (o.time || '') + (o.pill || '') + '</div>'   /* the play tile at the left end, its time on its right */
+    var foot = o.footEnd ? '<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-1);margin-top:auto;padding-top:var(--gap-tight)"><div style="display:flex;align-items:center;gap:var(--sp-1)">' + (o.chip || '') + '</div><div style="display:flex;align-items:center;gap:var(--sp-1)">' + (o.time || '') + (o.pill || '') + '</div></div>'   /* the leader chip at the right end, under the song; the play tile at the left end, its time on its right */
       : '<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-1);margin-top:auto;padding-top:var(--gap-tight)"><div style="display:flex;align-items:center;gap:var(--sp-1)">' + (o.pill || '') + (o.chip || '') + '</div>' + (o.time || '') + '</div>';
     var lead = o.lead ? (o.bigLead
       ? '<span aria-hidden="true" style="flex:none;display:flex;align-items:flex-start;justify-content:center;min-width:var(--ctl);font:var(--fw-black) calc(2.75 * var(--fs-m))/.95 var(--font);color:var(--text);font-variant-numeric:tabular-nums">' + o.lead + '</span>'   /* the number as tall as the two lines beside it, no tile */
