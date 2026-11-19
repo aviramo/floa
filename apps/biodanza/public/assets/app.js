@@ -633,7 +633,7 @@
     var arrow = function (act, ico, label, off) { return '<button class="rbtn rbtn--icon" data-act="' + act + '" aria-label="' + label + '" title="' + label + '"' + (off ? " disabled" : "") + '>' + ico + '</button>'; };
     return '<header class="rhead">' + (nav ? arrow("prevW", I.back, "הקודם", !hasPrev) : "") +
       '<div class="rhead__text"><input id="ina" class="rhead__title" placeholder="ללא שם" autocomplete="off" aria-label="שם התרגיל" value="' + esc(nameText || "") + '" style="width:100%;min-width:0;border:0;background:transparent;padding:0;margin:0;color:inherit;text-align:start;outline:0;text-overflow:ellipsis;text-box:trim-both cap alphabetic"></div>' +
-      (exId ? heartBtnEx(exId, "bio-flat") : "") + (nav ? arrow("nextW", I.fwd, "הבא", !hasNext) : "") + '</header>';
+      (exId ? heartBtnEx(exId, "bio-flat") : "") + arrow("del", I.trash, "הסרה מהוויוונסיה", false) + (nav ? arrow("nextW", I.fwd, "הבא", !hasNext) : "") + '</header>';
   }
   (function () {
     var st = document.createElement("style");
@@ -1228,7 +1228,7 @@
       '<label class="rfield" style="flex:none"><span>הנחיה</span><div id="igu" class="rf-rich" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true"' + (isDraft(it, "guidance") ? DRAFT_FIELD : "") + '>' + rtHtml(txt(it, "guidance")) + '</div></label>' +
       '<label class="rfield" style="flex:none"><span>הערות</span><div id="it" class="rf-rich" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true">' + rtHtml(it.notes || "") + '</div></label></div>' +
       '<div id="ibtns" style="flex:none;height:calc(2 * var(--fab) + var(--sp-2) + 2 * var(--gutter) + var(--inset-b))"></div></div></div>' +
-      '<button class="rfab" data-act="del" aria-label="הסרה מהוויוונסיה" title="הסרה מהוויוונסיה" style="border-color:var(--surface-2);background:var(--surface-2);color:var(--text)">' + I.trash + '</button>', function (r) {
+      '', function (r) {
       var sf = state.slideFrom || 0, pg = r.querySelector("#ipg"); state.slideFrom = 0;
       r.style.overflowX = "clip";   /* a page sliding in from the side must not make the window scroll sideways */
       if (pg && sf && !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)) {
@@ -1251,8 +1251,8 @@
           if (ev.target.closest("[data-addm]")) { openAddMusic(it, function () { repaintMus(); if (wide()) paint(); }); return; }
           var rm = ev.target.closest("[data-orm]");
           if (rm) {
-            ev.stopPropagation(); var mid = rm.dataset.orm;
-            api("/rest/v1/item_music_options?item_id=eq." + it.id + "&music_id=eq." + mid, { method: "DELETE" }).then(function () { it.item_music_options = (it.item_music_options || []).filter(function (o) { return o.music_id !== mid; }); repaintMus(); }, fail);
+            ev.stopPropagation(); var mid = rm.dataset.orm, mm = optList(it).filter(function (x) { return x.id === mid; })[0];
+            if (mm) confirmRemoveOpt(it, mm, function () { repaintMus(); if (wide()) paint(); });
             return;
           }
           var ch = ev.target.closest("[data-choose]");
@@ -1464,22 +1464,48 @@
     });
     return chain.then(function () { return api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { music_id: m ? m.id : null } }); }).then(function () { it.music_id = m ? m.id : null; it.music = m; });
   }
-  /* the options as cards, the same as the music page's: the name, the performer, and at the foot the play tile and the time; the chosen one has the green frame */
+  /* the card of a music option, the same as the music page's: the name, the performer, and at the foot the play tile and the time; the chosen one has the green frame, the others a chip to choose them */
+  function optCardHtml(m, sel, withRm) {
+    var tile = songBtn(m, false).replace(/width:var\(--fab\);height:var\(--fab\);min-height:var\(--fab\);/g, "width:46px;height:var(--tag-s);min-height:var(--tag-s);padding:0;border-radius:999px;background:var(--surface-2);");
+    var tm = '<span class="bio-time" data-dur="' + (m.duration_sec || "") + '"' + (m.audio_object ? ' data-for="' + esc(m.audio_object) + '"' : '') + ' style="color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + (durOf(m) ? clock(durOf(m)) : '') + '</span>';
+    var pickChip = sel ? '' : '<button type="button" class="rchip rchip--s" data-choose="' + esc(m.id) + '" title="לבחור אותה לתרגיל בוויוונסיה" style="cursor:pointer;border:0">בחירה</button>';
+    var rm = !withRm ? '' : '<button type="button" class="rbtn rbtn--icon" data-orm="' + esc(m.id) + '" aria-label="מחיקה מהתרגיל" title="מחיקה מהתרגיל" style="position:absolute;top:2px;right:2px;color:var(--text-3);min-height:var(--ctl);height:var(--ctl);width:var(--ctl);padding:0">' + I.trash + '</button>';
+    return '<div class="rcard rcard--compact" data-opt="' + esc(m.id) + '" role="button" tabindex="0"' + (sel ? ' aria-current="true"' : '') + ' style="margin:0;min-width:0;display:flex;flex-direction:column;gap:2px;cursor:pointer;background:var(--on-primary)' + (sel ? ';border-color:var(--primary);box-shadow:inset 0 0 0 1px var(--primary)' : '') + '">' +
+      '<span style="display:block;direction:ltr;text-align:left;overflow-wrap:anywhere;padding-right:' + (withRm ? 'var(--ctl)' : '0') + ';font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(songName(m)) + '</span>' +
+      '<span style="display:block;direction:ltr;text-align:left;overflow-wrap:anywhere;color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font)">' + (songBy(m) ? esc(songBy(m)) : '&nbsp;') + '</span>' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:var(--gap-tight)">' + tile + pickChip + tm + '</div>' + rm + '</div>';
+  }
+  /* removing a song from the options of an exercise: asked in the kit's popup; closing it is the cancel */
+  function confirmRemoveOpt(it, m, done) {
+    var dlg = document.getElementById("confirmDlg");
+    if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
+    var chosen = m.id === it.music_id;
+    RosterSheet.render(dlg, { kind: "confirm",
+      title: "מחיקת מוזיקה", from: "bottom", size: "s",
+      body: '<div class="pad"><span>למחוק את "' + esc(songName(m)) + '" מהתרגיל?' + (chosen ? ' זו המוזיקה שנבחרה: התרגיל יישאר בלי מוזיקה.' : '') + '</span></div>',
+      foot: '<button class="rbtn rbtn--danger rbtn--block" type="button" id="crmo">מחיקה</button>'
+    });
+    dlg.querySelector("#crmo").addEventListener("click", function () {
+      dlg.close();
+      api("/rest/v1/item_music_options?item_id=eq." + it.id + "&music_id=eq." + m.id, { method: "DELETE" }).then(function () {
+        return chosen ? api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { music_id: null } }) : null;
+      }).then(function () {
+        it.item_music_options = (it.item_music_options || []).filter(function (o) { return o.music_id !== m.id; });
+        if (chosen) { it.music_id = null; it.music = null; }
+        done();
+      }, fail);
+    });
+  }
   function musCards(it) {
     var list = optList(it), cur = it.music_id;
-    var cards = list.map(function (m) {
-      var sel = m.id === cur;
-      var tile = songBtn(m, false).replace(/width:var\(--fab\);height:var\(--fab\);min-height:var\(--fab\);/g, "width:46px;height:var(--tag-s);min-height:var(--tag-s);padding:0;border-radius:999px;background:var(--surface-2);");
-      var tm = '<span class="bio-time" data-dur="' + (m.duration_sec || "") + '"' + (m.audio_object ? ' data-for="' + esc(m.audio_object) + '"' : '') + ' style="color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + (durOf(m) ? clock(durOf(m)) : '') + '</span>';
-      var pickChip = sel ? '' : '<button type="button" class="rchip rchip--s" data-choose="' + esc(m.id) + '" title="לבחור אותה לתרגיל בוויוונסיה" style="cursor:pointer;border:0">בחירה</button>';
-      var rm = sel ? '' : '<button type="button" class="rbtn rbtn--icon" data-orm="' + esc(m.id) + '" aria-label="הסרת האפשרות" title="הסרת האפשרות" style="color:var(--text-3);min-height:var(--tag-s);height:var(--tag-s);width:var(--tag-s);padding:0">' + I.x + '</button>';
-      return '<div class="rcard rcard--compact" data-opt="' + esc(m.id) + '" role="button" tabindex="0"' + (sel ? ' aria-current="true"' : '') + ' style="margin:0;min-width:0;display:flex;flex-direction:column;gap:2px;cursor:pointer;background:var(--on-primary)' + (sel ? ';border-color:var(--primary);box-shadow:inset 0 0 0 1px var(--primary)' : '') + '">' +
-        '<span style="direction:ltr;text-align:left;overflow-wrap:anywhere;font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(songName(m)) + '</span>' +
-        '<span style="direction:ltr;text-align:left;overflow-wrap:anywhere;color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font)">' + (songBy(m) ? esc(songBy(m)) : '&nbsp;') + '</span>' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:var(--gap-tight)">' + tile + pickChip + rm + tm + '</div></div>';
-    }).join("");
+    var cards = list.map(function (m) { return optCardHtml(m, m.id === cur, true); }).join("");
     var add = '<div class="rcard rcard--compact" data-addm role="button" tabindex="0" style="margin:0;min-width:0;display:flex;align-items:center;justify-content:center;gap:var(--sp-1);cursor:pointer;min-height:var(--tag-s);border:1px dashed var(--line-strong);background:transparent;box-shadow:none;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>' + (list.length ? "הוספת מוזיקה" : "בחירת מוזיקה") + '</div>';
     return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch">' + cards + add + '</div>';
+  }
+  /* the catalog's preview of an exercise: the songs it comes with, as the same cards, at the same place (above the texts), without the add card */
+  function prevMusic(songs, sel, inset) {
+    if (!songs.length) return "";
+    return '<div id="pvmus" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch;margin-bottom:var(--sp-2)' + (inset ? ';margin-inline:var(--gutter)' : '') + '">' + songs.map(function (m) { return optCardHtml(m, m.id === sel, false); }).join("") + '</div>';
   }
   /* a song joins the options of the exercise; if the exercise has no chosen song yet, it is the chosen one */
   function addOpt(it, m) {
@@ -1825,13 +1851,13 @@
       var dlg = document.getElementById("exDlg");
       if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "exDlg"; document.body.appendChild(dlg); }
       RosterSheet.render(dlg, { title: name(e), from: "bottom",
-        body: bleedCss("exDlg") + '<style>#exDlg .sheet-body { padding-bottom: calc(var(--fab) + var(--gutter) * 2 + var(--inset-b)) } html.rs-lock:not(.kb-open) #exDlg .rfab { opacity: 1; transform: none; pointer-events: auto }</style>' + '<div style="padding-block:var(--sp-2)">' + ((placementCards(e, card) + card("poetics", "פואטיקה") + card("guidance", "הנחיה")) || ph("אין עדיין תיאור לתרגיל", "")) + musicRows(songs, sel) + '</div>' });
+        body: bleedCss("exDlg") + '<style>#exDlg .sheet-body { padding-bottom: calc(var(--fab) + var(--gutter) * 2 + var(--inset-b)) } html.rs-lock:not(.kb-open) #exDlg .rfab { opacity: 1; transform: none; pointer-events: auto }</style>' + '<div style="padding-block:var(--sp-2)">' + prevMusic(songs, sel) + ((placementCards(e, card) + card("poetics", "פואטיקה") + card("guidance", "הנחיה")) || ph("אין עדיין תיאור לתרגיל", "")) + '</div>' });
       bleedSet(dlg);
       /* the action is the round button at the bottom left, where the add button of a list is (a popover inside the popup: drawn in the top layer, placed by the window) */
       var fab = document.createElement("button"); fab.type = "button"; fab.id = "exgo"; fab.className = "rfab"; fab.innerHTML = I.check; fab.setAttribute("aria-label", word); fab.title = word;
       fab.style.cssText = "inset:auto;margin:0;left:max(var(--gutter), var(--inset-l));bottom:calc(var(--gutter) + var(--dockh))";
       fab.setAttribute("popover", "manual"); dlg.appendChild(fab); try { fab.showPopover(); } catch (x) { /* an old browser: an ordinary fixed button */ }
-      wirePick(dlg, function (id) { sel = id; });
+      wirePick(dlg, function (id) { sel = id; }, songs, sel);
       dlg.querySelector("#exgo").addEventListener("click", function () { if (swapIt) confirmSwap(e, swapIt, true, sel); else addEx(e, undefined, true, sel); });
     }, fail);
   }
@@ -1882,15 +1908,15 @@
     return '<div style="margin-top:var(--sp-2);border-top:1px solid var(--line);min-width:0">' + songs.map(function (m) { return songRow(m, m.id === sel, "data-pk"); }).join("") + '</div>';
   }
   /* choosing the song an exercise is added with: a tap marks it, a tap on the marked one takes the mark off (no music) */
-  function wirePick(root, onPick) {
-    var bs = [].slice.call(root.querySelectorAll("[data-pk]"));
-    bs.forEach(function (b) {
-      b.addEventListener("click", function () {
-        var row = b.closest(".rrow"), was = row.getAttribute("aria-current") === "true";
-        bs.forEach(function (x) { x.closest(".rrow").setAttribute("aria-current", "false"); });
-        if (!was) row.setAttribute("aria-current", "true");
-        onPick(was ? null : b.dataset.pk);
-      });
+  function wirePick(root, onPick, songs, sel0) {
+    var g = root.querySelector("#pvmus"); if (!g) return;
+    var cur = sel0;
+    g.addEventListener("click", function (ev) {
+      if (ev.target.closest("[data-audio], a")) return;
+      var ch = ev.target.closest("[data-choose]");
+      if (ch) { cur = ch.dataset.choose; g.innerHTML = prevMusic(songs, cur).replace(/^<div[^>]*>/, "").replace(/<\/div>$/, ""); onPick(cur); return; }
+      var c = ev.target.closest("[data-opt]"); if (!c) return;
+      var pb = c.querySelector("[data-audio]"); if (pb) pb.click();
     });
   }
   function firstMusic(exId, mid) {   /* the song an exercise is added with: the chosen one (or none), else the catalog's first */
@@ -1907,7 +1933,7 @@
       var word = swapIt ? "החלפה בתרגיל הזה" : "הוספה", sel = songs.length ? songs[0].id : null;
       var act = wide() ? ""   /* beside the list the action is the round button at the bottom left; on a narrow screen a plain check in the header, like the kit's popups */
                        : '<button class="rbtn" type="button" style="flex:none;width:var(--ctl);padding:0" data-act="doswap" aria-label="' + word + '" title="' + word + '">' + I.check + '</button>';   /* the green button, with a check */
-      show(head(name(e), "", !wide(), act) + '<div class="rlist" data-fab-room style="overflow-x:hidden"><div style="padding-block:var(--sp-2)">' + (body || ph("אין עדיין תיאור לתרגיל", "")) + musicRows(songs, sel) + '</div></div>' + (wide() ? '<button class="rfab" type="button" data-act="doswap" aria-label="' + word + '" title="' + word + '">' + I.check + '</button>' : ""), function (r) { on(r, "back", back); wirePick(r, function (id) { sel = id; }); on(r, "doswap", function () { if (swapIt) confirmSwap(e, swapIt, undefined, sel); else addEx(e, undefined, undefined, sel); }); }, "d");
+      show(head(name(e), "", !wide(), act) + '<div class="rlist" data-fab-room style="overflow-x:hidden"><div style="padding-block:var(--sp-2)">' + prevMusic(songs, sel, true) + (body || ph("אין עדיין תיאור לתרגיל", "")) + '</div></div>' + (wide() ? '<button class="rfab" type="button" data-act="doswap" aria-label="' + word + '" title="' + word + '">' + I.check + '</button>' : ""), function (r) { on(r, "back", back); wirePick(r, function (id) { sel = id; }, songs, sel); on(r, "doswap", function () { if (swapIt) confirmSwap(e, swapIt, undefined, sel); else addEx(e, undefined, undefined, sel); }); }, "d");
     }, fail);
   }
   /* replacing is asked in the kit's popup, one action: closing it is the cancel */
