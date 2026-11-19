@@ -179,6 +179,8 @@
       queue = (names || []).filter(Boolean); dropNext(); if (!queue.length) return;
       if (now === queue[0] && url) { el.currentTime = 0; el.play(); preloadNext(); } else toggle(queue[0]);
     },
+    queueNames: function () { return queue.slice(); },   /* the songs of the list that is playing, if one is */
+    stopList: function () { queue = []; dropNext(); el.pause(); },   /* the list is switched off: what plays is paused and nothing follows it */
     stop: function () { queue = []; dropNext(); el.pause(); now = ""; try { el.removeAttribute("src"); el.load(); } catch (e) { /* nothing to let go */ } if (url) { URL.revokeObjectURL(url); url = ""; } tell("", 0, 0); paint(); },
     playPause: function () { if (now && url) { if (el.paused) el.play(); else el.pause(); } },
     seek: function (f) { if (el.duration) el.currentTime = Math.max(0, Math.min(1, f)) * el.duration; },
