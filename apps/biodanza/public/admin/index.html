@@ -23,6 +23,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
 <div id="app"></div>
 <script src="/supabase.js"></script>
 <script src="/auth.js"></script>
+<script>document.write('<script src="' + (/^(localhost|127[.])/.test(location.hostname) ? '/biodanza/' : '/') + 'assets/audio.js"><\/script>')</script>
 <script>
 (function () {
   "use strict";
@@ -57,9 +58,13 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
     document.getElementById("cnt").textContent = (words.length ? hit.length + " מתוך " : "") + songs.length + " שירים";
     if (!hit.length) { out.innerHTML = '<div class="rempty"><b>לא נמצא כלום</b><span>נסו מילה אחרת</span></div>'; return; }
     out.innerHTML = hit.slice(0, MAXROWS).map(function (m) {
-      return '<div class="rrow"><div class="rrow__main"><span class="rrow__title">' + esc(m.title || m.name) + '</span>' + (m.artist ? '<span class="rrow__sub">' + esc(m.artist) + '</span>' : '') + '</div>' +
+      var has = m.audio_object && window.BioAudio;
+      if (has) BioAudio.info(m.audio_object, m.title || m.name, m.artist);
+      return '<div class="rrow" style="flex-wrap:wrap"><div class="rrow__main"><span class="rrow__title">' + esc(m.title || m.name) + '</span>' + (m.artist ? '<span class="rrow__sub">' + esc(m.artist) + '</span>' : '') + '</div>' +
         (m.duration_sec ? '<span class="rchip rchip--s">' + mmss(m.duration_sec) + '</span>' : '') +
-        '<span class="rchip rchip--s' + (m.audio_object ? ' rchip--ok' : '') + '">' + (m.audio_object ? "יש קובץ" : "ללא קובץ") + '</span></div>';
+        '<span class="rchip rchip--s' + (m.audio_object ? ' rchip--ok' : '') + '">' + (m.audio_object ? "יש קובץ" : "ללא קובץ") + '</span>' +
+        (has ? BioAudio.button(m.audio_object, true) +
+          '<div class="bio-bar" data-for="' + esc(m.audio_object) + '" style="flex:0 0 100%;order:3;padding-top:var(--sp-1)"><input type="range" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר" style="display:block;width:100%;margin:0;direction:ltr;accent-color:var(--primary)"></div>' : '') + '</div>';
     }).join("") + (hit.length > MAXROWS ? '<div class="rhint" style="padding:var(--gutter)">מוצגים ' + MAXROWS + ' הראשונים. מצמצמים בחיפוש כדי לראות את השאר.</div>' : '');
   }
   function load(offset, all) {
@@ -68,6 +73,15 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
       return rows.length === 1000 ? load(offset + 1000, all) : all;
     });
   }
+  /* the bar of a song: a drag puts it at that place (it is loaded if it is not yet), and the bar of the song that plays follows it */
+  document.addEventListener("input", function (e) {
+    var bar = e.target.closest && e.target.closest(".bio-bar"); if (!bar || !window.BioAudio) return;
+    BioAudio.seekTo(bar.dataset.for, e.target.value / 1000);
+  });
+  document.addEventListener("bioaudio", function (ev) {
+    var d = ev.detail || {}; if (!d.name || !(d.d > 0)) return;
+    document.querySelectorAll('.bio-bar[data-for="' + d.name + '"] input').forEach(function (r) { if (document.activeElement !== r) r.value = Math.round(d.t / d.d * 1000); });
+  });
   function start() {
     if (!window.FLOA_AUTH || !FLOA_AUTH.signedIn()) return msg("ניהול", "צריך להיכנס קודם דרך האפליקציה.", '<a class="rbtn" href="' + HOME + '">לאפליקציה</a>');
     FLOA_AUTH.api("/rest/v1/rpc/me", { method: "POST", json: {} }).then(function (me) {
