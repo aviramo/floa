@@ -1756,90 +1756,37 @@
   var pk = { q: "", ln: "", cg: "", lv: "", cv: "" };   /* the catalog's search, line, category, group level and place on the curve */
   function resetPk() { pk = { q: "", ln: "", cg: "", lv: "", cv: "" }; }
   var LEVELS_FALLBACK = [{ key: "all", name_he: "מתחילים (מתאים לכל הקבוצות)" }, { key: "exp3", name_he: "לקבוצות עם ניסיון של כמה חודשים" }, { key: "exp6", name_he: "לקבוצות עם ניסיון של חצי שנה ויותר" }, { key: "deep", name_he: "לקבוצות העמקה ומתקדמות" }];   /* the index of group levels (biodanza.levels), when it has not come from the cloud */
-  /* the catalog picker: the filters and the list. On a wide screen it is a pane; on a narrow one it is a popup from the bottom. */
-  function pickerBody() {
-    var two = function (x, y) { return '<div style="display:flex;gap:var(--gap-button);align-items:flex-end;min-width:0">' + x + y + '</div>'; };
-    var sel = function (id, label, opts) { return '<label class="rfield" style="flex:1 1 0;min-width:0;max-width:50%;overflow:hidden;margin:0"><span>' + label + '</span><select id="' + id + '" style="width:100%;min-width:0;max-width:100%;text-overflow:ellipsis"><option value="">הכול</option>' + opts + '</select></label>'; };
-    var cat = '<label class="rfield" style="flex:1 1 0;min-width:0;max-width:50%;overflow:hidden;margin:0"><span>קטגוריה</span><input style="width:100%;min-width:0" id="cg" placeholder=" " autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox" value="הכול"></label>';
-    var lvl = sel("lv", "רמת הקבוצה", (state.levels && state.levels.length ? state.levels : LEVELS_FALLBACK).map(function (l) { return '<option value="' + l.key + '">' + esc(l.name_he) + '</option>'; }).join(""));
-    var cur = sel("cv", "מיקום בעקומה", state.phases.map(function (x) { return '<option value="' + x.key + '">' + esc(x.name_he) + '</option>'; }).join(""));
-    var lin = sel("ln", "קו", state.lines.map(function (l) { return '<option value="' + l.key + '">' + esc(l.name_he) + '</option>'; }).join(""));
-    var srch = '<label class="rfield" style="margin:0"><span>חיפוש</span><input id="q" placeholder=" "></label>';
-    /* one scroll region holds the head and the list. The head is sticky: the two rows of filters slide away when the list is scrolled down, leaving the search at the top, and come back at the first scroll up. */
-    return '<div class="rlist" id="pks" style="position:relative"><div class="pad" data-pickhead id="pkh" style="position:sticky;top:0;z-index:2;background:var(--bg);flex:none;transition:transform var(--t-base)"><div id="pkf" style="display:flex;flex-direction:column;gap:var(--gap-field)">' + two(lvl, cur) + two(cat, lin) + '</div>' + srch + '</div>' +
-      '<div id="list"><div class="rskel rskel--title"></div></div></div>';
+  /* the catalog picker: a search and the list of categories; a category opens like an accordion onto its exercises. On a wide screen it is a pane; on a narrow one it is a popup from the bottom. */
+  function searchInput() {
+    return '<input id="q" class="rhead__title" type="text" placeholder="חיפוש תרגילים בקטלוג" autocomplete="off" aria-label="חיפוש תרגילים בקטלוג" style="width:100%;min-width:0;border:0;background:transparent;padding-inline:0;margin:0;color:inherit;text-align:start;outline:0;text-overflow:ellipsis;text-box:normal;line-height:1.4;padding-block:4px">';
+  }
+  function pickerBody(sheetMode) {
+    return (sheetMode ? '<style>#catDlg .sheet-head { display: none }</style><div style="padding-block:var(--sp-2)">' + searchInput() + '</div>' : '') +
+      '<div class="rlist" id="pks" style="position:relative"><div id="list"><div class="rskel rskel--title"></div></div></div>';
   }
   function pickerWire(r, swapIt, sheet) {
-      var catSel = pk.cg;   /* the key of the chosen category, "" = all */
-      r.querySelector("#q").value = pk.q; r.querySelector("#ln").value = pk.ln; r.querySelector("#lv").value = pk.lv; r.querySelector("#cv").value = pk.cv; r.querySelector("#cg").value = catSel ? catName(catSel) : "הכול";
-      /* a field you can type in that also opens its options when you click it: the options are the kit's menu, placed under the field */
-      /* scrolling down slides the two filter rows away (the search stays at the top); the first scroll up brings them back */
-      function wireHide() {
-        var sc = r.querySelector("#pks"), h = r.querySelector("#pkh"), f = r.querySelector("#pkf"), qf = r.querySelector("#q").closest("label"), last = 0, hidden = false;
-        if (!sc || !h || !f || !qf) return;
-        function drop() { return qf.offsetTop; }   /* how far the search is from the head's top edge: the rows, the gaps and the padding above it */
-        function set(on) { if (on === hidden) return; hidden = on; h.style.transform = on ? "translateY(-" + drop() + "px)" : ""; }
-        sc.addEventListener("scroll", function () {
-          var t = sc.scrollTop;
-          if (t <= 2) set(false);
-          else if (t > last + 2 && t > drop()) set(true);
-          else if (t < last - 2) set(false);
-          last = t;
-        }, { passive: true });
-        /* on a phone the keyboard leaves little room: while the search is being typed in, the two rows of filters make way, so the results are what is seen above the keyboard */
-        var qi = r.querySelector("#q");
-        qi.addEventListener("focus", function () { if (wide()) return; set(false); f.style.display = "none"; sc.scrollTop = 0; });
-        qi.addEventListener("blur", function () { if (!qi.value) f.style.display = ""; });   /* with words in the search the rows stay away: a tap on a result must not find the list moved under the finger */
-        qi.addEventListener("input", function () { sc.scrollTop = 0; });
-      }
-      function wireCat() {
-        var inp = r.querySelector("#cg"), pop = null, active = -1, shown = [];
-        function label() { return catSel ? catName(catSel) : "הכול"; }
-        var shield = null;
-        function close(revert) { if (shield) { shield.remove(); shield = null; } if (pop) { pop.remove(); pop = null; } inp.setAttribute("aria-expanded", "false"); if (revert) inp.value = label(); }
-        function choose(k) { catSel = k; close(true); paintCat(); }
-        function open(filter) {
-          close(false);
-          var f = (filter || "").trim();
-          shown = [{ key: "", name_he: "הכול" }].concat((state.cats || []).filter(function (c) { return !f || c.name_he.indexOf(f) >= 0; }));
-          if (!shown.length) return;
-          active = -1;
-          pop = document.createElement("div"); pop.className = "rmenu rmenu--fixed"; pop.setAttribute("role", "listbox");
-          pop.innerHTML = shown.map(function (c, k) { return '<button type="button" class="rmenu__item" role="option" tabindex="-1" data-k="' + k + '"' + (c.key === catSel ? ' aria-selected="true" style="font-weight:var(--fw-bold)"' : '') + '><span>' + esc(c.name_he) + '</span></button>'; }).join("");
-          /* a popover inside the open popup: it is drawn in the top layer and placed by the window (a popup that is moved or scaled cannot shift it), and the popup stays clickable */
-          var host = inp.closest("dialog");
-          shield = document.createElement("div"); shield.setAttribute("popover", "manual"); shield.style.cssText = "position:fixed;inset:0;margin:0;padding:0;border:0;width:auto;height:auto;background:transparent;touch-action:none";   /* an invisible sheet over everything: a touch outside the menu only closes it and reaches nothing behind */
-          ["pointerdown", "click", "touchstart"].forEach(function (n) { shield.addEventListener(n, function (e) { e.preventDefault(); e.stopPropagation(); if (n !== "touchstart") close(true); }, { passive: false }); });
-          (host || document.body).appendChild(shield); try { shield.showPopover(); } catch (x) { /* none */ }
-          (host || document.body).appendChild(pop);
-          pop.setAttribute("popover", "manual"); pop.style.inset = "auto"; pop.style.margin = "0"; pop.style.boxSizing = "border-box";
-          try { pop.showPopover(); } catch (x) { /* an old browser: an ordinary fixed menu */ }
-          var b = inp.getBoundingClientRect(), full = (r.querySelector("#q") || inp).closest("label").getBoundingClientRect(), vw = window.innerWidth, w = Math.min(Math.round(full.width), vw - 16), l = Math.max(8, Math.min(Math.round(full.left), vw - 8 - w));   /* the width of the search field under it: the whole page between its side paddings */
-          pop.style.top = Math.round(b.bottom + 2) + "px"; pop.style.left = l + "px"; pop.style.width = w + "px"; pop.style.maxWidth = "none"; pop.style.maxHeight = Math.max(120, Math.round((window.visualViewport ? window.visualViewport.height : window.innerHeight) - b.bottom - 16)) + "px"; pop.style.overflowY = "auto";   /* inside the window, above the keyboard */
-          pop.querySelectorAll("[data-k]").forEach(function (o) { o.addEventListener("mousedown", function (e) { e.preventDefault(); choose(shown[+o.dataset.k].key); }); });
-          inp.setAttribute("aria-expanded", "true");
-        }
-        function mark(n) { if (!pop) return; var all = pop.querySelectorAll("[data-k]"); active = Math.max(0, Math.min(n, all.length - 1)); all.forEach(function (o, k) { o.style.background = k === active ? "var(--surface)" : ""; }); if (all[active]) all[active].scrollIntoView({ block: "nearest" }); }
-        inp.addEventListener("focus", function () { inp.value = ""; open(""); });   /* the field empties when you enter it: you type or choose; leaving without a choice puts the chosen name back */
-        inp.addEventListener("click", function () { if (!pop) { inp.value = ""; open(""); } });
-        inp.addEventListener("input", function () { open(inp.value); });
-        inp.addEventListener("blur", function () { setTimeout(function () { close(true); }, 0); });
-        inp.addEventListener("keydown", function (e) {
-          if (e.key === "ArrowDown") { e.preventDefault(); if (!pop) open(""); mark(active + 1); }
-          else if (e.key === "ArrowUp") { e.preventDefault(); mark(active - 1); }
-          else if (e.key === "Enter") { e.preventDefault(); if (pop && shown.length) choose(shown[active >= 0 ? active : (shown.length > 1 ? 1 : 0)].key); }
-          else if (e.key === "Escape") { close(true); inp.blur(); }
-        });
-      }
+      var open = pk.open || (pk.open = {});   /* the categories that are open, kept while an exercise is looked at and back again */
+      r.querySelector("#q").value = pk.q;
       function paintCat() {
-        var q = fold(r.querySelector("#q").value.trim()), ln = r.querySelector("#ln").value, lv = r.querySelector("#lv").value, cv = r.querySelector("#cv").value, cg = catSel, l = r.querySelector("#list");
-        pk = { q: r.querySelector("#q").value, ln: ln, cg: cg, lv: lv, cv: cv };   /* what was typed and chosen is kept while an exercise is looked at and back again */
-        var rows = (state.cat || []).filter(function (e) {
-          return (!cg || e.category === cg) && (!lv || e.level_key === lv) && (!cv || (e.phase_keys || []).indexOf(cv) >= 0) && (!ln || (e.exercise_lines || []).some(function (x) { return x.line_key === ln; })) && (!q || fold(name(e) + " " + e.title_en + " " + e.category).indexOf(q) >= 0);
+        var q = fold(r.querySelector("#q").value.trim()), l = r.querySelector("#list");
+        pk.q = r.querySelector("#q").value;
+        var by = {};
+        (state.cat || []).forEach(function (e) {
+          if (q && fold(name(e) + " " + e.title_en + " " + catName(e.category)).indexOf(q) < 0) return;
+          var k = e.category || ""; (by[k] = by[k] || []).push(e);
         });
-        l.innerHTML = rows.length ? rows.map(function (e) {
-          return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-ex="' + e.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(name(e)) + '</span><span class="rrow__sub">' + esc([catName(e.category)].concat((e.exercise_lines || []).map(function (x) { return lineName(x.line_key); })).filter(Boolean).join(" · ")) + '</span></button></div>';
+        var cats = (state.cats || []).map(function (c) { return c.key; }).filter(function (k) { return by[k]; });
+        Object.keys(by).forEach(function (k) { if (cats.indexOf(k) < 0) cats.push(k); });
+        l.innerHTML = cats.length ? cats.map(function (k) {
+          var on = open[k] != null ? open[k] : !!q;   /* a search opens the categories that have something in it */
+          var head = '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-2)"><button type="button" class="rrow__main" data-cat="' + esc(k) + '" aria-expanded="' + on + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit;display:flex;align-items:center;gap:var(--sp-2)"><span style="flex:1 1 auto;min-width:0"><span class="rrow__title">' + esc(catName(k) || "ללא קטגוריה") + '</span><span class="rrow__sub">' + by[k].length + ' תרגילים</span></span><span style="flex:none;width:20px;height:20px;transition:transform .2s;' + (on ? 'transform:rotate(180deg)' : '') + '">' + I.down + '</span></button></div>';
+          return head + (on ? by[k].map(function (e) {
+            return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-ex="' + e.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(name(e)) + '</span><span class="rrow__sub">' + esc((e.exercise_lines || []).map(function (x) { return lineName(x.line_key); }).filter(Boolean).join(" · ")) + '</span></button></div>';
+          }).join("") : "");
         }).join("") : ph("לא נמצא תרגיל", "");
+        l.querySelectorAll("[data-cat]").forEach(function (b) { b.addEventListener("click", function () {
+          var k = b.dataset.cat, now = b.getAttribute("aria-expanded") === "true"; open[k] = !now; paintCat();
+        }); });
         l.querySelectorAll("[data-ex]").forEach(function (b) { b.addEventListener("click", function () {
           var ex = state.cat.filter(function (x) { return x.id === b.dataset.ex; })[0];
           l.querySelectorAll(".rrow").forEach(function (w) { w.removeAttribute("aria-current"); });
@@ -1862,13 +1809,13 @@
           }, function () { box.remove(); });
         }
       }
-      r.querySelector("#q").addEventListener("input", paintCat); r.querySelector("#ln").addEventListener("change", paintCat); r.querySelector("#lv").addEventListener("change", paintCat); r.querySelector("#cv").addEventListener("change", paintCat); wireCat(); wireHide();
+      r.querySelector("#q").addEventListener("input", function () { var sc = r.querySelector("#pks"); if (sc) sc.scrollTop = 0; paintCat(); });
       (state.cats ? Promise.resolve() : api("/rest/v1/categories?select=key,name_he&order=sort").then(function (c) {
         state.cats = c || [];
       })).then(function () { return state.cat ? null : loadCatalog().then(function (c) { state.cat = c; }); }).then(paintCat, fail);
   }
   function picker(swapIt) {
-    show(head(swapIt ? "החלפת תרגיל" : "קטלוג התרגילים", "", true) + pickerBody(), function (r) {
+    show('<header class="rhead"><button class="rbtn rbtn--icon rbtn--edge-start" data-act="back" aria-label="חזרה" title="חזרה">' + I.back + '</button><div class="rhead__text">' + searchInput() + '</div></header>' + pickerBody(false), function (r) {
       on(r, "back", !wide() ? back : swapIt ? function () { pending = { item: swapIt.id }; back(); }   /* leaving a replacement: the same exercise is open again on the left */
         : function () { show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); back(); });
       pickerWire(r, swapIt, false);
@@ -1878,7 +1825,7 @@
   function pickerSheet(swapIt) {
     var dlg = document.getElementById("catDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "catDlg"; document.body.appendChild(dlg); }
-    RosterSheet.render(dlg, { title: swapIt ? "החלפת תרגיל" : "קטלוג התרגילים", from: "bottom", body: bleedCss("catDlg") + pickerBody() });
+    RosterSheet.render(dlg, { title: "", from: "bottom", body: bleedCss("catDlg") + pickerBody(true) });
     bleedSet(dlg);   /* the content sits on the title's own edges, the same on both sides */
     var r = dlg.querySelector(".sheet-body"), ls = r.querySelector("#pks");
     var ph0 = r.querySelector("[data-pickhead]"); if (ph0) { ph0.style.paddingTop = "0"; ph0.style.paddingInline = "0"; }   /* the popup already leaves its standard step under the title */
