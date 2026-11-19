@@ -1072,6 +1072,7 @@
     l.querySelectorAll("[data-vm]").forEach(function (b) { b.addEventListener("click", function (ev) { ev.stopPropagation(); var v0 = state.vivs.filter(function (x) { return x.id === b.dataset.vm; })[0]; if (v0) vivMenu(v0, b); }); });   /* the dots on a row of the list: that vivencia's menu */
     if (state.vivs.length) enableDrag(l, "[data-id]", persistVivs);
     paintSel();
+    pl.style.setProperty("--sbw", Math.max(0, l.offsetWidth - l.clientWidth) + "px");   /* the header gives its side the room this list's scrollbar takes: its buttons are over the rows' buttons, and no scrollbar left over from another screen moves them */
     if (pending && pending.viv && state.vivsLoaded) {   /* opened on a vivencia's own address; only once the list is really here (the hearts can answer first, and an empty list would throw the address away) */
       var vv = state.vivs.filter(function (x) { return x.id === pending.viv; })[0];
       var want = pending; pending = want.item ? { item: want.item } : null;   /* the address is used once: going back to the list must not open it again */
