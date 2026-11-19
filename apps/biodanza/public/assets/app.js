@@ -1248,7 +1248,7 @@
         var repaintMus = function () { imus.innerHTML = musCards(it); };
         imus.addEventListener("click", function (ev) {
           if (ev.target.closest("[data-audio], a")) return;
-          if (ev.target.closest("[data-addm]")) { toMusic(); return; }
+          if (ev.target.closest("[data-addm]")) { openAddMusic(it, function () { repaintMus(); if (wide()) paint(); }); return; }
           var rm = ev.target.closest("[data-orm]");
           if (rm) {
             ev.stopPropagation(); var mid = rm.dataset.orm;
@@ -1471,7 +1471,7 @@
       var sel = m.id === cur;
       var tile = songBtn(m, false).replace(/width:var\(--fab\);height:var\(--fab\);min-height:var\(--fab\);/g, "width:46px;height:var(--tag-s);min-height:var(--tag-s);padding:0;border-radius:999px;background:var(--surface-2);");
       var tm = '<span class="bio-time" data-dur="' + (m.duration_sec || "") + '"' + (m.audio_object ? ' data-for="' + esc(m.audio_object) + '"' : '') + ' style="color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + (durOf(m) ? clock(durOf(m)) : '') + '</span>';
-      var pickChip = sel ? '<span class="rchip rchip--s">נבחרה</span>' : '<button type="button" class="rchip rchip--s" data-choose="' + esc(m.id) + '" title="לבחור אותה לתרגיל בוויוונסיה" style="cursor:pointer;border:0">בחירה</button>';
+      var pickChip = sel ? '' : '<button type="button" class="rchip rchip--s" data-choose="' + esc(m.id) + '" title="לבחור אותה לתרגיל בוויוונסיה" style="cursor:pointer;border:0">בחירה</button>';
       var rm = sel ? '' : '<button type="button" class="rbtn rbtn--icon" data-orm="' + esc(m.id) + '" aria-label="הסרת האפשרות" title="הסרת האפשרות" style="color:var(--text-3);min-height:var(--tag-s);height:var(--tag-s);width:var(--tag-s);padding:0">' + I.x + '</button>';
       return '<div class="rcard rcard--compact" data-opt="' + esc(m.id) + '" role="button" tabindex="0"' + (sel ? ' aria-current="true"' : '') + ' style="margin:0;min-width:0;display:flex;flex-direction:column;gap:2px;cursor:pointer;background:var(--on-primary)' + (sel ? ';border-color:var(--primary);box-shadow:inset 0 0 0 1px var(--primary)' : '') + '">' +
         '<span style="direction:ltr;text-align:left;overflow-wrap:anywhere;font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(songName(m)) + '</span>' +
@@ -1480,6 +1480,70 @@
     }).join("");
     var add = '<div class="rcard rcard--compact" data-addm role="button" tabindex="0" style="margin:0;min-width:0;display:flex;align-items:center;justify-content:center;gap:var(--sp-1);cursor:pointer;min-height:var(--tag-s);border:1px dashed var(--line-strong);background:transparent;box-shadow:none;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>' + (list.length ? "הוספת מוזיקה" : "בחירת מוזיקה") + '</div>';
     return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch">' + cards + add + '</div>';
+  }
+  /* a song joins the options of the exercise; if the exercise has no chosen song yet, it is the chosen one */
+  function addOpt(it, m) {
+    if (!it.music_id) return setChosen(it, m);
+    return api("/rest/v1/item_music_options?on_conflict=item_id,music_id", { method: "POST", prefer: "resolution=ignore-duplicates,return=minimal", json: { item_id: it.id, music_id: m.id } }).then(function () {
+      it.item_music_options = it.item_music_options || []; if (!optList(it).some(function (x) { return x.id === m.id; })) it.item_music_options.push({ music_id: m.id, created_at: new Date().toISOString(), music: m });
+    });
+  }
+  /* every song the person can see, read once (page by page) and kept */
+  var allSongsP = null;
+  function loadAllSongs() {
+    if (allSongsP) return allSongsP;
+    var PAGE = 1000;
+    function pg(off) {
+      return api("/rest/v1/music?select=id,name,title,artist,duration_sec,audio_object,in_catalog,owner_id,vivencia_id&order=name,id&limit=" + PAGE + "&offset=" + off).then(function (rows) {
+        rows = rows || [];
+        return rows.length === PAGE ? pg(off + PAGE).then(function (more) { return rows.concat(more); }) : rows;
+      });
+    }
+    allSongsP = pg(0).then(null, function (e) { allSongsP = null; throw e; });
+    return allSongsP;
+  }
+  /* the popup that adds songs to an exercise: the music page's cards and search, in two parts: the songs the catalog links to the exercise, and all the others */
+  function openAddMusic(it, changed) {
+    var me = FLOA_AUTH.userId(), vid = state.viv && state.viv.id;
+    var r = sheetOf("addMusDlg", "הוספת מוזיקה", '<label class="rfield"><span>חיפוש</span><input id="amq" placeholder=" " autocomplete="off"></label><div id="amlist" style="flex:1 1 auto;min-height:0;overflow-y:auto;margin-top:var(--sp-2);padding-bottom:var(--gutter)"><div class="rskel rskel--title"></div></div>');
+    r.style.overflowY = "hidden";   /* the search stays, only the cards scroll */
+    var listEl = r.querySelector("#amlist"), qi = r.querySelector("#amq");
+    var linked = null, rest = null, shown = 90, fresh = true;
+    function cardHtml(m, added) {
+      var tile = songBtn(m, false).replace(/width:var\(--fab\);height:var\(--fab\);min-height:var\(--fab\);/g, "width:46px;height:var(--tag-s);min-height:var(--tag-s);padding:0;border-radius:999px;background:var(--surface-2);");
+      var tm = '<span class="bio-time" data-dur="' + (m.duration_sec || "") + '"' + (m.audio_object ? ' data-for="' + esc(m.audio_object) + '"' : '') + ' style="color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + (durOf(m) ? clock(durOf(m)) : '') + '</span>';
+      return '<div class="rcard rcard--compact" data-am="' + esc(m.id) + '" role="button" tabindex="0"' + (added ? ' aria-current="true"' : '') + ' style="margin:0;min-width:0;display:flex;flex-direction:column;gap:2px;cursor:pointer;background:var(--on-primary)' + (added ? ';border-color:var(--primary)' : '') + '">' +
+        '<span style="direction:ltr;text-align:left;overflow-wrap:anywhere;font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(songName(m)) + '</span>' +
+        '<span style="direction:ltr;text-align:left;overflow-wrap:anywhere;color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font)">' + (songBy(m) ? esc(songBy(m)) : '&nbsp;') + '</span>' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:var(--gap-tight)">' + tile + tm + '</div></div>';
+    }
+    function draw() {
+      if (!linked || !rest) return;
+      var s0 = fold(qi.value.trim()), words = s0.split(/\s+/).filter(Boolean);
+      var hit = function (m) { var f = fold(songName(m) + " " + songBy(m)); return words.every(function (w) { return f.indexOf(w) >= 0; }); };
+      var has = {}; optList(it).forEach(function (m) { has[m.id] = 1; });
+      var lk = linked.filter(hit), ot = rest.filter(hit), cut = ot.slice(0, shown);
+      var grid = function (arr) { return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(18rem,1fr));gap:var(--sp-1)">' + arr.map(function (m) { return cardHtml(m, !!has[m.id]); }).join("") + '</div>'; };
+      var head = function (t, n) { return '<div class="rrow__sub" style="padding:var(--sp-2) 0 var(--sp-1)">' + esc(t) + ' (' + n + ')</div>'; };
+      listEl.innerHTML = (lk.length ? head("מקושרות לתרגיל בקטלוג", lk.length) + grid(lk) : '') + (cut.length ? head("שירים אחרים", ot.length) + grid(cut) : '') + (!lk.length && !cut.length ? ph("לא נמצא", "") : '');
+    }
+    qi.addEventListener("input", function () { shown = 90; listEl.scrollTop = 0; draw(); });
+    listEl.addEventListener("scroll", function () { if (listEl.scrollTop + listEl.clientHeight > listEl.scrollHeight - 600 && rest && shown < rest.length) { shown += 90; draw(); } }, { passive: true });
+    listEl.addEventListener("click", function (ev) {
+      if (ev.target.closest("[data-audio], a")) return;
+      var c = ev.target.closest("[data-am]"); if (!c) return;
+      var all = (linked || []).concat(rest || []), m = all.filter(function (x) { return x.id === c.dataset.am; })[0]; if (!m) return;
+      if (optList(it).some(function (x) { return x.id === m.id; })) return;
+      addOpt(it, m).then(function () { draw(); if (changed) changed(); }, fail);
+    });
+    var linkedP = it.exercise_id ? api("/rest/v1/exercise_music?exercise_id=eq." + it.exercise_id + "&select=music(id,name,title,artist,duration_sec,audio_object,in_catalog)").then(function (rows) {
+      var seen = {}, out = []; (rows || []).forEach(function (x) { if (x.music && !seen[x.music.id]) { seen[x.music.id] = 1; out.push(x.music); } }); return out;
+    }) : Promise.resolve([]);
+    Promise.all([linkedP, loadAllSongs()]).then(function (res) {
+      linked = res[0]; var lk = {}; linked.forEach(function (m) { lk[m.id] = 1; });
+      rest = res[1].filter(function (m) { return !lk[m.id] && (m.in_catalog !== false || m.owner_id === me || (vid && m.vivencia_id === vid)); });
+      draw();
+    }, function (e) { fail(e); listEl.innerHTML = ph("לא הצלחנו לטעון", ""); });
   }
   function chooseSong(it, m) {
     return setChosen(it, m).then(function () {
