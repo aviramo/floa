@@ -110,6 +110,7 @@
   var I = {
     back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>',
     plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+    inbox: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v6"/><path d="M4 13h4.5a3.5 3.5 0 0 0 7 0H20v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg>',
     catalog: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5 2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M9 7.5h7M9 11.5h5"/></svg>',
     play: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg>',
     heart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.500s-7.500-4.600-9.500-9.200A5.300 5.300 0 0 1 12 6.200a5.300 5.300 0 0 1 9.500 5.100c-2 4.600-9.500 9.200-9.500 9.200z"/></svg>',
@@ -689,13 +690,13 @@
       '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="nextW" aria-label="הבא" title="הבא"' + (hasNext ? "" : " disabled") + '>' + I.fwd + '</button></header>';
   }
   /* the header of one exercise: buttons only, each with its word. Previous and the list on the right, next on the left. The name is the field below. */
-  function itemHead(hasPrev, hasNext, where, exId, nameText, ro, roLabel) {
+  function itemHead(hasPrev, hasNext, where, exId, nameText, ro, roLabel, inBack) {
     var nav = !wide() && !ro;   /* beside the list there are no previous and next buttons: the list is the way around */
     var arrow = function (act, ico, label, off) { return '<button class="rbtn rbtn--icon" data-act="' + act + '" aria-label="' + label + '" title="' + label + '"' + (off ? " disabled" : "") + '>' + ico + '</button>'; };
     return '<header class="rhead">' + (nav ? arrow("prevW", I.back, "הקודם", !hasPrev) : "") +
       '<div class="rhead__text"><input id="ina" class="rhead__title" placeholder="ללא שם" autocomplete="off" aria-label="שם התרגיל"' + (ro ? ' readonly' : '') + ' value="' + esc(nameText || "") + '" style="width:100%;min-width:0;border:0;background:transparent;padding-inline:0;margin:0;color:inherit;text-align:start;outline:0;text-overflow:ellipsis;text-box:normal;line-height:1.4;padding-block:4px"></div>' +
       (exId ? heartBtnEx(exId, "bio-flat") : "") +   /* a catalog exercise: the heart first, then the action as a word to its left */
-      (ro && roLabel ? '<button type="button" class="rbtn" style="flex:none" data-act="doswap">' + esc(roLabel) + '</button>' : "") + (ro ? "" : arrow("del", I.trash, "הסרה מהוויוונסיה", false)) + (nav ? arrow("nextW", I.fwd, "הבא", !hasNext) : "") + '</header>';
+      (ro && roLabel ? '<button type="button" class="rbtn" style="flex:none" data-act="doswap">' + esc(roLabel) + '</button>' : "") + (ro ? "" : arrow("backlog", I.inbox, inBack ? "החזרה לוויוונסיה" : "העברה ל-Backlog", false) + arrow("del", I.trash, "הסרה מהוויוונסיה", false)) + (nav ? arrow("nextW", I.fwd, "הבא", !hasNext) : "") + '</header>';
   }
   (function () {
     var st = document.createElement("style");
@@ -1040,10 +1041,10 @@
 
   /* ---------- the vivencia: plan along the curve ---------- */
   function openViv(id) { if (!state.viv || state.viv.id !== id) state.lastItem = null; state.filter = ""; state.viv = state.vivs.filter(function (v) { return v.id === id; })[0] || { id: id, title: "" }; if (wide()) { stack().length = 0; show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); } go(editor); paintSel(); }
-  var ITEM_SELECT = "&select=id,position,exercise_id,music_id,notes,title,poetics,guidance,exercises(title_he,title_en,poetics,guidance,objective,exercise_texts(lang,poetics,guidance,level,curve,level_basis,curve_basis,source)),music!music_id(id,name,title,artist,duration_sec,audio_object,in_catalog),vivencia_item_facilitators(email),item_music_options(music_id,created_at,music(id,name,title,artist,duration_sec,audio_object,in_catalog))&order=position";
+  var ITEM_SELECT = "&select=id,position,exercise_id,music_id,backlog,notes,title,poetics,guidance,exercises(title_he,title_en,poetics,guidance,objective,exercise_texts(lang,poetics,guidance,level,curve,level_basis,curve_basis,source)),music!music_id(id,name,title,artist,duration_sec,audio_object,in_catalog),vivencia_item_facilitators(email),item_music_options(music_id,created_at,music(id,name,title,artist,duration_sec,audio_object,in_catalog))&order=position";
   function itemsOf(id) { return api("/rest/v1/vivencia_items?vivencia_id=eq." + id + ITEM_SELECT); }
   function loadItems() {
-    return itemsOf(state.viv.id).then(function (r) { state.items = r || []; });
+    return itemsOf(state.viv.id).then(function (r) { r = r || []; state.items = r.filter(function (i) { return !i.backlog; }).concat(r.filter(function (i) { return i.backlog; })); });   /* the numbered exercises, then the backlog */
   }
   function editor() {
     var v = state.viv; setUrl(BASE + v.id); curJoin(v.id);
@@ -1145,20 +1146,33 @@
       if (canEdit()) { arrowTo(l); setTimeout(function () { arrowTo(l); }, 350); }
       return;
     }
-    l.innerHTML = vis.map(function (i, k) {
+    var main = state.items.filter(function (i) { return !i.backlog; }), back = state.items.filter(function (i) { return i.backlog; });
+    var rowOf = function (i, tile) {
       var e = i.exercises || {};
       var pb = i.music ? playCol(i.music, true) : "";
-      return '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-2)"' + (state.lastItem === i.id ? ' aria-current="true"' : '') + '><span aria-hidden="true" style="flex:none;display:flex;align-items:center;justify-content:center;width:var(--ctl);height:var(--ctl);border-radius:var(--r-ctl);background:var(--surface-2);font:var(--fw-bold) var(--fs-m)/1 var(--font)">' + (k + 1) + '</span><button type="button" class="rrow__main" data-edit="' + i.id + '" style="background:none;border:0;padding:0;margin-inline-start:var(--sp-1);text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(itemName(i)) + '</span>' +
+      return '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-2)"' + (state.lastItem === i.id ? ' aria-current="true"' : '') + '><span aria-hidden="true" style="flex:none;display:flex;align-items:center;justify-content:center;width:var(--ctl);height:var(--ctl);border-radius:var(--r-ctl);background:var(--surface-2);font:var(--fw-bold) var(--fs-m)/1 var(--font)">' + tile + '</span><button type="button" class="rrow__main" data-edit="' + i.id + '" style="background:none;border:0;padding:0;margin-inline-start:var(--sp-1);text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(itemName(i)) + '</span>' +
         (i.music ? songLines(i.music) : '<span class="rrow__sub">בלי מוזיקה</span>') + '</span></button>' + pb + facChip(i, ' rrow__trail')   /* the same tile as the number's */ + '</div>';
-    }).join("");
+    };
+    l.innerHTML = '<div id="mlist">' + main.map(function (i, k) { return rowOf(i, k + 1); }).join("") + '</div>' +
+      (back.length ? '<div class="rrow__sub" style="padding:var(--sp-3) var(--gutter) var(--sp-1);border-top:1px solid var(--line);margin-top:var(--sp-2)">Backlog (' + back.length + ')</div><div id="blist">' + back.map(function (i) { return rowOf(i, "•"); }).join("") + '</div>' : "");
     l.querySelectorAll("[data-edit]").forEach(function (b) { b.addEventListener("click", function () { var it = state.items.filter(function (x) { return x.id === b.dataset.edit; })[0]; if (wide()) itemScreen(it); else go(function () { itemScreen(it); }); }); });
     wireFac(l);
-    if (canEdit()) enableDrag(l, "[data-edit]", persistItems);
+    if (canEdit()) { var ml = l.querySelector("#mlist"), bl = l.querySelector("#blist"); if (ml && main.length) enableDrag(ml, "[data-edit]", function (f, t) { persistGroup(false, f, t); }); if (bl) enableDrag(bl, "[data-edit]", function (f, t) { persistGroup(true, f, t); }); }
   }
   /* beside the list the open exercise's strip is marked at once, wherever it was opened from (a click, the arrows, a swap) */
   function markItem() {
     var l = document.getElementById("list"); if (!l || !l.hasAttribute("data-fab-room")) return;
     l.querySelectorAll("[data-edit]").forEach(function (b) { b.closest(".rrow").setAttribute("aria-current", b.dataset.edit === state.lastItem ? "true" : "false"); });
+  }
+  function persistGroup(isBack, from, to) {
+    var grp = state.items.filter(function (i) { return !!i.backlog === isBack; }), moved = grp.splice(from, 1)[0]; grp.splice(to, 0, moved);
+    var main = isBack ? state.items.filter(function (i) { return !i.backlog; }) : grp, back = isBack ? grp : state.items.filter(function (i) { return i.backlog; });
+    state.items = main.concat(back);
+    Promise.all(state.items.map(function (it, k) {
+      if (it.position === k + 1) return null;
+      it.position = k + 1;
+      return api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { position: k + 1 } });
+    })).then(loadItems).then(paint, fail);
   }
   function persistItems(from, to) {
     var moved = state.items.splice(from, 1)[0]; state.items.splice(to, 0, moved);
@@ -1292,7 +1306,7 @@
     markItem();
     var k = state.items.indexOf(it), prevIt = state.items[k - 1], nextIt = state.items[k + 1];
     /* the header walks the sequence: the right button to the previous exercise, the left one to the next, the name between them */
-    var hd = itemHead(!!prevIt, !!nextIt, "", it.exercise_id, itemName(it));   /* the middle button says where we are, and still opens the list */
+    var hd = itemHead(!!prevIt, !!nextIt, "", it.exercise_id, itemName(it), false, "", !!it.backlog);   /* the middle button says where we are, and still opens the list */
     show(hd + itemPageHtml(it, false), function (r) {
       var sf = state.slideFrom || 0, pg = r.querySelector("#ipg"); state.slideFrom = 0;
       r.style.overflowX = "clip";   /* a page sliding in from the side must not make the window scroll sideways */
@@ -1417,6 +1431,14 @@
         layoutFields(); it = fresh;
       } };
       on(r, "del", function () { confirmRemoveItem(it); });
+      on(r, "backlog", function () {   /* undecided: the exercise stays in the vivencia, below the numbered ones; or it comes back among them */
+        var to = !it.backlog, pos = state.items.reduce(function (m, i) { return Math.max(m, i.position); }, 0) + 1;
+        api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { backlog: to, position: pos } }).then(function () {
+          it.backlog = to; it.position = pos;
+          state.items = state.items.filter(function (i) { return !i.backlog; }).concat(state.items.filter(function (i) { return i.backlog; }));
+          toast(to ? "הועבר ל-Backlog" : "הוחזר לוויוונסיה"); paint(); itemScreen(it);
+        }, fail);
+      });
       on(r, "swap", function () { resetPk(); if (wide()) goSub(function () { picker(it); }); else pickerSheet(it); });   /* the catalog, to put another exercise in this place */   /* the catalog, to put another exercise in this place */
     }, "d");
   }

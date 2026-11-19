@@ -805,3 +805,6 @@ drop policy if exists listen_history_own on biodanza.listen_history;
 create policy listen_history_own on biodanza.listen_history for all to authenticated
   using (user_id = auth.uid() and biodanza.is_allowed()) with check (user_id = auth.uid() and biodanza.is_allowed());
 grant select, insert, update, delete on biodanza.listen_history to authenticated, service_role;
+-- THE BACKLOG OF A VIVENCIA (2026-11-19): exercises the facilitator is undecided about. They stay in the vivencia, listed below the numbered ones and not numbered;
+-- an exercise moves into the backlog and back by one flag.
+alter table biodanza.vivencia_items add column if not exists backlog boolean not null default false;
