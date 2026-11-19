@@ -790,7 +790,6 @@
     var nav = !wide() && !ro;   /* beside the list there are no previous and next buttons: the list is the way around */
     if (nav && tabs) {   /* a phone: no arrows and no name here, only the number and the countdown, and under them the tabs of the exercises around it (the name is the first field of the page) */
       return '<header class="rhead bio-ihead bio-ihead--m"><span aria-hidden="true" style="flex:none;font:var(--fw-black) calc(2.75 * var(--fs-m))/.95 var(--font);font-variant-numeric:tabular-nums">' + esc(numText || "") + '</span>' +
-        '<span id="itimer" hidden aria-live="off" style="flex:none;margin-right:auto;font:var(--fw-black) calc(2.75 * var(--fs-m))/.95 var(--font);font-variant-numeric:tabular-nums;color:var(--text);direction:ltr"></span>' +
         '<nav class="bio-tabs" aria-label="התרגילים"><div class="bio-tabs__track">' + tabs.map(function (t, i) { return '<span class="bio-tab' + (i === 2 ? ' is-cur' : '') + '">' + esc(t || "") + '</span>'; }).join("") + '</div></nav></header>';
     }
     var arrow = function (act, ico, label, off) { return '<button class="rbtn rbtn--icon" data-act="' + act + '" aria-label="' + label + '" title="' + label + '"' + (off ? " disabled" : "") + '>' + ico + '</button>'; };
