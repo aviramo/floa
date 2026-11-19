@@ -408,6 +408,14 @@
         });
       }).then(null, fail);
     });
+    document.addEventListener("biosongrenamed", function (ev) {   /* a song was renamed: the player says the new name at once */
+      var d3 = ev.detail || {};
+      if (curName === d3.n) { curTitle = d3.t; curArtist = d3.a; }
+      if (last && last.n === d3.n) { last.t = d3.t; last.a = d3.a; try { localStorage.setItem("biodanza.lastsong", JSON.stringify(last)); } catch (x) { /* not kept */ } }
+      if (window.BioAudio && BioAudio.info) BioAudio.info(d3.n, d3.t, d3.a);
+      nm0Reset(); sync();
+    });
+    function nm0Reset() { var el = dock.querySelector(".bio-dock__name"); if (el) el.dataset.h = ""; }
     var syncHide = 0;
     document.addEventListener("biooffline", function (ev) {   /* the songs coming down to the device: how many, and when it is all there */
       var d2 = ev.detail || {}, el2 = dock.querySelector(".bio-dock__sync"); if (!el2) return;
@@ -2131,8 +2139,13 @@
       var t = n.value.trim(), ar = a.value.trim(); if (!t) return toast("חסר שם");
       api("/rest/v1/music?id=eq." + m.id, { method: "PATCH", prefer: "return=minimal", json: { title: t, artist: ar, name: t + (ar ? ", " + ar : "") } }).then(function () {
         m.title = t; m.artist = ar; m.name = t + (ar ? ", " + ar : "");
-        (state.items || []).forEach(function (x) { if (x.music && x.music.id === m.id) { x.music.title = t; x.music.artist = ar; x.music.name = m.name; } });
+        var fix = function (x) { if (x && x.id === m.id) { x.title = t; x.artist = ar; x.name = m.name; } };   /* every copy of this song that is on the screen's side: the exercises', their options', the start and end music */
+        (state.items || []).forEach(function (x) { fix(x.music); (x.item_music_options || []).forEach(function (o) { fix(o.music); }); });
+        Object.keys(recvCache).forEach(function (k) { (recvCache[k] || []).forEach(function (o) { fix(o.music); }); });
+        if (m.audio_object) { songInfo[m.audio_object] = { t: t, a: ar }; document.dispatchEvent(new CustomEvent("biosongrenamed", { detail: { n: m.audio_object, t: t, a: ar } })); }
         dlg.close(); if (done) done();
+        if (document.getElementById("list") && document.getElementById("list").hasAttribute("data-fab-room") && state.items) paint();
+        var im = document.getElementById("imus"); if (im && liveItem && liveItem.id) { var li = state.items.filter(function (x) { return x.id === liveItem.id; })[0]; if (li) im.innerHTML = musCards(li); }
       }, fail);
     }
     dlg.querySelector("#ssave").addEventListener("click", save);
