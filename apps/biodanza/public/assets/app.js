@@ -297,7 +297,7 @@
         if (!last) return;   /* nothing loaded: the last song is loaded and played, as its own button does */
         var tb = document.createElement("button"); tb.dataset.audio = last.n; tb.style.display = "none"; document.body.appendChild(tb); tb.click(); tb.remove();
       });
-      var r = d.querySelector("input");
+      var r = d.querySelector(".bio-dock__bar");
       r.addEventListener("pointerdown", function () { seekDrag = true; });
       ["pointerup", "pointercancel", "change"].forEach(function (n) { r.addEventListener(n, function () { seekDrag = false; }); });
       r.addEventListener("input", function () { if (window.BioAudio && BioAudio.seek) BioAudio.seek(r.value / 1000); });
@@ -318,7 +318,7 @@
         d.classList.toggle("on", on); d.classList.toggle("away", !!document.querySelector("dialog[open] .sheet-foot"));   /* a popup with its own action button at the bottom (a name, a confirmation) is not covered: the pill slides away while it is open */
         d.classList.toggle("idle", !loaded);
         document.documentElement.classList.toggle("bio-docked", on);   /* the page ends above the footer */
-        var b = d.querySelector("button"), t = d.querySelector(".bio-dock__time"), r = d.querySelector("input"), s = clk(curT) + " / " + clk(loaded ? curD : (last ? last.d : 0)), nm = d.querySelector(".bio-dock__name");
+        var b = d.querySelector("button"), t = d.querySelector(".bio-dock__time"), r = d.querySelector(".bio-dock__bar"), s = clk(curT) + " / " + clk(loaded ? curD : (last ? last.d : 0)), nm = d.querySelector(".bio-dock__name");
         b.disabled = !loaded && !last; r.disabled = !loaded || !(curD > 0); b.dataset.st = playing ? "playing" : "paused";
         var lab = playing ? "השהיית השיר" : "השמעה"; if (b.getAttribute("aria-label") !== lab) { b.setAttribute("aria-label", lab); b.title = lab; b.innerHTML = playing ? PAUSE : PLAY; }
         if (t.textContent !== s) t.textContent = s;
