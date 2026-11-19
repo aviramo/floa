@@ -814,7 +814,18 @@
     document.querySelectorAll("[data-catopen]").forEach(function (b) { b.setAttribute("aria-pressed", "true"); });
     catPanel = catLayer; state.pickerShow = true; pd.classList.add("bio-dim");
   }
-  document.addEventListener("click", function (ev) { var ab = ev.target.closest && ev.target.closest("[data-addex]"); if (ab) { if (wide()) openCatPanel(); else { resetPk(); pickerSheet(); } return; } });   /* the plus beside the exercises' title: the catalog */
+  document.addEventListener("click", function (ev) { var ab = ev.target.closest && ev.target.closest("[data-addex]"); if (ab) {   /* the plus beside the exercises' title: an empty exercise at the end of the numbered ones, opened to be filled in */
+      if (!state.viv || !state.items || ab.disabled) return; ab.disabled = true;
+      var pos = state.items.reduce(function (x, k) { return Math.max(x, k.position); }, 0) + 1;
+      api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=representation", json: { vivencia_id: state.viv.id, position: pos, backlog: false, exercise_id: null, music_id: null } }).then(function (made) {
+        return loadItems().then(function () {
+          paint(); ab.disabled = false;
+          var it = made && made[0] && state.items.filter(function (x) { return x.id === made[0].id; })[0];
+          if (it) { if (wide()) itemScreen(it); else go(function () { itemScreen(it); }); }
+        });
+      }).then(null, function (e) { ab.disabled = false; fail(e); });
+      return;
+    } });
   document.addEventListener("click", function (ev) { var b = ev.target.closest && ev.target.closest("[data-catopen]"); if (b && wide()) { if (catPanel) closeCatPanel(); else openCatPanel(); } });
   pd.addEventListener("click", function (ev) { if (catPanel && pd.classList.contains("bio-dim")) closeCatPanel(); });   /* a tap on the dark side closes the layer, like any popup */
   /* wide screen: the vivencia list on the right, and after choosing one its exercises take that place and the open exercise is on the left. Back from the exercises is the vivencia list again. */
@@ -1284,7 +1295,7 @@
       return cardUi({ cls: "bio-icard", attrs: 'data-icard="' + i.id + '"' + (i.backlog ? ' data-back="1"' : ''), selected: state.lastItem === i.id, lead: tile, bigLead: true, title: itemName(i), titleAttr: 'data-edit="' + i.id + '"',
         sub: m ? songName(m) : "בלי מוזיקה", subRight: !!m, footEnd: true, pill: m ? cardPill(m) : "", chip: facChip(i, " rchip--s"), time: m ? clkSpan(m) : "" });
     };
-    var exHead = '<div style="display:flex;align-items:center;justify-content:space-between;padding:var(--gutter) var(--gutter) 0"><span class="rrow__title" style="font-weight:var(--fw-black)">ויוונסיה</span>' + (canEdit() ? '<button type="button" class="rbtn rbtn--icon" data-addex aria-label="הוספת תרגיל מהקטלוג" title="הוספת תרגיל מהקטלוג">' + I.plus + '</button>' : '') + '</div>';   /* the exercises have a title like the songs of the start, with a plus at its other end */
+    var exHead = '<div style="display:flex;align-items:center;justify-content:space-between;padding:var(--gutter) var(--gutter) 0"><span class="rrow__title" style="font-weight:var(--fw-black)">ויוונסיה</span>' + (canEdit() ? '<button type="button" class="rbtn rbtn--icon" data-addex aria-label="תרגיל ריק חדש" title="תרגיל ריק חדש">' + I.plus + '</button>' : '') + '</div>';   /* the exercises have a title like the songs of the start, with a plus at its other end */
     l.innerHTML = recvHtml("start") + exHead + '<div id="plist" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch;padding:var(--gutter)">' + main.map(function (i, k) { return rowOf(i, k + 1); }).join("") +
       '<div data-div style="grid-column:1 / -1;padding:var(--sp-2) 0 var(--sp-1);margin-top:var(--sp-1);border-top:1px solid var(--line);min-height:var(--ctl)"><div class="rrow__sub">נוספים</div>' + (back.length || !canEdit() ? '' : '<div class="rrow__sub" style="margin-top:var(--sp-1)">גררו לכאן תרגיל שעוד לא החלטתם עליו</div>') + '</div>' +
       back.map(function (i) { return rowOf(i, "•"); }).join("") + '</div>' + recvHtml("end");
