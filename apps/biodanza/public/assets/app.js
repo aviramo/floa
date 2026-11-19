@@ -879,8 +879,27 @@
   var catPrev = null, catPrevId = null;
   var CAT_KEY = "biodanza.catalog";
   function saveCat() {   /* a snapshot of the catalog: open or closed, the exercise looked at, the categories, the search, the scroll */
-    if (!wide() || !catLayer) return;
-    try { var pks = catLayer.querySelector("#pks"); localStorage.setItem(CAT_KEY, JSON.stringify({ open: !!catPanel, prev: catPrevId || null, q: pk.q || "", cats: pk.open || {}, sc: pks ? pks.scrollTop : 0 })); } catch (e) { /* not kept */ }
+    try {
+      if (wide()) {
+        if (!catLayer) return;
+        var pks = catLayer.querySelector("#pks"); localStorage.setItem(CAT_KEY, JSON.stringify({ open: !!catPanel, prev: catPrevId || null, q: pk.q || "", cats: pk.open || {}, sc: pks ? pks.scrollTop : 0 }));
+      } else {   /* a phone: the two popups */
+        var cd = document.getElementById("catDlg"), xd = document.getElementById("exDlg"), pk2 = cd && cd.querySelector("#pks");
+        localStorage.setItem(CAT_KEY, JSON.stringify({ open: !!(cd && cd.open), prev: xd && xd.open && xd.dataset.ex ? xd.dataset.ex : null, q: pk.q || "", cats: pk.open || {}, sc: pk2 ? pk2.scrollTop : 0 }));
+      }
+    } catch (e) { /* not kept */ }
+  }
+  function restoreCatMobile() {   /* a phone after a refresh: the catalog opens again where it was, on the exercise that was chosen */
+    if (wide()) return;
+    var snap = loadCatSnap(); if (!snap || !snap.open) return;
+    var cd = document.getElementById("catDlg"); if (cd && cd.open) return;
+    resetPk(); pk.q = snap.q || ""; pk.open = snap.cats || {};
+    var drawn = pickerSheet(); if (!drawn || !drawn.then) return;
+    drawn.then(function () {
+      var pks = document.querySelector("#catDlg #pks"); if (pks) pks.scrollTop = snap.sc || 0;
+      var ex = snap.prev && (state.cat || []).filter(function (x) { return x.id === snap.prev; })[0];
+      if (ex) previewSheet(ex);
+    });
   }
   var catPrevCtx = null;   /* the exercise of the catalog that is looked at: what the add button adds */
   function catAddHtml() {
@@ -2494,7 +2513,9 @@
     var ph0 = r.querySelector("[data-pickhead]"); if (ph0) { ph0.style.paddingTop = "0"; ph0.style.paddingInline = "0"; }   /* the popup already leaves its standard step under the title */
     r.style.overflowY = "hidden";   /* the search stays where it is and only the list scrolls, so nothing shows through above it */
     if (ls) ls.style.cssText += ";flex:1 1 auto;min-height:0;overflow-y:auto";
-    pickerWire(r, swapIt, true);
+    if (!dlg.__catWired) { dlg.__catWired = true; dlg.addEventListener("close", function () { if (!swapIt) saveCat(); }); }
+    var drawn = pickerWire(r, swapIt, true); saveCat();
+    return drawn;
   }
   /* the catalog's exercise as an item of the page: its texts, its songs as options, the first one chosen; nothing of it is written anywhere */
   function itemFake(e, rows, songs) {
@@ -2526,6 +2547,7 @@
       RosterSheet.render(dlg, { title: name(e), from: "bottom",
         body: bleedCss("exDlg") + '<style>#exDlg .sheet-body { padding-bottom: calc(var(--fab) + var(--gutter) * 2 + var(--inset-b)) } html.rs-lock:not(.kb-open) #exDlg .rfab { opacity: 1; transform: none; pointer-events: auto }</style>' + itemPageHtml(fake, true) });
       bleedSet(dlg);
+      dlg.dataset.ex = swapIt ? "" : e.id; if (!dlg.__catWired) { dlg.__catWired = true; dlg.addEventListener("close", function () { saveCat(); }); } saveCat();
       wireRoMusic(dlg, fake);
       /* the action is a button with its words, as on a computer: a plus and the name of the vivencia (or the word, and a menu of the last three, when none is open); a swap says so */
       var vname = state.viv ? (state.viv.title || "הוויוונסיה") : "ויוונסיה", ico = (swapIt ? I.swap : I.plus).replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ');
@@ -2933,7 +2955,7 @@
     api("/rest/v1/rpc/me", { method: "POST", json: {} }).then(function (me) {
       state.me = me; try { localStorage.setItem("biodanza.admin", me && me.admin ? "1" : "0"); localStorage.setItem("biodanza.super", me && me.super ? "1" : "0"); } catch (x) { /* none */ }
       if (!me || !me.allowed) return gate("לחשבון " + FLOA_AUTH.email() + " אין הרשאה להיכנס. אפשר לבקש מהמנהל להוסיף אותו.", true);
-      return Promise.all([api("/rest/v1/lines?select=key,name_he&order=sort"), api("/rest/v1/phases?select=key,name_he&order=sort"), api("/rest/v1/levels?select=key,name_he&order=rank").catch(function () { return []; })]).then(function (r) { state.lines = r[0]; state.phases = r[1]; state.levels = r[2]; if (!localHome) home(); startRealtime(); api("/rest/v1/song_likes?select=music_id").then(function (ls) { likes = {}; (ls || []).forEach(function (x) { likes[x.music_id] = true; }); }, function () { /* no hearts this time */ });
+      return Promise.all([api("/rest/v1/lines?select=key,name_he&order=sort"), api("/rest/v1/phases?select=key,name_he&order=sort"), api("/rest/v1/levels?select=key,name_he&order=rank").catch(function () { return []; })]).then(function (r) { state.lines = r[0]; state.phases = r[1]; state.levels = r[2]; if (!localHome) home(); startRealtime(); setTimeout(restoreCatMobile, 700); api("/rest/v1/song_likes?select=music_id").then(function (ls) { likes = {}; (ls || []).forEach(function (x) { likes[x.music_id] = true; }); }, function () { /* no hearts this time */ });
         api("/rest/v1/vivencia_likes?select=vivencia_id").then(function (ls) { likesViv = {}; (ls || []).forEach(function (x) { likesViv[x.vivencia_id] = true; }); if (state.vivsLoaded) renderVivs(); }, function () { /* no hearts this time */ });
         api("/rest/v1/exercise_likes?select=exercise_id").then(function (ls) { likesEx = {}; (ls || []).forEach(function (x) { likesEx[x.exercise_id] = true; }); }, function () { /* no hearts this time */ }); });
     }).catch(function (e) {
