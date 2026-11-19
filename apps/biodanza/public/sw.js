@@ -79,6 +79,8 @@ self.addEventListener("fetch", function (event) {
   }
   if (!url.pathname.startsWith(new URL(SCOPE).pathname) && !/^\/(kit\.css|sheet\.js|auth\.js|supabase\.js|favicon\.(ico|png|svg)|apple-touch-icon\.png)$/.test(url.pathname)) return;
 
+  if (url.pathname.indexOf(new URL(SCOPE).pathname + "admin") === 0) return;   /* the admin page is its own page: never the app shell, never kept as it */
+
   if (req.mode === "navigate") {   /* any address of the app is the same page: the app reads the address itself */
     event.respondWith(withTimeout(fetch(req), 6000).then(function (r) {
       if (r.ok && /text\/html/.test(r.headers.get("content-type") || "")) keepShell(r.clone());

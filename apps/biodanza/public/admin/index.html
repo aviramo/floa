@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>ביודנסה: ניהול</title>
+<script>document.write('<base href="' + (/^(localhost|127[.])/.test(location.hostname) ? '/biodanza/admin/' : '/admin/') + '">');</script>
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/kit.css">
+<style>
+/* The page is the window's height and never scrolls: the header and the search stay, only the list scrolls (kit elements only, tokens only). */
+html, body { height: 100%; }
+body { margin: 0; display: flex; flex-direction: column; height: 100dvh; background: var(--bg); color: var(--text); font: var(--fw-regular) var(--fs-m)/var(--lh-body) var(--font); }
+#app { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; max-width: 56rem; width: 100%; margin-inline: auto; }
+#app > .rlist { flex: 1 1 auto; }
+.pad { padding: var(--gutter); display: flex; flex-direction: column; gap: var(--gap-field); }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="/supabase.js"></script>
+<script src="/auth.js"></script>
+<script>
+(function () {
+  "use strict";
+  var app = document.getElementById("app");
+  var HOME = /^(localhost|127[.])/.test(location.hostname) ? "/biodanza/" : "/";
+  var songs = [], timer = 0, MAXROWS = 300;
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function fold(t) { return String(t == null ? "" : t).normalize("NFD").replace(new RegExp("[" + String.fromCharCode(0x300) + "-" + String.fromCharCode(0x36f) + String.fromCharCode(0x591) + "-" + String.fromCharCode(0x5c7) + "]", "g"), "").toLowerCase(); }
+  function mmss(s) { return s ? Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2) : ""; }
+  function msg(title, text, btn) {
+    app.innerHTML = '<div class="rempty" style="margin-block:auto"><b>' + esc(title) + '</b><span>' + esc(text) + '</span>' + (btn || "") + '</div>';
+  }
+  function shell() {
+    app.innerHTML = '<header class="rhead"><div class="rhead__text"><h1 class="rhead__title">ניהול</h1><span class="rhead__sub" id="cnt"></span></div></header>' +
+      '<div class="pad"><label class="rfield"><span>חיפוש שיר, מבצע או קוד</span><input id="q" type="search" placeholder=" " autocomplete="off"></label></div>' +
+      '<div class="rlist" id="out"></div>';
+    app.querySelector("#q").addEventListener("input", function () { clearTimeout(timer); timer = setTimeout(draw, 200); });
+  }
+  function draw() {
+    var words = fold(document.getElementById("q").value.trim()).split(/\s+/).filter(Boolean), out = document.getElementById("out");
+    var hit = songs.filter(function (m) { return words.every(function (w) { return m.f.indexOf(w) >= 0; }); });
+    document.getElementById("cnt").textContent = (words.length ? hit.length + " מתוך " : "") + songs.length + " שירים";
+    if (!hit.length) { out.innerHTML = '<div class="rempty"><b>לא נמצא כלום</b><span>נסו מילה אחרת</span></div>'; return; }
+    out.innerHTML = hit.slice(0, MAXROWS).map(function (m) {
+      var sub = [m.artist, mmss(m.duration_sec), m.collection].filter(Boolean).map(esc).join(" · ");
+      return '<div class="rrow"><div class="rrow__main"><span class="rrow__title">' + esc(m.title || m.name) + '</span>' + (sub ? '<span class="rrow__sub">' + sub + '</span>' : '') + '</div>' +
+        '<span class="rchip rchip--s' + (m.audio_object ? ' rchip--ok' : '') + '">' + (m.audio_object ? "יש קובץ" : "ללא קובץ") + '</span></div>';
+    }).join("") + (hit.length > MAXROWS ? '<div class="rhint" style="padding:var(--gutter)">מוצגים ' + MAXROWS + ' הראשונים. מצמצמים בחיפוש כדי לראות את השאר.</div>' : '');
+  }
+  function load(offset, all) {
+    return FLOA_AUTH.api("/rest/v1/music?select=id,name,title,artist,duration_sec,collection,audio_object&order=name,id&limit=1000&offset=" + offset).then(function (rows) {
+      all = all.concat(rows);
+      return rows.length === 1000 ? load(offset + 1000, all) : all;
+    });
+  }
+  function start() {
+    if (!window.FLOA_AUTH || !FLOA_AUTH.signedIn()) return msg("ניהול", "צריך להיכנס קודם דרך האפליקציה.", '<a class="rbtn" href="' + HOME + '">לאפליקציה</a>');
+    FLOA_AUTH.api("/rest/v1/rpc/me", { method: "POST", json: {} }).then(function (me) {
+      if (!me || !me.admin) return msg("ניהול", "הדף הזה למנהלים בלבד.");
+      shell();
+      document.getElementById("out").innerHTML = '<div class="rskel rskel--title"></div>';
+      return load(0, []).then(function (rows) {
+        songs = rows.map(function (m) { m.f = fold([m.name, m.title, m.artist, m.collection].join(" ")); return m; });
+        draw();
+      });
+    }).catch(function () { msg("ניהול", "לא הצלחנו לטעון. נסו שוב."); });
+  }
+  start();
+})();
+</script>
+</body>
+</html>
