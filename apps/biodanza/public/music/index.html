@@ -77,17 +77,18 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
   }
   /* every song that matches the search (not only the rows drawn), one per line: name, performer, length, code, file */
   function copyAll() {
-    var b = document.getElementById("cp"), txt = found().hit.map(function (m) { return [m.title || m.name, m.artist, mmss(m.duration_sec), m.audio_object ? "יש קובץ" : "ללא קובץ"].join(String.fromCharCode(9)); }).join(String.fromCharCode(10));
+    var b = document.getElementById("cp"), txt = found().hit.map(function (m) { return [m.title || m.name, m.artist, mmss(len(m)), m.audio_object ? "יש קובץ" : "ללא קובץ"].join(String.fromCharCode(9)); }).join(String.fromCharCode(10));
     function done(ok) { b.innerHTML = ok ? ICO.done : ICO.copy; b.title = ok ? "הועתק" : "ההעתקה נחסמה, אפשר לסמן ולהעתיק ידנית"; setTimeout(function () { b.innerHTML = ICO.copy; b.title = "העתקת הרשימה המוצגת"; }, 2000); }
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(function () { done(true); }, function () { done(false); }); else done(false);
   }
   var CHUNK = 90, hitList = [], shown = 0;
+  function len(m) { return m.file_sec ? Math.round(m.file_sec) : m.duration_sec; }   /* the real length of the file, the catalog's when there is no file */
   function card(m) {
     var has = m.audio_object && window.BioAudio;
     if (has) BioAudio.info(m.audio_object, m.title || m.name, m.artist);
     return '<div class="rcard rcard--compact"><span class="song__t">' + esc(m.title || m.name) + '</span>' + '<span class="song__a">' + (m.artist ? esc(m.artist) : '&nbsp;') + '</span>' +
       '<div class="song__f">' + (has ? '<button type="button" class="rbtn rbtn--icon" data-audio="' + esc(m.audio_object) + '" aria-label="השמעה" title="השמעה"></button>' : '<button type="button" class="rchip rchip--s" data-up="' + esc(m.id) + '" title="העלאת קובץ לשיר, זמין לכולם" style="cursor:pointer;border:0">ללא קובץ, העלאה</button>') +
-      (m.duration_sec ? '<span class="song__d">' + mmss(m.duration_sec) + '</span>' : '<span></span>') + '</div></div>';
+      (len(m) ? '<span class="song__d">' + mmss(len(m)) + '</span>' : '<span></span>') + '</div></div>';
   }
   /* a song with no file: choosing one here puts it in the bucket (through the Worker), attaches it to the song, and the song plays for everybody */
   var UPL = { mp3: 1, flac: 1, wav: 1, aiff: 1, aif: 1, m4a: 1 };
@@ -131,7 +132,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
     out.innerHTML = ""; more();
     if (!out.dataset.scr) { out.dataset.scr = "1"; out.addEventListener("scroll", function () { if (out.scrollTop + out.clientHeight > out.scrollHeight - 600) more(); }, { passive: true }); }
   }
-  function page(n) { return FLOA_AUTH.api("/rest/v1/music?select=id,name,title,artist,duration_sec,collection,audio_object&order=name,id&limit=1000&offset=" + n * 1000); }
+  function page(n) { return FLOA_AUTH.api("/rest/v1/music?select=id,name,title,artist,duration_sec,file_sec,collection,audio_object&order=name,id&limit=1000&offset=" + n * 1000); }
   function load() {   /* three pages at once, and a fourth only if the third was full */
     return Promise.all([page(0), page(1), page(2)]).then(function (r) {
       var all = r[0].concat(r[1], r[2]);
