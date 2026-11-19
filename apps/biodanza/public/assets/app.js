@@ -2073,7 +2073,7 @@
   /* a song chosen in the catalog's search: an exercise with no name, only that song */
   function addSongOnly(m, sheet) {
     var pos = state.items.reduce(function (x, i) { return Math.max(x, i.position); }, 0) + 1;
-    api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=minimal", json: { vivencia_id: state.viv.id, position: pos, exercise_id: null, music_id: m.id } }).then(function () {
+    api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=minimal", json: { vivencia_id: state.viv.id, position: pos, backlog: true, exercise_id: null, music_id: m.id } }).then(function () {
       if (sheet) { closeSheets(); return loadItems().then(paint, fail); }
       if (wide()) show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); else stack().pop(); back();
     }, fail);
@@ -2106,7 +2106,7 @@
     var pos = state.items.reduce(function (m, i) { return Math.max(m, i.position); }, 0) + 1;
     Promise.all([firstMusic(e.id, mid), detached(e.id)]).then(function (r) {
       var m = r[0], d = r[1];
-      return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=representation", json: { vivencia_id: state.viv.id, position: pos, exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, title: d.title || null, poetics: d.poetics || null, guidance: d.guidance || null } }).then(function (made) {
+      return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=representation", json: { vivencia_id: state.viv.id, position: pos, backlog: true, exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, title: d.title || null, poetics: d.poetics || null, guidance: d.guidance || null } }).then(function (made) {
         var item = made && made[0]; if (!item) return null;
         return api("/rest/v1/exercise_music?exercise_id=eq." + e.id + "&select=music_id").then(function (rows) {   /* all the songs the catalog gives the exercise are its options */
           return rows && rows.length ? api("/rest/v1/item_music_options?on_conflict=item_id,music_id", { method: "POST", prefer: "resolution=ignore-duplicates,return=minimal", json: rows.map(function (x) { return { item_id: item.id, music_id: x.music_id }; }) }) : null;
