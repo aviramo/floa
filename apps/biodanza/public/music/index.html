@@ -66,8 +66,9 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
     app.innerHTML = '<div class="rempty" style="margin-block:auto"><b>' + esc(title) + '</b><span>' + esc(text) + '</span>' + (btn || "") + '</div>';
   }
   function shell() {
-    app.innerHTML = '<div class="pad" style="padding-bottom:0">' + playerHtml() + '</div><div class="pad" style="flex-direction:row;align-items:flex-end"><label class="rfield" style="flex:1 1 auto"><span id="cnt">חיפוש שיר או מבצע</span><input id="q" type="search" placeholder=" " autocomplete="off"></label><button type="button" class="rbtn rbtn--icon rbtn--outline" id="cp" aria-label="העתקת הרשימה המוצגת" title="העתקת הרשימה המוצגת">' + ICO.copy + '</button></div>' +
-      '<div class="rlist" id="out"></div>';
+    app.innerHTML = '<div class="pad" style="flex-direction:row;align-items:flex-end"><label class="rfield" style="flex:1 1 auto"><span id="cnt">חיפוש שיר או מבצע</span><input id="q" type="search" placeholder=" " autocomplete="off"></label><button type="button" class="rbtn rbtn--icon rbtn--outline" id="cp" aria-label="העתקת הרשימה המוצגת" title="העתקת הרשימה המוצגת">' + ICO.copy + '</button></div>' +
+      '<div class="rlist" id="out"></div>' +
+      '<div class="pad" style="flex:none;padding-top:var(--sp-1);padding-bottom:calc(var(--gutter) + var(--inset-b))">' + playerHtml() + '</div>';   /* the player is fixed under the list: only the list scrolls */
     app.querySelector("#q").addEventListener("input", function () { clearTimeout(timer); timer = setTimeout(draw, 200); });
     app.querySelector("#cp").addEventListener("click", copyAll);
   }
