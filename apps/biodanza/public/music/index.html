@@ -30,10 +30,8 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
 #out [data-audio][data-st="sound"]::before { content: ""; width: var(--icon-s); height: var(--icon-s); background: currentColor; clip-path: polygon(22% 10%, 22% 90%, 92% 50%); }
 #out [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important; }
 #out > * { flex-shrink: 0; }
-#pw { position: fixed; inset: auto 0 0 0; padding: 0 var(--gutter) calc(var(--gutter) + var(--inset-b)); background: none; pointer-events: none; z-index: var(--z-sticky); }   /* the player floats over the cards: nothing around it */
-#pw > * { pointer-events: auto; }
-#out { padding-bottom: calc(var(--gutter) * 2 + var(--inset-b) + 4.5rem); }   /* the last cards can be scrolled clear of the player */
-#pl { flex-wrap: nowrap; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-card); box-shadow: var(--sh-card); padding: var(--gap-button) var(--pad-row); }   /* the player is a card of its own: tinted, not white like the songs, with the kit's card shadow */
+#pw { flex: none; padding: 0; }   /* the player is a footer under the list: the list ends above it */
+#pl { flex-wrap: nowrap; background: var(--surface-2); border: 0; border-top: 1px solid var(--line); border-radius: 0; box-shadow: none; margin: 0; padding: var(--gap-button) var(--gutter) calc(var(--gap-button) + var(--inset-b)); }   /* a full-width footer: square, tinted, a line on top */
 #pl .rrow__main { flex: 0 1 28rem; direction: ltr; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #pl #pa { color: var(--text-2); font-weight: var(--fw-regular); }
 #pl #pa:not(:empty)::before { content: "· "; }
