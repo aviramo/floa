@@ -34,7 +34,8 @@
 
   function songsOf(items) {
     var seen = {}, out = [];
-    (items || []).forEach(function (it) { var n = it.music && it.music.audio_object; if (n && !seen[n]) { seen[n] = 1; out.push(n); } });
+    var add = function (m) { var n = m && m.audio_object; if (n && !seen[n]) { seen[n] = 1; out.push(n); } };
+    (items || []).forEach(function (it) { add(it.music); (it.item_music_options || []).forEach(function (o) { add(o.music); }); });   /* the chosen song and all the options of every exercise */
     return out;
   }
   function putSongs(names, step) {   /* one song at a time, so a phone is not asked for ten downloads at once */
