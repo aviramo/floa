@@ -1471,15 +1471,15 @@
   }
   /* the time of a music card: the place in the song and its whole length, "1:23 / 3:40"; the player keeps it up to date (the bioaudio event) */
   function clkSpan(m) {
-    var nw = window.__bioNow || {}, d = durOf(m), t = nw.name && m.audio_object && nw.name === m.audio_object ? Math.floor(nw.t || 0) : 0;
+    var nw = window.__bioNow || {}, d = durOf(m), isMine = !!(nw.name && m.audio_object && nw.name === m.audio_object), t = isMine ? Math.floor(nw.t || 0) : 0;
     var tot = nw.name && nw.name === m.audio_object && nw.d > 0 ? Math.floor(nw.d) : d;
-    return '<span class="bio-clk" data-dur="' + (d || "") + '"' + (m.audio_object ? ' data-for="' + esc(m.audio_object) + '"' : '') + ' style="direction:ltr;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + clock(t) + (tot ? " / " + clock(tot) : "") + '</span>';
+    return '<span class="bio-clk" data-dur="' + (d || "") + '"' + (m.audio_object ? ' data-for="' + esc(m.audio_object) + '"' : '') + ' style="direction:ltr;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + (isMine ? clock(t) + (tot ? " / " + clock(tot) : "") : (tot ? clock(tot) : "")) + '</span>';
   }
   document.addEventListener("bioaudio", function (ev) {
     var d = ev.detail || {}; window.__bioNow = { name: d.name || "", t: d.t || 0, d: d.d || 0 };
     document.querySelectorAll(".bio-clk").forEach(function (sp) {
       var dur = parseInt(sp.dataset.dur, 10) || 0, mine = d.name && sp.dataset.for === d.name;
-      var tot = mine && d.d > 0 ? Math.floor(d.d) : dur, txt2 = clock(mine ? Math.floor(d.t || 0) : 0) + (tot ? " / " + clock(tot) : "");
+      var tot = mine && d.d > 0 ? Math.floor(d.d) : dur, txt2 = mine ? clock(Math.floor(d.t || 0)) + (tot ? " / " + clock(tot) : "") : (tot ? clock(tot) : "");   /* only the song that has the player shows where it is */
       if (sp.textContent !== txt2) sp.textContent = txt2;
     });
   });
