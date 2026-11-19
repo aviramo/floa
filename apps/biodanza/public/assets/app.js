@@ -2448,12 +2448,13 @@
         if (inSub()) { unwind(1); return; }   /* the catalog beside the exercise holds one entry: leaving it draws the exercise again from the address */
         stack().pop(); if (!wide()) { stack().pop(); stack().pop(); } var f = stack()[stack().length - 1]; if (f) f(); }, fail);   /* narrow: also the exercise screen and the one just seen */
     }
-    var pos = state.items.reduce(function (m, i) { return Math.max(m, i.position); }, 0) + 1;
+    var pos = state.items.reduce(function (m, i) { return Math.max(m, i.position); }, 0) + 1, newId = null;
+    var openNew = function () { var it = newId && state.items.filter(function (x) { return x.id === newId; })[0]; if (it) { paint(); if (wide()) itemScreen(it); else go(function () { itemScreen(it); }); } else paint(); };   /* what was added is the open, chosen exercise */
     Promise.all([firstMusic(e.id, mid), detached(e.id)]).then(function (r) {
       var m = r[0], d = r[1];
-      return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=representation", json: { vivencia_id: state.viv.id, position: pos, backlog: true, exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, title: d.title || null, poetics: d.poetics || null, guidance: d.guidance || null } }).then(function (made) { return made && made[0] ? optionsFor(made[0].id, all) : null; });   /* the songs that were marked come with the exercise, the first as its own; none marked, none comes */
-    }).then(function () { toast("התרגיל נוסף"); if (sheet) { closeSheets(); return loadItems().then(paint, fail); }
-      if (catPreview || catPanel) { closeCatPanel(true); show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); return loadItems().then(paint, fail); }
+      return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=representation", json: { vivencia_id: state.viv.id, position: pos, backlog: true, exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, title: d.title || null, poetics: d.poetics || null, guidance: d.guidance || null } }).then(function (made) { newId = made && made[0] ? made[0].id : null; return newId ? optionsFor(newId, all) : null; });   /* the songs that were marked come with the exercise, the first as its own; none marked, none comes */
+    }).then(function () { toast("התרגיל נוסף"); if (sheet) { closeSheets(); return loadItems().then(openNew, fail); }
+      if (catPreview || catPanel) { closeCatPanel(true); return loadItems().then(openNew, fail); }
       if (wide()) show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); else stack().pop(); back(); }, fail);
   }
 
