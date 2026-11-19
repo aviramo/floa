@@ -791,47 +791,42 @@
     if (wire) wire(t); }
   var catPanel = null, catLayer = null, catPreview = false;
   (function () { var st = document.createElement("style"); st.textContent = "#catLayer { position: fixed; z-index: 20; transform: translateX(100%); transition: transform .25s var(--ease); display: flex; flex-direction: column; min-height: 0 } #catLayer[hidden] { display: none } #catLayer.is-open { transform: none } #catLayer > .bio-banner { position: absolute; inset-block: 0; inset-inline-start: auto; left: -44px; width: 44px; height: 100% } #catLayer > .catbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; box-shadow: -1px 0 0 var(--line) } #catLayer > .catbody > .rlist { flex: 1 1 auto; min-height: 0 } @media (prefers-reduced-motion: reduce) { #catLayer { transition: none } }"; document.head.appendChild(st); })();
+  /* The catalog is ONE popup, a single body that slides as a whole: it is as wide as the left and the right sides together; its right part is the catalog's list, its left part is the exercise opened from it. Closing moves the whole body; the left part only slides out from under the right one when an exercise is chosen. */
   var catPrev = null, catPrevId = null;
-  function placeCatPrev() { if (!catPrev) return; var r = pd.getBoundingClientRect(); catPrev.style.top = r.top + "px"; catPrev.style.height = r.height + "px"; catPrev.style.left = r.left + "px"; catPrev.style.width = r.width + "px"; }
-  function ensureCatPrev() {
-    if (catPrev) return;
-    var d = document.createElement("div"); d.id = "catPrev"; d.style.background = getComputedStyle(document.body).backgroundColor;
-    document.body.appendChild(d); catPrev = d; placeCatPrev();
-  }
-  function closeCatPrev() {   /* it slides back in under the catalog's layer */
+  function ensureCatPrev() { /* the left part is built with the layer */ }
+  function closeCatPrev() {   /* the left part slides back in under the right one */
     if (!catPrev) return;
     catPrev.classList.remove("is-open"); catPrevId = null; catPreview = false;
     if (catLayer) catLayer.querySelectorAll(".bio-card[aria-current]").forEach(function (c) { c.removeAttribute("aria-current"); });
   }
-  (function () { var st = document.createElement("style"); st.textContent = "#catPrev { position: fixed; z-index: 19; display: flex; flex-direction: column; min-height: 0; overflow: hidden; visibility: hidden; transform: translateX(100%); transition: transform .25s var(--ease), visibility 0s linear .25s } #catPrev.is-open { visibility: visible; transform: none; transition: transform .25s var(--ease), visibility 0s } #catPrev > .rlist { flex: 1 1 auto; min-height: 0 } @media (prefers-reduced-motion: reduce) { #catPrev { transition: none } }"; document.head.appendChild(st); })();
-  function placeCatLayer() {   /* over the right column, beside the divider; the banner is the 44px at its left edge */
-    if (!catLayer) return; var r = pl.getBoundingClientRect();
-    catLayer.style.top = r.top + "px"; catLayer.style.height = r.height + "px"; catLayer.style.left = r.left + "px"; catLayer.style.width = r.width + "px";
-    placeCatPrev();
+  (function () { var st = document.createElement("style"); st.textContent = "#catLayer { position: fixed; z-index: 20; pointer-events: none; transform: translateX(100%); transition: transform .25s var(--ease) } #catLayer[hidden] { display: none } #catLayer.is-open { transform: none } #catLayer > .catmain { position: absolute; z-index: 1; inset-block: 0; right: 0; width: var(--plw); display: flex; flex-direction: column; min-height: 0; pointer-events: auto; box-shadow: -1px 0 0 var(--line) } #catLayer .catbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column } #catLayer .catbody > .rlist { flex: 1 1 auto; min-height: 0 } #catLayer > .catprev { position: absolute; z-index: 0; inset-block: 0; left: 0; width: var(--pdw); display: flex; flex-direction: column; min-height: 0; overflow: hidden; pointer-events: auto; visibility: hidden; transform: translateX(100%); transition: transform .25s var(--ease), visibility 0s linear .25s } #catLayer > .catprev.is-open { visibility: visible; transform: none; transition: transform .25s var(--ease), visibility 0s } #catLayer > .catprev > .rlist { flex: 1 1 auto; min-height: 0 } @media (prefers-reduced-motion: reduce) { #catLayer, #catLayer > .catprev { transition: none } }"; document.head.appendChild(st); })();
+  function placeCatLayer() {   /* the one body spans both sides, from the left side's edge to the right side's edge */
+    if (!catLayer) return; var a = pd.getBoundingClientRect(), b = pl.getBoundingClientRect();
+    catLayer.style.top = b.top + "px"; catLayer.style.height = b.height + "px"; catLayer.style.left = a.left + "px"; catLayer.style.width = (b.right - a.left) + "px";
+    catLayer.style.setProperty("--pdw", a.width + "px"); catLayer.style.setProperty("--plw", b.width + "px");
   }
-  function ensureCatLayer() {   /* built once, closed, waiting off the right edge of the screen: only its banner shows */
+  function ensureCatLayer() {   /* built once, closed, waiting off the right edge of the screen */
     if (catLayer) return;
     resetPk();   /* the search box reads the catalog's state: it must exist before the layer is drawn */
-    var d = document.createElement("div"); d.id = "catLayer"; d.style.background = getComputedStyle(document.body).backgroundColor;
-    d.innerHTML = '<div class="catbody" inert><header class="rhead"><div class="rhead__text">' + searchInput() + '</div></header>' + pickerBody(false) + '</div>';
-    document.body.appendChild(d); catLayer = d; pickerWire(d.querySelector(".catbody"), undefined, false); placeCatLayer();
+    var bg = getComputedStyle(document.body).backgroundColor;
+    var d = document.createElement("div"); d.id = "catLayer";
+    d.innerHTML = '<div class="catprev" style="background:' + bg + '"></div><div class="catmain" style="background:' + bg + '"><div class="catbody" inert><header class="rhead"><div class="rhead__text">' + searchInput() + '</div></header>' + pickerBody(false) + '</div></div>';
+    document.body.appendChild(d); catLayer = d; catPrev = d.querySelector(".catprev"); pickerWire(d.querySelector(".catbody"), undefined, false); placeCatLayer();
     window.addEventListener("resize", placeCatLayer);
-    if (window.ResizeObserver) new ResizeObserver(placeCatLayer).observe(pl);
+    if (window.ResizeObserver) { var ro = new ResizeObserver(placeCatLayer); ro.observe(pl); ro.observe(pd); }
   }
   function closeCatPanel(quiet) {
     if (!catPanel) return;
     catPanel = null; state.pickerShow = false; pd.classList.remove("bio-dim");
     document.querySelectorAll("[data-catopen]").forEach(function (b) { b.setAttribute("aria-pressed", "false"); });
-    catLayer.classList.remove("is-open");
-    if (catPrev) catPrev.classList.remove("is-open");   /* the catalog and the exercise that came out of it are one layer: they go back together (the exercise is remembered) */ catLayer.querySelector(".catbody").setAttribute("inert", "");   /* the layer and its banner slide back off to the right together */
+    catLayer.classList.remove("is-open"); catLayer.querySelector(".catbody").setAttribute("inert", "");   /* the whole body slides back off to the right, as one piece; the exercise opened from it is remembered */
   }
-  function openCatPanel() {   /* the layer and its banner slide left together; the exercise on the left goes dark */
+  function openCatPanel() {   /* the whole body slides left; the exercise on the left side goes dark */
     if (catPanel || !catLayer || catLayer.hidden) return;
     placeCatLayer(); catLayer.classList.add("is-open"); catLayer.querySelector(".catbody").removeAttribute("inert");
     document.querySelectorAll("[data-catopen]").forEach(function (b) { b.setAttribute("aria-pressed", "true"); });
     catPanel = catLayer; state.pickerShow = true; catPreview = !!catPrevId;
-    if (catPrevId && catPrev) requestAnimationFrame(function () { catPrev.classList.add("is-open"); });   /* and come back together */   /* what is on the left right now: only a catalog exercise (it has the add button) stays lit; anything else goes behind the half dark backdrop, as behind every popup */
-    pd.classList.add("bio-dim");   /* the left goes behind the half dark backdrop, as behind every popup */
+    pd.classList.add("bio-dim");
   }
   document.addEventListener("click", function (ev) { var ab = ev.target.closest && ev.target.closest("[data-addex]"); if (ab) {   /* the plus beside the exercises' title: an empty exercise at the end of the numbered ones, opened to be filled in */
       if (!state.viv || !state.items || ab.disabled) return;
@@ -2424,7 +2419,7 @@
         wireRoMusic(r, fake); sbSync(r); catPreview = true;
         on(r, "doswap", function () { if (swapIt) confirmSwap(e, swapIt, undefined, fake.music_id, fake.sel); else addEx(e, undefined, undefined, fake.music_id, fake.sel); });
       };
-      if (useLayer && catPanel) { ensureCatPrev(); placeCatPrev(); catPrev.innerHTML = phtml; pwire(catPrev); catPrevId = e.id; requestAnimationFrame(function () { catPrev.classList.add("is-open"); }); }
+      if (useLayer && catPanel) { catPrev.innerHTML = phtml; pwire(catPrev); catPrevId = e.id; requestAnimationFrame(function () { catPrev.classList.add("is-open"); }); }
       else show(phtml, pwire, "d");
     }, fail);
   }
