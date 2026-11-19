@@ -978,7 +978,7 @@
 
   /* ---------- the vivencia: plan along the curve ---------- */
   function openViv(id) { if (!state.viv || state.viv.id !== id) state.lastItem = null; state.filter = ""; state.viv = state.vivs.filter(function (v) { return v.id === id; })[0] || { id: id, title: "" }; if (wide()) { stack().length = 0; show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); } go(editor); paintSel(); }
-  var ITEM_SELECT = "&select=id,position,exercise_id,music_id,notes,title,poetics,guidance,exercises(title_he,title_en,poetics,guidance,objective,exercise_texts(lang,poetics,guidance,level,curve,level_basis,curve_basis,source)),music(id,name,title,artist,duration_sec,audio_object,in_catalog),vivencia_item_facilitators(email)&order=position";
+  var ITEM_SELECT = "&select=id,position,exercise_id,music_id,notes,title,poetics,guidance,exercises(title_he,title_en,poetics,guidance,objective,exercise_texts(lang,poetics,guidance,level,curve,level_basis,curve_basis,source)),music(id,name,title,artist,duration_sec,audio_object,in_catalog),vivencia_item_facilitators(email),item_music_options(music_id,created_at,music(id,name,title,artist,duration_sec,audio_object,in_catalog))&order=position";
   function itemsOf(id) { return api("/rest/v1/vivencia_items?vivencia_id=eq." + id + ITEM_SELECT); }
   function loadItems() {
     return itemsOf(state.viv.id).then(function (r) { state.items = r || []; });
@@ -1223,8 +1223,7 @@
       '<div style="display:flex;align-items:flex-end;gap:var(--gap-button)">' + facChip(it) + '</div>' +
       '</div>' +
       '<div id="iscroll" style="flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain">' +   /* everything under the name scrolls together; the texts are open to the end */
-      '<div class="rrow rrow--link" data-act="pickMusic" role="button" tabindex="0" style="flex:none;padding-inline:var(--sp-2);padding-block:var(--sp-2);border-bottom:0;cursor:pointer"><div style="flex:1 1 auto;min-width:0">' +
-        (it.music ? songLines(it.music) : '<span class="rrow__title">לחצו לבחירת מוזיקה</span>') + '</div>' + (it.music ? playCol(it.music, true) : '') + '</div>' +   /* a strip across the width, like the music chooser's rows */
+      '<div id="imus" style="flex:none;padding:var(--sp-2) var(--gutter) 0">' + musCards(it) + '</div>' +   /* the songs this exercise is torn between, as cards: the chosen one plays in the vivencia */
       '<div id="ifields" style="flex:none;display:flex;flex-direction:column;gap:var(--gap-field);padding:var(--gutter) var(--gutter) 0"><label class="rfield" style="flex:none"><span>פואטיקה</span><div id="ipo" class="rf-rich" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true"' + (isDraft(it, "poetics") ? DRAFT_FIELD : "") + '>' + rtHtml(txt(it, "poetics")) + '</div></label>' +
       '<label class="rfield" style="flex:none"><span>הנחיה</span><div id="igu" class="rf-rich" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true"' + (isDraft(it, "guidance") ? DRAFT_FIELD : "") + '>' + rtHtml(txt(it, "guidance")) + '</div></label>' +
       '<label class="rfield" style="flex:none"><span>הערות</span><div id="it" class="rf-rich" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true">' + rtHtml(it.notes || "") + '</div></label></div>' +
@@ -1244,6 +1243,23 @@
       if (pg) attachPager(pg, { next: nextIt ? function () { walk(nextIt); } : null, prev: prevIt ? function () { walk(prevIt); } : null });
       function toMusic() { if (wide()) { musicScreen(it); subEnter(function () { musicScreen(it); }); } else musicSheet(it); }   /* beside the list, the pane; on a narrow screen, a popup from the bottom */
       on(r, "pickMusic", function (b, ev) { if (ev.target.closest("a,[data-audio]")) return; toMusic(); });
+      var imus = r.querySelector("#imus");
+      if (imus) {
+        var repaintMus = function () { imus.innerHTML = musCards(it); };
+        imus.addEventListener("click", function (ev) {
+          if (ev.target.closest("[data-audio], a")) return;
+          if (ev.target.closest("[data-addm]")) { toMusic(); return; }
+          var rm = ev.target.closest("[data-orm]");
+          if (rm) {
+            ev.stopPropagation(); var mid = rm.dataset.orm;
+            api("/rest/v1/item_music_options?item_id=eq." + it.id + "&music_id=eq." + mid, { method: "DELETE" }).then(function () { it.item_music_options = (it.item_music_options || []).filter(function (o) { return o.music_id !== mid; }); repaintMus(); }, fail);
+            return;
+          }
+          var c = ev.target.closest("[data-opt]"); if (!c) return;
+          var m = optList(it).filter(function (x) { return x.id === c.dataset.opt; })[0]; if (!m || m.id === it.music_id) return;
+          setChosen(it, m).then(function () { repaintMus(); if (wide()) paint(); }, fail);
+        });
+      }
       r.querySelectorAll('[data-act="pickMusic"]').forEach(function (c) { c.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toMusic(); } }); });
       /* the three fields share the height that is left, by how many lines each has: all of it if it fits; if not, each gets its share and scrolls on its own */
       var box = r.querySelector("#ifields"), tas = ["#ipo", "#igu", "#it"].map(function (q) { return r.querySelector(q); });
@@ -1337,7 +1353,7 @@
 
   /* ---------- the songs of an exercise: two lines each, the song and who plays it ---------- */
   function chooseSongHere(it, m, out) {   /* a song (or none) for this exercise, in the pane */
-    api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { music_id: m ? m.id : null } }).then(function () { it.music_id = m ? m.id : null; it.music = m; if (wide()) paint(); out(); }, fail);
+    setChosen(it, m).then(function () { if (wide()) paint(); out(); }, fail);
   }
   /* songs of the other exercises: every exercise that has songs, each with its list (read once, page by page, then kept) */
   var exMusicP = null;
@@ -1426,9 +1442,35 @@
 
   /* ---------- other music: files the catalogs do not list. Same rows as the songs, with a tag ---------- */
   /* narrow screen: choosing the song is a popup from the bottom; "other music" is a second popup on top of it, closing it is back */
+  /* the songs an exercise of a vivencia is torn between, oldest first; the chosen one is among them even when it was chosen before the options existed */
+  function optList(it) {
+    var seen = {}, out = [];
+    (it.item_music_options || []).slice().sort(function (a, b) { return String(a.created_at).localeCompare(String(b.created_at)); }).forEach(function (o) { if (o.music && !seen[o.music.id]) { seen[o.music.id] = 1; out.push(o.music); } });
+    if (it.music && !seen[it.music.id]) out.unshift(it.music);
+    return out;
+  }
+  /* a song becomes the chosen one of the exercise, and stays among its options (so does the one it replaces) */
+  function setChosen(it, m) {
+    var have = {}; (it.item_music_options || []).forEach(function (o) { have[o.music_id] = 1; });
+    var add = []; [it.music, m].forEach(function (x) { if (x && !have[x.id] && !add.some(function (y) { return y.id === x.id; })) add.push(x); });
+    var chain = Promise.resolve();
+    if (add.length) chain = api("/rest/v1/item_music_options?on_conflict=item_id,music_id", { method: "POST", prefer: "resolution=ignore-duplicates,return=minimal", json: add.map(function (x) { return { item_id: it.id, music_id: x.id }; }) }).then(function () {
+      var now = new Date().toISOString(); it.item_music_options = it.item_music_options || []; add.forEach(function (x) { it.item_music_options.push({ music_id: x.id, created_at: now, music: x }); });
+    });
+    return chain.then(function () { return api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { music_id: m ? m.id : null } }); }).then(function () { it.music_id = m ? m.id : null; it.music = m; });
+  }
+  function musCards(it) {
+    var list = optList(it), cur = it.music_id;
+    var cards = list.map(function (m) {
+      var sel = m.id === cur;
+      return '<div class="rcard rcard--compact" data-opt="' + esc(m.id) + '" role="button" tabindex="0"' + (sel ? ' aria-current="true"' : '') + ' style="margin:0;min-width:0;display:flex;align-items:flex-start;gap:var(--sp-2);cursor:pointer;background:var(--on-primary)' + (sel ? ';border-color:var(--primary);box-shadow:inset 0 0 0 1px var(--primary)' : '') + '"><div style="flex:1 1 auto;min-width:0">' + songLines(m) + '</div>' + playCol(m, true) +
+        (sel ? '' : '<button type="button" class="rbtn rbtn--icon" data-orm="' + esc(m.id) + '" aria-label="הסרת האפשרות" title="הסרת האפשרות" style="position:absolute;inset-block-start:2px;inset-inline-start:2px;width:var(--ctl);min-height:0;height:var(--ctl);color:var(--text-3)">' + I.x + '</button>') + '</div>';
+    }).join("");
+    return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(18rem,1fr));gap:var(--sp-1);align-items:stretch">' + cards +
+      '<div class="rcard rcard--compact" data-addm role="button" tabindex="0" style="margin:0;display:flex;align-items:center;justify-content:center;gap:var(--sp-1);cursor:pointer;min-height:var(--fab);border-style:dashed;background:transparent;box-shadow:none;color:var(--text-2)">' + I.plus + '<span>' + (list.length ? 'הוספת אפשרות מוזיקה' : 'לחצו לבחירת מוזיקה') + '</span></div></div>';
+  }
   function chooseSong(it, m) {
-    return api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { music_id: m ? m.id : null } }).then(function () {
-      it.music_id = m ? m.id : null; it.music = m;
+    return setChosen(it, m).then(function () {
       ["otherDlg", "musicDlg"].forEach(function (id) { slideClose(document.getElementById(id)); });
       itemScreen(it);
     }, fail);
@@ -1559,7 +1601,7 @@
   function otherMusic(it, out) {
     show(head("מוזיקות אחרות", "", true) + '<div class="pad" style="padding-block-end:0"><label class="rfield"><span>חיפוש</span><input id="oq" placeholder=" " autocomplete="off"></label>' + UP_BTN + '</div><div class="rlist" id="olist"><div class="rskel rskel--title"></div></div>', function (r) {
       on(r, "back", function () { if (inSub() && history.state.sub >= 2) unwind(1); else musicScreen(it); });
-      otherWire(r, it, function (m) { api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { music_id: m.id } }).then(function () { it.music_id = m.id; it.music = m; if (wide()) paint(); out(); }, fail); });
+      otherWire(r, it, function (m) { setChosen(it, m).then(function () { if (wide()) paint(); out(); }, fail); });
     }, "d");
   }
 
