@@ -771,9 +771,10 @@
   }
   function ensureCatLayer() {   /* built once, closed, waiting off the right edge of the screen: only its banner shows */
     if (catLayer) return;
+    resetPk();   /* the search box reads the catalog's state: it must exist before the layer is drawn */
     var d = document.createElement("div"); d.id = "catLayer"; d.style.background = getComputedStyle(document.body).backgroundColor;
     d.innerHTML = '<button type="button" class="bio-banner" data-catopen aria-label="קטלוג התרגילים" title="קטלוג התרגילים">קטלוג</button><div class="catbody" inert><header class="rhead"><div class="rhead__text">' + searchInput() + '</div></header>' + pickerBody(false) + '</div>';
-    document.body.appendChild(d); catLayer = d; resetPk(); pickerWire(d.querySelector(".catbody"), undefined, false); placeCatLayer();
+    document.body.appendChild(d); catLayer = d; pickerWire(d.querySelector(".catbody"), undefined, false); placeCatLayer();
     window.addEventListener("resize", placeCatLayer);
     if (window.ResizeObserver) new ResizeObserver(placeCatLayer).observe(pl);
   }
