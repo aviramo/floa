@@ -899,7 +899,9 @@
   function facEmails(it) { return (it.vivencia_item_facilitators || []).map(function (x) { return x.email; }); }
   function facLabel(it) {
     var es = facEmails(it);
-    return !es.length ? "מוביל" : es.length === 1 ? facShort(es[0]) : facShort(es[0]) + " +" + (es.length - 1);
+    if (!es.length) return "מוביל";
+    var order = function (e) { var k = state.members.findIndex(function (m) { return m.email === e; }); return k < 0 ? 999 : k; };
+    return es.slice().sort(function (a, b) { return order(a) - order(b); }).map(facShort).join(", ");   /* all the leaders, by first name, in the order of the members */
   }
   function facChip(it, extra) {
     if (!facOn()) return "";
