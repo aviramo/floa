@@ -427,10 +427,19 @@
       };
     }
     document.addEventListener("click", function (ev) { var b = ev.target.closest && ev.target.closest("[data-hist]"); if (b) { if (wide() && histOpen) closeHist(); else openHistory(); } });
-    document.addEventListener("click", function (ev) {   /* a song outside the catalog: its name and performer are edited in the same popup as in the lists */
-      var nmEl = ev.target.closest && ev.target.closest(".bio-dock__name[data-edit]"); if (!nmEl) return;
-      var who = nmEl.dataset.who;
-      api("/rest/v1/music?id=eq." + nmEl.getAttribute("data-edit") + "&select=id,name,title,artist,duration_sec,audio_object,in_catalog&limit=1").then(function (rows) {
+    document.addEventListener("click", function (ev) {   /* a tap on the name in the player: a popup with the whole name and the performer; a song outside the catalog can be edited from it */
+      var nmEl = ev.target.closest && ev.target.closest(".bio-dock__name"); if (!nmEl) return;
+      var who = nmEl.dataset.who, ttl = loaded ? curTitle : (last && last.t) || "", art = loaded ? curArtist : (last && last.a) || "", eid = nmEl.getAttribute("data-edit");
+      if (!ttl && !art) return;
+      var idlg = document.getElementById("songInfoDlg");
+      if (!idlg) { idlg = document.createElement("dialog"); idlg.id = "songInfoDlg"; document.body.appendChild(idlg); }
+      RosterSheet.render(idlg, { title: "השיר שמתנגן", from: "bottom", size: "s",
+        body: '<div class="pad"><div dir="auto" style="font:var(--fw-black) var(--fs-l)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(ttl) + '</div>' + (art ? '<div dir="auto" style="margin-top:var(--sp-1);color:var(--text-2);font:var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(art) + '</div>' : '') + '</div>',
+        foot: eid ? '<button class="rbtn rbtn--block" type="button" id="siedit">עריכת שם ומבצע</button>' : undefined });
+      var eb = idlg.querySelector("#siedit"); if (!eb) return;
+      eb.addEventListener("click", function () { idlg.close(); editFromDock(); });
+      function editFromDock() {
+      api("/rest/v1/music?id=eq." + eid + "&select=id,name,title,artist,duration_sec,audio_object,in_catalog&limit=1").then(function (rows) {
         var m = rows && rows[0]; if (!m) return;
         songEdit(m, function () {
           var t = m.title || m.name, a = m.artist || ""; songInfo[who] = { t: t, a: a };
@@ -441,6 +450,7 @@
           sync(); if (document.getElementById("list")) { if (state.items && state.items.length) paint(); }
         });
       }).then(null, fail);
+      }
     });
     document.addEventListener("biosongrenamed", function (ev) {   /* a song was renamed: the player says the new name at once */
       var d3 = ev.detail || {};
