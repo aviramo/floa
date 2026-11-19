@@ -690,11 +690,11 @@
       '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="nextW" aria-label="הבא" title="הבא"' + (hasNext ? "" : " disabled") + '>' + I.fwd + '</button></header>';
   }
   /* the header of one exercise: buttons only, each with its word. Previous and the list on the right, next on the left. The name is the field below. */
-  function itemHead(hasPrev, hasNext, where, exId, nameText, ro, roLabel, inBack) {
+  function itemHead(hasPrev, hasNext, where, exId, nameText, ro, roLabel, inBack, numText) {
     var nav = !wide() && !ro;   /* beside the list there are no previous and next buttons: the list is the way around */
     var arrow = function (act, ico, label, off) { return '<button class="rbtn rbtn--icon" data-act="' + act + '" aria-label="' + label + '" title="' + label + '"' + (off ? " disabled" : "") + '>' + ico + '</button>'; };
     return '<header class="rhead">' + (nav ? arrow("prevW", I.back, "הקודם", !hasPrev) : "") +
-      '<div class="rhead__text"><input id="ina" class="rhead__title" placeholder="ללא שם" autocomplete="off" aria-label="שם התרגיל"' + (ro ? ' readonly' : '') + ' value="' + esc(nameText || "") + '" style="width:100%;min-width:0;border:0;background:transparent;padding-inline:0;margin:0;color:inherit;text-align:start;outline:0;text-overflow:ellipsis;text-box:normal;line-height:1.4;padding-block:4px"></div>' +
+      '<div class="rhead__text" style="flex-direction:row;align-items:center;gap:var(--sp-2)">' + (numText ? '<span aria-hidden="true" style="flex:none;font:var(--fw-black) var(--fs-xl)/1 var(--font);font-variant-numeric:tabular-nums">' + esc(numText) + '</span>' : "") + '<input id="ina" class="rhead__title" placeholder="ללא שם" autocomplete="off" aria-label="שם התרגיל"' + (ro ? ' readonly' : '') + ' value="' + esc(nameText || "") + '" style="width:100%;min-width:0;border:0;background:transparent;padding-inline:0;margin:0;color:inherit;text-align:start;outline:0;text-overflow:ellipsis;text-box:normal;line-height:1.4;padding-block:4px"></div>' +
       (exId ? heartBtnEx(exId, "bio-flat") : "") +   /* a catalog exercise: the heart first, then the action as a word to its left */
       (ro && roLabel ? '<button type="button" class="rbtn" style="flex:none" data-act="doswap">' + esc(roLabel) + '</button>' : "") + (ro ? "" : arrow("del", I.trash, "הסרה מהוויוונסיה", false)) + (nav ? arrow("nextW", I.fwd, "הבא", !hasNext) : "") + '</header>';
   }
@@ -1317,7 +1317,7 @@
     markItem();
     var k = state.items.indexOf(it), prevIt = state.items[k - 1], nextIt = state.items[k + 1];
     /* the header walks the sequence: the right button to the previous exercise, the left one to the next, the name between them */
-    var hd = itemHead(!!prevIt, !!nextIt, "", it.exercise_id, itemName(it), false, "", !!it.backlog);   /* the middle button says where we are, and still opens the list */
+    var hd = itemHead(!!prevIt, !!nextIt, "", it.exercise_id, itemName(it), false, "", !!it.backlog, it.backlog ? "•" : String(state.items.filter(function (i) { return !i.backlog; }).indexOf(it) + 1));   /* its number, the same as in the list, before its name */   /* the middle button says where we are, and still opens the list */
     show(hd + itemPageHtml(it, false), function (r) {
       var sf = state.slideFrom || 0, pg = r.querySelector("#ipg"); state.slideFrom = 0;
       r.style.overflowX = "clip";   /* a page sliding in from the side must not make the window scroll sideways */
