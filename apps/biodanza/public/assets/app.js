@@ -1811,7 +1811,7 @@
   function musCards(it, ro) {
     var list = optList(it), cur = it.music_id;
     var cards = list.map(function (m) { return optCardHtml(m, m.id === cur, !ro); }).join("");
-    if (ro) return list.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch">' + list.map(function (m) { return optCardHtml(m, false, false, true); }).join("") + '</div>' : '';
+    if (ro) { var base = (it.item_music_options || []).map(function (o) { return o.music; }).filter(Boolean); return base.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch">' + base.map(function (m) { return optCardHtml(m, m.id === cur, false, true); }).join("") + '</div>' : ''; }
     var add = '<div class="rcard rcard--compact" data-addm role="button" tabindex="0" style="margin:0;min-width:0;display:flex;align-items:center;justify-content:center;gap:var(--sp-1);cursor:pointer;min-height:var(--tag-s);border:1px dashed var(--line-strong);background:transparent;box-shadow:none;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>' + (list.length ? "הוספת מוזיקה" : "בחירת מוזיקה") + '</div>';
     return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch">' + cards + add + '</div>';
   }
@@ -2176,7 +2176,7 @@
   /* the catalog's exercise as an item of the page: its texts, its songs as options, the first one chosen; nothing of it is written anywhere */
   function itemFake(e, rows, songs) {
     return { id: "", exercise_id: e.id, exercises: Object.assign({}, e, { exercise_texts: rows || [] }), title: null, poetics: null, guidance: null, notes: "",
-      music_id: songs.length ? songs[0].id : null, music: songs[0] || null,
+      music_id: null, music: null,   /* no song is chosen until one is marked: only that one comes with the exercise */
       item_music_options: songs.map(function (m, i) { return { music_id: m.id, created_at: String(1000 + i), music: m }; }) };
   }
   /* the cards of a read only page: a tap plays, the chip chooses the song the exercise is added with */
@@ -2184,8 +2184,10 @@
     var imus = root.querySelector("#imus"); if (!imus) return;
     imus.addEventListener("click", function (ev) {
       if (ev.target.closest("[data-audio], a")) return;
-      var c = ev.target.closest("[data-opt]"); if (!c) return;
-      var pb = c.querySelector("[data-audio]"); if (pb) pb.click();
+      var c = ev.target.closest("[data-opt]"); if (!c) return;   /* a tap marks the song (green frame), a second tap takes the mark off; the play tile plays */
+      var id = c.dataset.opt; if (fake.music_id === id) { fake.music_id = null; fake.music = null; }
+      else { var m = (fake.item_music_options || []).map(function (o) { return o.music; }).filter(function (x) { return x && x.id === id; })[0]; fake.music_id = id; fake.music = m || null; }
+      imus.innerHTML = musCards(fake, true);
     });
   }
   function previewSheet(e, swapIt) {
@@ -2327,12 +2329,7 @@
     var pos = state.items.reduce(function (m, i) { return Math.max(m, i.position); }, 0) + 1;
     Promise.all([firstMusic(e.id, mid), detached(e.id)]).then(function (r) {
       var m = r[0], d = r[1];
-      return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=representation", json: { vivencia_id: state.viv.id, position: pos, backlog: true, exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, title: d.title || null, poetics: d.poetics || null, guidance: d.guidance || null } }).then(function (made) {
-        var item = made && made[0]; if (!item) return null;
-        return api("/rest/v1/exercise_music?exercise_id=eq." + e.id + "&select=music_id").then(function (rows) {   /* all the songs the catalog gives the exercise are its options */
-          return rows && rows.length ? api("/rest/v1/item_music_options?on_conflict=item_id,music_id", { method: "POST", prefer: "resolution=ignore-duplicates,return=minimal", json: rows.map(function (x) { return { item_id: item.id, music_id: x.music_id }; }) }) : null;
-        }, function () { return null; });
-      });
+      return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=minimal", json: { vivencia_id: state.viv.id, position: pos, backlog: true, exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, title: d.title || null, poetics: d.poetics || null, guidance: d.guidance || null } });   /* only the song that was marked comes with the exercise, or none
     }).then(function () { toast("התרגיל נוסף"); if (sheet) { closeSheets(); return loadItems().then(paint, fail); }
       if (wide()) show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); else stack().pop(); back(); }, fail);
   }
