@@ -776,11 +776,13 @@
   function fail(e) { console.error(e); toast("משהו השתבש, נסו שוב"); }
   /* pane "d" is the detail pane (the vivencia), on a wide screen beside the list; on a narrow one every screen takes the single pane. */
   function show(html, wire, pane) { if (!wide() && pane === "d") return itemSheet(html, wire);   /* narrow: the exercise is a popup from the bottom, not a page */
-    if (wide() && (pane === "d" || !state.pickerShow)) pd.classList.remove("bio-dim");   /* anything new on the left, or the catalog closed, and the exercise is lit again */
+    var isPrev = html.indexOf('data-act="doswap"') >= 0;   /* a catalog exercise (it has the add button) is the one thing on the left that stays lit while the catalog is open */
+    if (wide() && ((pane === "d" && (isPrev || !catPanel)) || !state.pickerShow)) pd.classList.remove("bio-dim");   /* anything new on the left, or the catalog closed, and the exercise is lit again */
     var t = wide() && pane === "d" ? pd : pl;
     if (t === pd) catPreview = false;   /* anything else on the left is no longer the catalog's exercise (previewEx sets it again after drawing) */
     if (t === pl && catPanel) closeCatPanel(true);
     t.innerHTML = html;
+    if (t === pd && catPanel && !isPrev) pd.classList.add("bio-dim");   /* the left side is redrawn while the layer is open (a song playing, a change): it stays behind the half dark backdrop */
     if (t === pl && wide()) {   /* the catalog layer is ready beside the lists, the vivencias and the exercises of one; elsewhere it is not */
       var listy = html.indexOf("data-fab-room") >= 0 && !(state.viv && state.viv.role === "view");
       if (listy) ensureCatLayer();
