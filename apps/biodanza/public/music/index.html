@@ -61,6 +61,52 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
   var songs = [], byObj = {}, timer = 0, MAXROWS = 300;
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   function fold(t) { return String(t == null ? "" : t).normalize("NFD").replace(new RegExp("[" + String.fromCharCode(0x300) + "-" + String.fromCharCode(0x36f) + String.fromCharCode(0x591) + "-" + String.fromCharCode(0x5c7) + "]", "g"), "").toLowerCase(); }
+  /* a smart search: finds what is NEAR the words, not only what contains them. Every typed word must match some word of the text, by the
+     best of: the same word, a word that starts with it, a word that holds it, or a word one or two letters off (a slip, a missing or an
+     extra letter, two letters swapped; also for the start of a longer word). fzs() gives a score (0 = no match, more = nearer) so a list can
+     put the nearest first; fz() is the yes or no. */
+  var fzCache = {};
+  function fzTok(h) { return fzCache[h] || (fzCache[h] = h.split(/[^0-9a-z֐-׿]+/).filter(Boolean)); }
+  function fzDist(a, b, max) {
+    var n = a.length, m = b.length; if (Math.abs(n - m) > max) return max + 1;
+    var p2 = null, p1 = [], i, j;
+    for (j = 0; j <= m; j++) p1[j] = j;
+    for (i = 1; i <= n; i++) {
+      var c = [i], lo = i;
+      for (j = 1; j <= m; j++) {
+        var v = Math.min(p1[j] + 1, c[j - 1] + 1, p1[j - 1] + (a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1));
+        if (p2 && i > 1 && j > 1 && a.charAt(i - 1) === b.charAt(j - 2) && a.charAt(i - 2) === b.charAt(j - 1)) v = Math.min(v, p2[j - 2] + 1);
+        c[j] = v; if (v < lo) lo = v;
+      }
+      if (lo > max) return max + 1;
+      p2 = p1; p1 = c;
+    }
+    return p1[m];
+  }
+  function fzWord(h, toks, w) {
+    var best = 0, i, t, d, mx = w.length <= 2 ? 0 : w.length <= 4 ? 1 : 2;
+    for (i = 0; i < toks.length; i++) {
+      t = toks[i];
+      if (t === w) return 10;
+      if (t.indexOf(w) === 0) best = Math.max(best, 8);
+      else if (mx && t.length >= w.length) { d = fzDist(w, t.slice(0, w.length), mx); if (d <= mx) best = Math.max(best, 6 - d * 1.5); }
+      if (mx && best < 6) { d = fzDist(w, t, mx); if (d <= mx) best = Math.max(best, 7 - d * 1.5); }
+    }
+    if (!best && h.indexOf(w) >= 0) best = 5;
+    return best;
+  }
+  function fzs(text, q) {
+    var h = fold(text), words = fold(q).split(/\s+/).filter(Boolean), toks = fzTok(h), sum = 0, k, s;
+    if (!words.length) return 1;
+    for (k = 0; k < words.length; k++) { s = fzWord(h, toks, words[k]); if (!s) return 0; sum += s; }
+    return sum / words.length;
+  }
+  function fz(text, q) { return fzs(text, q) > 0; }
+  function nearest(list, text, q) {   /* the matches of a search, nearest first (a plain order when nothing is typed) */
+    if (!fold(q).trim()) return list;
+    return list.map(function (x, i) { return { x: x, s: fzs(text(x), q), i: i }; }).filter(function (o) { return o.s > 0; })
+      .sort(function (a, b) { return b.s - a.s || a.i - b.i; }).map(function (o) { return o.x; });
+  }
   function mmss(s) { return s ? Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2) : ""; }
   function clk(s) { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2); }   /* the player's times: 0:00 is shown, not left empty */
   function msg(title, text, btn) {
@@ -75,7 +121,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
   }
   function found() {
     var words = fold(document.getElementById("q").value.trim()).split(/\s+/).filter(Boolean);
-    return { words: words, hit: songs.filter(function (m) { return words.every(function (w) { return m.f.indexOf(w) >= 0; }); }) };
+    return { words: words, hit: nearest(songs, function (m) { return m.f; }, words.join(" ")) };
   }
   /* every song that matches the search (not only the rows drawn), one per line: name, performer, length, code, file */
   function copyAll() {
@@ -169,6 +215,16 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
   }
   document.addEventListener("bioaudio", function (ev) { var d = ev.detail || {}; cur = { name: d.name || "", t: d.t || 0, d: d.d || 0, playing: !!d.playing }; paintPlayer(); });
   document.addEventListener("click", function (e) { if (e.target.closest && e.target.closest("#pp") && window.BioAudio) BioAudio.playPause(); });
+  /* the keyboard, as in the app: right and left move the song 5 seconds (Shift 15), up and down are the volume (Shift for five steps); in a text field they keep their own job */
+  document.addEventListener("keydown", function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey || !window.BioAudio) return;
+    var k = e.key, tg = e.target;
+    if (k !== "ArrowRight" && k !== "ArrowLeft" && k !== "ArrowUp" && k !== "ArrowDown") return;
+    if (tg && (tg.isContentEditable || /^(TEXTAREA|SELECT)$/.test(tg.tagName) || (tg.tagName === "INPUT" && tg.type !== "range"))) return;
+    e.preventDefault();
+    if (k === "ArrowRight" || k === "ArrowLeft") BioAudio.skip((k === "ArrowRight" ? 1 : -1) * (e.shiftKey ? 15 : 5));
+    else BioAudio.volume((k === "ArrowUp" ? 1 : -1) * (e.shiftKey ? 0.05 : 0.01));
+  });
   document.addEventListener("pointerdown", function (e) { if (e.target.id === "pb") dragging = true; });
   document.addEventListener("pointerup", function () { dragging = false; });
   document.addEventListener("input", function (e) {

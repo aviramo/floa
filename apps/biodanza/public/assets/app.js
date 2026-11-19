@@ -175,6 +175,52 @@
   }
   /* a search ignores capitals and marks: "marron" finds "Marrón", "cafe" finds "café" (also Hebrew points) */
   function fold(t) { return String(t == null ? "" : t).normalize("NFD").replace(new RegExp("[" + String.fromCharCode(0x300) + "-" + String.fromCharCode(0x36f) + String.fromCharCode(0x591) + "-" + String.fromCharCode(0x5c7) + "]", "g"), "").toLowerCase(); }
+  /* a smart search: finds what is NEAR the words, not only what contains them. Every typed word must match some word of the text, by the
+     best of: the same word, a word that starts with it, a word that holds it, or a word one or two letters off (a slip, a missing or an
+     extra letter, two letters swapped; also for the start of a longer word). fzs() gives a score (0 = no match, more = nearer) so a list can
+     put the nearest first; fz() is the yes or no. */
+  var fzCache = {};
+  function fzTok(h) { return fzCache[h] || (fzCache[h] = h.split(/[^0-9a-z֐-׿]+/).filter(Boolean)); }
+  function fzDist(a, b, max) {
+    var n = a.length, m = b.length; if (Math.abs(n - m) > max) return max + 1;
+    var p2 = null, p1 = [], i, j;
+    for (j = 0; j <= m; j++) p1[j] = j;
+    for (i = 1; i <= n; i++) {
+      var c = [i], lo = i;
+      for (j = 1; j <= m; j++) {
+        var v = Math.min(p1[j] + 1, c[j - 1] + 1, p1[j - 1] + (a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1));
+        if (p2 && i > 1 && j > 1 && a.charAt(i - 1) === b.charAt(j - 2) && a.charAt(i - 2) === b.charAt(j - 1)) v = Math.min(v, p2[j - 2] + 1);
+        c[j] = v; if (v < lo) lo = v;
+      }
+      if (lo > max) return max + 1;
+      p2 = p1; p1 = c;
+    }
+    return p1[m];
+  }
+  function fzWord(h, toks, w) {
+    var best = 0, i, t, d, mx = w.length <= 2 ? 0 : w.length <= 4 ? 1 : 2;
+    for (i = 0; i < toks.length; i++) {
+      t = toks[i];
+      if (t === w) return 10;
+      if (t.indexOf(w) === 0) best = Math.max(best, 8);
+      else if (mx && t.length >= w.length) { d = fzDist(w, t.slice(0, w.length), mx); if (d <= mx) best = Math.max(best, 6 - d * 1.5); }
+      if (mx && best < 6) { d = fzDist(w, t, mx); if (d <= mx) best = Math.max(best, 7 - d * 1.5); }
+    }
+    if (!best && h.indexOf(w) >= 0) best = 5;
+    return best;
+  }
+  function fzs(text, q) {
+    var h = fold(text), words = fold(q).split(/\s+/).filter(Boolean), toks = fzTok(h), sum = 0, k, s;
+    if (!words.length) return 1;
+    for (k = 0; k < words.length; k++) { s = fzWord(h, toks, words[k]); if (!s) return 0; sum += s; }
+    return sum / words.length;
+  }
+  function fz(text, q) { return fzs(text, q) > 0; }
+  function nearest(list, text, q) {   /* the matches of a search, nearest first (a plain order when nothing is typed) */
+    if (!fold(q).trim()) return list;
+    return list.map(function (x, i) { return { x: x, s: fzs(text(x), q), i: i }; }).filter(function (o) { return o.s > 0; })
+      .sort(function (a, b) { return b.s - a.s || a.i - b.i; }).map(function (o) { return o.x; });
+  }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   function name(e) { return e.title_he || e.title_en || ""; }
   function phaseName(k) { var p = state.phases.filter(function (x) { return x.key === k; })[0]; return p ? p.name_he : ""; }
@@ -923,8 +969,8 @@
     function paintS() {
       var q = fold(dlg.querySelector("#sq").value.trim()), l = dlg.querySelector("#slist");
       var have = {}; shares.forEach(function (x) { have[x.email] = 1; });
-      var mine = shares.filter(function (x) { return !q || fold(x.email + " " + who(x.email)).indexOf(q) >= 0; });
-      var rest = cands.filter(function (c) { return !have[c.email] && (!q || fold(c.email + " " + (c.note || "")).indexOf(q) >= 0); });
+      var mine = shares.filter(function (x) { return !q || fz(x.email + " " + who(x.email), q); });
+      var rest = cands.filter(function (c) { return !have[c.email] && (!q || fz(c.email + " " + (c.note || ""), q)); });
       var title2 = function (t) { return '<div class="rrow rrow--compact"><span class="rrow__sub">' + t + '</span></div>'; };
       var html = "";
       if (mine.length) {
@@ -1415,17 +1461,17 @@
     l.innerHTML = '<label class="rfield" style="margin-bottom:var(--sp-2)"><span>חיפוש מוזיקה או תרגיל</span><input id="mq" placeholder=" " autocomplete="off"></label><div id="mb"></div>' + (tail || "");
     var mb = l.querySelector("#mb"), q = l.querySelector("#mq"), groups = null, open = {}, byId = {};
     own.forEach(function (m) { byId[m.id] = m; });
-    function hit(m, s) { return fold(songName(m) + " " + songBy(m)).indexOf(s) >= 0; }
+    function hit(m, s) { return fz(songName(m) + " " + songBy(m), s); }
     function draw() {
       var s = fold(q.value.trim()), h = "";
-      var mine = own.filter(function (m) { return !s || hit(m, s); });
+      var mine = nearest(own, function (m) { return songName(m) + " " + songBy(m); }, s);
       h += mine.map(function (m) { return songRow(m, it.music_id === m.id, "data-m"); }).join("");
       if (!groups) h += '<div class="rskel rskel--title"></div>';
       else {
         var shown = 0;
         groups.forEach(function (g) {
           if (g.id === it.exercise_id) return;
-          var nm = !!s && fold(g.name).indexOf(s) >= 0, ms = s ? (nm ? g.songs : g.songs.filter(function (m) { return hit(m, s); })) : g.songs;
+          var nm = !!s && fz(g.name, s), ms = s ? (nm ? g.songs : nearest(g.songs, function (m) { return songName(m) + " " + songBy(m); }, s)) : g.songs;
           if (!ms.length) return;
           var on = open[g.id] != null ? open[g.id] : (!!s && !nm);   /* a search that matched songs inside opens their exercise; an exercise matched by name stays closed until asked */
           shown++;
@@ -1582,9 +1628,9 @@
     function draw() {
       if (!linked || !rest) return;
       var s0 = fold(qi.value.trim()), words = s0.split(/\s+/).filter(Boolean);
-      var hit = function (m) { var f = fold(songName(m) + " " + songBy(m)); return words.every(function (w) { return f.indexOf(w) >= 0; }); };
+      var hit = function (m) { return fz(songName(m) + " " + songBy(m), s0); };
       var cur = optList(it), has = {}; cur.forEach(function (m) { has[m.id] = 1; });
-      var sl = cur.filter(hit), lk = linked.filter(function (m) { return hit(m) && !has[m.id]; }), ot = rest.filter(function (m) { return hit(m) && !has[m.id]; }), cut = ot.slice(0, shown);
+      var nmOf = function (m) { return songName(m) + " " + songBy(m); }, sl = nearest(cur, nmOf, s0), lk = nearest(linked.filter(function (m) { return !has[m.id]; }), nmOf, s0), ot = nearest(rest.filter(function (m) { return !has[m.id]; }), nmOf, s0), cut = ot.slice(0, shown);
       var cnt = r.querySelector("#amc"); if (cnt) cnt.textContent = "חיפוש " + (words.length ? (sl.length + lk.length + ot.length) + " מתוך " : "בין ") + (linked.length + rest.length) + " שירים";   /* as the music page says it */
       var grid = function (arr) { return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(18rem,1fr));gap:var(--sp-1)">' + arr.map(function (m) { return cardHtml(m, !!has[m.id]); }).join("") + '</div>'; };
       var head = function (t, n) { return '<div class="rrow__sub" style="padding:var(--sp-2) 0 var(--sp-1)">' + esc(t) + ' (' + n + ')</div>'; };
@@ -1708,7 +1754,7 @@
     var pen = function (m) { return (m.owner_id && m.owner_id === me) || (canEd && vid && m.vivencia_id === vid) ? '<button type="button" class="rbtn rbtn--icon rrow__trail" data-ed="' + esc(m.id) + '" aria-label="עריכת שם ומבצע" title="עריכת שם ומבצע" style="width:var(--fab);height:var(--fab);min-height:var(--fab);color:var(--text-3)">' + I.pen + '</button>' : ''; };
     function draw() {
       var q = fold(r.querySelector("#oq").value.trim());
-      var vis = all.filter(function (m) { return !q || fold(songName(m) + " " + songBy(m)).indexOf(q) >= 0; });
+      var vis = nearest(all, function (m) { return songName(m) + " " + songBy(m); }, q);
       l.innerHTML = vis.length ? vis.map(function (m) { return songRow(m, it.music_id === m.id, "data-o", pen(m)); }).join("") : ph("לא נמצא", "");
     }
     l.addEventListener("click", function (e) {
@@ -1772,13 +1818,17 @@
       function paintCat() {
         var q = fold(r.querySelector("#q").value.trim()), l = r.querySelector("#list");
         pk.q = r.querySelector("#q").value;
-        var by = {};
-        (state.cat || []).forEach(function (e) {
-          if (q && fold(name(e) + " " + e.title_en + " " + catName(e.category)).indexOf(q) < 0) return;
-          var k = e.category || ""; (by[k] = by[k] || []).push(e);
+        var by = {}, top = {};
+        nearest(state.cat || [], function (e) { return name(e) + " " + e.title_en + " " + catName(e.category); }, q).forEach(function (e) {
+          var k = e.category || ""; (by[k] = by[k] || []).push(e);   /* nearest first inside a category */
         });
         var cats = (state.cats || []).map(function (c) { return c.key; }).filter(function (k) { return by[k]; });
         Object.keys(by).forEach(function (k) { if (cats.indexOf(k) < 0) cats.push(k); });
+        if (q) {   /* a search puts the category holding the nearest exercise first */
+          var all = nearest(state.cat || [], function (e) { return name(e) + " " + e.title_en + " " + catName(e.category); }, q);
+          all.forEach(function (e, i) { var k = e.category || ""; if (top[k] == null) top[k] = i; });
+          cats.sort(function (a, b) { return (top[a] == null ? 1e9 : top[a]) - (top[b] == null ? 1e9 : top[b]); });
+        }
         l.innerHTML = cats.length ? cats.map(function (k) {
           var on = open[k] != null ? open[k] : !!q;   /* a search opens the categories that have something in it */
           var head = '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-2)"><button type="button" class="rrow__main" data-cat="' + esc(k) + '" aria-expanded="' + on + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit;display:flex;align-items:center;gap:var(--sp-2)"><span style="flex:1 1 auto;min-width:0"><span class="rrow__title">' + esc(catName(k) || "ללא קטגוריה") + '</span><span class="rrow__sub">' + by[k].length + ' תרגילים</span></span><span style="flex:none;width:20px;height:20px;transition:transform .2s;' + (on ? 'transform:rotate(180deg)' : '') + '">' + I.down + '</span></button></div>';
@@ -1803,7 +1853,7 @@
           loadExMusic().then(function (gs) {
             if (tok !== sgTok || !box.isConnected) return;
             var seen = {}, songs = [];
-            gs.forEach(function (g) { g.songs.forEach(function (m) { if (!seen[m.id] && fold(songName(m) + " " + songBy(m)).indexOf(q) >= 0) { seen[m.id] = 1; songs.push(m); } }); });
+            gs.forEach(function (g) { g.songs.forEach(function (m) { if (!seen[m.id] && fz(songName(m) + " " + songBy(m), q)) { seen[m.id] = 1; songs.push(m); } }); });
             var sl = box.querySelector("[data-sgs]");
             if (!songs.length) { box.remove(); return; }
             sl.innerHTML = songs.slice(0, 60).map(function (m) { return songRow(m, false, "data-sg"); }).join("");
@@ -2031,7 +2081,7 @@
     });
     function paintA() {
       var q = fold(dlg.querySelector("#aq").value.trim()), l = dlg.querySelector("#alist");
-      var vis = rows.filter(function (a) { return !q || fold(a.email + " " + (a.note || "")).indexOf(q) >= 0; });
+      var vis = rows.filter(function (a) { return !q || fz(a.email + " " + (a.note || ""), q); });
       var sup = !!(state.me && state.me.super), roleOf = function (a) { return a.is_super ? "super" : a.is_admin ? "admin" : "member"; };
       var ROLES = [["member", "חבר"], ["admin", "מנהל"], ["super", "מנהל על"]];
       l.innerHTML = vis.length ? vis.map(function (a) {
