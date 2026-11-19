@@ -1844,6 +1844,29 @@
   function pickerWire(r, swapIt, sheet) {
       var open = pk.open || (pk.open = {});   /* the categories that are open, kept while an exercise is looked at and back again */
       r.querySelector("#q").value = pk.q;
+      var catBy = {};
+      function catCards(k) {
+        return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);padding:var(--sp-1) var(--gutter) var(--sp-2)">' + (catBy[k] || []).map(function (e) {
+          return cardUi({ attrs: 'data-ex="' + e.id + '" role="button" tabindex="0"', title: name(e), sub: (e.exercise_lines || []).map(function (x) { return lineName(x.line_key); }).filter(Boolean).join(" · "), subLtr: false });
+        }).join("") + '</div>';
+      }
+      /* the one click handler of the list: a category opens or closes (slides), an exercise opens */
+      r.querySelector("#list").addEventListener("click", function (ev) {
+        var l = r.querySelector("#list"), cb = ev.target.closest("[data-cat]");
+        if (cb) {
+          var k = cb.dataset.cat, nowOn = cb.getAttribute("aria-expanded") !== "true"; open[k] = nowOn; cb.setAttribute("aria-expanded", String(nowOn));
+          var chev = cb.lastElementChild; if (chev) chev.style.transform = nowOn ? "rotate(180deg)" : "";
+          var acc = l.querySelector('[data-accb="' + (window.CSS && CSS.escape ? CSS.escape(k) : k) + '"]');
+          if (acc) { if (nowOn && !acc.firstChild.firstChild) acc.firstChild.innerHTML = catCards(k); requestAnimationFrame(function () { acc.style.gridTemplateRows = nowOn ? "1fr" : "0fr"; }); }
+          return;
+        }
+        var b = ev.target.closest("[data-ex]"); if (!b) return;
+        var ex = state.cat.filter(function (x) { return x.id === b.dataset.ex; })[0];
+        l.querySelectorAll(".rrow, .bio-card").forEach(function (w) { w.removeAttribute("aria-current"); });
+        (b.closest(".bio-card") || b.closest(".rrow")).setAttribute("aria-current", "true");
+        if (sheet) previewSheet(ex, swapIt);   /* adding or replacing: the exercise is shown first, and the action is its own button in its header: on the left on a wide screen, in a second popup on a narrow one */
+        else previewEx(ex, swapIt);
+      });
       function paintCat() {
         var q = fold(r.querySelector("#q").value.trim()), l = r.querySelector("#list");
         pk.q = r.querySelector("#q").value;
@@ -1858,23 +1881,12 @@
           all.forEach(function (e, i) { var k = e.category || ""; if (top[k] == null) top[k] = i; });
           cats.sort(function (a, b) { return (top[a] == null ? 1e9 : top[a]) - (top[b] == null ? 1e9 : top[b]); });
         }
+        catBy = by;
         l.innerHTML = cats.length ? cats.map(function (k) {
           var on = open[k] != null ? open[k] : !!q;   /* a search opens the categories that have something in it */
-          var head = '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-1);background:var(--surface)"><button type="button" class="rrow__main" data-cat="' + esc(k) + '" aria-expanded="' + on + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit;display:flex;align-items:center;gap:var(--sp-2)"><span style="flex:1 1 auto;min-width:0"><span class="rrow__title" style="font-weight:var(--fw-black)">' + esc(catName(k) || "ללא קטגוריה") + '</span></span><span style="flex:none;width:20px;height:20px;transition:transform .2s;' + (on ? 'transform:rotate(180deg)' : '') + '">' + I.down + '</span></button></div>';
-          return head + (on ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);padding:var(--sp-1) var(--gutter) var(--sp-2)">' + by[k].map(function (e) {
-            return cardUi({ attrs: 'data-ex="' + e.id + '" role="button" tabindex="0"', title: name(e), sub: (e.exercise_lines || []).map(function (x) { return lineName(x.line_key); }).filter(Boolean).join(" · "), subLtr: false });
-          }).join("") + '</div>' : "");
+          var head = '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-1);min-height:0"><button type="button" class="rrow__main" data-cat="' + esc(k) + '" aria-expanded="' + on + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit;display:flex;align-items:center;gap:var(--sp-2)"><span style="flex:1 1 auto;min-width:0"><span class="rrow__title" style="font-weight:var(--fw-black)">' + esc(catName(k) || "ללא קטגוריה") + '</span></span><span style="flex:none;width:20px;height:20px;transition:transform .25s var(--ease);' + (on ? 'transform:rotate(180deg)' : '') + '">' + I.down + '</span></button></div>';
+          return head + '<div data-accb="' + esc(k) + '" style="display:grid;grid-template-rows:' + (on ? '1fr' : '0fr') + ';transition:grid-template-rows .25s var(--ease)"><div style="overflow:hidden;min-height:0">' + (on ? catCards(k) : '') + '</div></div>';
         }).join("") : ph("לא נמצא תרגיל", "");
-        l.querySelectorAll("[data-cat]").forEach(function (b) { b.addEventListener("click", function () {
-          var k = b.dataset.cat, now = b.getAttribute("aria-expanded") === "true"; open[k] = !now; paintCat();
-        }); });
-        l.querySelectorAll("[data-ex]").forEach(function (b) { b.addEventListener("click", function () {
-          var ex = state.cat.filter(function (x) { return x.id === b.dataset.ex; })[0];
-          l.querySelectorAll(".rrow, .bio-card").forEach(function (w) { w.removeAttribute("aria-current"); });
-          (b.closest(".bio-card") || b.closest(".rrow")).setAttribute("aria-current", "true");
-          if (sheet) previewSheet(ex, swapIt);   /* adding or replacing: the exercise is shown first, and the action is its own button in its header: on the left on a wide screen, in a second popup on a narrow one */
-          else previewEx(ex, swapIt);
-        }); });
         /* a typed search also finds songs (any exercise's); choosing one adds an exercise with no name and that song */
         if (q && !swapIt) {
           var box = document.createElement("div"); l.appendChild(box);
@@ -1885,16 +1897,19 @@
             gs.forEach(function (g) { g.songs.forEach(function (m) { if (!seen[m.id] && fz(songName(m) + " " + songBy(m), q)) { seen[m.id] = 1; songs.push(m); } }); });
             if (!songs.length) { box.remove(); return; }
             var shown = songs.slice(0, 60);
-            function drawSongs() {
-              var on = open.__songs != null ? open.__songs : true;
-              box.innerHTML = '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-1);background:var(--surface)"><button type="button" class="rrow__main" data-songs aria-expanded="' + on + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit;display:flex;align-items:center;gap:var(--sp-2)"><span style="flex:1 1 auto;min-width:0"><span class="rrow__title" style="font-weight:var(--fw-black)">מוזיקות</span></span><span style="flex:none;width:20px;height:20px;transition:transform .2s;' + (on ? 'transform:rotate(180deg)' : '') + '">' + I.down + '</span></button></div>' +
-                (on ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);padding:var(--sp-1) var(--gutter) var(--sp-2)">' + shown.map(function (m) {
-                  return cardUi({ attrs: 'data-sgc="' + esc(m.id) + '"', ltr: true, title: songName(m), sub: songBy(m), pill: cardPill(m), time: clkSpan(m), chip: '<button type="button" class="rchip rchip--s" data-sg="' + esc(m.id) + '" style="cursor:pointer;border:0">הוספה</button>' });
-                }).join("") + '</div>' : '');
-            }
-            drawSongs();
+            var on0 = open.__songs != null ? open.__songs : true;
+            box.innerHTML = '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-1);min-height:0"><button type="button" class="rrow__main" data-songs aria-expanded="' + on0 + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit;display:flex;align-items:center;gap:var(--sp-2)"><span style="flex:1 1 auto;min-width:0"><span class="rrow__title" style="font-weight:var(--fw-black)">מוזיקות</span></span><span style="flex:none;width:20px;height:20px;transition:transform .25s var(--ease);' + (on0 ? 'transform:rotate(180deg)' : '') + '">' + I.down + '</span></button></div>' +
+              '<div data-songsb style="display:grid;grid-template-rows:' + (on0 ? '1fr' : '0fr') + ';transition:grid-template-rows .25s var(--ease)"><div style="overflow:hidden;min-height:0"><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);padding:var(--sp-1) var(--gutter) var(--sp-2)">' + shown.map(function (m) {
+                return cardUi({ attrs: 'data-sgc="' + esc(m.id) + '"', ltr: true, title: songName(m), sub: songBy(m), pill: cardPill(m), time: clkSpan(m), chip: '<button type="button" class="rchip rchip--s" data-sg="' + esc(m.id) + '" style="cursor:pointer;border:0">הוספה</button>' });
+              }).join("") + '</div></div></div>';
             box.addEventListener("click", function (ev) {
-              if (ev.target.closest("[data-songs]")) { open.__songs = !(open.__songs != null ? open.__songs : true); drawSongs(); return; }
+              var sb = ev.target.closest("[data-songs]");
+              if (sb) {
+                var nowS = sb.getAttribute("aria-expanded") !== "true"; open.__songs = nowS; sb.setAttribute("aria-expanded", String(nowS));
+                if (sb.lastElementChild) sb.lastElementChild.style.transform = nowS ? "rotate(180deg)" : "";
+                var bodyS = box.querySelector("[data-songsb]"); if (bodyS) bodyS.style.gridTemplateRows = nowS ? "1fr" : "0fr";
+                return;
+              }
               if (ev.target.closest("[data-audio], a")) return;
               var bt = ev.target.closest("[data-sg]");
               if (!bt) { var cd = ev.target.closest("[data-sgc]"), pb = cd && cd.querySelector("[data-audio]"); if (pb) pb.click(); return; }
