@@ -1895,7 +1895,7 @@
           var on = open[k] != null ? open[k] : !!q;   /* a search opens the categories that have something in it */
           var head = '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-1);min-height:0;border-bottom-color:' + (on ? "transparent" : "var(--line)") + '"><button type="button" class="rrow__main" data-cat="' + esc(k) + '" aria-expanded="' + on + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit;display:flex;align-items:center;gap:var(--sp-2)"><span style="flex:1 1 auto;min-width:0"><span class="rrow__title" style="font-weight:var(--fw-black)">' + esc(catName(k) || "ללא קטגוריה") + '</span></span><span style="flex:none;width:20px;height:20px;transition:transform .25s var(--ease);' + (on ? 'transform:rotate(180deg)' : '') + '">' + I.down + '</span></button></div>';
           return head + '<div data-accb="' + esc(k) + '" style="border-bottom:1px solid ' + (on ? "var(--line)" : "transparent") + ';display:grid;grid-template-rows:' + (on ? '1fr' : '0fr') + ';transition:grid-template-rows .25s var(--ease)"><div style="overflow:hidden;min-height:0">' + (on ? catCards(k) : '') + '</div></div>';
-        }).join("") : ph("לא נמצא תרגיל", "");
+        }).join("") : (q && !swapIt ? "" : ph("לא נמצא תרגיל", ""));   /* a search with no exercise shows the songs it found, and "not found" only if there are none either */
         /* a typed search also finds songs (any exercise's); choosing one adds an exercise with no name and that song */
         if (q && !swapIt) {
           var box = document.createElement("div"); l.appendChild(box);
@@ -1904,7 +1904,7 @@
             if (tok !== sgTok || !box.isConnected) return;
             var seen = {}, songs = [];
             gs.forEach(function (g) { g.songs.forEach(function (m) { if (!seen[m.id] && fz(songName(m) + " " + songBy(m), q)) { seen[m.id] = 1; songs.push(m); } }); });
-            if (!songs.length) { box.remove(); return; }
+            if (!songs.length) { box.remove(); if (!cats.length) l.innerHTML = ph("לא נמצא", ""); return; }
             var shown = songs.slice(0, 60);
             var on0 = open.__songs != null ? open.__songs : true;
             box.innerHTML = '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-1);min-height:0;border-bottom-color:' + (on0 ? "transparent" : "var(--line)") + '"><button type="button" class="rrow__main" data-songs aria-expanded="' + on0 + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit;display:flex;align-items:center;gap:var(--sp-2)"><span style="flex:1 1 auto;min-width:0"><span class="rrow__title" style="font-weight:var(--fw-black)">מוזיקות</span></span><span style="flex:none;width:20px;height:20px;transition:transform .25s var(--ease);' + (on0 ? 'transform:rotate(180deg)' : '') + '">' + I.down + '</span></button></div>' +
