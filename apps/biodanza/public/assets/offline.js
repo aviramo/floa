@@ -8,7 +8,7 @@
   "use strict";
   var dbp = null, ids = {}, syncing = null, syncAgain = false;
   /* what makes two copies the same: everything but when it was kept */
-  function sig(r) { try { return JSON.stringify([r.row && r.row.title, r.role, r.pos, r.items, r.members]); } catch (e) { return Math.random() + ""; } }
+  function sig(r) { try { return JSON.stringify([r.row && r.row.title, r.role, r.pos, r.items, r.members, r.reception]); } catch (e) { return Math.random() + ""; } }
   function db() {
     if (!dbp) dbp = new Promise(function (res) {
       try {
@@ -32,9 +32,10 @@
   function all() { return run("readonly", function (s) { return s.getAll(); }).then(function (r) { return r || []; }); }
   var ready = all().then(function (rows) { rows.forEach(function (r) { ids[r.id] = true; }); }, function () { /* nothing saved */ });
 
-  function songsOf(items) {
+  function songsOf(items, extra) {
     var seen = {}, out = [];
     var add = function (m) { var n = m && m.audio_object; if (n && !seen[n]) { seen[n] = 1; out.push(n); } };
+    (extra || []).forEach(function (x) { add(x.music); });   /* the songs of the start and of the end of the vivencia */
     (items || []).forEach(function (it) { add(it.music); (it.item_music_options || []).forEach(function (o) { add(o.music); }); });   /* the chosen song and all the options of every exercise */
     return out;
   }
@@ -55,7 +56,7 @@
     get: function (id) { return run("readonly", function (s) { return s.get(id); }); },
     /* rec: { id, row, role, pos, items, members }. progress(done, total) counts the songs. Resolves when the copy and every song are on the device. */
     save: function (rec, progress) {
-      var names = songsOf(rec.items);
+      var names = songsOf(rec.items, rec.reception);
       try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) { /* the browser decides */ }
       if (progress) progress(0, names.length);
       return putSongs(names, progress).then(function () {
@@ -65,7 +66,7 @@
     },
     /* an open of a saved vivencia, online: the copy is made current, quietly (new songs come down too) */
     update: function (rec) {
-      var names = songsOf(rec.items);
+      var names = songsOf(rec.items, rec.reception);
       return putSongs(names).then(function () {
         rec.songs = names; rec.savedAt = Date.now();
         return run("readwrite", function (s) { return s.put(rec); });
@@ -95,7 +96,7 @@
         return list.reduce(function (p, v) {
           return p.then(function () { return load(v); }).then(function (rec) {
             if (!rec) return;
-            var old = have[v.id], names = songsOf(rec.items);
+            var old = have[v.id], names = songsOf(rec.items, rec.reception);
             var same = old && sig(old) === sig(rec);
             return (same ? Promise.all(names.map(function (n) { return window.BioAudio.kept(n); })).then(function (k) { return k.every(Boolean) ? "same" : "songs"; }) : Promise.resolve("new")).then(function (what) {
               if (what === "same") return;

@@ -93,7 +93,7 @@
   el.addEventListener("timeupdate", function () { tell(now, el.currentTime, el.duration || 0); });
   el.addEventListener("play", function () { tell(now, el.currentTime, el.duration || 0); });
   el.addEventListener("pause", function () { tell(now, el.currentTime, el.duration || 0); });
-  el.addEventListener("ended", function () { tell("", 0, 0); });
+  el.addEventListener("ended", function () { if (advance()) return; tell("", 0, 0); });
   new MutationObserver(paint).observe(document.documentElement, { childList: true, subtree: true });
 
   /* what the phone shows on its lock screen and notification shade (Android, iPhone, desktop media keys): the song's name and who plays it,
@@ -125,13 +125,32 @@
     el.addEventListener("ended", function () { ms.playbackState = "none"; });
   }
 
+  var queue = [], nextFor = "", nextUrl = "";
+  function dropNext() { if (nextUrl) { try { URL.revokeObjectURL(nextUrl); } catch (e) { /* gone */ } } nextUrl = ""; nextFor = ""; }
+  function following() { var i = queue.indexOf(now); return i < 0 || !queue.length ? "" : queue[(i + 1) % queue.length]; }
+  function preloadNext() {   /* the song after this one is brought ahead of time */
+    var nx = following(); if (!nx || nx === now || nextFor === nx) return;
+    bytes(nx).then(function (b) { if (following() !== nx) return; dropNext(); nextUrl = URL.createObjectURL(b); nextFor = nx; }).catch(function () { /* it is fetched when its turn comes */ });
+  }
+  function advance() {   /* a song ended: the next one of the list, round to the first after the last */
+    if (!queue.length || queue.indexOf(now) < 0) return false;
+    var nx = following(); if (!nx) return false;
+    if (nx !== now && nextFor === nx && nextUrl) {
+      if (url) URL.revokeObjectURL(url);
+      url = nextUrl; nextUrl = ""; nextFor = ""; now = nx; el.src = url;
+      var pr = el.play(); if (pr && pr.catch) pr.catch(function () { /* the next press plays it */ });
+      paint(); preloadNext(); return true;
+    }
+    toggle(nx); return true;
+  }
   function toggle(name) {
+    if (queue.length && queue.indexOf(name) < 0) { queue = []; dropNext(); }   /* a song of another place ends the list */
     if (now === name && url) { if (el.paused) el.play(); else el.pause(); return; }
     busy = name; paint();
     bytes(name).then(function (b) {
       if (url) URL.revokeObjectURL(url);
       url = URL.createObjectURL(b); now = name; el.src = url;
-      return el.play();
+      return el.play().then(function () { preloadNext(); });
     }).catch(function (e) {
       if (window.toast) window.toast(e && e.status === 403 ? "אין הרשאה להשמיע" : "אי אפשר להשמיע עכשיו");
     }).then(function () { busy = ""; paint(); });
@@ -155,7 +174,12 @@
     pause: function () { el.pause(); },
     /* the player's one button: the loaded song plays or pauses */
     /* the player's X: the song stops and is let go, so the pill has nothing loaded */
-    stop: function () { el.pause(); now = ""; try { el.removeAttribute("src"); el.load(); } catch (e) { /* nothing to let go */ } if (url) { URL.revokeObjectURL(url); url = ""; } tell("", 0, 0); paint(); },
+    /* play these songs one after the other, without a pause, round again from the first */
+    playList: function (names) {
+      queue = (names || []).filter(Boolean); dropNext(); if (!queue.length) return;
+      if (now === queue[0] && url) { el.currentTime = 0; el.play(); preloadNext(); } else toggle(queue[0]);
+    },
+    stop: function () { queue = []; dropNext(); el.pause(); now = ""; try { el.removeAttribute("src"); el.load(); } catch (e) { /* nothing to let go */ } if (url) { URL.revokeObjectURL(url); url = ""; } tell("", 0, 0); paint(); },
     playPause: function () { if (now && url) { if (el.paused) el.play(); else el.pause(); } },
     seek: function (f) { if (el.duration) el.currentTime = Math.max(0, Math.min(1, f)) * el.duration; },
     /* move a song to a place in it, also one that is not playing: its file is loaded (not played) and put there; play then goes on from that place */

@@ -1057,7 +1057,34 @@
   /* ---------- the vivencia: plan along the curve ---------- */
   function openViv(id) { if (!state.viv || state.viv.id !== id) state.lastItem = null; state.filter = ""; state.viv = state.vivs.filter(function (v) { return v.id === id; })[0] || { id: id, title: "" }; if (wide()) { stack().length = 0; show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); } go(editor); paintSel(); }
   var ITEM_SELECT = "&select=id,position,exercise_id,music_id,backlog,notes,title,poetics,guidance,exercises(title_he,title_en,poetics,guidance,objective,exercise_texts(lang,poetics,guidance,level,curve,level_basis,curve_basis,source)),music!music_id(id,name,title,artist,duration_sec,audio_object,in_catalog),vivencia_item_facilitators(email),item_music_options(music_id,created_at,music(id,name,title,artist,duration_sec,audio_object,in_catalog))&order=position";
-  function itemsOf(id) { return api("/rest/v1/vivencia_items?vivencia_id=eq." + id + ITEM_SELECT); }
+  var recvCache = {};   /* the songs of the start and of the end of each vivencia: id|start, id|end */
+  function itemsOf(id) {
+    var rp = api("/rest/v1/vivencia_reception_music?vivencia_id=eq." + id + "&select=kind,music_id,created_at,music(id,name,title,artist,duration_sec,audio_object,in_catalog)&order=created_at").then(function (rows) {
+      var st = [], en = [];
+      (rows || []).forEach(function (x) { if (x.music) (x.kind === "end" ? en : st).push({ music_id: x.music_id, created_at: x.created_at, music: x.music }); });
+      recvCache[id + "|start"] = st; recvCache[id + "|end"] = en;
+    }, function () { /* no such songs now */ });
+    return Promise.all([api("/rest/v1/vivencia_items?vivencia_id=eq." + id + ITEM_SELECT), rp]).then(function (r) { return r[0]; });
+  }
+  function recvRows(id) {   /* the start and end songs of a vivencia, one list with a kind on each, for the copy kept on the device */
+    var out = []; ["start", "end"].forEach(function (k) { (recvCache[id + "|" + k] || []).forEach(function (x) { out.push({ kind: k, music_id: x.music_id, created_at: x.created_at, music: x.music }); }); });
+    return out;
+  }
+  function recvItem(kind) {   /* a vivencia's start or end songs, as an "exercise" that only has options */
+    var id = state.viv && state.viv.id, key = id + "|" + kind;
+    return { __recv: kind, id: id, exercise_id: null, music_id: null, music: null, item_music_options: recvCache[key] || (recvCache[key] = []) };
+  }
+  var PLAYSVG = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true" style="width:100%;height:100%"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>';
+  /* a section of only songs: "מוסיקת התחלה" above the exercises, "מוסיקת סיום" under them */
+  function recvHtml(kind) {
+    var list = optList(recvItem(kind)), edit = canEdit();
+    if (!edit && !list.length) return "";
+    var label = kind === "start" ? "מוסיקת התחלה" : "מוסיקת סיום";
+    var play = list.some(function (m) { return m.audio_object; }) ? '<button type="button" class="rchip rchip--s" data-recvplay style="cursor:pointer;border:0;display:inline-flex;align-items:center;gap:var(--sp-1)"><span aria-hidden="true" style="display:grid;width:var(--icon-s);height:var(--icon-s)">' + PLAYSVG + '</span>השמעה ברצף</button>' : '';
+    var add = edit ? '<div class="rcard rcard--compact" data-addm role="button" tabindex="0" style="margin:0;min-width:0;display:flex;align-items:center;justify-content:center;gap:var(--sp-1);cursor:pointer;min-height:var(--tag-s);border:1px dashed var(--line-strong);background:transparent;box-shadow:none;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>הוספת מוזיקה</div>' : '';
+    return '<div data-recv="' + kind + '" style="' + (kind === "start" ? 'border-bottom:1px solid var(--line)' : 'border-top:1px solid var(--line);margin-top:var(--sp-2)') + '"><div style="display:flex;align-items:center;justify-content:space-between;padding:var(--gutter) var(--gutter) 0"><span class="rrow__title" style="font-weight:var(--fw-black)">' + label + '</span>' + play + '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);padding:var(--gutter)">' + list.map(function (m) { return optCardHtml(m, false, edit, true); }).join("") + add + '</div></div>';
+  }
   function loadItems() {
     return itemsOf(state.viv.id).then(function (r) { r = r || []; state.items = r.filter(function (i) { return !i.backlog; }).concat(r.filter(function (i) { return i.backlog; })); });   /* the numbered exercises, then the backlog */
   }
@@ -1081,7 +1108,10 @@
     var cloudDone = false;
     local.then(function (rec) {
       if (!rec || cloudDone || !state.viv || state.viv.id !== v.id || !document.getElementById("list")) return;
-      state.items = rec.items || []; state.members = rec.members || []; paint();
+      state.items = rec.items || []; state.members = rec.members || [];
+      recvCache[v.id + "|start"] = []; recvCache[v.id + "|end"] = [];
+      (rec.reception || []).forEach(function (x) { (recvCache[v.id + "|" + x.kind] = recvCache[v.id + "|" + x.kind] || []).push({ music_id: x.music_id, created_at: x.created_at, music: x.music }); });
+      paint();
     });
     api("/rest/v1/rpc/vivencia_members", { method: "POST", json: { v: v.id } }).then(function (mm) { state.members = mm || []; if (document.getElementById("list")) paint(); }, function () { if (!state.members) state.members = []; });
     loadItems().then(function () {
@@ -1106,14 +1136,14 @@
     BioOffline.sync(state.vivs, function (v) {
       return Promise.all([itemsOf(v.id), api("/rest/v1/rpc/vivencia_members", { method: "POST", json: { v: v.id } })]).then(function (r) {
         var items = r[0] || [];
-        return { id: v.id, row: { id: v.id, title: v.title, updated_at: v.updated_at, vivencia_items: [{ count: items.length }] }, role: v.role, pos: v.pos, items: items, members: r[1] || [] };
+        return { id: v.id, row: { id: v.id, title: v.title, updated_at: v.updated_at, vivencia_items: [{ count: items.length }] }, role: v.role, pos: v.pos, items: items, members: r[1] || [], reception: recvRows(v.id) };
       });
     });
   }
   function refreshOffline(v) {   /* an open vivencia is already read: its copy is made current from that, quietly */
     if (state.offline || !window.BioOffline) return;
     api("/rest/v1/rpc/vivencia_members", { method: "POST", json: { v: v.id } }).then(function (mm) {
-      return BioOffline.update({ id: v.id, row: { id: v.id, title: v.title, updated_at: v.updated_at, vivencia_items: [{ count: state.items.length }] }, role: v.role, pos: v.pos, items: state.items, members: mm || [] });
+      return BioOffline.update({ id: v.id, row: { id: v.id, title: v.title, updated_at: v.updated_at, vivencia_items: [{ count: state.items.length }] }, role: v.role, pos: v.pos, items: state.items, members: mm || [], reception: recvRows(v.id) });
     }, function () { /* the old copy stays */ });
   }
   /* coming back to the app, or the internet coming back, is another comparison (not more than once a minute) */
@@ -1166,18 +1196,37 @@
       return cardUi({ cls: "bio-icard", attrs: 'data-icard="' + i.id + '"' + (i.backlog ? ' data-back="1"' : ''), selected: state.lastItem === i.id, lead: tile, bigLead: true, title: itemName(i), titleAttr: 'data-edit="' + i.id + '"',
         sub: m ? songName(m) : "בלי מוזיקה", subRight: !!m, footEnd: true, pill: m ? cardPill(m) : "", chip: facChip(i, " rchip--s"), time: m ? clkSpan(m) : "" });
     };
-    l.innerHTML = '<div id="plist" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch;padding:var(--gutter)">' + main.map(function (i, k) { return rowOf(i, k + 1); }).join("") +
+    l.innerHTML = recvHtml("start") + '<div id="plist" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch;padding:var(--gutter)">' + main.map(function (i, k) { return rowOf(i, k + 1); }).join("") +
       '<div data-div style="grid-column:1 / -1;padding:var(--sp-2) 0 var(--sp-1);margin-top:var(--sp-1);border-top:1px solid var(--line);min-height:var(--ctl)"><div class="rrow__sub">נוספים</div>' + (back.length || !canEdit() ? '' : '<div class="rrow__sub" style="margin-top:var(--sp-1)">גררו לכאן תרגיל שעוד לא החלטתם עליו</div>') + '</div>' +
-      back.map(function (i) { return rowOf(i, "•"); }).join("") + '</div>';
+      back.map(function (i) { return rowOf(i, "•"); }).join("") + '</div>' + recvHtml("end");
     /* the list has a scrollbar at its left edge that takes room from the cards: the header above gives its left side the same room, so its button is over the cards' edge */
     var sbw = Math.max(0, l.offsetWidth - l.clientWidth); pl.style.setProperty("--sbw", sbw + "px");
-    var openIt = function (id) { var it = state.items.filter(function (x) { return x.id === id; })[0]; if (!it) return; if (wide()) itemScreen(it); else go(function () { itemScreen(it); }); };
+    var openIt = function (id) {
+      var it = state.items.filter(function (x) { return x.id === id; })[0]; if (!it) return;
+      if (wide() && liveItem && liveItem.id === id) {   /* a second press on the open exercise closes it */
+        liveItem = null; state.lastItem = null; show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); markItem(); setUrl(BASE + state.viv.id); return;
+      }
+      if (wide()) itemScreen(it); else go(function () { itemScreen(it); });
+    };
     l.querySelectorAll("[data-icard]").forEach(function (c) { c.addEventListener("click", function (ev) {
       if (ev.target.closest("[data-audio], a, [data-fac], [data-idel]")) return;
       openIt(c.dataset.icard);
     }); });
     l.querySelectorAll("[data-idel]").forEach(function (b) { b.addEventListener("click", function (ev) { ev.stopPropagation(); var it = state.items.filter(function (x) { return x.id === b.dataset.idel; })[0]; if (it) confirmRemoveItem(it); }); });
     wireFac(l);
+    l.querySelectorAll("[data-recv]").forEach(function (rc) {
+      var kind = rc.dataset.recv;
+      rc.addEventListener("click", function (ev) {
+        if (ev.target.closest("[data-audio], a")) return;
+        var it = recvItem(kind);
+        if (ev.target.closest("[data-recvplay]")) { var names = optList(it).map(function (m) { return m.audio_object; }).filter(Boolean); if (window.BioAudio && BioAudio.playList) BioAudio.playList(names); return; }
+        if (ev.target.closest("[data-addm]")) { openAddMusic(it, function () { paint(); }); return; }
+        var rm = ev.target.closest("[data-orm]");
+        if (rm) { var mm = optList(it).filter(function (x) { return x.id === rm.dataset.orm; })[0]; if (mm) confirmRemoveOpt(it, mm, function () { paint(); }); return; }
+        var c = ev.target.closest("[data-opt]"); if (!c) return;
+        var pb = c.querySelector("[data-audio]"); if (pb) pb.click();
+      });
+    });
     if (canEdit()) enableGroupDrag(l.querySelector("#plist"), persistGroups);
   }
   /* beside the list the open exercise's strip is marked at once, wherever it was opened from (a click, the arrows, a swap) */
@@ -1716,21 +1765,15 @@
   function confirmRemoveOpt(it, m, done) {
     var dlg = document.getElementById("confirmDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
-    var chosen = m.id === it.music_id;
+    var chosen = !it.__recv && m.id === it.music_id;
     RosterSheet.render(dlg, { kind: "confirm",
       title: "מחיקת מוזיקה", from: "bottom", size: "s",
-      body: '<div class="pad"><span>למחוק את "' + esc(songName(m)) + '" מהתרגיל?' + (chosen ? ' זו המוזיקה שנבחרה: התרגיל יישאר בלי מוזיקה.' : '') + '</span></div>',
+      body: '<div class="pad"><span>למחוק את "' + esc(songName(m)) + '" ' + (it.__recv === "start" ? "ממוסיקת ההתחלה" : it.__recv === "end" ? "ממוסיקת הסיום" : "מהתרגיל") + '?' + (chosen ? ' זו המוזיקה שנבחרה: התרגיל יישאר בלי מוזיקה.' : '') + '</span></div>',
       foot: '<button class="rbtn rbtn--danger rbtn--block" type="button" id="crmo">מחיקה</button>'
     });
     dlg.querySelector("#crmo").addEventListener("click", function () {
       dlg.close();
-      api("/rest/v1/item_music_options?item_id=eq." + it.id + "&music_id=eq." + m.id, { method: "DELETE" }).then(function () {
-        return chosen ? api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { music_id: null } }) : null;
-      }).then(function () {
-        it.item_music_options = (it.item_music_options || []).filter(function (o) { return o.music_id !== m.id; });
-        if (chosen) { it.music_id = null; it.music = null; }
-        done();
-      }, fail);
+      dropOpt(it, m).then(done, fail);
     });
   }
   function musCards(it, ro) {
@@ -1746,7 +1789,21 @@
     return '<div id="pvmus" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch;margin-bottom:var(--sp-2)' + (inset ? ';margin-inline:var(--gutter)' : '') + '">' + songs.map(function (m) { return optCardHtml(m, m.id === sel, false); }).join("") + '</div>';
   }
   /* a song joins the options of the exercise; if the exercise has no chosen song yet, it is the chosen one */
+  function dropOpt(it, m) {   /* a song leaves an exercise's options, or the start or end songs; the chosen one of an exercise leaves it without music */
+    var rec = !!it.__recv, chosen = !rec && m.id === it.music_id;
+    var url = rec ? "/rest/v1/vivencia_reception_music?vivencia_id=eq." + it.id + "&kind=eq." + it.__recv + "&music_id=eq." + m.id : "/rest/v1/item_music_options?item_id=eq." + it.id + "&music_id=eq." + m.id;
+    return api(url, { method: "DELETE" }).then(function () {
+      return chosen ? api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { music_id: null } }) : null;
+    }).then(function () {
+      var keep = (it.item_music_options || []).filter(function (o) { return o.music_id !== m.id; });
+      if (rec) { it.item_music_options.length = 0; keep.forEach(function (x) { it.item_music_options.push(x); }); } else it.item_music_options = keep;
+      if (chosen) { it.music_id = null; it.music = null; }
+    });
+  }
   function addOpt(it, m) {
+    if (it.__recv) return api("/rest/v1/vivencia_reception_music?on_conflict=vivencia_id,kind,music_id", { method: "POST", prefer: "resolution=ignore-duplicates,return=minimal", json: { vivencia_id: it.id, kind: it.__recv, music_id: m.id } }).then(function () {
+      if (!optList(it).some(function (x) { return x.id === m.id; })) it.item_music_options.push({ music_id: m.id, created_at: new Date().toISOString(), music: m });
+    });
     if (!it.music_id) return setChosen(it, m);
     return api("/rest/v1/item_music_options?on_conflict=item_id,music_id", { method: "POST", prefer: "resolution=ignore-duplicates,return=minimal", json: { item_id: it.id, music_id: m.id } }).then(function () {
       it.item_music_options = it.item_music_options || []; if (!optList(it).some(function (x) { return x.id === m.id; })) it.item_music_options.push({ music_id: m.id, created_at: new Date().toISOString(), music: m });
@@ -1769,7 +1826,7 @@
   /* the popup that adds songs to an exercise: the music page's cards and search, in two parts: the songs the catalog links to the exercise, and all the others */
   function openAddMusic(it, changed) {
     var me = FLOA_AUTH.userId(), vid = state.viv && state.viv.id;
-    var r = sheetOf("addMusDlg", "", '<style>#addMusDlg .sheet-head { display: none } html.bio-docked #addMusDlg .sheet-body { padding-bottom: 0 }</style><div><label class="rfield"><span id="amc">חיפוש בין שירים</span><input id="amq" placeholder=" " autocomplete="off"></label></div><div id="amlist" style="flex:1 1 auto;min-height:0;overflow-y:auto;margin-top:var(--sp-2);padding-bottom:calc(var(--dockfull) + var(--gutter))"><div class="rskel rskel--title"></div></div>');
+    var r = sheetOf("addMusDlg", "", '<style>#addMusDlg .sheet-head { display: none } html.bio-docked #addMusDlg .sheet-body { padding-bottom: 0 }</style><div><label class="rfield"><span id="amc">חיפוש בין שירים</span><input id="amq" placeholder=" " autocomplete="off"></label></div><div style="padding-top:var(--sp-1)"><button type="button" class="rbtn rbtn--block rbtn--ghost" id="amup">העלאת קובץ מוזיקה</button></div><div id="amlist" style="flex:1 1 auto;min-height:0;overflow-y:auto;margin-top:var(--sp-2);padding-bottom:calc(var(--dockfull) + var(--gutter))"><div class="rskel rskel--title"></div></div>');
     r.style.overflowY = "hidden";   /* the search stays, only the cards scroll */
     var listEl = r.querySelector("#amlist"), qi = r.querySelector("#amq");
     var linked = null, rest = null, shown = 90, fresh = true;
@@ -1787,6 +1844,27 @@
       var head = function (t, n) { return '<div class="rrow__sub" style="padding:var(--sp-2) 0 var(--sp-1)">' + esc(t) + ' (' + n + ')</div>'; };
       listEl.innerHTML = (sl.length ? head("בתרגיל", sl.length) + grid(sl) : '') + (lk.length ? head("מקושרות לתרגיל בקטלוג", lk.length) + grid(lk) : '') + (cut.length ? head("שירים אחרים", ot.length) + grid(cut) : '') + (!sl.length && !lk.length && !cut.length ? ph("לא נמצא", "") : '');
     }
+    var upb = r.querySelector("#amup");
+    if (upb) upb.addEventListener("click", function () {
+      if (upb.dataset.busy) return;
+      var inp = document.createElement("input"); inp.type = "file"; inp.accept = "audio/*,.flac,.m4a,.aiff,.aif,.wav,.mp3";
+      inp.addEventListener("change", function () {
+        var f = inp.files && inp.files[0]; if (!f) return;
+        var label = upb.textContent; upb.dataset.busy = "1"; upb.textContent = "0%";
+        var back = function (t, ms) { upb.textContent = t; setTimeout(function () { upb.textContent = label; delete upb.dataset.busy; }, ms || 0); };
+        putAudio(f, function (pc) { upb.textContent = pc + "%"; }).then(function (o) {
+          var title = f.name.replace(/\.[^.]+$/, "").replace(/[_]+/g, " ").trim();
+          return api("/rest/v1/rpc/add_upload", { method: "POST", json: { p_object: o.object, p_format: o.format, p_size: o.size, p_title: title, p_artist: "", p_vivencia: state.viv ? state.viv.id : null } });
+        }).then(function (id) {
+          return api("/rest/v1/music?id=eq." + id + "&select=id,name,title,artist,duration_sec,audio_object,in_catalog,owner_id,vivencia_id");
+        }).then(function (rows) {
+          back(label); var row = rows && rows[0]; if (!row) return;
+          if (rest) rest.unshift(row);
+          return addOpt(it, row).then(function () { draw(); if (changed) changed(); songEdit(row, function () { draw(); if (changed) changed(); }); });   /* it is in the list at once, and its name and performer are asked for */
+        }).catch(function (er) { console.error(er); back(er && er.message === "format" ? "קובץ שמע בלבד" : "ההעלאה נכשלה", 3000); });
+      });
+      inp.click();
+    });
     qi.addEventListener("input", function () { shown = 90; listEl.scrollTop = 0; draw(); });
     listEl.addEventListener("scroll", function () { if (listEl.scrollTop + listEl.clientHeight > listEl.scrollHeight - 600 && rest && shown < rest.length) { shown += 90; draw(); } }, { passive: true });
     listEl.addEventListener("click", function (ev) {
@@ -1794,14 +1872,7 @@
       var c = ev.target.closest("[data-am]"); if (!c) return;
       var all = (linked || []).concat(rest || []), m = all.filter(function (x) { return x.id === c.dataset.am; })[0]; if (!m) return;
       if (optList(it).some(function (x) { return x.id === m.id; })) {   /* a marked song: the mark comes off and it is disconnected from the exercise */
-        var chosen = m.id === it.music_id;
-        api("/rest/v1/item_music_options?item_id=eq." + it.id + "&music_id=eq." + m.id, { method: "DELETE" }).then(function () {
-          return chosen ? api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { music_id: null } }) : null;
-        }).then(function () {
-          it.item_music_options = (it.item_music_options || []).filter(function (o) { return o.music_id !== m.id; });
-          if (chosen) { it.music_id = null; it.music = null; }
-          draw(); if (changed) changed();
-        }, fail);
+        dropOpt(it, m).then(function () { draw(); if (changed) changed(); }, fail);
         return;
       }
       addOpt(it, m).then(function () { draw(); if (changed) changed(); }, fail);

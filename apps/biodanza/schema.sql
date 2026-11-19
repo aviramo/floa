@@ -808,3 +808,21 @@ grant select, insert, update, delete on biodanza.listen_history to authenticated
 -- THE BACKLOG OF A VIVENCIA (2026-11-19): exercises the facilitator is undecided about. They stay in the vivencia, listed below the numbered ones and not numbered;
 -- an exercise moves into the backlog and back by one flag.
 alter table biodanza.vivencia_items add column if not exists backlog boolean not null default false;
+-- THE MUSIC OF RECEIVING THE AUDIENCE (2026-11-19): songs that play while people arrive, before the first exercise. They belong to the vivencia, not to an exercise:
+-- a section at the top of its list, only music. Whoever may see the vivencia sees them, whoever may edit it changes them.
+create table if not exists biodanza.vivencia_reception_music (
+  vivencia_id uuid not null references biodanza.vivencias(id) on delete cascade,
+  music_id    uuid not null references biodanza.music(id) on delete cascade,
+  created_at  timestamptz not null default now(),
+  primary key (vivencia_id, music_id)
+);
+alter table biodanza.vivencia_reception_music enable row level security;
+drop policy if exists recv_read on biodanza.vivencia_reception_music;
+create policy recv_read on biodanza.vivencia_reception_music for select to authenticated using (biodanza.can_view(vivencia_id));
+drop policy if exists recv_write on biodanza.vivencia_reception_music;
+create policy recv_write on biodanza.vivencia_reception_music for all to authenticated using (biodanza.can_edit(vivencia_id)) with check (biodanza.can_edit(vivencia_id));
+grant select, insert, update, delete on biodanza.vivencia_reception_music to authenticated, service_role;
+-- the music at the start and at the end of a vivencia: one table, a kind (start | end)
+alter table biodanza.vivencia_reception_music add column if not exists kind text not null default 'start' check (kind in ('start', 'end'));
+alter table biodanza.vivencia_reception_music drop constraint if exists vivencia_reception_music_pkey;
+alter table biodanza.vivencia_reception_music add primary key (vivencia_id, kind, music_id);
