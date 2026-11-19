@@ -736,8 +736,8 @@
     var arrow = function (act, ico, label, off) { return '<button class="rbtn rbtn--icon" data-act="' + act + '" aria-label="' + label + '" title="' + label + '"' + (off ? " disabled" : "") + '>' + ico + '</button>'; };
     return '<header class="rhead">' + (nav ? arrow("prevW", I.back, "הקודם", !hasPrev) : "") +
       '<div class="rhead__text" style="flex-direction:row;align-items:center;gap:var(--sp-2);padding-inline-start:0;justify-content:flex-start">' + (numText ? '<span aria-hidden="true" style="flex:none;font:var(--fw-black) calc(2.75 * var(--fs-m))/.95 var(--font);font-variant-numeric:tabular-nums">' + esc(numText) + '</span>' : "") + '<input id="ina" class="rhead__title" placeholder="ללא שם" autocomplete="off" aria-label="שם התרגיל"' + (ro ? ' readonly' : '') + ' value="' + esc(nameText || "") + '" style="flex:1 1 0;width:auto;min-width:0;border:0;background:transparent;padding-inline:0;margin:0;color:inherit;text-align:start;outline:0;text-overflow:ellipsis;text-box:normal;line-height:1.4;padding-block:4px"></div>' +
-      (exId ? heartBtnEx(exId, "bio-flat") : "") +   /* a catalog exercise: the heart first, then the action as a word to its left */
-      (ro && roLabel ? '<button type="button" class="rbtn" style="flex:none;gap:var(--sp-1)" data-act="doswap"' + (roPlus ? ' aria-label="הוספה לוויוונסיה ' + esc(roLabel) + '" title="הוספה לוויוונסיה"' : '') + '>' + (roPlus ? '<span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span><span style="max-width:14rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(roLabel) + '</span>' : esc(roLabel)) + '</button>' : "") + (ro ? "" : arrow("del", I.trash, "הסרה מהוויוונסיה", false)) + (nav ? arrow("nextW", I.fwd, "הבא", !hasNext) : "") + '</header>';
+      (exId && ro ? heartBtnEx(exId, "bio-flat") : "") +   /* a catalog exercise: the heart first, then the action as a word to its left */
+      (ro && roLabel ? '<button type="button" class="rbtn" style="flex:none;gap:var(--sp-1)" data-act="doswap"' + (roPlus ? ' aria-label="הוספה לוויוונסיה ' + esc(roLabel) + '" title="הוספה לוויוונסיה"' : '') + '>' + (roPlus ? '<span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span><span style="max-width:14rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(roLabel) + '</span>' : esc(roLabel)) + '</button>' : "") + "" + (nav ? arrow("nextW", I.fwd, "הבא", !hasNext) : "") + '</header>';
   }
   (function () {
     var st = document.createElement("style");
@@ -964,7 +964,7 @@
     if (state.offline) items.length = 0;   /* with no internet nothing changes: only the copy on the device can be taken off it */
     if (items.length) menu(b, items);
   }
-  (function () { var st = document.createElement("style"); st.textContent = ".bio-vm { opacity: 0; transition: opacity var(--t-base) var(--ease) } .rrow:hover .bio-vm, .rrow:focus-within .bio-vm, .bio-vm[aria-expanded=\"true\"] { opacity: 1 } @media (hover: none) { .bio-vm { opacity: 1 } }"; document.head.appendChild(st); })();
+  (function () { var st = document.createElement("style"); st.textContent = ".bio-card .bio-ha { opacity: 0; flex: none; width: var(--tag-s); height: var(--tag-s); min-height: var(--tag-s); padding: 0; background: transparent; border-color: transparent; transition: opacity var(--t-base) var(--ease) } .bio-card:hover .bio-ha, .bio-card:focus-within .bio-ha, .bio-card[aria-current=\"true\"] .bio-ha { opacity: 1 } @media (hover: none) { .bio-card .bio-ha { opacity: 1 } } .bio-vm { opacity: 0; transition: opacity var(--t-base) var(--ease) } .rrow:hover .bio-vm, .rrow:focus-within .bio-vm, .bio-vm[aria-expanded=\"true\"] { opacity: 1 } @media (hover: none) { .bio-vm { opacity: 1 } }"; document.head.appendChild(st); })();
   function renderVivs() {
     var l = document.getElementById("hl"); if (!l) return;
     l.innerHTML = state.vivs.length ? state.vivs.map(function (v) {
@@ -1307,7 +1307,8 @@
     var rowOf = function (i, tile) {
       var m = i.music;
       return cardUi({ cls: "bio-icard", attrs: 'data-icard="' + i.id + '"' + (i.backlog ? ' data-back="1"' : ''), selected: state.lastItem === i.id, lead: tile, bigLead: true, title: itemName(i), titleAttr: 'data-edit="' + i.id + '"',
-        sub: m ? songName(m) : "בלי מוזיקה", subRight: !!m, footEnd: true, pill: m ? cardPill(m) : "", chip: facChip(i, " rchip--s"), time: m ? clkSpan(m) : "" });
+        sub: m ? songName(m) : "בלי מוזיקה", subRight: !!m, footEnd: true, pill: m ? cardPill(m) : "", chip: facChip(i, " rchip--s"), time: m ? clkSpan(m) : "",
+        actions: (canEdit() ? '<button type="button" class="rbtn rbtn--icon bio-ha" data-idel="' + i.id + '" aria-label="הסרה מהוויוונסיה" title="הסרה מהוויוונסיה">' + I.trash + '</button>' : '') + (i.exercise_id ? heartBtnEx(i.exercise_id, "bio-ha") : '') });   /* on hover: the bin at the right, the heart at its left */
     };
     var exHead = '<div style="display:flex;align-items:center;justify-content:space-between;padding:var(--gutter) var(--gutter) 0"><span class="rrow__title" style="font-weight:var(--fw-black)">ויוונסיה</span>' + (canEdit() ? '<button type="button" class="rbtn rbtn--icon" data-addex aria-label="תרגיל ריק חדש" title="תרגיל ריק חדש">' + I.plus + '</button>' : '') + '</div>';   /* the exercises have a title like the songs of the start, with a plus at its other end */
     l.innerHTML = recvHtml("start") + exHead + '<div id="plist" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch;padding:var(--gutter)">' + main.map(function (i, k) { return rowOf(i, k + 1); }).join("") +
@@ -1323,7 +1324,7 @@
       if (wide()) itemScreen(it); else go(function () { itemScreen(it); });
     };
     l.querySelectorAll("[data-icard]").forEach(function (c) { c.addEventListener("click", function (ev) {
-      if (ev.target.closest("[data-audio], a, [data-fac], [data-idel]")) return;
+      if (ev.target.closest("[data-audio], a, [data-fac], [data-idel], [data-likex]")) return;
       openIt(c.dataset.icard);
     }); });
     l.querySelectorAll("[data-idel]").forEach(function (b) { b.addEventListener("click", function (ev) { ev.stopPropagation(); var it = state.items.filter(function (x) { return x.id === b.dataset.idel; })[0]; if (it) confirmRemoveItem(it); }); });
@@ -1870,12 +1871,12 @@
       ? '<button type="button" class="rrow__main" ' + o.titleAttr + ' style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:var(--fw-bold) ' + (o.big ? 'var(--fs-l)' : 'var(--fs-s)') + '/var(--lh-tight) var(--font);color:inherit;' + dir + (o.corner ? 'padding-inline-end:var(--ctl)' : '') + '">' + esc(o.title) + '</button>'
       : '<span style="display:block;' + dir + 'overflow-wrap:anywhere;' + (o.corner ? 'padding-right:var(--ctl);' : '') + 'font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(o.title) + '</span>';
     var sub = '<span style="display:block;' + (o.subRight ? 'direction:ltr;text-align:right;' : o.subLtr !== false ? 'direction:ltr;text-align:left;' : '') + 'overflow-wrap:anywhere;color:var(--text-2);font:var(--fw-regular) ' + (o.big ? 'var(--fs-m)' : 'var(--fs-xs)') + '/var(--lh-tight) var(--font)">' + (o.sub ? esc(o.sub) : '&nbsp;') + '</span>';
-    var foot = o.footEnd ? '<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-1);margin-top:auto;padding-top:var(--gap-tight)"><div style="display:flex;align-items:center;gap:var(--sp-1)">' + (o.chip || '') + '</div><div style="display:flex;align-items:center;gap:var(--sp-1)">' + (o.time || '') + (o.pill || '') + '</div></div>'   /* the leader chip at the right end, under the song; the play tile at the left end, its time on its right */
+    var foot = o.footEnd ? '<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-1);margin-top:auto;padding-top:var(--gap-tight)"><div style="display:flex;align-items:center;gap:var(--sp-1)">' + (o.chip || '') + (o.actions || '') + '</div><div style="display:flex;align-items:center;gap:var(--sp-1)">' + (o.time || '') + (o.pill || '') + '</div></div>'   /* the leader chip at the right end, under the song; the play tile at the left end, its time on its right */
       : '<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-1);margin-top:auto;padding-top:var(--gap-tight)"><div style="display:flex;align-items:center;gap:var(--sp-1)">' + (o.pill || '') + (o.chip || '') + '</div>' + (o.time || '') + '</div>';
     var lead = o.lead ? (o.bigLead
       ? '<span aria-hidden="true" style="flex:none;display:flex;align-items:flex-start;justify-content:center;min-width:var(--ctl);font:var(--fw-black) calc(2.75 * var(--fs-m))/.95 var(--font);color:var(--text);font-variant-numeric:tabular-nums">' + o.lead + '</span>'   /* the number as tall as the two lines beside it, no tile */
       : '<span aria-hidden="true" style="flex:none;display:flex;align-items:center;justify-content:center;width:var(--ctl);height:var(--ctl);border-radius:var(--r-ctl);background:var(--surface-2);font:var(--fw-bold) var(--fs-m)/1 var(--font)">' + o.lead + '</span>') : '';
-    if (!o.pill && !o.chip && !o.time) foot = '';   /* nothing to put in the bottom row: it does not add room under the text */
+    if (!o.pill && !o.chip && !o.time && !o.actions) foot = '';   /* nothing to put in the bottom row: it does not add room under the text */
     var body = '<div style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px;' + (o.lead ? '' : 'width:100%') + '">' + title + sub + foot + '</div>';
     return '<div class="rcard rcard--compact bio-card' + (o.cls ? ' ' + o.cls : '') + '" ' + (o.attrs || '') + (o.selected ? ' aria-current="true"' : '') + ' style="margin:0;min-width:0;display:flex;' + (o.lead ? 'flex-direction:row;align-items:flex-start;gap:var(--sp-2);' : 'flex-direction:column;') + 'padding:var(--sp-2);cursor:pointer;position:relative;background:var(--on-primary)">' + lead + body + (o.corner || '') + '</div>';   /* the same room on all four sides */
   }
