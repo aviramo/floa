@@ -678,8 +678,9 @@
     var id = b.dataset.likex, was = !!likesEx[id];
     if (was) delete likesEx[id]; else likesEx[id] = true;
     paintHeartsEx(id);
-    (was ? api("/rest/v1/exercise_likes?exercise_id=eq." + id, { method: "DELETE" })
-         : api("/rest/v1/exercise_likes", { method: "POST", json: { exercise_id: id }, prefer: "resolution=ignore-duplicates,return=minimal" })).catch(function () {
+    var isIt = id.indexOf("item:") === 0, rid = isIt ? id.slice(5) : id;   /* an exercise of a vivencia that is no catalog exercise: the heart belongs to the item */
+    (was ? api("/rest/v1/" + (isIt ? "item_likes?item_id=eq." : "exercise_likes?exercise_id=eq.") + rid, { method: "DELETE" })
+         : api("/rest/v1/" + (isIt ? "item_likes" : "exercise_likes"), { method: "POST", json: isIt ? { item_id: rid } : { exercise_id: rid }, prefer: "resolution=ignore-duplicates,return=minimal" })).catch(function () {
       if (was) likesEx[id] = true; else delete likesEx[id]; paintHeartsEx(id); toast("אי אפשר לשמור עכשיו");
     });
   }, true);
@@ -1475,7 +1476,7 @@
       var m = i.music;
       return cardUi({ cls: "bio-icard", attrs: 'data-icard="' + i.id + '"' + (i.backlog ? ' data-back="1"' : ''), selected: state.lastItem === i.id, lead: tile, bigLead: true, title: itemName(i), titleAttr: 'data-edit="' + i.id + '"',
         sub: m ? songName(m) : "בלי מוזיקה", subRight: !!m, subLtr: m ? undefined : false, footEnd: true, pill: m ? cardPill(m) : "", chip: facChip(i, " rchip--s"), time: m ? clkSpan(m) : "",
-        actions: (canEdit() ? '<button type="button" class="rbtn rbtn--icon bio-ha" data-idel="' + i.id + '" aria-label="הסרה מהוויוונסיה" title="הסרה מהוויוונסיה">' + I.trash + '</button>' : '') + (i.exercise_id ? heartBtnEx(i.exercise_id, "bio-ha") : '') });   /* on hover: the bin at the right, the heart at its left */
+        actions: (canEdit() ? '<button type="button" class="rbtn rbtn--icon bio-ha" data-idel="' + i.id + '" aria-label="הסרה מהוויוונסיה" title="הסרה מהוויוונסיה">' + I.trash + '</button>' : '') + heartBtnEx(i.exercise_id || ("item:" + i.id), "bio-ha") });   /* on hover: the bin at the right, the heart at its left */
     };
     var exHead = '<div class="bio-sech" style="display:flex;align-items:center;justify-content:space-between;padding:var(--gutter) var(--gutter) 0"><span class="rrow__title" style="font-weight:var(--fw-black)">ויוונסיה</span>' + (canEdit() ? '<button type="button" class="rbtn rbtn--icon" data-addex aria-haspopup="menu" aria-label="הוספת תרגיל" title="הוספת תרגיל">' + I.plus + '</button>' : '') + '</div>';   /* the exercises have a title like the songs of the start, with a plus at its other end */
     l.innerHTML = recvHtml("start") + exHead + '<div id="plist" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);align-items:stretch;padding:var(--gutter)">' + main.map(function (i, k) { return rowOf(i, k + 1); }).join("") +
@@ -1784,7 +1785,7 @@
     markItem();
     var k = state.items.findIndex(function (x) { return x.id === it.id; }), prevIt = state.items[k - 1], nextIt = state.items[k + 1];   /* its place by its id: the list may have been read again, and its objects are new ones */
     /* the header walks the sequence: the right button to the previous exercise, the left one to the next, the name between them */
-    var hd = itemHead(!!prevIt, !!nextIt, "", it.exercise_id, itemName(it), false, "", !!it.backlog, it.backlog ? "•" : String(state.items.filter(function (i) { return !i.backlog; }).findIndex(function (i) { return i.id === it.id; }) + 1), undefined, [2, 1, 0, -1, -2].map(function (d) { var x = state.items[k + d]; if (!x) return null; return { n: x.backlog ? "•" : String(state.items.filter(function (i) { return !i.backlog; }).findIndex(function (i) { return i.id === x.id; }) + 1), t: itemName(x) }; }));   /* the tabs, from the left: the next ones, this one, the previous ones */   /* its number, the same as in the list, before its name */   /* the middle button says where we are, and still opens the list */
+    var hd = itemHead(!!prevIt, !!nextIt, "", it.exercise_id || ("item:" + it.id), itemName(it), false, "", !!it.backlog, it.backlog ? "•" : String(state.items.filter(function (i) { return !i.backlog; }).findIndex(function (i) { return i.id === it.id; }) + 1), undefined, [2, 1, 0, -1, -2].map(function (d) { var x = state.items[k + d]; if (!x) return null; return { n: x.backlog ? "•" : String(state.items.filter(function (i) { return !i.backlog; }).findIndex(function (i) { return i.id === x.id; }) + 1), t: itemName(x) }; }));   /* the tabs, from the left: the next ones, this one, the previous ones */   /* its number, the same as in the list, before its name */   /* the middle button says where we are, and still opens the list */
     show(hd + itemPageHtml(it, false), function (r) {
       var sf = state.slideFrom || 0, pg = r.querySelector("#ipg"); state.slideFrom = 0;
       sbSync(r);
@@ -2969,7 +2970,7 @@
       if (!me || !me.allowed) return gate("לחשבון " + FLOA_AUTH.email() + " אין הרשאה להיכנס. אפשר לבקש מהמנהל להוסיף אותו.", true);
       return Promise.all([api("/rest/v1/lines?select=key,name_he&order=sort"), api("/rest/v1/phases?select=key,name_he&order=sort"), api("/rest/v1/levels?select=key,name_he&order=rank").catch(function () { return []; })]).then(function (r) { state.lines = r[0]; state.phases = r[1]; state.levels = r[2]; if (!localHome) home(); startRealtime(); setTimeout(restoreCatMobile, 700); api("/rest/v1/song_likes?select=music_id").then(function (ls) { likes = {}; (ls || []).forEach(function (x) { likes[x.music_id] = true; }); }, function () { /* no hearts this time */ });
         api("/rest/v1/vivencia_likes?select=vivencia_id").then(function (ls) { likesViv = {}; (ls || []).forEach(function (x) { likesViv[x.vivencia_id] = true; }); if (state.vivsLoaded) renderVivs(); }, function () { /* no hearts this time */ });
-        api("/rest/v1/exercise_likes?select=exercise_id").then(function (ls) { likesEx = {}; (ls || []).forEach(function (x) { likesEx[x.exercise_id] = true; }); }, function () { /* no hearts this time */ }); });
+        api("/rest/v1/exercise_likes?select=exercise_id").then(function (ls) { likesEx = {}; (ls || []).forEach(function (x) { likesEx[x.exercise_id] = true; }); return api("/rest/v1/item_likes?select=item_id"); }).then(function (ls) { (ls || []).forEach(function (x) { likesEx["item:" + x.item_id] = true; }); }, function () { /* no hearts this time */ }); });
     }).catch(function (e) {
       console.error(e);
       if (e && !e.status && !e.signedOut) return startOffline();   /* no answer at all: the network is gone */

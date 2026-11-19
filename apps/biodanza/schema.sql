@@ -826,3 +826,18 @@ grant select, insert, update, delete on biodanza.vivencia_reception_music to aut
 alter table biodanza.vivencia_reception_music add column if not exists kind text not null default 'start' check (kind in ('start', 'end'));
 alter table biodanza.vivencia_reception_music drop constraint if exists vivencia_reception_music_pkey;
 alter table biodanza.vivencia_reception_music add primary key (vivencia_id, kind, music_id);
+
+-- the hearts of the exercises inside a vivencia that is not linked to a catalog exercise: each person's own, nobody else sees them
+create table if not exists biodanza.item_likes (
+  user_id    uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  item_id    uuid not null references biodanza.vivencia_items(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (user_id, item_id)
+);
+alter table biodanza.item_likes enable row level security;
+drop policy if exists item_likes_read on biodanza.item_likes;
+create policy item_likes_read on biodanza.item_likes for select to authenticated using (user_id = auth.uid());
+drop policy if exists item_likes_write on biodanza.item_likes;
+create policy item_likes_write on biodanza.item_likes for all to authenticated
+  using (user_id = auth.uid() and biodanza.is_allowed()) with check (user_id = auth.uid() and biodanza.is_allowed());
+grant select, insert, update, delete on biodanza.item_likes to authenticated, service_role;
