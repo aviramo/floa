@@ -2132,9 +2132,32 @@
     RosterSheet.render(dlg, {
       title: "עריכת מוזיקה", from: "bottom", size: "s",
       body: '<div class="pad"><label class="rfield"><span>שם השיר</span><input id="sn" placeholder=" " autocomplete="off" value="' + esc(m.title || m.name || "") + '"></label><label class="rfield"><span>מבצע</span><input id="sa" placeholder=" " autocomplete="off" value="' + esc(m.artist || "") + '"></label></div>',
-      foot: '<button class="rbtn rbtn--block" type="button" id="ssave">שמירה</button>'
+      foot: '<button class="rbtn rbtn--block" type="button" id="ssave">שמירה</button><button class="rbtn rbtn--danger rbtn--ghost rbtn--block" type="button" id="sdel">מחיקת השיר</button>'
     });
     var n = dlg.querySelector("#sn"), a = dlg.querySelector("#sa"); n.focus(); n.select();
+    dlg.querySelector("#sdel").addEventListener("click", function () {   /* a song that is not from the catalog can be deleted: from every exercise, option and start or end music it is in */
+      dlg.close();
+      var c = document.getElementById("confirmDlg");
+      if (!c) { c = document.createElement("dialog"); c.id = "confirmDlg"; document.body.appendChild(c); }
+      RosterSheet.render(c, { kind: "confirm", title: "מחיקת שיר", from: "bottom", size: "s",
+        body: '<div class="pad"><span>למחוק את "' + esc(songName(m)) + '" לגמרי? הוא יוסר מכל התרגילים והוויוונסיות שבהם הוא נמצא.</span></div>',
+        foot: '<button class="rbtn rbtn--danger rbtn--block" type="button" id="csdel">מחיקה</button>' });
+      c.querySelector("#csdel").addEventListener("click", function () {
+        c.close();
+        api("/rest/v1/music?id=eq." + m.id, { method: "DELETE", prefer: "return=minimal" }).then(function () {
+          m.__gone = true;
+          (state.items || []).forEach(function (x) {
+            if (x.music && x.music.id === m.id) { x.music = null; x.music_id = null; }
+            x.item_music_options = (x.item_music_options || []).filter(function (o) { return o.music_id !== m.id; });
+          });
+          Object.keys(recvCache).forEach(function (k) { recvCache[k] = (recvCache[k] || []).filter(function (o) { return !o.music || o.music.id !== m.id; }); });
+          if (allSongsP) allSongsP.then(function (rows) { var k = (rows || []).findIndex(function (x) { return x.id === m.id; }); if (k >= 0) rows.splice(k, 1); });
+          if (done) done();
+          if (document.getElementById("list") && document.getElementById("list").hasAttribute("data-fab-room") && state.items) paint();
+          var im = document.getElementById("imus"); if (im && liveItem && liveItem.id) { var li = state.items.filter(function (x) { return x.id === liveItem.id; })[0]; if (li) im.innerHTML = musCards(li); }
+        }, fail);
+      });
+    });
     function save() {
       var t = n.value.trim(), ar = a.value.trim(); if (!t) return toast("חסר שם");
       api("/rest/v1/music?id=eq." + m.id, { method: "PATCH", prefer: "return=minimal", json: { title: t, artist: ar, name: t + (ar ? ", " + ar : "") } }).then(function () {
@@ -2156,6 +2179,7 @@
     var vid = state.viv && state.viv.id, canEd = state.viv && (state.viv.role === "owner" || state.viv.role === "edit");   /* a song made in this vivencia can be renamed by whoever can edit it */
     var pen = function (m) { return (m.owner_id && m.owner_id === me) || (canEd && vid && m.vivencia_id === vid) ? '<button type="button" class="rbtn rbtn--icon rrow__trail" data-ed="' + esc(m.id) + '" aria-label="עריכת שם ומבצע" title="עריכת שם ומבצע" style="width:var(--fab);height:var(--fab);min-height:var(--fab);color:var(--text-3)">' + I.pen + '</button>' : ''; };
     function draw() {
+      all = all.filter(function (m) { return !m.__gone; });
       var q = fold(r.querySelector("#oq").value.trim());
       var vis = nearest(all, function (m) { return songName(m) + " " + songBy(m); }, q);
       l.innerHTML = vis.length ? vis.map(function (m) { return songRow(m, it.music_id === m.id, "data-o", pen(m)); }).join("") : ph("לא נמצא", "");
