@@ -755,32 +755,42 @@
   function show(html, wire, pane) { if (!wide() && pane === "d") return itemSheet(html, wire);   /* narrow: the exercise is a popup from the bottom, not a page */
     if (wide() && (pane === "d" || !state.pickerShow)) pd.classList.remove("bio-dim");   /* anything new on the left, or the catalog closed, and the exercise is lit again */
     var t = wide() && pane === "d" ? pd : pl;
-    if (t === pl && catPanel) { catPanel = null; state.pickerShow = false; }
+    if (t === pl && catPanel) closeCatPanel(true);
     t.innerHTML = html;
-    if (t === pl && wide() && html.indexOf("data-fab-room") >= 0 && !(state.viv && state.viv.role === "view")) {   /* the catalog's green banner is always there beside the lists, the vivencias and the exercises of one */
-      var bn = document.createElement("button"); bn.type = "button"; bn.className = "bio-banner"; bn.setAttribute("data-catopen", ""); bn.setAttribute("aria-label", "קטלוג התרגילים"); bn.title = "קטלוג התרגילים"; bn.textContent = "קטלוג"; t.appendChild(bn);
+    if (t === pl && wide()) {   /* the catalog layer is ready beside the lists, the vivencias and the exercises of one; elsewhere it is not */
+      var listy = html.indexOf("data-fab-room") >= 0 && !(state.viv && state.viv.role === "view");
+      if (listy) ensureCatLayer();
+      if (catLayer) { catLayer.hidden = !listy; placeCatLayer(); }
     }
     if (wire) wire(t); }
-  var catPanel = null;
-  (function () { var st = document.createElement("style"); st.textContent = "#catPanel { position: absolute; inset: 0; z-index: 6; display: flex; flex-direction: column; min-height: 0; animation: bioPanel .25s var(--ease) } @keyframes bioPanel { from { transform: translateX(100%) } to { transform: none } } #catPanel.is-out { animation: bioPanelOut .25s var(--ease) forwards } @keyframes bioPanelOut { from { transform: none } to { transform: translateX(100%) } } @media (prefers-reduced-motion: reduce) { #catPanel { animation: none } } #catPanel > .rlist { flex: 1 1 auto; min-height: 0 }"; document.head.appendChild(st); })();
-  function closeCatPanel() {
+  var catPanel = null, catLayer = null, catPreview = false;
+  (function () { var st = document.createElement("style"); st.textContent = "#catLayer { position: fixed; z-index: 20; transform: translateX(100%); transition: transform .25s var(--ease); display: flex; flex-direction: column; min-height: 0 } #catLayer[hidden] { display: none } #catLayer.is-open { transform: none } #catLayer > .bio-banner { position: absolute; inset-block: 0; inset-inline-start: auto; left: -44px; width: 44px; height: 100% } #catLayer > .catbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; box-shadow: -1px 0 0 var(--line) } #catLayer > .catbody > .rlist { flex: 1 1 auto; min-height: 0 } @media (prefers-reduced-motion: reduce) { #catLayer { transition: none } }"; document.head.appendChild(st); })();
+  function placeCatLayer() {   /* over the right column, beside the divider; the banner is the 44px at its left edge */
+    if (!catLayer) return; var r = pl.getBoundingClientRect();
+    catLayer.style.top = r.top + "px"; catLayer.style.height = r.height + "px"; catLayer.style.left = (r.left + 44) + "px"; catLayer.style.width = Math.max(0, r.width - 44) + "px";
+  }
+  function ensureCatLayer() {   /* built once, closed, waiting off the right edge of the screen: only its banner shows */
+    if (catLayer) return;
+    var d = document.createElement("div"); d.id = "catLayer"; d.style.background = getComputedStyle(document.body).backgroundColor;
+    d.innerHTML = '<button type="button" class="bio-banner" data-catopen aria-label="קטלוג התרגילים" title="קטלוג התרגילים">קטלוג</button><div class="catbody" inert><header class="rhead"><div class="rhead__text">' + searchInput() + '</div></header>' + pickerBody(false) + '</div>';
+    document.body.appendChild(d); catLayer = d; resetPk(); pickerWire(d.querySelector(".catbody"), undefined, false); placeCatLayer();
+    window.addEventListener("resize", placeCatLayer);
+    if (window.ResizeObserver) new ResizeObserver(placeCatLayer).observe(pl);
+  }
+  function closeCatPanel(quiet) {
     if (!catPanel) return;
-    var gone = catPanel; catPanel = null; state.pickerShow = false; pd.classList.remove("bio-dim");
-    if (!gone.isConnected || window.matchMedia("(prefers-reduced-motion: reduce)").matches) { gone.remove(); return; }
-    gone.style.pointerEvents = "none"; gone.classList.add("is-out");   /* it slides out to the right, the way it came in */
-    gone.addEventListener("animationend", function () { gone.remove(); }); setTimeout(function () { gone.remove(); }, 400);
+    catPanel = null; state.pickerShow = false; pd.classList.remove("bio-dim");
+    catLayer.classList.remove("is-open"); catLayer.querySelector(".catbody").setAttribute("inert", "");   /* the layer and its banner slide back off to the right together */
+    if (!quiet && catPreview) { catPreview = false; if (liveItem) itemScreen(liveItem); else show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); }   /* a look at a catalog exercise is over: the left side is as it was */
+    catPreview = false;
   }
-  function openCatPanel() {   /* wide screen: the catalog slides in from the right over the whole column, up to the divider */
-    if (catPanel) return;
-    resetPk();
-    var d = document.createElement("div"); d.id = "catPanel"; d.style.background = getComputedStyle(document.body).backgroundColor;
-    d.innerHTML = '<header class="rhead"><button class="rbtn rbtn--icon rbtn--edge-start" data-act="back" aria-label="סגירה" title="סגירה">' + I.back + '</button><div class="rhead__text">' + searchInput() + '</div></header>' + pickerBody(false);
-    pl.appendChild(d); catPanel = d; state.pickerShow = true; pd.classList.add("bio-dim");
-    d.querySelector('[data-act="back"]').addEventListener("click", function () { closeCatPanel(); show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); });
-    pickerWire(d, undefined, false);
+  function openCatPanel() {   /* the layer and its banner slide left together; the exercise on the left goes dark */
+    if (catPanel || !catLayer) return;
+    placeCatLayer(); catLayer.classList.add("is-open"); catLayer.querySelector(".catbody").removeAttribute("inert");
+    catPanel = catLayer; state.pickerShow = true; pd.classList.add("bio-dim");
   }
-  document.addEventListener("click", function (ev) { var b = ev.target.closest && ev.target.closest("[data-catopen]"); if (b && wide()) openCatPanel(); });
-  pd.addEventListener("click", function (ev) { if (catPanel && pd.classList.contains("bio-dim") && ev.target.closest) { closeCatPanel(); show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); } });   /* a tap on the dark side closes the panel, like any popup */
+  document.addEventListener("click", function (ev) { var b = ev.target.closest && ev.target.closest("[data-catopen]"); if (b && wide()) { if (catPanel) closeCatPanel(); else openCatPanel(); } });
+  pd.addEventListener("click", function (ev) { if (catPanel && pd.classList.contains("bio-dim")) closeCatPanel(); });   /* a tap on the dark side closes the layer, like any popup */
   /* wide screen: the vivencia list on the right, and after choosing one its exercises take that place and the open exercise is on the left. Back from the exercises is the vivencia list again. */
   function homeWide() { state.viv = null; state.lastItem = null; emptyDetail(); home(); }
   function emptyDetail() {
@@ -2331,7 +2341,7 @@
       var word = swapIt ? "החלפה בתרגיל הזה" : state.viv ? "הוספה לוויוונסיה" : "";   /* with no vivencia open the catalog is only looked at */
       /* the same page as the exercise of a vivencia, only read: its header, its song cards, its texts; the action is the green button in the header, where the delete is in the vivencia */
       show(itemHead(false, false, "", e.id, name(e), true, word) + itemPageHtml(fake, true), function (r) {
-        wireRoMusic(r, fake); sbSync(r);
+        wireRoMusic(r, fake); sbSync(r); catPreview = !!catPanel;
         on(r, "doswap", function () { if (swapIt) confirmSwap(e, swapIt, undefined, fake.music_id, fake.sel); else addEx(e, undefined, undefined, fake.music_id, fake.sel); });
       }, "d");
     }, fail);
@@ -2390,7 +2400,7 @@
       var m = r[0], d = r[1];
       return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=representation", json: { vivencia_id: state.viv.id, position: pos, backlog: true, exercise_id: e.id, music_id: m && m[0] ? m[0].music_id : null, title: d.title || null, poetics: d.poetics || null, guidance: d.guidance || null } }).then(function (made) { return made && made[0] ? optionsFor(made[0].id, all) : null; });   /* the songs that were marked come with the exercise, the first as its own; none marked, none comes */
     }).then(function () { toast("התרגיל נוסף"); if (sheet) { closeSheets(); return loadItems().then(paint, fail); }
-      if (catPanel) { closeCatPanel(); show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); return loadItems().then(paint, fail); }
+      if (catPanel) { closeCatPanel(true); show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); return loadItems().then(paint, fail); }
       if (wide()) show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); else stack().pop(); back(); }, fail);
   }
 
