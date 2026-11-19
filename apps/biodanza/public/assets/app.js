@@ -850,7 +850,7 @@
   /* the on-screen keyboard: while it is up, the player (hidden behind it anyway) keeps no room at the bottom of a popup, so the list reaches the keyboard */
   (function () {
     var st = document.createElement("style");
-    st.textContent = "@media (max-width: 700px) { :root { --dockfull: calc(var(--ctl) + 20px + var(--sp-1) * 3 + var(--inset-b)) } .bio-dock { gap: var(--sp-1); min-height: 0; padding-block: var(--sp-1) calc(var(--sp-1) + var(--inset-b)) } .bio-dock > .bio-dockbar { order: 1; flex: 0 0 100% } .bio-dock > .rbtn:first-child { order: 2; width: var(--ctl) !important; height: var(--ctl) !important; min-height: var(--ctl) !important } .bio-dock > .bio-dock__time { order: 3 } .bio-dock > [data-addcur] { order: 4 } .bio-dock > .bio-dock__name { order: 5; flex: 1 1 0; min-width: 0 } .bio-dock > .bio-dock__sync { order: 6 } .bio-dock > [data-hist] { order: 7 } } html.bio-kb .bio-dock { display: none !important } html.bio-kb dialog.rsheet:not(:has(.sheet-foot)) .sheet-body { padding-bottom: 0 !important } html.bio-kb dialog.rsheet:not(:has(.sheet-foot)) .sheet { padding-bottom: 0 !important }";
+    st.textContent = "@media (max-width: 700px) { :root { --dockfull: calc(var(--ctl) + 20px + var(--sp-1) * 3 + var(--inset-b)) } .bio-dock { gap: var(--sp-1); min-height: 0; padding-block: var(--sp-1) calc(var(--sp-1) + var(--inset-b)) } .bio-dock > .bio-dockbar { order: 1; flex: 0 0 100% } .bio-dock > .rbtn:first-child { order: 2; width: var(--ctl) !important; height: var(--ctl) !important; min-height: var(--ctl) !important } .bio-dock > .bio-dock__time { order: 3 } .bio-dock > [data-addcur] { order: 4; flex: 0 1 auto !important; min-width: 0; max-width: 42% } .bio-dock > [data-addcur] [data-addcur-label] { max-width: 100% !important } .bio-dock { flex-wrap: wrap; align-content: flex-start } .bio-dock > .bio-dock__name { order: 5; flex: 1 1 0; min-width: 0 } .bio-dock > .bio-dock__sync { order: 6 } .bio-dock > [data-hist] { order: 7 } } html.bio-kb .bio-dock { display: none !important } html.bio-kb dialog.rsheet:not(:has(.sheet-foot)) .sheet-body { padding-bottom: 0 !important } html.bio-kb dialog.rsheet:not(:has(.sheet-foot)) .sheet { padding-bottom: 0 !important }";
     document.head.appendChild(st);
     var vv = window.visualViewport; if (!vv) return;
     function upd() { document.documentElement.classList.toggle("bio-kb", Math.max(0, window.innerHeight - vv.height - vv.offsetTop) > 120); }
@@ -1719,9 +1719,9 @@
     setUrl(BASE + state.viv.id + "/" + it.id);
     state.lastItem = it.id;   /* the strip of the exercise last opened stays marked in the list, like the vivencia in its list */
     markItem();
-    var k = state.items.indexOf(it), prevIt = state.items[k - 1], nextIt = state.items[k + 1];
+    var k = state.items.findIndex(function (x) { return x.id === it.id; }), prevIt = state.items[k - 1], nextIt = state.items[k + 1];   /* its place by its id: the list may have been read again, and its objects are new ones */
     /* the header walks the sequence: the right button to the previous exercise, the left one to the next, the name between them */
-    var hd = itemHead(!!prevIt, !!nextIt, "", it.exercise_id, itemName(it), false, "", !!it.backlog, it.backlog ? "•" : String(state.items.filter(function (i) { return !i.backlog; }).indexOf(it) + 1));   /* its number, the same as in the list, before its name */   /* the middle button says where we are, and still opens the list */
+    var hd = itemHead(!!prevIt, !!nextIt, "", it.exercise_id, itemName(it), false, "", !!it.backlog, it.backlog ? "•" : String(state.items.filter(function (i) { return !i.backlog; }).findIndex(function (i) { return i.id === it.id; }) + 1));   /* its number, the same as in the list, before its name */   /* the middle button says where we are, and still opens the list */
     show(hd + itemPageHtml(it, false), function (r) {
       var sf = state.slideFrom || 0, pg = r.querySelector("#ipg"); state.slideFrom = 0;
       sbSync(r);
