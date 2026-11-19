@@ -882,7 +882,7 @@
 
   function newViv() { namePopup({ id: uuid(), title: "" }, true); }
   /* Who guides an exercise: optional, any number of people, offered only when a vivencia has more than two editors (owners and accounts shared with edit rights). */
-  function facOn() { return state.members.length > 2; }
+  function facOn() { return state.members.length >= 2; }   /* the members are the owners and those who may edit: from two of them an exercise can have a facilitator, and its card says who */
   function facName(e) { var m = state.members.filter(function (x) { return x.email === e; })[0]; return m && m.note ? m.note : e.split("@")[0]; }
   function facEmails(it) { return (it.vivencia_item_facilitators || []).map(function (x) { return x.email; }); }
   function facLabel(it) {
