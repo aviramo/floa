@@ -1712,6 +1712,27 @@
       chip: sel || plain ? '' : '<button type="button" class="rchip rchip--s" data-choose="' + esc(m.id) + '" title="לבחור אותה לתרגיל בוויוונסיה" style="cursor:pointer;border:0">בחירה</button>',
       time: clkSpan(m), corner: withRm ? '<button type="button" class="rbtn rbtn--icon" data-orm="' + esc(m.id) + '" aria-label="מחיקה מהתרגיל" title="מחיקה מהתרגיל" ' + CARD_BIN + '>' + I.trash + '</button>' : '' });
   }
+  /* deleting a song from an exercise: asked in the kit's popup; closing it is the cancel */
+  function confirmRemoveOpt(it, m, done) {
+    var dlg = document.getElementById("confirmDlg");
+    if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
+    var chosen = m.id === it.music_id;
+    RosterSheet.render(dlg, { kind: "confirm",
+      title: "מחיקת מוזיקה", from: "bottom", size: "s",
+      body: '<div class="pad"><span>למחוק את "' + esc(songName(m)) + '" מהתרגיל?' + (chosen ? ' זו המוזיקה שנבחרה: התרגיל יישאר בלי מוזיקה.' : '') + '</span></div>',
+      foot: '<button class="rbtn rbtn--danger rbtn--block" type="button" id="crmo">מחיקה</button>'
+    });
+    dlg.querySelector("#crmo").addEventListener("click", function () {
+      dlg.close();
+      api("/rest/v1/item_music_options?item_id=eq." + it.id + "&music_id=eq." + m.id, { method: "DELETE" }).then(function () {
+        return chosen ? api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { music_id: null } }) : null;
+      }).then(function () {
+        it.item_music_options = (it.item_music_options || []).filter(function (o) { return o.music_id !== m.id; });
+        if (chosen) { it.music_id = null; it.music = null; }
+        done();
+      }, fail);
+    });
+  }
   function musCards(it, ro) {
     var list = optList(it), cur = it.music_id;
     var cards = list.map(function (m) { return optCardHtml(m, m.id === cur, !ro); }).join("");
