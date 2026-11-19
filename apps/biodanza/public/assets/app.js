@@ -301,7 +301,14 @@
       rows = rows.slice(0, 120);
       var dlg = document.getElementById("histDlg");
       if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "histDlg"; document.body.appendChild(dlg); }
-      var when = function (at) { try { return new Date(at).toLocaleString("he-IL", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" }); } catch (x) { return ""; } };
+      var when = function (at) {   /* how long ago, in words */
+        var m = Math.max(0, Math.floor((Date.now() - at) / 60000)), h = Math.floor(m / 60), d = Math.floor(h / 24);
+        if (m < 1) return "עכשיו"; if (m === 1) return "לפני דקה"; if (m < 60) return "לפני " + m + " דקות";
+        if (h === 1) return "לפני שעה"; if (h === 2) return "לפני שעתיים"; if (h < 24) return "לפני " + h + " שעות";
+        if (d === 1) return "אתמול"; if (d === 2) return "שלשום"; if (d < 7) return "לפני " + d + " ימים";
+        var w = Math.floor(d / 7); if (w === 1) return "לפני שבוע"; if (w === 2) return "לפני שבועיים"; if (d < 30) return "לפני " + w + " שבועות";
+        var mo = Math.floor(d / 30); if (mo === 1) return "לפני חודש"; if (mo === 2) return "לפני חודשיים"; if (mo < 12) return "לפני " + mo + " חודשים"; return "לפני יותר משנה";
+      };
       var cards = rows.map(function (e, i) {
         return '<div class="rcard rcard--compact" data-hi="' + i + '" role="button" tabindex="0" style="cursor:pointer;background:var(--on-primary);margin:0;min-width:0;display:flex;flex-direction:column;gap:2px">' +
           '<span style="direction:ltr;text-align:left;overflow-wrap:anywhere;font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(e.t || "שיר") + '</span>' +
