@@ -1315,7 +1315,7 @@
   /* the page of an exercise, below its header: the songs (cards), the texts. ro: the catalog's exercise, only read (no facilitators, no notes, the texts are not edited) */
   function itemPageHtml(it, ro) {
     return '<style>#ipg, #ipg * { touch-action: pan-y } #ipg textarea, #ipg .rf-rich { max-height: none } #ifields > .rfield { margin: 0 } #ifields .rf-rich { font-size: var(--fs-xl); line-height: 1.5 } #imus [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important }</style><div id="ipg" style="display:flex;flex-direction:column;flex:1 1 auto;min-height:0"><div class="pad" style="padding-bottom:0">' +
-      '<div style="display:flex;align-items:flex-end;gap:var(--gap-button)">' + (ro ? '' : facChip(it)) + '</div>' +
+      '<div style="display:flex;align-items:flex-end;gap:var(--gap-button)">' + '' + '</div>' +
       '</div>' +
       '<div id="iscroll" style="flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain">' +   /* everything under the name scrolls together; the texts are open to the end */
       '<div id="imus" style="flex:none;padding:var(--sp-2) var(--gutter) 0">' + musCards(it, ro) + '</div>' +   /* the songs this exercise is torn between, as cards: the chosen one plays in the vivencia */
