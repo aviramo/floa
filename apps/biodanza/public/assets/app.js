@@ -1472,8 +1472,8 @@
         '<span style="direction:ltr;text-align:left;overflow-wrap:anywhere;color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font)">' + (songBy(m) ? esc(songBy(m)) : '&nbsp;') + '</span>' +
         '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:var(--gap-tight)">' + tile + rm + tm + '</div></div>';
     }).join("");
-    return (list.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch">' + cards + '</div>' : '') +
-      '<button type="button" class="rbtn rbtn--block rbtn--ghost" data-addm style="margin-top:' + (list.length ? 'var(--sp-2)' : '0') + '">' + (list.length ? 'הוספת אפשרות מוזיקה' : 'בחירת מוזיקה') + '</button>';
+    var add = '<div class="rcard rcard--compact" data-addm role="button" tabindex="0" style="margin:0;min-width:0;display:flex;align-items:center;justify-content:center;gap:var(--sp-1);cursor:pointer;min-height:var(--tag-s);border:1px dashed var(--line-strong);background:transparent;box-shadow:none;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>' + (list.length ? "הוספת מוזיקה" : "בחירת מוזיקה") + '</div>';
+    return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:var(--sp-1);align-items:stretch">' + cards + add + '</div>';
   }
   function chooseSong(it, m) {
     return setChosen(it, m).then(function () {
