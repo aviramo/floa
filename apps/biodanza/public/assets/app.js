@@ -2551,14 +2551,14 @@
       wireRoMusic(dlg, fake);
       /* the action is a button with its words, as on a computer: a plus and the name of the vivencia (or the word, and a menu of the last three, when none is open); a swap says so */
       var vname = state.viv ? (state.viv.title || "הוויוונסיה") : "ויוונסיה", ico = (swapIt ? I.swap : I.plus).replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ');
-      var gob = document.createElement("button"); gob.type = "button"; gob.id = "exgo"; gob.className = "rbtn"; gob.setAttribute("aria-label", swapIt ? word : "הוספה לוויוונסיה " + vname);
-      gob.style.cssText = "order:98;flex:none;gap:var(--sp-1);max-width:55%";
-      gob.innerHTML = '<span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m);flex:none">' + ico + '</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(swapIt ? "החלפה" : vname) + '</span>';
+      var gob = document.createElement("button"); gob.type = "button"; gob.id = "exgo"; gob.className = "rbtn rbtn--icon rbtn--primary"; gob.setAttribute("aria-label", swapIt ? word : "הוספה לוויוונסיה " + vname); gob.title = swapIt ? word : "הוספה לוויוונסיה " + vname;
+      gob.style.cssText = "order:98;flex:none";
+      gob.innerHTML = '<span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m);flex:none">' + ico + '</span>';   /* only the plus; the confirmation says where it goes */
       var shd = dlg.querySelector(".sheet-head"); if (shd) shd.appendChild(gob);
       gob.addEventListener("click", function () {
         if (swapIt) confirmSwap(e, swapIt, true, fake.music_id, fake.sel);
         else if (!state.viv) vivPick(gob, e, fake.music_id, fake.sel);
-        else addEx(e, undefined, true, fake.music_id, fake.sel);
+        else confirmAddEx(name(e), state.viv.title || "הוויוונסיה", function () { addEx(e, undefined, true, fake.music_id, fake.sel); });
       });
     }, fail);
   }
@@ -2682,6 +2682,14 @@
   function closeSheets() { ["exDlg", "catDlg"].forEach(function (id) { slideClose(document.getElementById(id)); }); }
   var sgTok = 0;
   /* a song chosen in the catalog's search: an exercise with no name, only that song */
+  function confirmAddEx(exLabel, toLabel, fn) {   /* adding an exercise from the catalog asks first, with one action */
+    var dlg = document.getElementById("confirmDlg");
+    if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
+    RosterSheet.render(dlg, { kind: "confirm", title: "הוספת תרגיל", from: "bottom", size: "s",
+      body: '<div class="pad"><span>להוסיף את "' + esc(exLabel) + '" ל"' + esc(toLabel) + '"?</span></div>',
+      foot: '<button class="rbtn rbtn--block" type="button" id="caddex">הוספה</button>' });
+    dlg.querySelector("#caddex").addEventListener("click", function () { dlg.close(); fn(); });
+  }
   function confirmAddMusic(songLabel, toLabel, fn) {   /* every adding of a song asks first, in the kit's popup with ONE action */
     var dlg = document.getElementById("confirmDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
