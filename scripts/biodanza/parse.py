@@ -340,7 +340,9 @@ ENTRY = re.compile(r'^(.*?)\.{3,}\s*(\d+)[,.](\d\d)\s*\.*\s*([A-Za-z]*\s?[\d\-]*
 CONT = re.compile(r'^[-–(\[a-z]|/|\w-\w.{36,}| � ')
 ENTRY_NODOTS = re.compile(r'^(.*?\D)\s*(\d+)[,.](\d\d)\s+([A-Z]{2,5}C?\d{1,2}-\d{1,3})\s*$')
 held, prev_blank = [], True      # a line without its time is a wrapped title when it follows a line, a dance heading when it follows a blank
-for l in c14[first:]:
+last_entry = False      # the line before was a complete song entry (it ended with its time)
+for k, l in enumerate(c14[first:], first):
+    nxt_blank = k + 1 >= len(c14) or not c14[k + 1].strip().lstrip('!').strip()
     s = l.strip().lstrip('!').strip()
     if not s:
         prev_blank = True
@@ -349,6 +351,7 @@ for l in c14[first:]:
         continue
     m = ENTRY.match(s) or ENTRY_NODOTS.match(s)
     if m and dance:
+        last_entry = True
         raw = clean(' '.join(held + [m.group(1)]))
         held = []
         ttl, _, art = raw.rpartition(' - ')
@@ -363,12 +366,15 @@ for l in c14[first:]:
     elif '....' not in s and len(s) < 160:
         if 'SECONDPART' in s.upper().replace(' ', ''):
             break
-        if prev_blank and ' - ' not in s and not CONT.search(s):   # a line that only finishes a title or an artist list (page break) is not a new dance
+        # a heading also sits straight under a song entry with no blank line between, but then a blank line follows it (a wrapped title is followed by its own rest)
+        if (prev_blank and ' - ' not in s and not CONT.search(s)) or (last_entry and nxt_blank and not CONT.search(s) and not re.search(r'-\s*$', s) and (' - ' not in s or (len(s) <= 45 and not re.search(r'\d', s)))):   # a line that only finishes a title or an artist list (page break) is not a new dance
             held = []
             dance = s
             by14.setdefault(dance, [])
         else:
             held.append(s)
+    if not (m and dance):
+        last_entry = False
     prev_blank = False
 
 # no long dash in a text that reaches the page (owner rule); a range like 1860-1911 is untouched. Titles used as KEYS above are left alone.
