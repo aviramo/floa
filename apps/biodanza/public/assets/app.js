@@ -1123,7 +1123,7 @@
     if (!wide()) { stack().length = 0; stack().push(home); setUrl(BASE); }
     show(head("הוויוונסיות שלי", "", false,
       '<button class="rbtn rbtn--icon bio-flat" data-act="new" aria-label="ויוונסיה חדשה" title="ויוונסיה חדשה">' + I.plus + '</button><button class="rbtn rbtn--icon bio-flat" data-act="homemore" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>',
-      (wide() ? '<img src="favicon.png" alt="" style="flex:none;width:var(--ctl);height:var(--ctl);border-radius:var(--r-ctl)">' : '<img src="bird.png" alt="" style="flex:none;width:var(--ctl);height:var(--ctl);object-fit:contain">')) +
+      (wide() ? '<img src="favicon.png" alt="" style="flex:none;width:var(--ctl);height:var(--ctl);border-radius:var(--r-ctl)">' : '<img src="bird.png" alt="" style="flex:none;width:var(--icon-m);height:var(--icon-m);margin-inline:calc((var(--ctl) - var(--icon-m)) / 2);object-fit:contain">')) +
       '<div class="rlist" data-fab-room id="hl"><div class="rskel rskel--title"></div></div>' +
       '', function (r) {
       on(r, "homemore", function (b) {   /* one menu: the songs I loved, who may enter (the manager), leaving */
