@@ -295,7 +295,7 @@
   /* while a song plays, the time under its button counts down to 0 (audio.js tells the page); the others show their whole length */
   document.addEventListener("bioaudio", function (ev) {
     var d = ev.detail || {};
-    if (d.name && d.d > 0 && durKnown[d.name] !== Math.round(d.d)) { durKnown[d.name] = Math.round(d.d); try { localStorage.setItem("biodanza.dur", JSON.stringify(durKnown)); } catch (x) { /* not kept */ } }
+    learnDur(d.name, d.d);
     document.querySelectorAll(".bio-time").forEach(function (sp) {
       var full = +sp.dataset.dur || durKnown[sp.dataset.for] || 0, left = full;
       if (d.name && sp.dataset.for === d.name) left = Math.max(0, Math.ceil((full || Math.round(d.d || 0)) - d.t));
@@ -311,10 +311,31 @@
   var durKnown = {};
   try { durKnown = JSON.parse(localStorage.getItem("biodanza.dur") || "{}") || {}; } catch (x) { durKnown = {}; }
   function durOf(m) { return (m && (m.duration_sec || durKnown[m.audio_object])) || 0; }
+  /* a song's length, once learned (from the player, or from the song's own file on the device), is kept in this browser and shown at once on every card of that song that has no time yet */
+  function learnDur(name, d) {
+    if (!name || !(d > 0)) return;
+    var r = Math.round(d);
+    if (durKnown[name] !== r) { durKnown[name] = r; try { localStorage.setItem("biodanza.dur", JSON.stringify(durKnown)); } catch (x) { /* not kept */ } }
+    document.querySelectorAll(".bio-clk[data-for]").forEach(function (sp) { if (sp.dataset.for === name && !sp.textContent) { sp.textContent = clock(r); sp.dataset.dur = String(r); } });
+  }
+  /* every song of the open vivencia (its exercises, their options, the start and the end) that has no length yet gets it from its file on the device; the ones not on the device yet are read when the sync has brought them */
+  var durBusy = false;
+  function fillDurations() {
+    if (durBusy || !window.BioAudio || !BioAudio.length || !state.viv) return;
+    var todo = [], seen = {};
+    function add(m) { var n = m && m.audio_object; if (n && !seen[n] && !durOf(m)) { seen[n] = 1; todo.push(n); } }
+    (state.items || []).forEach(function (it) { add(it.music); (it.item_music_options || []).forEach(function (o) { add(o.music); }); });
+    ["start", "end"].forEach(function (k) { (recvCache[state.viv.id + "|" + k] || []).forEach(function (x) { add(x.music); }); });
+    if (!todo.length) return;
+    durBusy = true; var i = 0;
+    function next() { if (i >= todo.length) return Promise.resolve(); var n = todo[i++]; return BioAudio.length(n).then(function (d) { learnDur(n, d); }).then(next); }
+    Promise.all([next(), next()]).then(function () { durBusy = false; }, function () { durBusy = false; });
+  }
+  document.addEventListener("biooffline", function (ev) { if (ev.detail && ev.detail.state === "done") fillDurations(); });
   /* the player: ONE pill at the bottom right, always there once signed in. Play/pause, the time left and the song's bar are one thing; with no song loaded it says so. It lives in the top layer and is never hidden: a popup that opens is put under it. */
   (function () {
     var st = document.createElement("style");
-    st.textContent = ":root { --dockfull: calc(var(--fab) + var(--gap-button) * 2 + var(--inset-b)); --dockh: var(--inset-b) } html.bio-docked { --dockh: var(--dockfull) } html.bio-docked body { box-sizing: border-box; padding-bottom: var(--dockh) } html.bio-docked .rfab:not(.rfab--in) { bottom: calc(var(--gutter) + var(--dockh)) } html.bio-docked .rmsg--toast { bottom: calc(var(--gutter) + var(--dockh)) !important } " +
+    st.textContent = ".bio-acc { display: flex; align-items: center; gap: var(--sp-1); min-width: 0; min-height: var(--ctl); padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: start; cursor: pointer } .bio-accb { display: grid; grid-template-rows: 1fr; transition: grid-template-rows .25s var(--ease) } .bio-accb > div { overflow: hidden; min-height: 0 } .bio-accb[data-closed] { grid-template-rows: 0fr } .bio-accb[data-closed] > div { visibility: hidden; transition: visibility 0s linear .25s } #songInfoDlg .sheet-foot { flex-direction: column; align-items: stretch } #songInfoDlg .sheet-foot > .rbtn { width: 100%; flex: 0 0 auto } #songInfoDlg #sisim { background: transparent; border-color: transparent; color: #B3261E } :root { --bar-top: 8px; --bar-gap: 12px; --dockfull: calc(var(--fab) + var(--gap-button) * 2 + var(--inset-b)); --dockh: var(--inset-b) } html.bio-docked { --dockh: var(--dockfull) } html.bio-docked body { box-sizing: border-box; padding-bottom: var(--dockh) } html.bio-docked .rfab:not(.rfab--in) { bottom: calc(var(--gutter) + var(--dockh)) } html.bio-docked .rmsg--toast { bottom: calc(var(--gutter) + var(--dockh)) !important } " +
       ".bio-dock { position: fixed; inset: auto 0 0 0; margin: 0; width: auto; max-width: none; box-sizing: border-box; min-height: calc(var(--fab) + var(--gap-button) * 2 + var(--inset-b)); display: flex; align-items: center; gap: var(--gap-button); padding: var(--gap-button) var(--gutter) calc(var(--gap-button) + var(--inset-b)); overflow: visible; color: var(--text); background: var(--surface-2); border: 0; border-top: 1px solid var(--line); border-radius: 0; box-shadow: 0 -4px 14px -4px rgba(63, 47, 20, .16); z-index: var(--z-sticky); } " +   /* a square footer across the bottom: the page ends above it, the add button and the toasts sit above it */
       "@media (min-width: 1024px) { .rfab[data-act=\"swap\"] { left: auto !important; right: calc(var(--listw) + var(--gutter)) !important; bottom: calc(var(--gutter) + var(--dockh)) !important } } html.bio-docked dialog:not(:has(.sheet-foot)) .sheet-body { padding-bottom: calc(var(--dockfull) + var(--gutter)) } .bio-dock:not(.on), .bio-dock.closed { display: none } .bio-dock.away { opacity: 0; pointer-events: none } " +
       ".bio-dock__btn { flex: none; display: grid; place-items: center; width: var(--fab); height: var(--fab); padding: 0; border: 0; border-radius: var(--r-fab); background: var(--danger); color: var(--on-primary); cursor: pointer } " +
@@ -1452,6 +1473,7 @@
     document.querySelectorAll("[data-recvloop]").forEach(function (b) { b.classList.toggle("is-live", loopLive(b.dataset.recvloop)); });
   });
   function registerLists() {   /* which sections are loops, and their songs, to the player */
+    fillDurations();   /* the vivencia is on screen: any song of it with no length reads it from its file on the device */
     if (!window.BioAudio || !BioAudio.setLists || !state.viv) return;
     var o = {}; ["start", "end"].forEach(function (k) { o[state.viv.id + "|" + k] = loopOn(k) ? optList(recvItem(k)).map(function (m) { return m.audio_object; }).filter(Boolean) : []; });
     BioAudio.setLists(o);

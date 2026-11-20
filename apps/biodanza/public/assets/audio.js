@@ -256,6 +256,17 @@
     /* the name a song's file is shown by on the phone's lock screen */
     info: function (name, title, artist) { if (name) infos[name] = { title: title || "", artist: artist || "" }; if (name === now) showMeta(); },
     kept: isKept,
+    /* the length in seconds of a song that is ON the device, read from its own file (0 when it is not kept, or the file does not say): with no internet the time of every song of a kept vivencia is still known */
+    length: function (name) {
+      return kept(name).then(function (b) {
+        if (!b) return 0;
+        return new Promise(function (res) {
+          var a = new Audio(), u = URL.createObjectURL(b), done = false, t = setTimeout(function () { fin(0); }, 8000);
+          function fin(d) { if (done) return; done = true; clearTimeout(t); a.removeAttribute("src"); try { URL.revokeObjectURL(u); } catch (e) { /* gone */ } res(d > 0 && isFinite(d) ? d : 0); }
+          a.preload = "metadata"; a.addEventListener("loadedmetadata", function () { fin(a.duration); }); a.addEventListener("error", function () { fin(0); }); a.src = u;
+        });
+      }).catch(function () { return 0; });
+    },
     /* put the song on this device (downloaded now if it is not here yet): resolves when it is stored */
     save: function (name) {
       return kept(name).then(function (have) {   /* a song already on the device is not written again (a sync that rewrote 150MB every time would be slow and wear the phone) */
