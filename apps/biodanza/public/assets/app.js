@@ -2416,7 +2416,7 @@
         }).then(function (rows) {
           back(label); var row = rows && rows[0]; if (!row) return;
           if (rest) rest.unshift(row);
-          return addOpt(it, row).then(function () { draw(); if (changed) changed(); songEdit(row, function () { draw(); if (changed) changed(); }); });   /* it is in the list at once, and its name and performer are asked for */
+          return addOpt(it, row).then(function () { draw(); refreshSimilar(); if (changed) changed(); songEdit(row, function () { draw(); refreshSimilar(); if (changed) changed(); }); });   /* it is in the list at once, and its name and performer are asked for */
         }).catch(function (er) { console.error(er); back(er && er.message === "format" ? "קובץ שמע בלבד" : "ההעלאה נכשלה", 3000); });
       });
       inp.click();
@@ -2432,20 +2432,26 @@
         if (ix >= 0) it.sel.splice(ix, 1); else { it.sel.push(m.id); addOpt(it, m); }
         var f0 = (it.item_music_options || []).map(function (o) { return o.music; }).filter(function (x) { return x && x.id === it.sel[0]; })[0];
         it.music_id = it.sel[0] || null; it.music = f0 || null;
-        draw(); if (changed) changed(); return;
+        draw(); refreshSimilar(); if (changed) changed(); return;
       }
       if (optList(it).some(function (x) { return x.id === m.id; })) {   /* a marked song: the mark comes off and it is disconnected from the exercise */
-        confirmRemoveOpt(it, m, function () { draw(); if (changed) changed(); });   /* taking a song off asks first, in the kit's popup */
+        confirmRemoveOpt(it, m, function () { draw(); refreshSimilar(); if (changed) changed(); });   /* taking a song off asks first, in the kit's popup */
         return;
       }
-      confirmAddMusic(songName(m), it.__recv ? (it.__recv === "start" ? "מוסיקת ההתחלה" : "מוסיקת הסיום") : (itemName(it) || "התרגיל"), function () { addOpt(it, m).then(function () { draw(); if (changed) changed(); }, fail); });
+      confirmAddMusic(songName(m), it.__recv ? (it.__recv === "start" ? "מוסיקת ההתחלה" : "מוסיקת הסיום") : (itemName(it) || "התרגיל"), function () { addOpt(it, m).then(function () { draw(); refreshSimilar(); if (changed) changed(); }, fail); });
     });
-    var linkedP = similarRows(it).then(function (rows) {
-      var seen = {}, out = []; (rows || []).forEach(function (x) { if (x.music && !seen[x.music.id]) { seen[x.music.id] = 1; out.push(x.music); } }); return out;
-    });
-    Promise.all([linkedP, loadAllSongs()]).then(function (res) {
-      linked = res[0]; var lk = {}; linked.forEach(function (m) { lk[m.id] = 1; });
-      rest = res[1].filter(function (m) { return !lk[m.id] && (m.in_catalog !== false || m.owner_id === me || (vid && m.vivencia_id === vid)); });
+    var allSongs = null;
+    function applyLinked(rows) {   /* the suggestions, and the rest of the music without them */
+      var seen = {}, out = []; (rows || []).forEach(function (x) { if (x.music && !seen[x.music.id]) { seen[x.music.id] = 1; out.push(x.music); } });
+      linked = out; var lk = {}; linked.forEach(function (m) { lk[m.id] = 1; });
+      rest = allSongs.filter(function (m) { return !lk[m.id] && (m.in_catalog !== false || m.owner_id === me || (vid && m.vivencia_id === vid)); });
+    }
+    function refreshSimilar() {   /* the music of the exercise changed: the suggestions are asked for again, and the list draws them */
+      if (!allSongs) return;
+      similarRows(it).then(function (rows) { applyLinked(rows); draw(); }, function () { /* the old ones stay */ });
+    }
+    Promise.all([similarRows(it), loadAllSongs()]).then(function (res) {
+      allSongs = res[1]; applyLinked(res[0]);
       draw();
     }, function (e) { fail(e); listEl.innerHTML = ph("לא הצלחנו לטעון", ""); });
   }
