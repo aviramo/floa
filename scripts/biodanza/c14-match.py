@@ -35,7 +35,7 @@ res=[]
 for e in c:
     cands=[]
     for n in now:
-        ts=max(tscore(e['title_en'],n['title_en']),tscore(e['title_he'],n['title_he']))
+        ts=tscore(e['title_en'],n['title_en'])   # the two catalogs are English: the Hebrew titles are our own translation, so they are not compared
         a,b=cm.get(e['id'],set()),nm.get(n['id'],set())
         sh=len(a&b); jm=sh/len(a|b) if a|b else 0
         if ts<0.3 and sh<2: continue
@@ -54,6 +54,6 @@ byid={n['id']:n for n in now}
 import random; random.seed(3)
 for s in ('exact','strong','possible'):
     print('==',s)
-    for e,c in random.sample([r for r in res if strength(r[1])==s],7):
+    for e,c in (lambda L:random.sample(L,min(7,len(L))))([r for r in res if strength(r[1])==s]):
         t=c[0]; print(' ',e['title_en'],'|',e['title_he'],'=>',byid[t[3]]['title_en'],'|',byid[t[3]]['title_he'],round(t[0],2),t[1],round(t[2],2))
 json.dump([{'c14':e['id'],'cands':[{'ex':t[3],'title':round(t[0],3),'shared':t[1],'jac':round(t[2],3)} for t in c],'strength':strength(c)} for e,c in res],open(D+'matches.json','w',encoding='utf8'),ensure_ascii=False)
