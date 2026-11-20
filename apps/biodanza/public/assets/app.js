@@ -2687,7 +2687,7 @@
       gob.addEventListener("click", function () {
         if (swapIt) confirmSwap(e, swapIt, true, fake.music_id, fake.sel);
         else if (!state.viv) vivPick(gob, e, fake.music_id, fake.sel);
-        else confirmAddEx(name(e), state.viv.title || "הוויוונסיה", function () { addEx(e, undefined, true, fake.music_id, fake.sel); });
+        else confirmAddEx(name(e), state.viv.title || "הוויוונסיה", function () { addEx(e, undefined, true, fake.music_id, fake.sel); }, !(fake.sel && fake.sel.length) && !fake.music_id);
       });
     }, fail);
   }
@@ -2812,11 +2812,11 @@
   function closeSheets() { ["exDlg", "catDlg"].forEach(function (id) { slideClose(document.getElementById(id)); }); }
   var sgTok = 0;
   /* a song chosen in the catalog's search: an exercise with no name, only that song */
-  function confirmAddEx(exLabel, toLabel, fn) {   /* adding an exercise from the catalog asks first, with one action */
+  function confirmAddEx(exLabel, toLabel, fn, noMusic) {   /* adding an exercise from the catalog asks first, with one action */
     var dlg = document.getElementById("confirmDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
     RosterSheet.render(dlg, { kind: "confirm", title: "הוספת תרגיל", from: "bottom", size: "s",
-      body: '<div class="pad"><span>להוסיף את "' + esc(exLabel) + '" ל"' + esc(toLabel) + '"?</span></div>',
+      body: '<div class="pad"><span>להוסיף את "' + esc(exLabel) + '" ל"' + esc(toLabel) + '"?</span>' + (noMusic ? '<div style="margin-top:var(--sp-2);font-weight:var(--fw-black)">שימו לב: לא נבחרה מוסיקה</div>' : '') + '</div>',
       foot: '<button class="rbtn rbtn--block" type="button" id="caddex">הוספה</button>' });
     dlg.querySelector("#caddex").addEventListener("click", function () { dlg.close(); fn(); });
   }
