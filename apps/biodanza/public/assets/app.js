@@ -2240,7 +2240,7 @@
   }
   function optList(it) {
     var seen = {}, out = [];
-    (it.item_music_options || []).slice().sort(function (a, b) { return String(a.created_at).localeCompare(String(b.created_at)); }).forEach(function (o) { if (o.music && !seen[o.music.id]) { seen[o.music.id] = 1; out.push(o.music); } });
+    (it.__recv ? (it.item_music_options || []) : (it.item_music_options || []).slice().sort(function (a, b) { return String(a.created_at).localeCompare(String(b.created_at)); })).forEach(function (o) { if (o.music && !seen[o.music.id]) { seen[o.music.id] = 1; out.push(o.music); } });
     if (it.music && !seen[it.music.id]) out.unshift(it.music);
     var ci = out.findIndex(function (m) { return m.id === it.music_id; });   /* the chosen one is the first */
     if (ci > 0) out.unshift(out.splice(ci, 1)[0]);
