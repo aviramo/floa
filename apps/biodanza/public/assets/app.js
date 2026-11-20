@@ -1675,10 +1675,12 @@
     paint();
     secs.forEach(function (q) { api("/rest/v1/vivencia_opening?vivencia_id=eq." + id + "&who=eq." + encodeURIComponent(q.who), { method: "PATCH", json: { position: q.position }, prefer: "return=minimal" }).then(null, fail); });
   }
+  function openName(who) { return String(who).split("#")[0]; }   /* a leader may have several paragraphs: the first is under the name, the others under name#2, name#3 */
+  function openKey(n) { var have = {}; openRows().forEach(function (x) { have[x.who] = 1; }); if (!have[n]) return n; for (var k = 2; ; k++) if (!have[n + "#" + k]) return n + "#" + k; }
   function openSecHtml(q, i, ro) {
     var on = accOpen[(state.viv.id) + "|sec|" + q.who] === true;   /* folded when the vivencia opens, each leader's words in one line */
     return '<div data-sec="' + i + '" data-who="' + esc(q.who) + '" style="margin-top:calc(var(--sp-1) / 2)"><div data-sech-row style="display:flex;align-items:center;gap:var(--sp-1)">' +
-      '<button type="button" class="bio-chipb" data-sech aria-expanded="' + on + '"><span>' + esc(q.who) + '</span><span aria-hidden="true" style="display:grid;width:var(--icon-s);height:var(--icon-s);transition:transform .2s var(--ease);' + (on ? 'transform:rotate(180deg)' : '') + '">' + I.down.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span></button>' +
+      '<button type="button" class="bio-chipb" data-sech aria-expanded="' + on + '"><span>' + esc(openName(q.who)) + '</span><span aria-hidden="true" style="display:grid;width:var(--icon-s);height:var(--icon-s);transition:transform .2s var(--ease);' + (on ? 'transform:rotate(180deg)' : '') + '">' + I.down.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span></button>' +
       '<span data-secsum dir="auto" style="flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-2);font:var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font)">' + (on ? '' : esc(openSum(q.body))) + '</span>' +
       (ro ? '' : '<button type="button" class="rbtn rbtn--icon" data-secx aria-label="הסרת המקטע" title="הסרת המקטע" style="flex:none;height:var(--tag-s);min-height:var(--tag-s);background:transparent;border-color:transparent;color:var(--text-3)">' + I.trash + '</button>') + '</div>' +
       '<div class="bio-accb" data-secb' + (on ? '' : ' data-closed') + '><div><label class="rfield bio-secf" style="flex:none;margin:0"><span>מה אומר/ת</span><div id="opt' + i + '" data-owho="' + esc(q.who) + '" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true">' + rtHtml(q.body) + '</div></label></div></div></div>';
@@ -1690,16 +1692,12 @@
     return '<div data-opening><div class="bio-sech" style="display:flex;align-items:center;justify-content:space-between;padding:var(--gutter) var(--gutter) 0">' + accHead("open", "פתיחת הערב") + '</div>' + accOpenTag("open") +
       '<div style="padding:0 var(--gutter)">' + (facOn() && !free ? '' : '<label class="rfield" style="flex:none;margin:calc(-1 * var(--sp-3)) 0 0"><span>טקסט חופשי</span><div id="opt0" data-owho="" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true">' + rtHtml(free) + '</div></label>') +
       secs.map(function (q, k) { return openSecHtml(q, k + 1, ro); }).join("") +
-      (!ro && facOn() && openLeft().length ? '<div style="display:flex;justify-content:flex-start"><button type="button" class="rbtn rbtn--icon" data-secadd style="margin-inline-start:calc(-1 * (var(--ctl) - var(--icon-m)) / 2)" aria-haspopup="menu" aria-label="הוספת מוביל" title="הוספת מוביל">' + I.plus + '</button></div>' : '') + '</div>' + ACC_CLOSE + '</div>';
-  }
-  function openLeft() {   /* the leaders who have no section yet */
-    var seen = {}, have = {}; openRows().forEach(function (x) { have[x.who] = 1; });
-    return state.members.filter(function (x) { var n = facShort(x.email); if (seen[n] || have[n]) return false; return (seen[n] = 1); });
+      (!ro && facOn() ? '<div style="display:flex;justify-content:flex-start"><button type="button" class="rbtn rbtn--icon" data-secadd style="margin-inline-start:calc(-1 * (var(--ctl) - var(--icon-m)) / 2)" aria-haspopup="menu" aria-label="הוספת פסקה" title="הוספת פסקה">' + I.plus + '</button></div>' : '') + '</div>' + ACC_CLOSE + '</div>';
   }
   function openMenu(btn, onPick) {   /* the leaders; one tap picks */
     var old = document.getElementById("moreMenu"); if (old) old.remove();
     var m = document.createElement("div"); m.id = "moreMenu"; m.className = "rmenu rmenu--fixed"; m.setAttribute("role", "menu");
-    var seen = {}, have = {}; openRows().forEach(function (x) { have[x.who] = 1; });
+    var seen = {}, have = {};   /* every leader, again and again: each tap is one more paragraph */
     m.innerHTML = state.members.filter(function (x) { var n = facShort(x.email); if (seen[n] || have[n]) return false; return (seen[n] = 1); }).map(function (x) { return '<button type="button" class="rmenu__item" role="menuitem" data-n="' + esc(facShort(x.email)) + '"><span>' + esc(facShort(x.email)) + '</span></button>'; }).join("");
     if (!m.children.length) m.innerHTML = '<div class="rmenu__item" role="menuitem" aria-disabled="true" style="opacity:.6;pointer-events:none"><span>' + (state.members.length < 2 ? "אין עוד מובילים בשיתוף" : "כל המובילים כבר כאן") + '</span></div>';
     var sh = document.createElement("div"); sh.style.cssText = "position:fixed;inset:0;z-index:var(--z-menu);background:transparent;touch-action:none";
@@ -1741,7 +1739,7 @@
       var dlg = document.getElementById("confirmDlg");
       if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
       RosterSheet.render(dlg, { kind: "confirm", title: "מחיקת מקטע", from: "bottom", size: "s",
-        body: '<div class="pad"><span>למחוק את המקטע של "' + esc(who) + '" מפתיחת הערב?' + (has ? ' הטקסט שלו יימחק.' : '') + '</span></div>',
+        body: '<div class="pad"><span>למחוק את הפסקה של "' + esc(openName(who)) + '" מפתיחת הערב?' + (has ? ' הטקסט שלו יימחק.' : '') + '</span></div>',
         foot: '<button class="rbtn rbtn--danger rbtn--block" type="button" id="csecx">מחיקה</button>' });
       dlg.querySelector("#csecx").addEventListener("click", function () {
         dlg.close(); delete accOpen[state.viv.id + "|sec|" + who]; clearTimeout(timers[who]);
@@ -1757,8 +1755,9 @@
     var add = root.querySelector("[data-secadd]");
     if (add) add.addEventListener("click", function () {
       openMenu(add, function (n) {
-        accOpen[state.viv.id + "|sec|" + n] = true; openPut(n, ""); paint();
-        setTimeout(function () { var bx = [].slice.call(document.querySelectorAll("[data-owho]")).filter(function (x) { return x.dataset.owho === n; })[0]; if (bx) bx.focus(); }, 0);
+        var key = openKey(n);
+        accOpen[state.viv.id + "|sec|" + key] = true; openPut(key, ""); paint();
+        setTimeout(function () { var bx = [].slice.call(document.querySelectorAll("[data-owho]")).filter(function (x) { return x.dataset.owho === key; })[0]; if (bx) bx.focus(); }, 0);
       });
     });
   }
