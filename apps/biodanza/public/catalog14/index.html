@@ -112,7 +112,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
   function why(r, m) {
     var t = m.title >= 0.95 ? "השם זהה" : m.title >= 0.75 ? "השם דומה מאוד (" + pct(m.title) + ")" : "השם דומה בחלקו (" + pct(m.title) + ")";
     var h = '<div class="c__why">' + t;
-    h += '</div><div class="c__why"><b>התאמת מוסיקה:</b> ' + (m.shared ? pct(m.jaccard) + ' (' + m.shared + ' שירים משותפים)' : 'אין שירים משותפים') + '</div>';
+    h += '</div><div class="c__why"><b>מוסיקה</b><br>בתרגיל מ־2014: ' + r.music.length + ' שירים<br>בתרגיל הקיים: ' + m.songs_n + ' שירים<br>משותפים: ' + m.shared + (m.shared ? ' (התאמה ' + pct(m.jaccard) + ')' : '') + '</div>';
     return h;
   }
   function card(r) {
