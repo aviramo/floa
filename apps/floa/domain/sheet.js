@@ -154,6 +154,16 @@
     if (opts.from) dlg.setAttribute("data-from", opts.from);
     else if (!dlg.hasAttribute("data-from")) dlg.setAttribute("data-from", "bottom");
 
+    /* the content slides under the header: a soft shadow shows under it while anything inside the popup is scrolled away from its top (kit.css draws it from data-scrolled) */
+    dlg.addEventListener("scroll", function (e) {
+      var el = e.target; if (!el || el.nodeType !== 1 || (el.closest && el.closest(".sheet-head, .sheet-foot"))) return;
+      var set = dlg.__rsScrolled || (dlg.__rsScrolled = []), i = set.indexOf(el);
+      if (el.scrollTop > 2) { if (i < 0) set.push(el); } else if (i >= 0) set.splice(i, 1);
+      dlg.__rsScrolled = set = set.filter(function (x) { return x.isConnected && x.scrollTop > 2; });   /* a list that was drawn again is not scrolled any more */
+      if (set.length) dlg.setAttribute("data-scrolled", ""); else dlg.removeAttribute("data-scrolled");
+    }, { capture: true, passive: true });
+    dlg.addEventListener("close", function () { dlg.__rsScrolled = []; dlg.removeAttribute("data-scrolled"); });
+
     var isOpen = false;
     function opened() {
       if (isOpen) return; isOpen = true;

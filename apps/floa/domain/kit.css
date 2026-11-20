@@ -437,6 +437,8 @@ html[dir="ltr"] .rfield > select { padding-inline: 0 20px; background-position: 
    Widths (data-size): s for a short confirmation, m the default, l only for a wide editor (code or long forms).
    ===================================================================== */
 :root {
+  --edge-shadow-h: 6px;         /* the soft edge under a fixed header while the content is scrolled under it: ONE size and strength for every popup, search block and header */
+  --edge-shadow: linear-gradient(rgba(0, 0, 0, .12), rgba(0, 0, 0, 0));
   --pp-head: 44px;              /* the header row: title and X */
   --pp-x: 44px;                 /* the X button: a 44px touch target */
   --pp-radius: 0;               /* iron rule: square corners */
@@ -548,6 +550,10 @@ dialog.rsheet[data-from="bottom"] > .rs-grab, dialog.rsheet:not([data-from]) > .
 dialog.rsheet .sheet { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: var(--pp-pt-sheet, var(--pp-pt, 16px)) var(--pp-px, 16px) var(--sheet-b); }
 dialog.rsheet[data-from="top"] .sheet { padding-bottom: var(--pp-head-top); }
 dialog.rsheet .sheet-head { flex: 0 0 auto; display: flex; align-items: center; gap: var(--pp-gap); min-height: var(--pp-head, 44px); margin-bottom: var(--pp-head-gap, 12px); }
+dialog.rsheet .sheet-head { position: relative; z-index: 1; }
+dialog.rsheet .sheet-head::before { content: ""; position: absolute; z-index: -1; inset: 0 calc(-1 * var(--bleed, var(--pp-px, 16px))); background: var(--bg); pointer-events: none; }   /* the header is solid, edge to edge: whatever scrolls under it is hidden, never seen through it */
+dialog.rsheet .sheet-head::after { content: ""; position: absolute; inset-inline: calc(-1 * var(--bleed, var(--pp-px, 16px))); top: 100%; height: var(--edge-shadow-h); background: var(--edge-shadow); opacity: 0; transition: opacity .18s ease; pointer-events: none; }
+dialog.rsheet[data-scrolled] .sheet-head::after { opacity: 1; }
 dialog.rsheet .sheet-head > :first-child:not(.hicon) { flex: 1 1 auto; min-width: 0; margin: 0; font-size: var(--fs-l, var(--pp-title)); font-weight: var(--fw-black, 800); letter-spacing: -.01em; line-height: 1.25; overflow-wrap: anywhere; }
 dialog.rsheet .sheet-head .hicon { flex: 0 0 auto; width: var(--pp-x, 44px); height: var(--pp-x, 44px); min-width: var(--pp-x, 44px); display: grid; place-items: center; padding: 0; border: 0; border-radius: 0; background: transparent; color: inherit; cursor: pointer; }
 dialog.rsheet .sheet-head .hicon:focus-visible { outline: 2px solid currentColor; outline-offset: -4px; }

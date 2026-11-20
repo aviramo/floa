@@ -341,7 +341,7 @@
       ".bio-dock__btn { flex: none; display: grid; place-items: center; width: var(--fab); height: var(--fab); padding: 0; border: 0; border-radius: var(--r-fab); background: var(--danger); color: var(--on-primary); cursor: pointer } " +
       ".bio-dock__btn[data-st=\"paused\"] { background: var(--surface-2); color: var(--text) } .bio-dock__btn:disabled { background: var(--surface-2); color: var(--text-3); cursor: default } " +
       ".bio-bar input, .bio-dock__bar { -webkit-appearance: none; appearance: none; background: transparent; height: 20px; margin: 0; cursor: pointer; --p: 0%; --c: var(--primary) } .bio-bar input:hover { --c: var(--danger) } .bio-bar input::-webkit-slider-runnable-track, .bio-dock__bar::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--c) var(--p), var(--track, var(--surface-2)) var(--p)) } .bio-bar input::-webkit-slider-thumb, .bio-dock__bar::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border: 0; border-radius: 50%; background: var(--c) } .bio-bar input::-moz-range-track, .bio-dock__bar::-moz-range-track { height: 4px; border-radius: 2px; background: var(--track, var(--surface-2)) } .bio-bar input::-moz-range-progress, .bio-dock__bar::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--c) } .bio-bar input::-moz-range-thumb, .bio-dock__bar::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: var(--c) } .bio-bar input:focus, .bio-bar input:focus-visible, .bio-dock__bar:focus, .bio-dock__bar:focus-visible, .bio-dock__btn:focus, .bio-dock__btn:focus-visible, .bio-dock__x:focus, .bio-dock__x:focus-visible { outline: none } .bio-dock .bio-vol { margin: 0 } @media (max-width: 1023px) { .bio-dock .bio-vol, .bio-dock .bio-volume { display: none !important } } .bio-volume { flex: none; display: flex; align-items: center; gap: var(--gap-tight); --c: var(--primary) } .bio-volume input { -webkit-appearance: none; appearance: none; background: transparent; width: 7rem; height: 20px; margin: 0; cursor: pointer; direction: ltr; --p: 0% } .bio-volume { direction: ltr; margin-left: var(--sp-3) } .bio-volume input::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--c) var(--p), var(--track, var(--on-primary)) var(--p)) } .bio-volume input::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border: 0; border-radius: 50%; background: var(--c) } .bio-volume input::-moz-range-track { height: 4px; border-radius: 2px; background: var(--track, var(--on-primary)) } .bio-volume input::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--c) } .bio-volume input::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: var(--c) } .bio-volume input:focus, .bio-volume input:focus-visible { outline: none } .bio-volume > .rbtn > svg { width: var(--icon-m); height: var(--icon-m) } .bio-dock__x { flex: none; display: grid; place-items: center; width: var(--icon-m, 20px); height: var(--ctl); padding: 0; border: 0; border-radius: var(--r-ctl); background: transparent; color: var(--text-2); cursor: pointer } .bio-dock__x > svg { width: var(--icon-m, 20px); height: var(--icon-m, 20px); stroke-width: var(--icon-w) } .bio-dock.idle .bio-dock__x { display: none } " +
-      "@media (min-width: 701px) { .bio-dock > .bio-volume { order: 1 } .bio-dock > .bio-dock__time { order: 2 } .bio-dock > .rbtn:first-child { order: 3; margin-inline-end: var(--sp-1) } .bio-dock > .bio-dockbar, .bio-dock > .bio-dock__name, .bio-dock > .bio-dock__sync, .bio-dock > [data-hist] { order: 4 } } .bio-dock [data-addcur][hidden], .bio-dock .bio-dock__sync[hidden] { display: none } .bio-dock > .bio-dock__cat { display: none !important }  .bio-dock .bio-dock__sync { position: absolute; top: 3px; left: var(--gutter); margin: 0; pointer-events: none } @media (min-width: 701px) { .bio-dock .bio-dock__sync { left: calc(var(--gutter) + var(--ib) + var(--gap-button)) } } .bio-dock .rbtn > svg { width: var(--icon-l); height: var(--icon-l) } @media (min-width: 760px) { html.bio-docked #addMusDlg, html.bio-docked #histDlg { inset-block-end: var(--dockfull); max-height: calc(100dvh - var(--dockfull) - 48px) } html.bio-docked #addMusDlg #amlist { padding-bottom: var(--gutter) } html.bio-docked #histDlg .sheet-body { padding-bottom: var(--gutter) } } .bio-card [data-fac] { font-size: var(--fs-xs); min-height: 0; padding-block: 2px } .bio-card [data-fac][aria-pressed=\"true\"] { background: var(--surface-2); color: var(--text); border-color: var(--surface-2) } #pl { position: relative } #pl:has(> .bio-banner) { padding-inline-start: 44px } .bio-banner { position: absolute; inset-block: 0; inset-inline-start: 0; width: 44px; height: 100%; border: 0; border-radius: 0; background: var(--primary); color: var(--on-primary); writing-mode: vertical-rl; font: var(--fw-bold) var(--fs-l)/1 var(--font); letter-spacing: .12em; cursor: pointer; z-index: 3 } .bio-banner:hover { filter: brightness(1.1) } #pd { position: relative } #pd::after { content: \"\"; position: absolute; inset: 0; z-index: 5; background: var(--pp-scrim, rgba(16, 20, 26, .55)); opacity: 0; pointer-events: none; transition: opacity .25s var(--ease) } #pd.bio-dim::after { opacity: 1; pointer-events: auto } @media (prefers-reduced-motion: reduce) { #pd::after { transition: none } } #pl .rhead, #pd .rhead { padding-inline-end: calc(var(--gutter) + var(--sbw, 0px)) } .bio-card[aria-current=\"true\"] { border-color: #14110E; box-shadow: inset 0 0 0 1px #14110E } @media (max-width: 1023.98px) { .bio-card[aria-current=\"true\"]:not([data-opt]) { border-color: var(--line); box-shadow: none } } .rrow[aria-current=\"true\"] { box-shadow: inset 3px 0 0 #14110E } .bio-card:has([data-audio][data-st=\"pause\"])[aria-current] { box-shadow: none } .bio-card [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important } [data-opt] [data-audio] svg, [data-am] [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important } .bio-dock > .rbtn:first-child:not(:disabled) { background: var(--primary); border-color: var(--primary); color: var(--on-primary) } .bio-dock.playing > .rbtn:first-child:not(:disabled) { color: #C42B1E } .bio-dock.playing { --primary: #FFFFFF; --text: #FFFFFF; --text-2: #FFFFFF; --text-3: #FFFFFF; --surface-2: #B3261E; --line: #C8564D; --track: #D98A83; background: #B3261E }  " +
+      "@media (min-width: 701px) { .bio-dock > .bio-volume { order: 1 } .bio-dock > .bio-dock__time { order: 2 } .bio-dock > .rbtn:first-child { order: 3; margin-inline-end: var(--sp-1) } .bio-dock > .bio-dockbar, .bio-dock > .bio-dock__name, .bio-dock > .bio-dock__sync, .bio-dock > [data-hist] { order: 4 } } .bio-dock [data-addcur][hidden], .bio-dock .bio-dock__sync[hidden] { display: none } .bio-dock > .bio-dock__cat { display: none !important }  .bio-dock .bio-dock__sync { position: absolute; top: 3px; left: var(--gutter); margin: 0; pointer-events: none } @media (min-width: 701px) { .bio-dock .bio-dock__sync { left: calc(var(--gutter) + var(--ib) + var(--gap-button)) } } .bio-dock .rbtn > svg { width: var(--icon-l); height: var(--icon-l) } @media (min-width: 760px) { html.bio-docked #addMusDlg, html.bio-docked #histDlg { inset-block-end: var(--dockfull); max-height: calc(100dvh - var(--dockfull) - 48px) } html.bio-docked #addMusDlg #amlist { padding-bottom: var(--gutter) } html.bio-docked #histDlg .sheet-body { padding-bottom: var(--gutter) } } .bio-card [data-fac] { font-size: var(--fs-xs); min-height: 0; padding-block: 2px } .bio-card [data-fac][aria-pressed=\"true\"] { background: var(--surface-2); color: var(--text); border-color: var(--surface-2) } #pl { position: relative } #pl:has(> .bio-banner) { padding-inline-start: 44px } .bio-banner { position: absolute; inset-block: 0; inset-inline-start: 0; width: 44px; height: 100%; border: 0; border-radius: 0; background: var(--primary); color: var(--on-primary); writing-mode: vertical-rl; font: var(--fw-bold) var(--fs-l)/1 var(--font); letter-spacing: .12em; cursor: pointer; z-index: 3 } .bio-banner:hover { filter: brightness(1.1) } #pd { position: relative } #pd::after { content: \"\"; position: absolute; inset: 0; z-index: 5; background: var(--pp-scrim, rgba(16, 20, 26, .55)); opacity: 0; pointer-events: none; transition: opacity .25s var(--ease) } #pd.bio-dim::after { opacity: 1; pointer-events: auto } @media (prefers-reduced-motion: reduce) { #pd::after { transition: none } } #pl .rhead, #pd .rhead { padding-inline-end: calc(var(--gutter) + var(--sbw, 0px)) } .bio-card[aria-current=\"true\"] { border-color: #14110E; box-shadow: inset 0 0 0 1px #14110E, var(--sh-card) } @media (max-width: 1023.98px) { .bio-card[aria-current=\"true\"]:not([data-opt]) { border-color: var(--line); box-shadow: var(--sh-card) } } .rrow[aria-current=\"true\"] { box-shadow: inset 3px 0 0 #14110E } .bio-card:has([data-audio][data-st=\"pause\"])[aria-current] { box-shadow: var(--sh-card) } .bio-card [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important } [data-opt] [data-audio] svg, [data-am] [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important } .bio-dock > .rbtn:first-child:not(:disabled) { background: var(--primary); border-color: var(--primary); color: var(--on-primary) } .bio-dock.playing > .rbtn:first-child:not(:disabled) { color: #C42B1E } .bio-dock.playing { --primary: #FFFFFF; --text: #FFFFFF; --text-2: #FFFFFF; --text-3: #FFFFFF; --surface-2: #B3261E; --line: #C8564D; --track: #D98A83; background: #B3261E }  " +
       ".bio-dock .bio-dockbar { flex: 1 1 8rem; min-width: 0; padding: 0; touch-action: none } .bio-dock .bio-dockbar .bio-dock__bar { width: 100%; display: block; direction: ltr } .bio-dock .bio-dockbar input::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--c) var(--p), var(--track, var(--on-primary)) var(--p)) } .bio-dock .bio-dockbar input::-moz-range-track { background: var(--track, var(--on-primary)) } " +
       ".bio-dock { --surface-2: #14110E; --text: #F4EEE4; --text-2: #BFB5A6; --text-3: #8E8576; --line: #3A342C; --track: #5A5247; --primary: #FFFFFF; --on-primary: #14110E; --danger: #E0402F; --ghost: rgba(244, 238, 228, .12) } .bio-dock .bio-dock__time { color: #FFFFFF !important } .bio-dock__name { cursor: pointer; flex: 0 1 28rem; min-width: 8rem; direction: ltr; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis } .bio-dock__name span { color: var(--text-2) } .bio-dock__name[data-edit] { cursor: pointer } .bio-dock .bio-dock__cat { background: var(--surface-2); color: var(--text); border-color: var(--surface-2) } .bio-dock .bio-dock__cat[aria-pressed=\"true\"] { background: var(--primary); color: var(--on-primary); border-color: var(--primary) } @media (min-width: 701px) and (max-width: 1023px) { .bio-dock__cat { display: none } } .bio-dock__name span:not(:empty)::before { content: \"· \" } " +
       "@media (max-width: 700px) { .bio-dock { flex-wrap: wrap } .bio-dock__name { flex: 1 1 100%; order: 4 } .bio-dock .bio-dockbar { flex: 0 0 100%; order: 3 } .bio-dock [data-hist] { margin-inline-end: calc((var(--ib) - 22px) / -2) } } " +
@@ -377,7 +377,7 @@
     }
     /* the play button inside a history card says pause while that song plays */
     function hpOn(n) { return !!(n && window.__bioNow && window.__bioNow.playing && window.__bioNow.name === n); }
-    function hpPaint() { document.querySelectorAll("[data-hp]").forEach(function (b) { var on = hpOn(b.dataset.hn), k = on ? "1" : "0"; if (b.dataset.pl === k) return; b.dataset.pl = k; b.innerHTML = on ? PAUSE : PLAY; b.setAttribute("aria-label", on ? "עצירה" : "השמעה"); b.title = on ? "עצירה" : "השמעה"; }); }
+    function hpPaint() { document.querySelectorAll("[data-hp]").forEach(function (b) { var on = hpOn(b.dataset.hn), k = on ? "1" : "0"; var hc = b.closest("[data-hi]"); if (hc) hc.classList.toggle("is-play", on); if (b.dataset.pl === k) return;   /* the card of the song that plays is red, like every playing card */ b.dataset.pl = k; b.innerHTML = on ? PAUSE : PLAY; b.setAttribute("aria-label", on ? "עצירה" : "השמעה"); b.title = on ? "עצירה" : "השמעה"; }); }
     document.addEventListener("bioaudio", function () { setTimeout(hpPaint, 0); });
     function playName(n, t, a) {   /* a song of the history plays as its own button would play it */
       if (!n) return;
@@ -459,22 +459,27 @@
       var who = nmEl.dataset.who, ttl = loaded ? curTitle : (last && last.t) || "", art = loaded ? curArtist : (last && last.a) || "", eid = nmEl.getAttribute("data-edit");
       if (!ttl && !art) return;
       var acb = dock.querySelector("[data-addcur]"), canAdd = !!acb && !acb.hidden, addTo = canAdd ? ((acb.querySelector("[data-addcur-label]") || {}).textContent || "") : "";   /* a phone: adding the song that plays is here, not in the player */
-      var headH = '<div style="padding:var(--sp-2) var(--sp-3);max-width:28rem"><div dir="auto" style="font:var(--fw-black) var(--fs-m)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(ttl) + '</div>' + (art ? '<div dir="auto" style="margin-top:2px;color:var(--text-2);font:var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(art) + '</div>' : '') + '</div>';
+      var headH = '<div style="padding:var(--sp-2) var(--sp-3);max-width:28rem"><div dir="auto" style="font:var(--fw-black) var(--fs-m)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(ttl) + '</div>' + (art ? '<div dir="auto" style="margin-top:0;color:var(--text-2);font:var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(art) + '</div>' : '') + '</div>';
       if (wide()) {   /* a computer: a menu that comes out of the name, upwards */
-        var mi = (canAdd ? [{ label: "הוספה ל" + addTo, primary: true, fn: function () { acb.click(); } }] : []).concat(eid ? [{ label: "עריכת שם ומבצע", fn: function () { editFromDock(); } }] : []);
+        var openMenu = function (sn) {
+        var mi = (who ? [{ label: simLabel(sn), ghost: true, disabled: sn === 0, fn: function () { if (sn !== 0) similarToPlaying(who); } }] : []).concat(eid ? [{ label: "עריכת שם ומבצע", fn: function () { editFromDock(); } }] : []).concat(canAdd ? [{ label: "הוספה ל" + addTo, primary: true, fn: function () { acb.click(); } }] : []);
         menu(nmEl, [], { foot: mi, head: headH, up: true, ref: nmEl.closest(".bio-dock") });
+        };
+        if (who) simOf(who).then(function (o) { openMenu(o.n); }, function () { openMenu(null); }); else openMenu(null);
         return;
       }
       var idlg = document.getElementById("songInfoDlg");
       if (!idlg) { idlg = document.createElement("dialog"); idlg.id = "songInfoDlg"; document.body.appendChild(idlg); }
       RosterSheet.render(idlg, { title: "המוסיקה שמתנגנת", from: "bottom", size: "s",
-        body: '<div class="pad"><div dir="auto" style="font:var(--fw-black) var(--fs-l)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(ttl) + '</div>' + (art ? '<div dir="auto" style="margin-top:var(--sp-1);color:var(--text-2);font:var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(art) + '</div>' : '') + '</div>',
-        foot: (canAdd || eid) ? (canAdd ? '<button class="rbtn rbtn--block rbtn--primary" type="button" id="siadd">הוספה ל' + esc(addTo) + '</button>' : '') + (eid ? '<button class="rbtn rbtn--block" type="button" id="siedit">עריכת שם ומבצע</button>' : '') : undefined });
+        body: '<div class="pad" style="gap:0"><div dir="auto" style="font:var(--fw-black) var(--fs-l)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(ttl) + '</div>' + (art ? '<div dir="auto" style="margin-top:0;color:var(--text-2);font:var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(art) + '</div>' : '') + '</div>',
+        foot: (canAdd || eid || who) ? (who ? '<button class="rbtn rbtn--block" type="button" id="sisim">' + simLabel(null) + '</button>' : '') + (eid ? '<button class="rbtn rbtn--block" type="button" id="siedit">עריכת שם ומבצע</button>' : '') + (canAdd ? '<button class="rbtn rbtn--block rbtn--primary" type="button" id="siadd">הוספה ל' + esc(addTo) + '</button>' : '') : undefined });
       if (who) api("/rest/v1/music?audio_object=eq." + encodeURIComponent(who) + "&select=id&limit=1").then(function (rows) {   /* the heart of the song that plays: loved or not, at the left of the header */
         var mr = rows && rows[0], hd = idlg.querySelector(".sheet-head"); if (!mr || !hd || hd.querySelector("[data-like]")) return;
         hd.insertAdjacentHTML("beforeend", heartBtn(mr).replace(" rrow__trail", ""));
         paintHearts(mr.id);
       }, function () { /* no heart without the answer */ });
+      var sb2 = idlg.querySelector("#sisim"); if (sb2) simOf(who).then(function (o) { if (!sb2.isConnected) return; sb2.textContent = simLabel(o.n); if (!o.n) sb2.disabled = true; }, function () { /* no number without the answer */ });
+      if (sb2) sb2.addEventListener("click", function () { idlg.close(); similarToPlaying(who); });
       var ab2 = idlg.querySelector("#siadd"); if (ab2) ab2.addEventListener("click", function () { idlg.close(); acb.click(); });
       var eb = idlg.querySelector("#siedit"); if (!eb) return;
       eb.addEventListener("click", function () { idlg.close(); editFromDock(); });
@@ -1040,7 +1045,7 @@
     catPrev.classList.remove("is-open"); catPrevId = null; catPreview = false; catPrevCtx = null; refreshPrevLabel(); saveCat();
     if (catLayer) catLayer.querySelectorAll(".bio-card[aria-current]").forEach(function (c) { c.removeAttribute("aria-current"); });
   }
-  (function () { var st = document.createElement("style"); st.textContent = "#catLayer { position: fixed; z-index: 20; pointer-events: none; transform: translateX(100%); transition: transform .25s var(--ease) } #catLayer[hidden] { display: none } #catLayer.is-open { transform: none } #catLayer > .catmain { position: absolute; z-index: 1; inset-block: 0; right: 0; width: var(--plw); display: flex; flex-direction: column; min-height: 0; pointer-events: auto; box-shadow: -1px 0 0 var(--line) } #catLayer .catbody > .rhead { padding-inline-end: var(--gutter) } #catLayer .catbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column } #catLayer .catbody > .rlist { flex: 1 1 auto; min-height: 0 } #catLayer > .catprev { position: absolute; z-index: 0; inset-block: 0; left: 0; width: var(--pdw); display: flex; flex-direction: column; min-height: 0; overflow: hidden; pointer-events: auto; visibility: hidden; transform: translateX(100%); transition: transform .25s var(--ease), visibility 0s linear .25s } #catLayer > .catprev.is-open { visibility: visible; transform: none; transition: transform .25s var(--ease), visibility 0s } #catLayer > .catprev > .rlist { flex: 1 1 auto; min-height: 0 } @media (prefers-reduced-motion: reduce) { #catLayer, #catLayer > .catprev { transition: none } }"; document.head.appendChild(st); })();
+  (function () { var st = document.createElement("style"); st.textContent = "#catLayer .catsh { position: absolute; z-index: 5; inset-block: 0; right: var(--plw); width: 10px; margin-right: -5px; pointer-events: auto; cursor: col-resize; touch-action: none } #catLayer .catsh::after { content: ''; position: absolute; inset-block: 0; right: 4px; width: 2px; background: transparent; transition: background var(--t-base) } #catLayer .catsh:hover::after, #catLayer .catsh:focus-visible::after, html.split-drag #catLayer .catsh::after { background: var(--line-strong) } #catLayer .catsh:focus-visible { outline: none } #catLayer { position: fixed; z-index: 20; pointer-events: none; transform: translateX(100%); transition: transform .25s var(--ease) } #catLayer[hidden] { display: none } #catLayer.is-open { transform: none } #catLayer > .catmain { position: absolute; z-index: 1; inset-block: 0; right: 0; width: var(--plw); display: flex; flex-direction: column; min-height: 0; pointer-events: auto; box-shadow: -1px 0 0 var(--line) } #catLayer .catbody > .rhead { padding-inline-end: var(--gutter) } #catLayer .catbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column } #catLayer .catbody > .rlist { flex: 1 1 auto; min-height: 0 } #catLayer > .catprev { position: absolute; z-index: 0; inset-block: 0; left: 0; width: var(--pdw); display: flex; flex-direction: column; min-height: 0; overflow: hidden; pointer-events: auto; visibility: hidden; transform: translateX(100%); transition: transform .25s var(--ease), visibility 0s linear .25s } #catLayer > .catprev.is-open { visibility: visible; transform: none; transition: transform .25s var(--ease), visibility 0s } #catLayer > .catprev > .rlist { flex: 1 1 auto; min-height: 0 } @media (prefers-reduced-motion: reduce) { #catLayer, #catLayer > .catprev { transition: none } }"; document.head.appendChild(st); })();
   function placeCatLayer() {   /* the one body spans both sides, from the left side's edge to the right side's edge */
     if (!catLayer) return; var a = pd.getBoundingClientRect(), b = pl.getBoundingClientRect();
     catLayer.style.top = b.top + "px"; catLayer.style.height = b.height + "px"; catLayer.style.left = a.left + "px"; catLayer.style.width = (b.right - a.left) + "px";
@@ -1053,6 +1058,7 @@
     var bg = getComputedStyle(document.body).backgroundColor;
     var d = document.createElement("div"); d.id = "catLayer";
     d.innerHTML = '<div class="catprev" style="background:' + bg + '"></div><div class="catmain" style="background:' + bg + '"><div class="catbody" inert><header class="rhead"><div class="rhead__text" style="padding-inline-start:0">' + pickerTabs() + '</div><button type="button" id="catX" class="rbtn rbtn--icon bio-flat" aria-label="סגירת הקטלוג" title="סגירת הקטלוג">' + I.x + '</button></header>' + pickerBody(false) + '</div></div>';
+    d.insertAdjacentHTML("beforeend", '<div class="catsh" role="separator" aria-orientation="vertical" aria-label="רוחב הרשימה (גרירה, חצים במקלדת, לחיצה כפולה לברירת המחדל)" title="גרירה לשינוי הרוחב · לחיצה כפולה: ברירת מחדל" tabindex="0"></div>'); if (window.__bioSplitWire) window.__bioSplitWire(d.querySelector(".catsh"));
     document.body.appendChild(d); catLayer = d; catPrev = d.querySelector(".catprev"); (d.querySelector("#catAdd") || document.createElement("i")).addEventListener("click", function (ev) {
       var c = catPrevCtx; if (!c) return;
       if (!state.viv) vivPick(ev.currentTarget, c.e, c.fake.music_id, c.fake.sel);
@@ -1238,7 +1244,7 @@
     if (state.offline) items.length = 0;   /* with no internet nothing changes: only the copy on the device can be taken off it */
     if (items.length) menu(b, items);
   }
-  (function () { var st = document.createElement("style"); st.textContent = ".bio-card .bio-ha { position: absolute; opacity: 0; flex: none; width: var(--tag-s); height: var(--tag-s); min-height: var(--tag-s); padding: 0; background: transparent; border-color: transparent; transition: opacity var(--t-base) var(--ease) } .bio-card [data-audio] svg, .bio-card [data-hp] svg, #imus .bio-card [data-audio] svg { width: calc(var(--icon-s) * .75); height: calc(var(--icon-s) * .75) } .bio-card [data-orm] { opacity: 0; transition: opacity var(--t-base) var(--ease) } .bio-card [data-orm] > svg { width: var(--icon-m); height: var(--icon-m) } .bio-card:hover [data-orm], .bio-card [data-orm]:focus-visible { opacity: 1 } @media (hover: none) { .bio-card [data-orm] { opacity: 1 } } .bio-card .bio-ha.bio-ha--tl[data-likex] { right: auto; bottom: auto; left: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2); top: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2) } .bio-card .bio-ha > svg { width: var(--icon-m); height: var(--icon-m) } .bio-card .bio-ha[data-likex] { right: calc(var(--sp-2) + (var(--ctl) - var(--icon-m)) / 2 - (var(--tag-s) - var(--icon-m)) / 2); bottom: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2) } .bio-card .bio-ha[data-idel] { left: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2); top: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2) }   /* the icon itself is a full card step from the card's edges */ .bio-card:hover .bio-ha, .bio-card .bio-ha:focus-visible, .bio-card .bio-ha[aria-pressed=\"true\"] { opacity: 1 } @media (hover: none) { .bio-card .bio-ha { opacity: 1 } } #list[data-fab-room] { padding-bottom: 0 } .rbtn[data-recvloop], .rbtn[data-recvloop]:hover, .rbtn[data-recvloop]:active, .rbtn[data-recvloop]:focus, .rbtn[data-recvloop][aria-pressed=\"true\"], .rhead .rbtn[data-recvloop]:hover, .rhead .rbtn[data-recvloop]:active { background: transparent; border-color: transparent; box-shadow: none; color: var(--text-2) } .rbtn[data-recvloop][aria-pressed=\"true\"], .rbtn[data-recvloop][aria-pressed=\"true\"]:hover, .rbtn[data-recvloop][aria-pressed=\"true\"]:active { color: var(--danger) } .rhead .rbtn--icon[data-act=\"back\"] { margin-inline-start: 0 } .rhead .rbtn--icon[data-act=\"back\"], .rhead .rbtn--icon[data-act=\"back\"]:hover, .rhead .rbtn--icon[data-act=\"back\"]:active { background: transparent; border-color: transparent } .bio-vm { opacity: 0; transition: opacity var(--t-base) var(--ease) } .rrow:hover .bio-vm, .bio-vm:focus-visible, .bio-vm[aria-expanded=\"true\"] { opacity: 1 } @media (hover: none) { .bio-vm { opacity: 1 } }"; document.head.appendChild(st); })();
+  (function () { var st = document.createElement("style"); st.textContent = ".bio-card .bio-ha { position: absolute; opacity: 0; flex: none; width: var(--tag-s); height: var(--tag-s); min-height: var(--tag-s); padding: 0; background: transparent; border-color: transparent; transition: opacity var(--t-base) var(--ease) } .bio-card [data-audio] svg, .bio-card [data-hp] svg, #imus .bio-card [data-audio] svg { width: calc(var(--icon-s) * .75); height: calc(var(--icon-s) * .75) } .bio-card [data-orm] { opacity: 0; transition: opacity var(--t-base) var(--ease) } .bio-card [data-orm] > svg { width: var(--icon-m); height: var(--icon-m) } .bio-card:hover [data-orm], .bio-card [data-orm]:focus-visible { opacity: 1 } @media (hover: none) { .bio-card [data-orm] { opacity: 1 } } .bio-card .bio-ha.bio-ha--tl[data-likex] { right: auto; bottom: auto; left: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2); top: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2) } .bio-card .bio-ha > svg { width: var(--icon-m); height: var(--icon-m) } .bio-card .bio-ha[data-likex] { right: calc(var(--sp-2) + (var(--ctl) - var(--icon-m)) / 2 - (var(--tag-s) - var(--icon-m)) / 2); bottom: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2) } .bio-card .bio-ha[data-idel] { left: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2); top: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2) }   /* the icon itself is a full card step from the card's edges */ .bio-card:hover .bio-ha, .bio-card .bio-ha:focus-visible, .bio-card .bio-ha[aria-pressed=\"true\"] { opacity: 1 } @media (hover: none) { .bio-card .bio-ha { opacity: 1 } } #list[data-fab-room] { padding-bottom: var(--sp-1) } .rbtn[data-recvloop], .rbtn[data-recvloop]:hover, .rbtn[data-recvloop]:active, .rbtn[data-recvloop]:focus, .rbtn[data-recvloop][aria-pressed=\"true\"], .rhead .rbtn[data-recvloop]:hover, .rhead .rbtn[data-recvloop]:active { background: transparent; border-color: transparent; box-shadow: none; color: var(--text-2) } .rbtn[data-recvloop][aria-pressed=\"true\"], .rbtn[data-recvloop][aria-pressed=\"true\"]:hover, .rbtn[data-recvloop][aria-pressed=\"true\"]:active { color: var(--danger) } .rhead .rbtn--icon[data-act=\"back\"] { margin-inline-start: 0 } .rhead .rbtn--icon[data-act=\"back\"], .rhead .rbtn--icon[data-act=\"back\"]:hover, .rhead .rbtn--icon[data-act=\"back\"]:active { background: transparent; border-color: transparent } .bio-vm { opacity: 0; transition: opacity var(--t-base) var(--ease) } .rrow:hover .bio-vm, .bio-vm:focus-visible, .bio-vm[aria-expanded=\"true\"] { opacity: 1 } @media (hover: none) { .bio-vm { opacity: 1 } }"; document.head.appendChild(st); })();
   function renderVivs() {
     var l = document.getElementById("hl"); if (!l) return;
     l.innerHTML = state.vivs.length ? state.vivs.map(function (v) {
@@ -1366,7 +1372,7 @@
   function menu(btn, items, opts) {   /* opts.head: a block of text above the items; opts.up: the menu opens upwards from the button (the player is at the bottom) */
     var old = document.getElementById("moreMenu"); if (old) old.remove();
     var m = document.createElement("div"); m.id = "moreMenu"; m.className = "rmenu rmenu--fixed"; m.setAttribute("role", "menu");
-    m.innerHTML = (opts && opts.head ? opts.head : "") + items.map(function (it, k) { return '<button type="button" class="rmenu__item" role="menuitem" data-k="' + k + '"' + (it.tone ? ' data-tone="' + it.tone + '"' : '') + '>' + it.icon + '<span>' + esc(it.label) + '</span></button>'; }).join("") + (opts && opts.foot ? '<div style="display:flex;flex-direction:column;gap:var(--sp-1);padding:var(--sp-2) var(--sp-3) var(--sp-3)">' + opts.foot.map(function (f, k) { return '<button type="button" class="rbtn rbtn--block' + (f.primary ? ' rbtn--primary' : '') + '" data-f="' + k + '">' + esc(f.label) + '</button>'; }).join("") + '</div>' : "");
+    m.innerHTML = (opts && opts.head ? opts.head : "") + items.map(function (it, k) { return '<button type="button" class="rmenu__item" role="menuitem" data-k="' + k + '"' + (it.tone ? ' data-tone="' + it.tone + '"' : '') + '>' + it.icon + '<span>' + esc(it.label) + '</span></button>'; }).join("") + (opts && opts.foot ? '<div style="display:flex;flex-direction:column;gap:var(--sp-1);padding:var(--sp-2) var(--sp-3) var(--sp-3)">' + opts.foot.map(function (f, k) { return '<button type="button" class="rbtn rbtn--block' + (f.primary ? ' rbtn--primary' : '') + '" data-f="' + k + '"' + (f.disabled ? ' disabled' : '') + (f.ghost ? ' style="background:transparent;border-color:transparent;color:#B3261E"' : '') + '>' + esc(f.label) + '</button>'; }).join("") + '</div>' : "");
     var sh = document.createElement("div"); sh.style.cssText = "position:fixed;inset:0;z-index:var(--z-menu);background:transparent;touch-action:none";   /* an open menu blocks everything outside it: a touch there only closes the menu */
     document.body.appendChild(sh); document.body.appendChild(m);
     btn.setAttribute("aria-expanded", "true");   /* the button that opened the menu stays shown while it is open */
@@ -1499,6 +1505,23 @@
     return { __recv: kind, id: id, exercise_id: null, music_id: null, music: null, item_music_options: recvCache[key] || (recvCache[key] = []) };
   }
   var PLAYSVG = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true" style="width:100%;height:100%"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>';
+  /* the three parts of a vivencia are accordions: the arrow sits next to the title; only the vivencia itself is open until somebody opens another */
+  var accOpen = {};
+  function accIsOpen(kind) { var k = (state.viv && state.viv.id) + "|" + kind; return accOpen[k] != null ? accOpen[k] : kind === "ex"; }
+  function accHead(kind, label) {
+    var on = accIsOpen(kind);
+    return '<button type="button" class="bio-acc" data-acc="' + kind + '" aria-expanded="' + on + '"><span class="rrow__title" style="font-weight:var(--fw-black)">' + label + '</span><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m);transition:transform .2s var(--ease);' + (on ? 'transform:rotate(180deg)' : '') + '">' + I.down.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span></button>';
+  }
+  function accOpenTag(kind) { return '<div class="bio-accb" data-accb="' + kind + '"' + (accIsOpen(kind) ? '' : ' data-closed') + '><div>'; }
+  var ACC_CLOSE = '</div></div>';
+  var PAUSEI = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5v14M15 5v14"/></svg>';
+  function recvPlaying(kind) {   /* the song that is loaded now belongs to this section */
+    var nw = window.__bioNow || {}; if (!nw.name || !state.viv) return false;
+    return optList(recvItem(kind)).some(function (m) { return m.audio_object === nw.name; });
+  }
+  document.addEventListener("bioaudio", function () {   /* the play button of a section is a pause while one of its songs plays */
+    document.querySelectorAll("[data-recvplay]").forEach(function (b) { var on = recvPlaying(b.dataset.recvplay) && !!(window.__bioNow || {}).playing; b.innerHTML = on ? PAUSEI : I.play; b.style.color = on ? "var(--danger)" : "var(--text)"; b.setAttribute("aria-label", on ? "השהיה" : "השמעה"); });
+  });
   /* a section of only songs: "מוסיקת התחלה" above the exercises, "מוסיקת סיום" under them */
   function recvHtml(kind) {
     var list = optList(recvItem(kind)), edit = canEdit();
@@ -1507,9 +1530,9 @@
     var key = state.viv.id + "|" + kind;
     var play = list.length > 1 ? '<button type="button" class="rbtn rbtn--icon' + (loopLive(kind) ? ' is-live' : '') + '" data-recvloop="' + kind + '" aria-pressed="' + loopOn(kind) + '" aria-label="לולאה" title="לולאה: כשמנגנים מוסיקה מהקטע, המוסיקה ממשיכה אחד אחרי השני ובסוף חוזרים להתחלה">' + I.loop + '</button>' : '';
     var pOn = recvPlaying(kind) && !!(window.__bioNow || {}).playing;
-    var playBtn = list.length ? '<button type="button" class="rbtn rbtn--icon" data-recvplay="' + kind + '" aria-label="' + (pOn ? "השהיה" : "השמעה") + '" style="background:transparent;border-color:transparent;color:var(--text)">' + (pOn ? PAUSEI : I.play) + '</button>' : '';
+    var playBtn = list.length ? '<button type="button" class="rbtn rbtn--icon" data-recvplay="' + kind + '" aria-label="' + (pOn ? "השהיה" : "השמעה") + '" style="background:transparent;border-color:transparent;color:' + (pOn ? 'var(--danger)' : 'var(--text)') + '">' + (pOn ? PAUSEI : I.play) + '</button>' : '';
     var add = edit ? '<div class="rcard rcard--compact" data-addm role="button" tabindex="0" style="margin:0;min-width:0;display:flex;align-items:center;justify-content:center;gap:var(--sp-1);cursor:pointer;min-height:var(--tag-s);border:1px dashed var(--line-strong);background:transparent;box-shadow:none;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>הוספת מוזיקה</div>' : '';
-    return '<div data-recv="' + kind + '" style="' + (kind === "start" ? '' : 'margin-top:var(--sp-2)') + '"><div class="bio-sech" style="display:flex;align-items:center;justify-content:space-between;padding:var(--gutter) var(--gutter) 0">' + accHead(kind, label + " (" + list.length + ")") + '<span style="display:flex;align-items:center;gap:var(--sp-1)">' + (edit ? '<button type="button" class="rbtn rbtn--icon" data-addm aria-label="הוספת מוזיקה" title="הוספת מוזיקה">' + I.plus + '</button>' : '') + play + playBtn + '</span></div>' + accOpenTag(kind) +
+    return '<div data-recv="' + kind + '" style="' + (kind === "start" ? '' : 'margin-top:var(--sp-2)') + '"><div class="bio-sech" style="display:flex;align-items:center;justify-content:space-between;padding:var(--gutter) var(--gutter) 0">' + accHead(kind, label + " (" + list.length + ")") + '<span style="display:flex;align-items:center;gap:var(--sp-1)">' + playBtn + play + (edit ? '<button type="button" class="rbtn rbtn--icon" data-addm aria-label="הוספת מוזיקה" title="הוספת מוזיקה">' + I.plus + '</button>' : '') + '</span></div>' + accOpenTag(kind) +
       '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);padding:var(--gutter)">' + list.map(function (m) { var nw = window.__bioNow || {}; return optCardHtml(m, !!(nw.playing && m.audio_object && nw.name === m.audio_object), edit, true, key); }).join("") + '</div>' + ACC_CLOSE + '</div>';
   }
   function loadItems() {
@@ -1645,6 +1668,19 @@
     }); });
     l.querySelectorAll("[data-idel]").forEach(function (b) { b.addEventListener("click", function (ev) { ev.stopPropagation(); var it = state.items.filter(function (x) { return x.id === b.dataset.idel; })[0]; if (it) confirmRemoveItem(it); }); });
     wireFac(l);
+    var accSet = function (kind, on) {   /* open or close one part; the arrow turns and the part slides */
+      accOpen[state.viv.id + "|" + kind] = on;
+      var b = l.querySelector('[data-acc="' + kind + '"]'), body = l.querySelector('[data-accb="' + kind + '"]');
+      if (b) { b.setAttribute("aria-expanded", String(on)); var ch = b.lastElementChild; if (ch) ch.style.transform = on ? "rotate(180deg)" : ""; }
+      if (body) { if (on) body.removeAttribute("data-closed"); else body.setAttribute("data-closed", ""); }
+    };
+    l.querySelectorAll("[data-acc]").forEach(function (b) { b.addEventListener("click", function () { accSet(b.dataset.acc, !accIsOpen(b.dataset.acc)); }); });
+    l.querySelectorAll(".bio-sech [data-addm], .bio-sech [data-addex]").forEach(function (b) { b.addEventListener("click", function () { var sec = b.closest("[data-recv]"); accSet(sec ? sec.dataset.recv : "ex", true); }, true); });   /* adding to a part opens it, so the new song is seen */
+    l.querySelectorAll("[data-recvplay]").forEach(function (b) { b.addEventListener("click", function () {
+      var kind = b.dataset.recvplay, nw = window.__bioNow || {}, sec = l.querySelector('[data-recv="' + kind + '"]'); if (!sec) return;
+      var mine = recvPlaying(kind) ? [].filter.call(sec.querySelectorAll("[data-audio]"), function (x) { return x.dataset.audio === nw.name; })[0] : null;
+      var btn = mine || sec.querySelector("[data-audio]"); if (btn) btn.click();   /* a song of this part is loaded: its own button plays or pauses it; otherwise the part starts from its first song */
+    }); });
     l.querySelectorAll("[data-recv]").forEach(function (rc) {
       var kind = rc.dataset.recv;
       rc.addEventListener("click", function (ev) {
@@ -1966,7 +2002,7 @@
   }
   /* the page of an exercise, below its header: the songs (cards), the texts. ro: the catalog's exercise, only read (no facilitators, no notes, the texts are not edited) */
   function itemPageHtml(it, ro) {
-    return '<style>#ipg, #ipg * { touch-action: pan-y } #ipg textarea, #ipg .rf-rich { max-height: none } #ifields > .rfield { margin: 0 } #ifields .rf-rich { font-size: var(--fs-m); line-height: 1.5 } #ifields[data-ro] .rf-rich { font-size: var(--fs-m); line-height: 1.6 } #imus [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important } #ipg:has(#ifields:not([data-ro])) #imus [data-audio] { display: none } #ipg:has(#ifields:not([data-ro])) #imus .bio-card[aria-current] { border-color: var(--line); box-shadow: none }</style><div id="ipg" style="display:flex;flex-direction:column;flex:1 1 auto;min-height:0">' +   /* nothing between the header and the scroller: the content goes right under the header's edge, where its shadow is */
+    return '<style>#ipg, #ipg * { touch-action: pan-y } #ipg textarea, #ipg .rf-rich { max-height: none } #ifields > .rfield { margin: 0 } #ifields .rf-rich { font-size: var(--fs-m); line-height: 1.5 } #ifields[data-ro] .rf-rich { font-size: var(--fs-m); line-height: 1.6 } #imus [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important } #ipg:has(#ifields:not([data-ro])) #imus [data-audio] { display: none } #ipg:has(#ifields:not([data-ro])) #imus .bio-card[aria-current] { border-color: var(--line); box-shadow: var(--sh-card) }</style><div id="ipg" style="display:flex;flex-direction:column;flex:1 1 auto;min-height:0">' +   /* nothing between the header and the scroller: the content goes right under the header's edge, where its shadow is */
       '<div id="iscroll" style="flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-top:calc(var(--pp-head-gap, 12px) + var(--pp-hair))">' +   /* everything under the name scrolls together; the texts are open to the end */
       '<div id="imus" style="flex:none;padding:0 var(--gutter)">' + musCards(it, ro) + '</div>' +   /* the songs this exercise is torn between, as cards: the chosen one plays in the vivencia */
       '<div id="ifields"' + (ro ? ' data-ro' : '') + ' style="flex:none;display:flex;flex-direction:column;gap:var(--gap-field);padding:var(--gutter) var(--gutter) 0">' + (!ro && !wide() ? '<label class="rfield" style="flex:none"><span>שם התרגיל</span><input id="ina" placeholder=" " autocomplete="off" value="' + esc(itemName(it) || "") + '"></label>' : '') + '<label class="rfield" style="flex:none"><span>פואטיקה</span><div id="ipo" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true"' + (isDraft(it, "poetics") ? DRAFT_FIELD : "") + '>' + rtHtml(txt(it, "poetics")) + '</div></label>' +
@@ -2438,9 +2474,22 @@
     return allSongsP;
   }
   /* the popup that adds songs to an exercise: the music page's cards and search, in two parts: the songs the catalog links to the exercise, and all the others */
+  var simCache = {};
+  function simOf(who) {   /* the song that plays and the songs like it, asked once per song: the button shows how many before it is pressed */
+    if (simCache[who]) return simCache[who];
+    return simCache[who] = api("/rest/v1/music?audio_object=eq." + encodeURIComponent(who) + "&select=id,name,title,artist,duration_sec,audio_object,in_catalog,owner_id,vivencia_id&limit=1").then(function (rows) {
+      var m = rows && rows[0]; if (!m) return { m: null, n: 0 };
+      var it = { __listen: true, id: "", music: m, music_id: m.id, item_music_options: [], sel: [] };
+      return similarRows(it).then(function (rs) { var seen = {}; (rs || []).forEach(function (x) { if (x.music && x.music.id !== m.id) seen[x.music.id] = 1; }); return { m: m, it: it, n: Object.keys(seen).length }; });
+    }).catch(function (e) { delete simCache[who]; throw e; });
+  }
+  function simLabel(n) { return n === 0 ? "אין מוסיקה דומה" : "מוסיקה דומה" + (n != null ? " (" + n + ")" : ""); }
+  function similarToPlaying(who) {   /* only the songs like the one that plays: the popup of an exercise's music, with its suggestions and nothing else; a tap plays a song */
+    simOf(who).then(function (o) { if (o.m && o.n) openAddMusic(o.it, null); }, fail);
+  }
   function openAddMusic(it, changed) {
     var me = FLOA_AUTH.userId(), vid = state.viv && state.viv.id;
-    var r = sheetOf("addMusDlg", "", '<style>#addMusDlg .sheet-head { display: none } html.bio-docked #addMusDlg .sheet-body { padding-bottom: 0 } #addMusDlg .bio-card[aria-current="true"] { border-color: var(--line); box-shadow: none } #addMusDlg #amup { height: var(--rf-h); min-height: var(--rf-h); border-radius: 0; border: 0; border-bottom: 1px solid var(--rf-line); background: transparent } #addMusDlg .rfield:focus-within + #amup { border-bottom-color: var(--rf-ink); box-shadow: 0 1px 0 var(--rf-ink) }</style><div style="display:flex;align-items:flex-end;gap:var(--gap-button)"><label class="rfield" style="flex:1 1 auto;margin:0"><span id="amc">חיפוש בין מוסיקות</span><input id="amq" placeholder=" " autocomplete="off"></label><button type="button" class="rbtn rbtn--icon rbtn--ghost" id="amup" aria-label="העלאת קובץ מוזיקה" title="העלאת קובץ מוזיקה" style="flex:none;gap:var(--sp-1)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.upload.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span></button></div><div id="amlist" style="flex:1 1 auto;min-height:0;overflow-y:auto;margin-top:var(--sp-2);padding-bottom:calc(var(--dockfull) + var(--gutter))"><div class="rskel rskel--title"></div></div>');
+    var r = sheetOf("addMusDlg", "", '<style>#addMusDlg .sheet-head { display: none } #addMusDlg .sheet-body > div:first-of-type { position: relative; z-index: 1 } #addMusDlg .sheet-body > div:first-of-type::after { content: \"\"; position: absolute; inset-inline: calc(-1 * var(--bleed, var(--pp-px))); top: calc(100% + var(--sp-2)); height: var(--edge-shadow-h); background: var(--edge-shadow); opacity: 0; transition: opacity .18s ease; pointer-events: none } #addMusDlg[data-scrolled] .sheet-body > div:first-of-type::after { opacity: 1 } html.bio-docked #addMusDlg .sheet-body { padding-bottom: 0 } #addMusDlg .bio-card[aria-current="true"] { border-color: var(--line); box-shadow: var(--sh-card) } #addMusDlg #amup { height: var(--rf-h); min-height: var(--rf-h); border-radius: 0; border: 0; border-bottom: 1px solid var(--rf-line); background: transparent } #addMusDlg .rfield:focus-within + #amup { border-bottom-color: var(--rf-ink); box-shadow: 0 1px 0 var(--rf-ink) }</style><div style="display:flex;align-items:flex-end;gap:var(--gap-button)"><label class="rfield" style="flex:1 1 auto;margin:0"><span id="amc">חיפוש בין מוסיקות</span><input id="amq" placeholder=" " autocomplete="off"></label><button type="button" class="rbtn rbtn--icon rbtn--ghost" id="amup" aria-label="העלאת קובץ מוזיקה" title="העלאת קובץ מוזיקה" style="flex:none;gap:var(--sp-1)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.upload.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span></button></div><div id="amlist" style="flex:1 1 auto;min-height:0;overflow-y:auto;margin-top:var(--sp-2);padding-bottom:calc(var(--dockfull) + var(--gutter))"><div class="rskel rskel--title"></div></div>');
     r.style.overflowY = "hidden";   /* the search stays, only the cards scroll */
     var listEl = r.querySelector("#amlist"), qi = r.querySelector("#amq");
     qi.blur(); setTimeout(function () { if (document.activeElement === qi) qi.blur(); }, 60);   /* the popup opens on the list: the keyboard comes up only when the search is touched */
@@ -2452,14 +2501,16 @@
       if (!linked || !rest) return;
       var s0 = fold(qi.value.trim()), words = s0.split(/\s+/).filter(Boolean);
       var hit = function (m) { return fz(songName(m) + " " + songBy(m), s0); };
-      var cur = it.__preview ? optList(it).filter(function (m) { return it.sel.indexOf(m.id) >= 0; }) : optList(it), has = {}; cur.forEach(function (m) { has[m.id] = 1; });   /* on the catalog's exercise only what was marked counts */
-      var nmOf = function (m) { return songName(m) + " " + songBy(m); }, sl = nearest(cur, nmOf, s0), lk = nearest(linked.filter(function (m) { return !has[m.id]; }), nmOf, s0), ot = nearest(rest.filter(function (m) { return !has[m.id]; }), nmOf, s0), cut = ot.slice(0, shown);
-      var cnt = r.querySelector("#amc"); if (cnt) cnt.textContent = "חיפוש " + (words.length ? (sl.length + lk.length + ot.length) + " מתוך " : "בין ") + (linked.length + rest.length) + " מוסיקות";   /* as the music page says it */
+      var cur = it.__listen ? [] : it.__preview ? optList(it).filter(function (m) { return it.sel.indexOf(m.id) >= 0; }) : optList(it), has = {}; cur.forEach(function (m) { has[m.id] = 1; });   /* on the catalog's exercise only what was marked counts */
+      var nmOf = function (m) { return songName(m) + " " + songBy(m); }, sl = nearest(cur, nmOf, s0), lk = nearest(linked.filter(function (m) { return !has[m.id]; }), nmOf, s0), ot = it.__listen ? [] : nearest(rest.filter(function (m) { return !has[m.id]; }), nmOf, s0), cut = ot.slice(0, shown);
+      if (it.__listen) lk = lk.filter(function (m) { return m.id !== it.music_id; });
+      var cnt = r.querySelector("#amc"); if (cnt && it.__listen) cnt.textContent = "חיפוש " + (words.length ? lk.length + " מתוך " : "בין ") + linked.filter(function (m) { return m.id !== it.music_id; }).length + " מוסיקות דומות"; else if (cnt) cnt.textContent = "חיפוש " + (words.length ? (sl.length + lk.length + ot.length) + " מתוך " : "בין ") + (linked.length + rest.length) + " מוסיקות";   /* as the music page says it */
       var grid = function (arr) { return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(18rem,1fr));gap:var(--sp-1)">' + arr.map(function (m) { return cardHtml(m, !!has[m.id]); }).join("") + '</div>'; };
       var head = function (t, n) { return '<div class="rrow__sub" style="padding:var(--sp-2) 0 var(--sp-1)">' + esc(t) + ' (' + n + ')</div>'; };
-      listEl.innerHTML = (sl.length ? head(it.__preview ? "נבחרו" : "בתרגיל", sl.length) + grid(sl) : '') + (lk.length ? head("הצעות", lk.length) + grid(lk) : '') + (cut.length ? head("מוסיקה אחרת", ot.length) + grid(cut) : '') + (!sl.length && !lk.length && !cut.length ? ph("לא נמצא", "") : '');
+      listEl.innerHTML = (sl.length ? head(it.__listen ? "מתנגנת" : it.__preview ? "נבחרו" : "בתרגיל", sl.length) + grid(sl) : '') + (lk.length ? (it.__listen ? '' : head("הצעות", lk.length)) + grid(lk) : '') + (cut.length ? head("מוסיקה אחרת", ot.length) + grid(cut) : '') + (!sl.length && !lk.length && !cut.length ? ph(it.__listen ? "אין מוסיקה דומה" : "לא נמצא", "") : '');
     }
     var upb = r.querySelector("#amup");
+    if (upb && it.__listen) { upb.remove(); upb = null; }   /* listening only: nothing is uploaded or added from here */
     if (upb) upb.addEventListener("click", function () {
       if (upb.dataset.busy) return;
       var inp = document.createElement("input"); inp.type = "file"; inp.accept = "audio/*,.flac,.m4a,.aiff,.aif,.wav,.mp3";
@@ -2485,6 +2536,7 @@
     listEl.addEventListener("click", function (ev) {
       if (ev.target.closest("[data-audio], a")) return;
       var c = ev.target.closest("[data-am]"); if (!c) return;
+      if (it.__listen) { var pb = c.querySelector("[data-audio]"); if (pb) pb.click(); return; }
       var all = (linked || []).concat(rest || []), m = all.filter(function (x) { return x.id === c.dataset.am; })[0]; if (!m) return;
       if (it.__preview) {   /* the catalog's exercise: a tap marks the song, a second tap takes the mark off */
         var ix = it.sel.indexOf(m.id);
@@ -2509,7 +2561,7 @@
       if (!allSongs) return;
       similarRows(it).then(function (rows) { applyLinked(rows); draw(); }, function () { /* the old ones stay */ });
     }
-    Promise.all([similarRows(it), loadAllSongs()]).then(function (res) {
+    Promise.all([similarRows(it), it.__listen ? Promise.resolve([]) : loadAllSongs()]).then(function (res) {
       allSongs = res[1]; applyLinked(res[0]);
       draw();
     }, function (e) { fail(e); listEl.innerHTML = ph("לא הצלחנו לטעון", ""); });
@@ -2685,8 +2737,8 @@
   }
 
   /* ---------- picker: the catalog ---------- */
-  var pk = { q: "", ln: "", cg: "", lv: "", cv: "", tab: "ex", mq: "", mln: "", mch: "", msp: "", mef: "" };   /* the catalog's search, line, category, group level and place on the curve */
-  function resetPk() { pk = { q: "", ln: "", cg: "", lv: "", cv: "", tab: "ex", mq: "", mln: "", mch: "", msp: "", mef: "" }; }
+  var pk = { q: "", ln: "", cg: "", lv: "", cv: "", tab: (loadCatSnap() || {}).tab === "mu" ? "mu" : "ex", mq: "", mln: "", mch: "", msp: "", mef: "" };   /* the tab is the one it was left on, even after a refresh */   /* the catalog's search, line, category, group level and place on the curve */
+  function resetPk() { pk = { q: "", ln: "", cg: "", lv: "", cv: "", tab: pk.tab === "mu" ? "mu" : "ex", mq: "", mln: "", mch: "", msp: "", mef: "" }; }   /* a fresh search each time, but the tab stays where it was left */
   var LEVELS_FALLBACK = [{ key: "all", name_he: "מתחילים (מתאים לכל הקבוצות)" }, { key: "exp3", name_he: "לקבוצות עם ניסיון של כמה חודשים" }, { key: "exp6", name_he: "לקבוצות עם ניסיון של חצי שנה ויותר" }, { key: "deep", name_he: "לקבוצות העמקה ומתקדמות" }];   /* the index of group levels (biodanza.levels), when it has not come from the cloud */
   /* the catalog picker: a search and the list of categories; a category opens like an accordion onto its exercises. On a wide screen it is a pane; on a narrow one it is a popup from the bottom. */
   function searchInput(id, label) {
@@ -2706,12 +2758,12 @@
     return (!f.ln || (m.line_tags || []).indexOf(f.ln) >= 0) && (!f.ch || (m.rhythm_char_tags || []).indexOf(f.ch) >= 0) && (!f.sp || (m.rhythm_speed_tags || []).indexOf(f.sp) >= 0) && (!f.ef || (m.effect_tags || []).indexOf(f.ef) >= 0);
   }
   function pickerBody(sheetMode, swapIt) {
-    var pageCss = '<style>.mfs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-1) } @media (min-width: 640px) { .mfs { grid-template-columns: repeat(4, minmax(0, 1fr)) } } .pgp > .pgs { padding-inline: var(--gutter); padding-block: var(--sp-1) 0 } #pgr::-webkit-scrollbar { display: none } ' + (sheetMode ? '#catDlg .sheet-head { display: none } #catDlg [data-accb] > div > div, #catDlg #mgrid { padding-inline: 0 !important } #catDlg .sheet-body > #pgr, #catDlg .sheet-body > .rtabs { padding-inline: 0 } #catDlg .pgp > * { padding-inline: var(--bleed, var(--pp-px)) }' : '') + '</style>';
-    var pageSt = 'flex:0 0 100%;min-width:0;min-height:0;display:flex;flex-direction:column;scroll-snap-align:start;scroll-snap-stop:always', listSt = 'position:relative;flex:1 1 auto;min-height:0;overflow-y:auto';
-    var exPage = '<div class="pgp" role="tabpanel" style="' + pageSt + '"><div class="pgs">' + searchInput("q", "חיפוש תרגילים בקטלוג") + '</div><div class="rlist pgl" id="pks" style="' + listSt + '"><div id="list"><div class="rskel rskel--title"></div></div></div></div>';
-    var muPage = swapIt ? '' : '<div class="pgp" role="tabpanel" style="' + pageSt + '"><div class="pgs">' + searchInput("mq", "חיפוש מוסיקה בקטלוג") + '</div><div class="pgs mfs">' +
-      [["mln", "קו"], ["mch", "אופי"], ["msp", "מהירות"], ["mef", "אפקט"]].map(function (b) { return '<label class="rfield"><select data-mf="' + b[0] + '" aria-label="' + b[1] + '"><option value="">' + b[1] + '</option></select></label>'; }).join("") +
-      '</div><div class="rlist pgl" id="pkl" style="' + listSt + '"><div class="rskel rskel--title"></div></div></div>';
+    var pageCss = '<style>.mfs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-1) } @media (min-width: 640px) { .mfs { grid-template-columns: repeat(4, minmax(0, 1fr)) } } .pgh > .pgs { padding-inline: var(--gutter); padding-block: var(--sp-1) 0 } .pgh { position: absolute; inset: 0 0 auto 0; z-index: 2; background: var(--bg); padding-bottom: var(--sp-1); transform: translateY(calc(-1 * var(--ho, 0px))); will-change: transform } .pgp::after { content: \"\"; position: absolute; inset-inline: 0; top: calc(var(--hh, 0px) - var(--ho, 0px)); height: var(--edge-shadow-h); background: var(--edge-shadow); opacity: 0; transition: opacity .18s ease; pointer-events: none; z-index: 3 } .pgp[data-sc]::after { opacity: 1 } .pgp > .pgl { padding-top: var(--hh, 0px) } #pgr::-webkit-scrollbar { display: none } ' + (sheetMode ? '#catDlg .sheet-head { display: none } #catDlg [data-accb] > div > div, #catDlg #mgrid { padding-inline: 0 !important } #catDlg .sheet-body > #pgr, #catDlg .sheet-body > .rtabs { padding-inline: 0 } #catDlg .pgp > * { padding-inline: var(--bleed, var(--pp-px)) } #catDlg .pgh > .pgs { padding-inline: 0 }' : '') + '</style>';
+    var pageSt = 'position:relative;flex:0 0 100%;min-width:0;min-height:0;display:flex;flex-direction:column;scroll-snap-align:start;scroll-snap-stop:always', listSt = 'position:relative;flex:1 1 auto;min-height:0;overflow-y:auto';
+    var exPage = '<div class="pgp" role="tabpanel" style="' + pageSt + '"><div class="pgh"><div class="pgs">' + searchInput("q", "חיפוש תרגילים בקטלוג") + '</div></div><div class="rlist pgl" id="pks" style="' + listSt + '"><div id="list"><div class="rskel rskel--title"></div></div></div></div>';
+    var muPage = swapIt ? '' : '<div class="pgp" role="tabpanel" style="' + pageSt + '"><div class="pgh"><div class="pgs mfs">' +
+      [["mln", "קו"], ["mch", "אופי"], ["msp", "מהירות"], ["mef", "אפקט"]].map(function (b) { return '<label class="rfield"><span>' + b[1] + '</span><select data-mf="' + b[0] + '"><option value="">הכל</option></select></label>'; }).join("") +
+      '</div><div class="pgs">' + searchInput("mq", "חיפוש מוסיקה בקטלוג") + '</div></div><div class="rlist pgl" id="pkl" style="' + listSt + '"><div class="rskel rskel--title"></div></div></div>';
     return pageCss + (sheetMode && !swapIt ? pickerTabs() : '') +
       '<div id="pgr" style="flex:1 1 auto;min-height:0;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none">' + exPage + muPage + '</div>';
   }
@@ -2759,6 +2811,7 @@
           cats.sort(function (a, b) { return (top[a] == null ? 1e9 : top[a]) - (top[b] == null ? 1e9 : top[b]); });
         }
         catBy = by;
+        hint(r.querySelector("#q"), catFind("").length, "תרגיל", "תרגילים");
         l.innerHTML = cats.length ? cats.map(function (k) {
           var on = open[k] != null ? open[k] : false;   /* a category opens only when it is tapped: typing a search opens nothing */
           var head = '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-1);min-height:0;border-bottom-color:' + (on ? "transparent" : "var(--line)") + '"><button type="button" class="rrow__main" data-cat="' + esc(k) + '" aria-expanded="' + on + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit;display:flex;align-items:center;gap:var(--sp-2)"><span style="flex:1 1 auto;min-width:0"><span class="rrow__title" style="font-weight:var(--fw-black)">' + esc(catName(k) || "ללא קטגוריה") + '</span></span><span data-catn style="flex:none;color:var(--text-2);font:var(--fw-regular) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + by[k].length + '</span><span style="flex:none;width:20px;height:20px;transition:transform .25s var(--ease);' + (on ? 'transform:rotate(180deg)' : '') + '">' + I.down + '</span></button></div>';
@@ -2767,6 +2820,11 @@
       }
       /* the pager: two pages side by side in one horizontal scroller with scroll snap. In RTL the first page (exercises) is on the right and scrollLeft runs negative, so the target is signed by the direction. A tap on a tab scrolls the pager; a swipe changes the tab; the tab marker is the kit's own (aria-selected). */
       var pgr = r.querySelector("#pgr"), tabEls = r.querySelectorAll("[data-pkt]"), TABS = ["ex", "mu"], goingTo = null, goT = 0, mq = r.querySelector("#mq");
+      function hint(inp, n, one, many) {   /* the search box says how many there are to search in, after the boxes above it have filtered */
+        if (!inp) return;
+        var t = "חיפוש " + (n === 1 ? one + " אחת" : "בין " + n + " " + many);
+        inp.placeholder = t; inp.setAttribute("aria-label", t);
+      }
       var musicAll = null, musicLoading = false, mById = {}, mList = [], mShown = 0, MP = 100;
       function musicCards(a, b) {
         return mList.slice(a, b).map(function (m) {
@@ -2787,7 +2845,9 @@
         var l = r.querySelector("#pkl"); if (!l || !musicAll) return;
         var s = fold(mq.value.trim()), f = { ln: pk.mln, ch: pk.mch, sp: pk.msp, ef: pk.mef };
         pk.mq = mq.value; saveCat();   /* the search and the four boxes are kept through a refresh, like the exercises' search */
-        mList = musicAll.filter(function (m) { return tagHit(m, f) && (!s || fz(songName(m) + " " + songBy(m), s)); });
+        var byTags = musicAll.filter(function (m) { return tagHit(m, f); });
+        hint(mq, byTags.length, "מוסיקה", "מוסיקות");
+        mList = byTags.filter(function (m) { return !s || fz(songName(m) + " " + songBy(m), s); });
         mShown = Math.min(MP, mList.length); l.scrollTop = 0;
         l.innerHTML = mList.length ? '<div id="mgrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);padding:var(--gutter)">' + musicCards(0, mShown) + '</div>' : ph("לא נמצאה מוסיקה", "");
       }
@@ -2842,6 +2902,18 @@
           var m = mById[bt.dataset.sg]; if (m) confirmAddMusic(songName(m), state.viv ? (state.viv.title || "הוויוונסיה") : "", function () { addSongOnly(m, sheet); });
         });
       }
+      r.querySelectorAll(".pgp").forEach(function (P) {   /* the header (the boxes and the search) leaves with the scroll and comes back with it: the cards reach the tabs */
+        var L = P.querySelector(".pgl"), H = P.querySelector(".pgh"); if (!L || !H) return;
+        var hh = 0, off = 0, last = L.scrollTop;
+        var measure = function () { hh = H.offsetHeight; P.style.setProperty("--hh", hh + "px"); };
+        measure(); if (window.ResizeObserver) new ResizeObserver(measure).observe(H);
+        L.addEventListener("scroll", function () {
+          var st = L.scrollTop, d = st - last; last = st;
+          off = st <= 0 ? 0 : Math.max(0, Math.min(hh, off + d));   /* down: it goes up with the list; up: it comes back by as much as the list moved */
+          P.style.setProperty("--ho", off + "px");   /* the header and the shadow under it both follow this one number */
+          P.toggleAttribute("data-sc", st > 2);   /* the shadow stays while the list is scrolled: under the header, or under the tabs once the header is gone */
+        }, { passive: true });
+      });
       var scEl = r.querySelector("#pks"); if (scEl) scEl.addEventListener("scroll", function () { clearTimeout(scEl._t); scEl._t = setTimeout(saveCat, 250); });
       r.querySelector("#q").addEventListener("input", function () { var sc = r.querySelector("#pks"); if (sc) sc.scrollTop = 0; paintCat(); if (!catTx) loadCatTx().then(function () { if (catTx && r.isConnected && r.querySelector("#q").value.trim()) paintCat(); }); });
       return (state.cats ? Promise.resolve() : api("/rest/v1/categories?select=key,name_he&order=sort").then(function (c) {
@@ -2862,7 +2934,15 @@
   function pickerSheet(swapIt) {
     var dlg = document.getElementById("catDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "catDlg"; document.body.appendChild(dlg); }
+    if (!swapIt && dlg.__bioKind === "main" && dlg.querySelector("#pgr")) {   /* built once: closing only lowers it, opening only raises it, with the search, the tab, the boxes and the scroll as they were */
+      if (dlg.__bioPk) pk = dlg.__bioPk;
+      RosterSheet.open(dlg, "bottom"); bleedSet(dlg);
+      if (document.activeElement && document.activeElement !== document.body && dlg.contains(document.activeElement)) document.activeElement.blur();
+      saveCat();
+      return Promise.resolve();
+    }
     RosterSheet.render(dlg, { title: "", from: "bottom", body: bleedCss("catDlg") + pickerBody(true, swapIt) });
+    dlg.__bioKind = swapIt ? "swap" : "main"; dlg.__bioPk = swapIt ? null : pk;
     bleedSet(dlg);   /* the content sits on the title's own edges, the same on both sides */
     var q0 = dlg.querySelector("#q"); if (q0) q0.blur();   /* the popup opens on the list: the keyboard comes up only when the search is touched */
     if (document.activeElement && document.activeElement !== document.body && dlg.contains(document.activeElement)) document.activeElement.blur();   /* showModal focuses the first control, now the first tab: it would show a focus frame, so nothing starts focused */
@@ -3356,7 +3436,7 @@
     var saved = null; try { saved = Number(localStorage.getItem(KEY)) || null; } catch (e) { /* none */ }
     if (saved) setW(saved);
     window.addEventListener("resize", function () { var w = parseFloat(root.style.getPropertyValue("--listw")); if (w) setW(w); });
-    if (!h) return;
+    function wire(h) {
     var drag = false;
     h.addEventListener("pointerdown", function (e) { if (!wide() || e.button > 0) return; drag = true; h.setPointerCapture(e.pointerId); root.classList.add("split-drag"); e.preventDefault(); });
     h.addEventListener("pointermove", function (e) { if (drag) setW(window.innerWidth - e.clientX); });
@@ -3364,6 +3444,8 @@
     h.addEventListener("pointerup", end); h.addEventListener("pointercancel", end);
     h.addEventListener("dblclick", function () { root.style.removeProperty("--listw"); try { localStorage.removeItem(KEY); } catch (e) { /* none */ } });
     h.addEventListener("keydown", function (e) { if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return; e.preventDefault(); setW(curW() + (e.key === "ArrowLeft" ? 24 : -24)); save(); });
+    }
+    window.__bioSplitWire = wire; if (h) wire(h);
   })();
   /* back and forward: show what the address says, without writing it again */
   window.addEventListener("popstate", function () {
