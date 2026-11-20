@@ -11,8 +11,12 @@ if os.path.exists(oc):
     s = open(oc, encoding='utf8').read()
     for r in json.loads(s[s.find('['):s.rfind(']') + 1]):
         old[r['title_en'].strip().lower()] = r
+import re
+# not dances: a cross reference ("See: ...") and the lines of the PDF's title page and list of collections, which the parse reads as headings
+NOT_DANCE = re.compile(r'^See:|^\W*(Selected musics|Single songs|Correct titles)|Catalogue of Musics|^[A-Z]{2,5}C?\s\W\s')
 rows = []
 for name, songs in d.items():
+    if NOT_DANCE.search(name.strip()): continue
     t = name.strip().title() if name.isupper() else name.strip()
     o = old.get(t.lower(), {})
     rows.append(dict(id=str(uuid.uuid4()), title_en=t, title_he=o.get('title_he') or '', category=o.get('category') or '',
