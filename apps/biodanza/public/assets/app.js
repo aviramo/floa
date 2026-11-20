@@ -438,14 +438,14 @@
       };
       if (wide()) { showHistLayer(rows, when); return; }
       var cards = rows.map(function (e, i) {
-        return '<div class="rcard rcard--compact bio-card" data-hi="' + i + '"' + (e.n && window.__bioNow && window.__bioNow.name === e.n ? ' aria-current="true"' : '') + ' role="button" tabindex="0" style="cursor:pointer;background:var(--on-primary);margin:0;min-width:0;display:flex;flex-direction:column;gap:2px">' +
+        return '<div class="rcard rcard--compact bio-card' + (hpOn(e.n) ? ' is-play' : '') + '" data-hi="' + i + '"' + (e.n && window.__bioNow && window.__bioNow.name === e.n ? ' aria-current="true"' : '') + ' role="button" tabindex="0" style="cursor:pointer;background:var(--on-primary);margin:0;min-width:0;display:flex;flex-direction:column;gap:2px">' +
           '<span style="direction:ltr;text-align:left;overflow-wrap:anywhere;font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(e.t || "מוסיקה") + '</span>' +
           '<span style="direction:ltr;text-align:left;overflow-wrap:anywhere;color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font)">' + (e.a ? esc(e.a) : "&nbsp;") + '</span>' +
           '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:var(--gap-tight)"><button type="button" class="rbtn rbtn--icon" data-hp="' + i + '" data-hn="' + esc(e.n || "") + '" aria-label="' + (hpOn(e.n) ? "עצירה" : "השמעה") + '" title="' + (hpOn(e.n) ? "עצירה" : "השמעה") + '" style="background:var(--surface-2);border-color:var(--surface-2);width:var(--tag-s);min-height:var(--tag-s);height:var(--tag-s);padding:0;border-radius:999px">' + (hpOn(e.n) ? PAUSE : PLAY) + '</button>' +
           '<span style="color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + esc(when(e.at)) + '</span></div></div>';
       }).join("");
       RosterSheet.render(dlg, { title: "היסטוריית האזנה", from: "bottom", size: "l",
-        body: '<div style="padding:var(--sp-2) 0 var(--gutter)">' + (rows.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);align-items:stretch">' + cards + '</div>' : ph("אין עדיין היסטוריה", "מוסיקה שהתחילה להתנגן תופיע כאן")) + '</div>' });
+        body: '<div style="padding:calc(var(--pp-head-gap, 12px) + var(--pp-hair)) 0 var(--gutter)">' + (rows.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);align-items:stretch">' + cards + '</div>' : ph("אין עדיין היסטוריה", "מוסיקה שהתחילה להתנגן תופיע כאן")) + '</div>' });
       dlg.onclick = function (ev) {
         var c = ev.target.closest && ev.target.closest("[data-hi]"); if (!c) return;
         var e = rows[+c.dataset.hi]; if (!e) return;
