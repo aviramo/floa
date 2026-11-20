@@ -112,8 +112,9 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
   function why(r, m) {
     var t = m.title >= 0.95 ? "השם זהה" : m.title >= 0.75 ? "השם דומה מאוד (" + pct(m.title) + ")" : "השם דומה בחלקו (" + pct(m.title) + ")";
     var h = '<div class="c__why">' + t;
-    if (m.shared) h += '<br>' + m.shared + ' שירים משותפים מתוך ' + r.music.length + ' של התרגיל מ־2014';
-    return h + '</div>';
+    h += '</div><div class="c__why"><b>מוסיקה משותפת:</b> ' + (m.shared ? m.shared + ' מתוך ' + r.music.length + ' של התרגיל מ־2014' : 'אין') + '</div>';
+    if (m.songs && m.songs.length) h += '<div class="c__s" style="direction:ltr;text-align:start">' + m.songs.map(esc).join('<br>') + '</div>';
+    return h;
   }
   function card(r) {
     var b = best(r), m0 = r.matches[0];
