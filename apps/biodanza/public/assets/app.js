@@ -1408,9 +1408,9 @@
   var ITEM_SELECT = "&select=id,position,exercise_id,music_id,backlog,notes,title,poetics,guidance,exercises(title_he,title_en,poetics,guidance,objective,exercise_texts(lang,poetics,guidance,level,curve,level_basis,curve_basis,source)),music!music_id(id,name,title,artist,duration_sec,audio_object,in_catalog),vivencia_item_facilitators(email),item_music_options(music_id,created_at,music(id,name,title,artist,duration_sec,audio_object,in_catalog))&order=position";
   var recvCache = {};   /* the songs of the start and of the end of each vivencia: id|start, id|end */
   function itemsOf(id) {
-    var rp = api("/rest/v1/vivencia_reception_music?vivencia_id=eq." + id + "&select=kind,music_id,created_at,music(id,name,title,artist,duration_sec,audio_object,in_catalog)&order=created_at").then(function (rows) {
+    var rp = api("/rest/v1/vivencia_reception_music?vivencia_id=eq." + id + "&select=kind,music_id,created_at,position,music(id,name,title,artist,duration_sec,audio_object,in_catalog)&order=position.asc.nullslast,created_at.asc").then(function (rows) {
       var st = [], en = [];
-      (rows || []).forEach(function (x) { if (x.music) (x.kind === "end" ? en : st).push({ music_id: x.music_id, created_at: x.created_at, music: x.music }); });
+      (rows || []).forEach(function (x) { if (x.music) (x.kind === "end" ? en : st).push({ music_id: x.music_id, created_at: x.created_at, position: x.position, music: x.music }); });
       recvCache[id + "|start"] = st; recvCache[id + "|end"] = en;
     }, function () { /* no such songs now */ });
     return Promise.all([api("/rest/v1/vivencia_items?vivencia_id=eq." + id + ITEM_SELECT), rp]).then(function (r) { return r[0]; });
@@ -1601,7 +1601,69 @@
       });
     });
     registerLists();
-    if (canEdit()) enableGroupDrag(l.querySelector("#plist"), persistGroups);
+    if (canEdit()) {
+      enableGroupDrag(l.querySelector("#plist"), persistGroups);
+      ["start", "end"].forEach(function (k) { var box = l.querySelector('[data-recv="' + k + '"] > div:last-child'); if (box) enableRecvDrag(box, k); });
+    }
+  }
+  /* the order of the start or end music: the same drag as the exercise cards, in one list. The others make room, with their animation. */
+  function enableRecvDrag(box, kind) {
+    var cards = [].slice.call(box.querySelectorAll(".bio-card[data-opt]")); if (cards.length < 2) return;
+    var d = null, blockTouch = function (e) { if (d && d.live) e.preventDefault(); };
+    box.addEventListener("touchmove", blockTouch, { passive: false });
+    cards.forEach(function (c) {
+      c.addEventListener("pointerdown", function (e) {
+        if (e.button > 0 || e.target.closest("button, a, [data-audio]")) return;
+        var rects = cards.map(function (r) { return r.getBoundingClientRect(); });
+        d = { c: c, k: cards.indexOf(c), x0: e.clientX, y0: e.clientY, pid: e.pointerId, live: false, timer: null, order: null,
+              sl: rects.map(function (b) { return { x: b.left + b.width / 2, y: b.top + b.height / 2, h: b.height }; }) };
+        if (e.pointerType === "touch") d.timer = setTimeout(function () { if (d && !d.live) begin(); }, 160);
+      });
+    });
+    function begin() {
+      d.live = true; d.c.setPointerCapture && d.c.setPointerCapture(d.pid);
+      d.c.style.transition = "none"; d.c.style.zIndex = "var(--z-raised)"; d.c.style.boxShadow = "var(--sh-card)";
+      cards.forEach(function (r) { if (r !== d.c) r.style.transition = "transform var(--t-base) var(--ease)"; });
+    }
+    function move(e) {
+      if (!d) return;
+      var dx = e.clientX - d.x0, dy = e.clientY - d.y0;
+      if (!d.live) {
+        if (e.pointerType === "touch") { if (Math.abs(dy) > 8) { clearTimeout(d.timer); d = null; } return; }
+        if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+        begin();
+      }
+      d.c.style.transform = "translate(" + dx + "px, " + dy + "px)";
+      var cx = d.sl[d.k].x + dx, cy = d.sl[d.k].y + dy, others = [];
+      cards.forEach(function (r, i) { if (i !== d.k) others.push(i); });
+      var ins = 0; others.forEach(function (i, n) { var t = d.sl[i]; if (t.y < cy - t.h / 2 || (Math.abs(t.y - cy) <= t.h / 2 && t.x > cx)) ins = n + 1; });
+      var order = others.slice(); order.splice(ins, 0, d.k); d.order = order;
+      order.forEach(function (ci, pos) {
+        if (ci === d.k) return;
+        var slot = d.sl[pos], r = cards[ci];
+        r.style.transform = pos !== ci ? "translate(" + Math.round(slot.x - d.sl[ci].x) + "px, " + Math.round(slot.y - d.sl[ci].y) + "px)" : "";
+      });
+    }
+    box.addEventListener("pointermove", move);
+    function finish() {
+      if (!d) return;
+      clearTimeout(d.timer);
+      var was = d; d = null;
+      if (!was.live) return;
+      cards.forEach(function (r) { r.style.transform = ""; r.style.transition = ""; r.style.zIndex = ""; r.style.boxShadow = ""; });
+      var eat = function (ev) { ev.stopPropagation(); ev.preventDefault(); };
+      document.addEventListener("click", eat, true); setTimeout(function () { document.removeEventListener("click", eat, true); }, 80);
+      if (!was.order || was.order.every(function (v, i) { return v === i; })) return;
+      persistRecv(kind, was.order.map(function (i) { return cards[i].dataset.opt; }));
+    }
+    box.addEventListener("pointerup", finish); box.addEventListener("pointercancel", finish);
+  }
+  function persistRecv(kind, ids) {   /* ids: the music ids in their new order */
+    var key = state.viv.id + "|" + kind, list = recvCache[key] || [], by = {};
+    list.forEach(function (o) { by[o.music_id] = o; });
+    recvCache[key] = ids.map(function (id, k) { var o = by[id]; if (o) o.position = k + 1; return o; }).filter(Boolean);
+    paint();
+    Promise.all(ids.map(function (id, k) { return api("/rest/v1/vivencia_reception_music?vivencia_id=eq." + state.viv.id + "&kind=eq." + kind + "&music_id=eq." + id, { method: "PATCH", prefer: "return=minimal", json: { position: k + 1 } }); })).then(function () { if (state.viv) refreshOffline(state.viv); }, fail);
   }
   /* beside the list the open exercise's strip is marked at once, wherever it was opened from (a click, the arrows, a swap) */
   function markItem() {
