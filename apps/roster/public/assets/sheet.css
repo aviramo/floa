@@ -54,7 +54,7 @@ dialog.rsheet .sheet-head .hicon { flex: 0 0 auto; width: var(--pp-x, 44px); hei
 dialog.rsheet .sheet-head .hicon:focus-visible { outline: 2px solid currentColor; outline-offset: -4px; }
 dialog.rsheet .sheet-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; overscroll-behavior-y: contain; margin: calc(var(--pp-hair) * -1); padding: var(--pp-hair); }   /* the hairline of room keeps a focus ring from being clipped */
 dialog.rsheet .sheet-body > * { flex: 0 0 auto; }
-dialog.rsheet .sheet-foot { flex: 0 0 auto; display: flex; gap: var(--pp-gap); align-items: center; padding-top: var(--pp-foot-pt); margin-top: var(--pp-foot-mt); border-top: 1px solid var(--rs-line); }
+dialog.rsheet .sheet-foot { flex: 0 0 auto; display: flex; gap: var(--pp-gap); align-items: center; padding-top: var(--pp-foot-pt); margin-top: var(--pp-foot-mt); }
 
 /* widths: m is the default; s for a short confirmation, l for a wide editor (data-size on the dialog) */
 dialog.rsheet[data-size="s"], dialog.rsheet[data-size="sm"] { max-width: var(--pp-w-s, 400px); }
