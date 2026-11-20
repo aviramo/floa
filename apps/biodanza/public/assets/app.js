@@ -946,11 +946,11 @@
       '<div class="rhead__text" style="flex-direction:row;align-items:center;gap:var(--sp-2);padding-inline-start:0;justify-content:flex-start">' + (numText ? '<span aria-hidden="true" style="flex:none;font:var(--fw-black) calc(2.75 * var(--fs-m))/.95 var(--font);font-variant-numeric:tabular-nums">' + esc(numText) + '</span>' : "") + '<input id="ina" class="rhead__title" placeholder="ללא שם" autocomplete="off" aria-label="שם התרגיל"' + (ro ? ' readonly' : '') + ' value="' + esc(nameText || "") + '" style="flex:1 1 0;width:auto;min-width:0;border:0;background:transparent;padding-inline:0;margin:0;color:inherit;text-align:start;outline:0;text-overflow:ellipsis;text-box:normal;line-height:1.4;padding-block:4px"></div>' +
       (ro && roLabel ? '<button type="button" class="rbtn" style="flex:none;gap:var(--sp-1);margin-inline-end:var(--gutter)" data-act="doswap"' + (roPlus ? ' aria-label="הוספה לוויוונסיה ' + esc(roLabel) + '" title="הוספה לוויוונסיה"' : '') + '>' + (roPlus ? '<span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span><span style="max-width:14rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(roLabel) + '</span>' : esc(roLabel)) + '</button>' : "") +
       "" +   /* the heart of a catalog exercise is on its card in the catalog, on hover */
-      "" + "" + (ro || wide() ? "" : '<span id="itimer" hidden aria-live="off" style="flex:none;font:var(--fw-black) calc(2.75 * var(--fs-m))/.95 var(--font);font-variant-numeric:tabular-nums;color:var(--text);direction:ltr"></span>') + (nav ? arrow("nextW", I.fwd, "הבא", !hasNext) : "") + (wide() && !ro ? '<button type="button" class="rbtn rbtn--icon bio-flat" data-act="closeIt" aria-label="סגירת התרגיל" title="סגירת התרגיל">' + I.x + '</button>' : "") + '</header>';
+      "" + "" + (ro || wide() ? "" : '<span id="itimer" hidden aria-live="off" style="flex:none;font:var(--fw-black) calc(2.75 * var(--fs-m))/.95 var(--font);font-variant-numeric:tabular-nums;color:#B3261E;direction:ltr"></span>') + (nav ? arrow("nextW", I.fwd, "הבא", !hasNext) : "") + (wide() && !ro ? '<button type="button" class="rbtn rbtn--icon bio-flat" data-act="closeIt" aria-label="סגירת התרגיל" title="סגירת התרגיל">' + I.x + '</button>' : "") + '</header>';
   }
   (function () {
     var st = document.createElement("style");
-    st.textContent = ":root { --primary: #14110E; --on-primary: #FFFFFF; --bg: #F7F5F1; --surface: #EEEBE5; --surface-2: #E5E1DA; --line: #E3DFD7; --sh-card: 0 6px 18px -4px rgba(40, 30, 15, .26), 0 1px 3px rgba(40, 30, 15, .10) } [data-opening] .bio-chipb { display: inline-flex; flex: none; justify-content: space-between; align-items: center; gap: var(--sp-1); min-height: var(--tag-s); padding: 0 var(--sp-2); border: 0; border-radius: 999px; background: var(--primary); color: var(--on-primary); font: var(--fw-bold) var(--fs-s)/1 var(--font); cursor: pointer } [data-opening] .bio-chipb > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap } [data-opening] .bio-secf { margin-inline-start: var(--sp-3) !important; margin-top: calc(-1 * var(--sp-2)) !important } [data-opening] .rfield > span:first-child { transform: translateY(16px) !important; inset-inline-end: 0 !important; pointer-events: none; transition: opacity .12s ease } [data-opening] .rfield[data-rf=\"v\"] > span:first-child { opacity: 0 } .bio-card [data-upl-wrap] { gap: var(--sp-1) !important } .bio-card [data-yt], .bio-card [data-upl] { display: grid; place-items: center; width: var(--tag-s) !important; height: var(--tag-s) !important; min-height: var(--tag-s) !important; padding: 0 !important; border-radius: 999px !important; background: var(--surface-2) !important; border-color: var(--surface-2) !important } .bio-card [data-yt] svg { width: 62%; height: auto } .bio-card [data-upl] svg { width: 54%; height: 54% } .bio-card.is-play-opt { border-color: #B3261E !important; box-shadow: inset 0 0 0 1px #B3261E, var(--sh-card) !important } [data-recv] [data-audio] { display: none !important } .bio-tab.is-play .bio-tab__n, .bio-tab.is-play .bio-tab__t { color: #B3261E !important } .bio-tab.is-play .rchip[data-fac-label] { background: #B3261E !important; color: #FFFFFF !important } .bio-tab.is-play .rchip:not([data-fac-label]) { border-color: #B3261E !important; color: #B3261E !important } .bio-card:has([data-choose]) { --text: rgba(20, 17, 14, .5); --text-2: rgba(20, 17, 14, .42); --text-3: rgba(20, 17, 14, .38); background: rgba(255, 255, 255, .55) !important; border-color: rgba(20, 17, 14, .1) } .bio-card:has([data-choose]) [data-audio] { opacity: .55 } button.rchip { background: transparent !important; border: 1px solid #14110E !important; color: #14110E !important } button.rchip[aria-pressed=\"true\"]:not([data-fac]) { background: #14110E !important; color: #FFFFFF !important } button.rchip[data-fac][aria-pressed=\"true\"], .rchip[data-fac-label] { background: #14110E !important; color: #FFFFFF !important; border: 0 !important } button.rchip[data-fac][aria-pressed=\"false\"] { background: transparent !important; color: #14110E !important; border: 1px solid #14110E !important } [data-audio] { background: var(--danger) !important; border-color: var(--danger) !important; color: #FFFFFF !important } .bio-card, .bio-card * { user-select: none; -webkit-user-select: none } .bio-card.is-play, .bio-card:has([data-audio][data-st=\"pause\"]) { background: #B3261E !important; border-color: transparent !important; color: #FFFFFF; --text: #FFFFFF; --text-2: #FFFFFF; --text-3: #FFFFFF; --danger: #FFFFFF } .bio-card.is-play [data-audio], .bio-card.is-play [data-hp], .bio-card:has([data-audio][data-st=\"pause\"]) [data-audio] { background: #FFFFFF !important; border-color: transparent !important; color: #B3261E !important } .bio-card.is-play button.rchip, .bio-card:has([data-audio][data-st=\"pause\"]) button.rchip { background: transparent !important; color: #FFFFFF !important; border-color: #FFFFFF !important } .bio-pair > .rbtn, .bio-pair > .bio-flat { min-width: 0; padding-inline: var(--sp-1) } .bio-flat, .rhead .bio-flat, .rhead .bio-flat:hover, .rhead .bio-flat:active, .rhead .bio-flat[aria-expanded] { background: transparent; border-color: transparent } @keyframes bioNum { from { opacity: 0; transform: translateX(var(--nx, 0)) } to { opacity: 1; transform: none } } @media (prefers-reduced-motion: reduce) { .bio-num { animation: none !important } } .bio-bar, .bio-bar * { touch-action: none } .bio-vol { display: none; position: relative; flex: none; place-items: center; width: var(--ctl); height: var(--ctl); border-radius: var(--r-ctl); background: var(--surface-2); overflow: hidden; touch-action: none; cursor: ns-resize; user-select: none; margin-inline-end: var(--sp-1) } .bio-vol.on { display: grid } @media (max-width: 1023px) { .bio-vol { display: none } } .bio-vol > i { position: absolute; inset: auto 0 0 0; height: calc(var(--v) * 100%); background: color-mix(in srgb, var(--primary) 32%, transparent); transition: height var(--t-fast) var(--ease) } .bio-vol > b { position: relative; font: var(--fw-bold) var(--fs-s)/1 var(--font); font-variant-numeric: tabular-nums; color: var(--text) } #pd .bio-vol { display: none !important } /* the volume button is in the list's header, once */ .bio-vol:focus { outline: none } .bio-vol:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px } /* a page header (not a popup's) has no line under it: the standard soft edge shows under it while its list is scrolled, like a popup's title */ .rhead.rhead:not(dialog *) { border-bottom: 0; position: relative; z-index: 2 } .rhead.rhead:not(dialog *)::after { content: \"\"; position: absolute; inset-inline: 0; top: 100%; height: var(--edge-shadow-h, 6px); background: var(--edge-shadow, linear-gradient(rgba(0, 0, 0, .12), rgba(0, 0, 0, 0))); opacity: 0; transition: opacity .18s ease; pointer-events: none } .rhead.rhead[data-scrolled]:not(dialog *)::after { opacity: 1 } @media (prefers-reduced-motion: reduce) { .rhead.rhead:not(dialog *)::after { transition: none } }";
+    st.textContent = ":root { --primary: #14110E; --on-primary: #FFFFFF; --bg: #F7F5F1; --surface: #EEEBE5; --surface-2: #E5E1DA; --line: #E3DFD7; --sh-card: 0 6px 18px -4px rgba(40, 30, 15, .26), 0 1px 3px rgba(40, 30, 15, .10) } .rfield:has(> .rf-rich[contenteditable=true]), .rfield:has(> .rf-rich[contenteditable=true]) > *, .rf-rich[contenteditable=true], .rf-rich[contenteditable=true] * { cursor: text !important } .rf-rich [data-mention] { cursor: default !important } .rf-rich b, .rf-rich strong, .rcard__body b, .rhint__tx b { color: var(--text) !important } [data-opening] .bio-chipb { display: inline-flex; flex: none; justify-content: space-between; align-items: center; gap: var(--sp-1); min-height: var(--tag-s); padding: 0 var(--sp-2); border: 0; border-radius: 999px; background: var(--primary); color: var(--on-primary); font: var(--fw-bold) var(--fs-s)/1 var(--font); cursor: pointer } [data-opening] .bio-chipb > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap } [data-opening] .bio-secf { margin-inline-start: var(--sp-3) !important; margin-top: calc(-1 * var(--sp-2)) !important } [data-opening] .rfield > span:first-child { transform: translateY(16px) !important; inset-inline-end: 0 !important; pointer-events: none; transition: opacity .12s ease } [data-opening] .rfield[data-rf=\"v\"] > span:first-child { opacity: 0 } .bio-card [data-upl-wrap] { gap: var(--sp-1) !important } .bio-card [data-yt], .bio-card [data-upl] { display: grid; place-items: center; width: var(--tag-s) !important; height: var(--tag-s) !important; min-height: var(--tag-s) !important; padding: 0 !important; border-radius: 999px !important; background: var(--surface-2) !important; border-color: var(--surface-2) !important } .bio-card [data-yt] svg { width: 62%; height: auto } .bio-card [data-upl] svg { width: 54%; height: 54% } .bio-card.is-play-opt { border-color: #B3261E !important; box-shadow: inset 0 0 0 1px #B3261E, var(--sh-card) !important } [data-recv] [data-audio] { display: none !important } .bio-tab.is-play .bio-tab__n, .bio-tab.is-play .bio-tab__t { color: #B3261E !important } .bio-tab.is-play .rchip[data-fac-label] { background: #B3261E !important; color: #FFFFFF !important } .bio-tab.is-play .rchip:not([data-fac-label]) { border-color: #B3261E !important; color: #B3261E !important } .bio-card:has([data-choose]) { --text: rgba(20, 17, 14, .5); --text-2: rgba(20, 17, 14, .42); --text-3: rgba(20, 17, 14, .38); background: rgba(255, 255, 255, .55) !important; border-color: rgba(20, 17, 14, .1) } .bio-card:has([data-choose]) [data-audio] { opacity: .55 } button.rchip { background: transparent !important; border: 1px solid #14110E !important; color: #14110E !important } button.rchip[aria-pressed=\"true\"]:not([data-fac]) { background: #14110E !important; color: #FFFFFF !important } button.rchip[data-fac][aria-pressed=\"true\"], .rchip[data-fac-label] { background: #14110E !important; color: #FFFFFF !important; border: 0 !important } button.rchip[data-fac][aria-pressed=\"false\"] { background: transparent !important; color: #14110E !important; border: 1px solid #14110E !important } [data-audio] { background: var(--danger) !important; border-color: var(--danger) !important; color: #FFFFFF !important } .bio-card, .bio-card * { user-select: none; -webkit-user-select: none } .bio-card.is-play, .bio-card:has([data-audio][data-st=\"pause\"]) { background: #B3261E !important; border-color: transparent !important; color: #FFFFFF; --text: #FFFFFF; --text-2: #FFFFFF; --text-3: #FFFFFF; --danger: #FFFFFF } .bio-card.is-play [data-audio], .bio-card.is-play [data-hp], .bio-card:has([data-audio][data-st=\"pause\"]) [data-audio] { background: #FFFFFF !important; border-color: transparent !important; color: #B3261E !important } .bio-card.is-play button.rchip, .bio-card:has([data-audio][data-st=\"pause\"]) button.rchip { background: transparent !important; color: #FFFFFF !important; border-color: #FFFFFF !important } .bio-pair > .rbtn, .bio-pair > .bio-flat { min-width: 0; padding-inline: var(--sp-1) } .bio-flat, .rhead .bio-flat, .rhead .bio-flat:hover, .rhead .bio-flat:active, .rhead .bio-flat[aria-expanded] { background: transparent; border-color: transparent } @keyframes bioNum { from { opacity: 0; transform: translateX(var(--nx, 0)) } to { opacity: 1; transform: none } } @media (prefers-reduced-motion: reduce) { .bio-num { animation: none !important } } .bio-bar, .bio-bar * { touch-action: none } .bio-vol { display: none; position: relative; flex: none; place-items: center; width: var(--ctl); height: var(--ctl); border-radius: var(--r-ctl); background: var(--surface-2); overflow: hidden; touch-action: none; cursor: ns-resize; user-select: none; margin-inline-end: var(--sp-1) } .bio-vol.on { display: grid } @media (max-width: 1023px) { .bio-vol { display: none } } .bio-vol > i { position: absolute; inset: auto 0 0 0; height: calc(var(--v) * 100%); background: color-mix(in srgb, var(--primary) 32%, transparent); transition: height var(--t-fast) var(--ease) } .bio-vol > b { position: relative; font: var(--fw-bold) var(--fs-s)/1 var(--font); font-variant-numeric: tabular-nums; color: var(--text) } #pd .bio-vol { display: none !important } /* the volume button is in the list's header, once */ .bio-vol:focus { outline: none } .bio-vol:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px } /* a page header (not a popup's) has no line under it: the standard soft edge shows under it while its list is scrolled, like a popup's title */ .rhead.rhead:not(dialog *) { border-bottom: 0; position: relative; z-index: 2 } .rhead.rhead:not(dialog *)::after { content: \"\"; position: absolute; inset-inline: 0; top: 100%; height: var(--edge-shadow-h, 6px); background: var(--edge-shadow, linear-gradient(rgba(0, 0, 0, .12), rgba(0, 0, 0, 0))); opacity: 0; transition: opacity .18s ease; pointer-events: none } .rhead.rhead[data-scrolled]:not(dialog *)::after { opacity: 1 } @media (prefers-reduced-motion: reduce) { .rhead.rhead:not(dialog *)::after { transition: none } }";
     document.head.appendChild(st);
     /* the same edge from the header's side: a scroller under a page header (outside any popup) sets data-scrolled on that header while it is scrolled away from its top, same 2px threshold as sheet.js */
     (function () {
@@ -1264,7 +1264,7 @@
   /* my vivencias, with my role and my order in each */
   function loadVivs() {
     var uid = FLOA_AUTH.userId();
-    return Promise.all([api("/rest/v1/vivencias?select=id,title,updated_at,opening_name,opening_text,vivencia_items(count)&vivencia_items.backlog=not.is.true"), api("/rest/v1/vivencia_owners?user_id=eq." + uid + "&select=vivencia_id,position"),
+    return Promise.all([api("/rest/v1/vivencias?select=id,title,updated_at,vivencia_items(count)&vivencia_items.backlog=not.is.true"), api("/rest/v1/vivencia_owners?user_id=eq." + uid + "&select=vivencia_id,position"),
       api("/rest/v1/vivencia_shares?email=eq." + encodeURIComponent(FLOA_AUTH.email().toLowerCase()) + "&select=vivencia_id,role,position")]).then(function (r) {
       var pos = {}, role = {};
       (r[2] || []).forEach(function (o) { pos[o.vivencia_id] = o.position; role[o.vivencia_id] = o.role; });   /* shared with me */
@@ -1538,7 +1538,8 @@
       (rows || []).forEach(function (x) { if (x.music) (x.kind === "end" ? en : st).push({ music_id: x.music_id, created_at: x.created_at, position: x.position, music: x.music }); });
       recvCache[id + "|start"] = st; recvCache[id + "|end"] = en;
     }, function () { /* no such songs now */ });
-    return Promise.all([api("/rest/v1/vivencia_items?vivencia_id=eq." + id + ITEM_SELECT), rp]).then(function (r) { return r[0]; });
+    var op = api("/rest/v1/vivencia_opening?vivencia_id=eq." + id + "&select=who,body,position&order=position.asc").then(function (rows) { openCache[id] = rows || []; }, function () { /* no opening now */ });
+    return Promise.all([api("/rest/v1/vivencia_items?vivencia_id=eq." + id + ITEM_SELECT), rp, op]).then(function (r) { return r[0]; });
   }
   function recvRows(id) {   /* the start and end songs of a vivencia, one list with a kind on each, for the copy kept on the device */
     var out = []; ["start", "end"].forEach(function (k) { (recvCache[id + "|" + k] || []).forEach(function (x) { out.push({ kind: k, music_id: x.music_id, created_at: x.created_at, music: x.music }); }); });
@@ -1594,43 +1595,49 @@
     return '<div data-recv="' + kind + '" style="' + (kind === "start" ? '' : 'margin-top:var(--sp-2)') + '"><div class="bio-sech" style="display:flex;align-items:center;justify-content:space-between;padding:var(--gutter) var(--gutter) 0">' + accHead(kind, label + " (" + list.length + ")") + '<span style="display:flex;align-items:center;gap:var(--sp-1)">' + playBtn + play + (edit ? '<button type="button" class="rbtn rbtn--icon" data-addm aria-label="הוספת מוזיקה" title="הוספת מוזיקה">' + I.plus + '</button>' : '') + '</span></div>' + accOpenTag(kind) +
       '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);padding:var(--gutter)">' + list.map(function (m) { var nw = window.__bioNow || {}; return optCardHtml(m, !!(nw.playing && m.audio_object && nw.name === m.audio_object), edit, true, key); }).join("") + '</div>' + ACC_CLOSE + '</div>';
   }
-  /* the opening of the evening: free text first, then a section for each leader who says something before the evening (a black chip, the words under it, indented; the chip folds the section).
-     It is kept as ONE text: the free part, then "@name" on a line of its own with that leader's words under it. */
-  function openParse(t) {
-    var parts = [{ who: "", text: "" }], names = {}; state.members.forEach(function (m) { names[facShort(m.email)] = 1; });
-    String(t || "").split("\n").forEach(function (ln) {
-      var m = /^@(.+)$/.exec(ln);
-      if (m && names[m[1].trim()]) parts.push({ who: m[1].trim(), text: "" });
-      else { var q = parts[parts.length - 1]; q.text += (q.started ? "\n" : "") + ln; q.started = true; }
-    });
-    return parts;
-  }
-  function openJoin(parts) {
-    return parts.map(function (q) { return q.who ? "@" + q.who + (q.text ? "\n" + q.text : "") : q.text; }).filter(function (x, i) { return i || x; }).join("\n");
-  }
+  /* the opening of the evening: a free text (kept only where there is nobody to add) and a section for each leader who says something before the evening
+     (a black chip, the words under it, indented; the chip folds the section). One row per section in biodanza.vivencia_opening, who = '' for the free text:
+     a save sends only the row that was changed, and a change from somebody else is written into the boxes I am not typing in. */
+  var openCache = {};   /* vivencia id -> [{ who, body, position }] */
+  function openRows(id) { return (openCache[id || state.viv.id] || []).slice().sort(function (x, y) { return (x.position | 0) - (y.position | 0); }); }
+  function openFreeText() { var r = openRows().filter(function (x) { return x.who === ""; })[0]; return r ? r.body : ""; }
   function openSum(t) { return String(t || "").replace(/[*]{2}/g, "").replace(/\s+/g, " ").trim(); }   /* a folded section tells its words in one line, up to the bin */
+  function openLocal(who, body) {   /* what I typed is in the cache at once, so a repaint draws the same words */
+    var id = state.viv.id, list = openCache[id] || (openCache[id] = []), r = list.filter(function (x) { return x.who === who; })[0];
+    if (r) r.body = body; else { r = { who: who, body: body, position: list.reduce(function (m, x) { return Math.max(m, x.position | 0); }, 0) + 1 }; list.push(r); }
+    return r;
+  }
+  function openPut(who, body) {   /* the one row, to the server */
+    var id = state.viv.id, r = openLocal(who, body);
+    return api("/rest/v1/vivencia_opening?on_conflict=vivencia_id,who", { method: "POST", prefer: "resolution=merge-duplicates,return=minimal", json: { vivencia_id: id, who: who, body: body, position: r.position } }).then(function () { refreshOffline(state.viv); }, fail);
+  }
+  function openDel(who) {
+    var id = state.viv.id; openCache[id] = (openCache[id] || []).filter(function (x) { return x.who !== who; });
+    return api("/rest/v1/vivencia_opening?vivencia_id=eq." + id + "&who=eq." + encodeURIComponent(who), { method: "DELETE" }).then(function () { refreshOffline(state.viv); }, fail);
+  }
   function openSecHtml(q, i, ro) {
     var on = accOpen[(state.viv.id) + "|sec|" + q.who] === true;   /* folded when the vivencia opens, each leader's words in one line */
     return '<div data-sec="' + i + '" data-who="' + esc(q.who) + '" style="margin-top:calc(var(--sp-1) / 2)"><div style="display:flex;align-items:center;gap:var(--sp-1)">' +
       '<button type="button" class="bio-chipb" data-sech aria-expanded="' + on + '"><span>' + esc(q.who) + '</span><span aria-hidden="true" style="display:grid;width:var(--icon-s);height:var(--icon-s);transition:transform .2s var(--ease);' + (on ? 'transform:rotate(180deg)' : '') + '">' + I.down.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span></button>' +
-      '<span data-secsum dir="auto" style="flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-2);font:var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font)">' + (on ? '' : esc(openSum(q.text))) + '</span>' +
+      '<span data-secsum dir="auto" style="flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-2);font:var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font)">' + (on ? '' : esc(openSum(q.body))) + '</span>' +
       (ro ? '' : '<button type="button" class="rbtn rbtn--icon" data-secx aria-label="הסרת המקטע" title="הסרת המקטע" style="flex:none;height:var(--tag-s);min-height:var(--tag-s);background:transparent;border-color:transparent;color:var(--text-3)">' + I.trash + '</button>') + '</div>' +
-      '<div class="bio-accb" data-secb' + (on ? '' : ' data-closed') + '><div><label class="rfield bio-secf" style="flex:none;margin:0"><span>מה אומר/ת</span><div id="opt' + i + '" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true">' + rtHtml(q.text) + '</div></label></div></div></div>';
+      '<div class="bio-accb" data-secb' + (on ? '' : ' data-closed') + '><div><label class="rfield bio-secf" style="flex:none;margin:0"><span>מה אומר/ת</span><div id="opt' + i + '" data-owho="' + esc(q.who) + '" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true">' + rtHtml(q.body) + '</div></label></div></div></div>';
   }
   function openingHtml() {   /* between the start music and the vivencia */
     var v = state.viv, ro = !canEdit(); if (!v) return "";
-    if (ro && !v.opening_text) return "";
-    var parts = openParse(v.opening_text);
+    var free = openFreeText(), secs = openRows().filter(function (x) { return x.who !== ""; });
+    if (ro && !free && !secs.length) return "";
     return '<div data-opening><div class="bio-sech" style="display:flex;align-items:center;justify-content:space-between;padding:var(--gutter) var(--gutter) 0">' + accHead("open", "פתיחת הערב") + '</div>' + accOpenTag("open") +
-      '<div style="padding:0 var(--gutter)">' + (facOn() && !parts[0].text ? '' : '<label class="rfield" style="flex:none;margin:calc(-1 * var(--sp-3)) 0 0"><span>טקסט חופשי</span><div id="opt0" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true">' + rtHtml(parts[0].text) + '</div></label>') +   /* with leaders to add, the opening is their sections; the free text stays only where there is nobody to add, or where it already has words */
-      parts.slice(1).map(function (q, k) { return openSecHtml(q, k + 1, ro); }).join("") +
+      '<div style="padding:0 var(--gutter)">' + (facOn() && !free ? '' : '<label class="rfield" style="flex:none;margin:calc(-1 * var(--sp-3)) 0 0"><span>טקסט חופשי</span><div id="opt0" data-owho="" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true">' + rtHtml(free) + '</div></label>') +
+      secs.map(function (q, k) { return openSecHtml(q, k + 1, ro); }).join("") +
       (!ro && facOn() ? '<div style="display:flex;justify-content:flex-start"><button type="button" class="rbtn rbtn--icon" data-secadd style="margin-inline-start:calc(-1 * (var(--ctl) - var(--icon-m)) / 2)" aria-haspopup="menu" aria-label="הוספת מוביל" title="הוספת מוביל">' + I.plus + '</button></div>' : '') + '</div>' + ACC_CLOSE + '</div>';
   }
   function openMenu(btn, onPick) {   /* the leaders; one tap picks */
     var old = document.getElementById("moreMenu"); if (old) old.remove();
     var m = document.createElement("div"); m.id = "moreMenu"; m.className = "rmenu rmenu--fixed"; m.setAttribute("role", "menu");
-    var seen = {};
-    m.innerHTML = state.members.filter(function (x) { var n = facShort(x.email); if (seen[n]) return false; return (seen[n] = 1); }).map(function (x) { return '<button type="button" class="rmenu__item" role="menuitem" data-n="' + esc(facShort(x.email)) + '"><span>' + esc(facShort(x.email)) + '</span></button>'; }).join("");
+    var seen = {}, have = {}; openRows().forEach(function (x) { have[x.who] = 1; });
+    m.innerHTML = state.members.filter(function (x) { var n = facShort(x.email); if (seen[n] || have[n]) return false; return (seen[n] = 1); }).map(function (x) { return '<button type="button" class="rmenu__item" role="menuitem" data-n="' + esc(facShort(x.email)) + '"><span>' + esc(facShort(x.email)) + '</span></button>'; }).join("");
+    if (!m.children.length) { toast("כל המובילים כבר כאן"); return; }
     var sh = document.createElement("div"); sh.style.cssText = "position:fixed;inset:0;z-index:var(--z-menu);background:transparent;touch-action:none";
     document.body.appendChild(sh); document.body.appendChild(m);
     var r = btn.getBoundingClientRect();
@@ -1643,55 +1650,68 @@
   }
   function wireOpening(l) {
     var root = l.querySelector("[data-opening]"); if (!root) return;
-    var v = state.viv, t = 0, last = v.opening_text || "";   /* last: what the server has; v keeps what is typed, so a repaint draws the same words */
-    var boxes = function () { return [].slice.call(root.querySelectorAll("[id^=opt]")); };
+    var timers = {};
+    var boxes = function () { return [].slice.call(root.querySelectorAll("[data-owho]")); };
     boxes().forEach(rtInit);
     (function () {   /* the chips are all as wide as the widest name needs, no wider */
       var cs = [].slice.call(root.querySelectorAll(".bio-chipb")), w = 0;
       cs.forEach(function (c) { c.style.width = ""; w = Math.max(w, c.offsetWidth); });
       if (w) cs.forEach(function (c) { c.style.width = w + "px"; });
     })();
-    function gather() {
-      var free = root.querySelector("#opt0"), parts = [{ who: "", text: free ? free.value : "" }];
-      [].forEach.call(root.querySelectorAll("[data-sec]"), function (sec) { parts.push({ who: sec.dataset.who, text: sec.querySelector("[id^=opt]").value }); });
-      return openJoin(parts);
-    }
-    function save(text) {   /* text: a change made in the structure (a section added), not yet in the boxes */
-      var b = typeof text === "string" ? text : gather(); v.opening_text = b;
-      if (b === last) return;
-      last = b; var body = { opening_text: b || null };
-      var row = state.vivs.filter(function (x) { return x.id === v.id; })[0]; if (row && row !== v) Object.assign(row, body);
-      api("/rest/v1/vivencias?id=eq." + v.id, { method: "PATCH", json: body, prefer: "return=minimal" }).then(function () { refreshOffline(v); }, fail);
-    }
     boxes().forEach(function (el) {
-      el.addEventListener("input", function () { v.opening_text = gather(); clearTimeout(t); t = setTimeout(function () { save(); }, 700); });
-      el.addEventListener("change", function () { clearTimeout(t); save(); });
+      var who = el.dataset.owho;
+      el.addEventListener("input", function () { openLocal(who, el.value); clearTimeout(timers[who]); timers[who] = setTimeout(function () { openPut(who, el.value); }, 500); });
+      el.addEventListener("change", function () { clearTimeout(timers[who]); openPut(who, el.value); });
+      el.addEventListener("blur", function () { clearTimeout(cur.trail); curMine(); });
+      ["focus", "keyup", "mouseup", "touchend"].forEach(function (n) { el.addEventListener(n, curThrottled); });
     });
     [].forEach.call(root.querySelectorAll("[data-sech]"), function (b) { b.addEventListener("click", function () {
       var sec = b.closest("[data-sec]"), body = sec.querySelector("[data-secb]"), on = body.hasAttribute("data-closed");
-      accOpen[v.id + "|sec|" + sec.dataset.who] = on;
+      accOpen[state.viv.id + "|sec|" + sec.dataset.who] = on;
       b.setAttribute("aria-expanded", String(on)); b.lastElementChild.style.transform = on ? "rotate(180deg)" : "";
       if (on) body.removeAttribute("data-closed"); else body.setAttribute("data-closed", "");
-      var sm = sec.querySelector("[data-secsum]"); if (sm) sm.textContent = on ? "" : openSum(sec.querySelector("[id^=opt]").value);
+      var sm = sec.querySelector("[data-secsum]"); if (sm) sm.textContent = on ? "" : openSum(sec.querySelector("[data-owho]").value);
     }); });
     [].forEach.call(root.querySelectorAll("[data-secx]"), function (b) { b.addEventListener("click", function () {
-      var sec = b.closest("[data-sec]"), who = sec.dataset.who, has = !!sec.querySelector("[id^=opt]").value.trim();
+      var sec = b.closest("[data-sec]"), who = sec.dataset.who, has = !!sec.querySelector("[data-owho]").value.trim();
       var dlg = document.getElementById("confirmDlg");
       if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
       RosterSheet.render(dlg, { kind: "confirm", title: "מחיקת מקטע", from: "bottom", size: "s",
         body: '<div class="pad"><span>למחוק את המקטע של "' + esc(who) + '" מפתיחת הערב?' + (has ? ' הטקסט שלו יימחק.' : '') + '</span></div>',
         foot: '<button class="rbtn rbtn--danger rbtn--block" type="button" id="csecx">מחיקה</button>' });
       dlg.querySelector("#csecx").addEventListener("click", function () {
-        dlg.close(); delete accOpen[v.id + "|sec|" + who];
-        sec.remove(); clearTimeout(t); save(); paint();
+        dlg.close(); delete accOpen[state.viv.id + "|sec|" + who]; clearTimeout(timers[who]);
+        openDel(who); paint();
       });
     }); });
     var add = root.querySelector("[data-secadd]");
     if (add) add.addEventListener("click", function () {
       openMenu(add, function (n) {
-        var cur = gather(), nt = (cur ? cur + "\n" : "") + "@" + n; accOpen[v.id + "|sec|" + n] = true; clearTimeout(t); save(nt); paint();
-        setTimeout(function () { var sc = [].slice.call(document.querySelectorAll("[data-sec]")).filter(function (x) { return x.dataset.who === n; })[0]; var bx = sc && sc.querySelector("[id^=opt]"); if (bx) bx.focus(); }, 0);
+        accOpen[state.viv.id + "|sec|" + n] = true; openPut(n, ""); paint();
+        setTimeout(function () { var bx = [].slice.call(document.querySelectorAll("[data-owho]")).filter(function (x) { return x.dataset.owho === n; })[0]; if (bx) bx.focus(); }, 0);
       });
+    });
+  }
+  function applyOpening(rows) {   /* the rows from the server: the boxes I am not typing in are written anew; a section added or removed redraws the part */
+    if (!state.viv) return;
+    var id = state.viv.id, root = document.querySelector("[data-opening]"), fe = document.activeElement;
+    var fw = root && fe && fe.dataset && fe.dataset.owho != null && root.contains(fe) ? fe.dataset.owho : null;
+    var mine = fw === null ? null : (openCache[id] || []).filter(function (x) { return x.who === fw; })[0];
+    var next = (rows || []).map(function (r) { return mine && r.who === fw ? { who: r.who, body: mine.body, position: r.position } : r; });
+    if (mine && !next.some(function (r) { return r.who === fw; })) next.push(mine);
+    openCache[id] = next;
+    var wasRoot = !!root, sorted = openRows(), free = openFreeText();
+    var want = JSON.stringify(sorted.filter(function (x) { return x.who !== ""; }).map(function (x) { return x.who; }));
+    var have = root ? JSON.stringify([].map.call(root.querySelectorAll("[data-sec]"), function (x) { return x.dataset.who; })) : "[]";
+    var freeShown = root ? !!root.querySelector('[data-owho=""]') : false, freeWant = !facOn() || !!free;
+    if (!wasRoot) { if (document.getElementById("list")) paint(); return; }
+    if (want !== have || freeShown !== freeWant) { paint(); return; }
+    [].forEach.call(root.querySelectorAll("[data-owho]"), function (box) {
+      var r = sorted.filter(function (x) { return x.who === box.dataset.owho; })[0], body = r ? r.body : "";
+      if (box !== document.activeElement && box.value !== body) {
+        box.value = body;
+        var sec = box.closest("[data-sec]"), sm = sec && sec.querySelector("[data-secsum]"); if (sm && sec.querySelector("[data-secb]").hasAttribute("data-closed")) sm.textContent = openSum(body);
+      }
     });
   }
   function loadItems() {
@@ -1699,7 +1719,7 @@
   }
   function editor() {
     var v = state.viv; setUrl(BASE + v.id); curJoin(v.id); refreshPrevLabel();
-    show(head(v.title || "ויוונסיה חדשה", "", true, wide() ? '<button type="button" id="vgo" class="rbtn rbtn--icon" hidden aria-label="לתרגיל שמתנגן" title="לתרגיל שמתנגן" style="display:none;flex:none;flex-direction:column;gap:0;color:var(--danger);background:transparent;border-color:transparent"><span id="vgon" style="font:var(--fw-black) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums"></span><span style="display:block;width:18px;height:18px">' + I.curve + '</span></button><span id="vtimer" hidden aria-live="off" style="flex:none;font:var(--fw-black) calc(2.75 * var(--fs-m))/.95 var(--font);font-variant-numeric:tabular-nums;color:var(--text);direction:ltr"></span>' + '<button type="button" class="rbtn rbtn--icon bio-flat" data-catopen aria-pressed="false" aria-label="קטלוג התרגילים" title="קטלוג התרגילים">' + I.catalog + '</button>' : '<button type="button" class="rbtn rbtn--icon bio-flat" data-catopen aria-pressed="false" aria-label="קטלוג התרגילים" title="קטלוג התרגילים">' + I.catalog + '</button>') +   /* the way to the catalog is a word in the header, not a floating button */
+    show(head(v.title || "ויוונסיה חדשה", "", true, wide() ? '<button type="button" id="vgo" class="rbtn rbtn--icon" hidden aria-label="לתרגיל שמתנגן" title="לתרגיל שמתנגן" style="display:none;flex:none;flex-direction:column;gap:0;color:var(--danger);background:transparent;border-color:transparent"><span id="vgon" style="font:var(--fw-black) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums"></span><span style="display:block;width:18px;height:18px">' + I.curve + '</span></button><span id="vtimer" hidden aria-live="off" style="flex:none;font:var(--fw-black) calc(2.75 * var(--fs-m))/.95 var(--font);font-variant-numeric:tabular-nums;color:#B3261E;direction:ltr"></span>' + '<button type="button" class="rbtn rbtn--icon bio-flat" data-catopen aria-pressed="false" aria-label="קטלוג התרגילים" title="קטלוג התרגילים">' + I.catalog + '</button>' : '<button type="button" class="rbtn rbtn--icon bio-flat" data-catopen aria-pressed="false" aria-label="קטלוג התרגילים" title="קטלוג התרגילים">' + I.catalog + '</button>') +   /* the way to the catalog is a word in the header, not a floating button */
       '<div class="rlist" data-fab-room id="list"><div class="rskel rskel--title"></div></div>' +
       '', function (r) {   /* on a wide screen the way to the catalog is a green banner down the side, added by show() */
       on(r, "back", back); on(r, "add", function () { resetPk(); if (wide()) goSub(picker); else pickerSheet(); });
@@ -1719,7 +1739,7 @@
     local.then(function (rec) {
       if (!rec || cloudDone || !state.viv || state.viv.id !== v.id || !document.getElementById("list")) return;
       state.items = rec.items || []; state.members = rec.members || [];
-      recvCache[v.id + "|start"] = []; recvCache[v.id + "|end"] = [];
+      recvCache[v.id + "|start"] = []; recvCache[v.id + "|end"] = []; openCache[v.id] = rec.opening || [];
       (rec.reception || []).forEach(function (x) { (recvCache[v.id + "|" + x.kind] = recvCache[v.id + "|" + x.kind] || []).push({ music_id: x.music_id, created_at: x.created_at, music: x.music }); });
       paint();
     });
@@ -1746,14 +1766,14 @@
     BioOffline.sync(state.vivs, function (v) {
       return Promise.all([itemsOf(v.id), api("/rest/v1/rpc/vivencia_members", { method: "POST", json: { v: v.id } })]).then(function (r) {
         var items = r[0] || [];
-        return { id: v.id, row: { id: v.id, title: v.title, updated_at: v.updated_at, opening_name: v.opening_name, opening_text: v.opening_text, vivencia_items: [{ count: items.filter(function (i) { return !i.backlog; }).length }] }, role: v.role, pos: v.pos, items: items, members: r[1] || [], reception: recvRows(v.id) };
+        return { id: v.id, row: { id: v.id, title: v.title, updated_at: v.updated_at, vivencia_items: [{ count: items.filter(function (i) { return !i.backlog; }).length }] }, role: v.role, pos: v.pos, items: items, members: r[1] || [], reception: recvRows(v.id), opening: openCache[v.id] || [] };
       });
     });
   }
   function refreshOffline(v) {   /* an open vivencia is already read: its copy is made current from that, quietly */
     if (state.offline || !window.BioOffline) return;
     api("/rest/v1/rpc/vivencia_members", { method: "POST", json: { v: v.id } }).then(function (mm) {
-      return BioOffline.update({ id: v.id, row: { id: v.id, title: v.title, updated_at: v.updated_at, opening_name: v.opening_name, opening_text: v.opening_text, vivencia_items: [{ count: state.items.filter(function (i) { return !i.backlog; }).length }] }, role: v.role, pos: v.pos, items: state.items, members: mm || [], reception: recvRows(v.id) });
+      return BioOffline.update({ id: v.id, row: { id: v.id, title: v.title, updated_at: v.updated_at, vivencia_items: [{ count: state.items.filter(function (i) { return !i.backlog; }).length }] }, role: v.role, pos: v.pos, items: state.items, members: mm || [], reception: recvRows(v.id), opening: openCache[v.id] || [] });
     }, function () { /* the old copy stays */ });
   }
   /* coming back to the app, or the internet coming back, is another comparison (not more than once a minute) */
@@ -3480,15 +3500,17 @@
      the row. The page reloads what it shows: the list of vivencias, the exercises of the open vivencia, and the fields of the open exercise (written in
      place, never over a field I am in the middle of changing). A save of my own comes back too and changes nothing, because nothing differs. */
   var rt = { ws: null, hb: 0, tk: 0, retry: 1000, timer: 0, v: false, i: false, on: false };
-  var RT_TABLES = ["vivencias", "vivencia_items", "vivencia_owners", "vivencia_shares", "vivencia_item_facilitators"];
+  var RT_TABLES = ["vivencias", "vivencia_items", "vivencia_owners", "vivencia_shares", "vivencia_item_facilitators", "vivencia_opening"];
   function rtSend(o) { if (rt.ws && rt.ws.readyState === 1) rt.ws.send(JSON.stringify(o)); }
   function rtChange(table) {
+    if (table === "vivencia_opening") { rt.o = true; clearTimeout(rt.timer); rt.timer = setTimeout(rtFlush, 150); return; }
     if (table === "vivencia_items" || table === "vivencia_item_facilitators") rt.i = true; else rt.v = true;
     if (table === "vivencia_shares" || table === "vivencia_owners") rt.i = true;   /* who may do what: the exercises screen redraws with the role */
     clearTimeout(rt.timer); rt.timer = setTimeout(rtFlush, 300);
   }
   function rtFlush() {
-    var v = rt.v, i = rt.i; rt.v = rt.i = false;
+    var v = rt.v, i = rt.i, o = rt.o; rt.v = rt.i = rt.o = false;
+    if (o && state.viv) api("/rest/v1/vivencia_opening?vivencia_id=eq." + state.viv.id + "&select=who,body,position&order=position.asc").then(applyOpening, function () { /* the next change will try again */ });
     if (v) loadVivs().then(function () {
       if (state.viv) {
         var cur = state.vivs.filter(function (x) { return x.id === state.viv.id; })[0];
@@ -3528,7 +3550,7 @@
     };
     ws.onmessage = function (e) {
       var m; try { m = JSON.parse(e.data); } catch (x) { return; }
-      if (m.event === "phx_reply" && m.topic === TOPIC && m.ref === "1") { rt.on = !!(m.payload && m.payload.status === "ok"); if (rt.on) { rt.v = rt.i = true; rtFlush(); cur.id = ""; if (cur.want) curJoin(cur.want); } }   /* what was missed while the connection was closed, and the cursors' channel again */
+      if (m.event === "phx_reply" && m.topic === TOPIC && m.ref === "1") { rt.on = !!(m.payload && m.payload.status === "ok"); if (rt.on) { rt.v = rt.i = rt.o = true; rtFlush(); cur.id = ""; if (cur.want) curJoin(cur.want); } }   /* what was missed while the connection was closed, and the cursors' channel again */
       else if (m.event === "postgres_changes") rtChange(m.payload && m.payload.data && m.payload.data.table);
       else if (m.event === "broadcast" && cur.topic && m.topic === cur.topic) {   /* somebody's cursor */
         var pl = m.payload && m.payload.payload; if (!pl || !pl.email || pl.email === FLOA_AUTH.email().toLowerCase()) return;
@@ -3566,8 +3588,11 @@
   function curLeave() { cur.want = ""; if (cur.topic && rt.ws) rtSend({ topic: cur.topic, event: "phx_leave", ref: "c0", payload: {} }); cur.topic = ""; cur.id = ""; cur.peers = {}; paintGhosts(); }
   function whoName(email) { var m = (state.members || []).filter(function (x) { return x.email === email; })[0]; return (m && m.note) || String(email || "").split("@")[0]; }
   function whoHue(email) { var h = 0; for (var i = 0; i < email.length; i++) h = (h * 31 + email.charCodeAt(i)) % 360; return h; }
+  function inOpening(el) { return !!(el && el.dataset && el.dataset.owho != null && el.closest && el.closest("[data-opening]")); }
   function curMine() {   /* my place, to everyone else */
-    if (!liveItem || !liveItem.fld) return;
+    var el0 = document.activeElement;
+    if (inOpening(el0)) return curSend({ item: "open", email: FLOA_AUTH.email().toLowerCase(), field: "o:" + el0.dataset.owho, a: rtSel(el0).a, b: rtSel(el0).b });
+    if (!liveItem || !liveItem.fld) return curSend({ item: "open", email: FLOA_AUTH.email().toLowerCase(), field: null });
     var el = document.activeElement, k = Object.keys(liveItem.fld).filter(function (x) { return liveItem.fld[x] === el; })[0];
     if (!k || k === "title") return curSend({ item: liveItem.id, email: FLOA_AUTH.email().toLowerCase(), field: null });
     curSend({ item: liveItem.id, email: FLOA_AUTH.email().toLowerCase(), field: k, a: rtSel(el).a, b: rtSel(el).b });
@@ -3576,22 +3601,28 @@
   function paintGhosts() {
     document.querySelectorAll(".bio-ghost").forEach(function (g) { g.dataset.keep = ""; });
     var now = Date.now();
-    if (liveItem && liveItem.fld && liveItem.root.isConnected) {
-      Object.keys(cur.peers).forEach(function (email) {
-        var pr = cur.peers[email];
-        if (now - pr.at > 6000) { delete cur.peers[email]; return; }
-        if (pr.item !== liveItem.id || !pr.field || !liveItem.fld[pr.field]) return;
-        var ta = liveItem.fld[pr.field], host = ta.parentElement, id = "g-" + email + "-" + pr.field, g = host.querySelector('[data-gid="' + id + '"]');
-        if (!g) { g = document.createElement("div"); g.className = "bio-ghost"; g.dataset.gid = id; g.innerHTML = "<div></div>"; host.appendChild(g); }
-        g.dataset.keep = "1";
-        var cs = getComputedStyle(ta), inner = g.firstChild, hue = whoHue(email), len = rtWalk(ta, false).length, a = Math.min(pr.a, len), b = Math.min(pr.b, len);
-        inner.style.cssText = "position:absolute;top:0;left:0;white-space:pre-wrap;overflow-wrap:anywhere;color:transparent;box-sizing:border-box;width:" + ta.clientWidth + "px;font:" + cs.font + ";letter-spacing:" + cs.letterSpacing + ";padding:" + cs.padding + ";direction:" + cs.direction + ";text-align:" + cs.textAlign + ";transform:translateY(" + (-ta.scrollTop) + "px)";
-        inner.innerHTML = ta.innerHTML;
-        var caret = document.createElement("span"); caret.className = "bio-caret"; caret.style.setProperty("--c", "hsl(" + hue + " 62% 38%)"); caret.innerHTML = "<i>" + esc(pr.name) + "</i>";
-        if (a !== b) { try { var p1 = rtPoint(inner, a), p2 = rtPoint(inner, b), rg = document.createRange(); rg.setStart(p1[0], p1[1]); rg.setEnd(p2[0], p2[1]); var mk = document.createElement("mark"); mk.style.background = "hsl(" + hue + " 70% 78% / .75)"; rg.surroundContents(mk); } catch (x) { /* across several tags: the caret alone */ } }
-        var pc = rtPoint(inner, b), rc = document.createRange(); rc.setStart(pc[0], pc[1]); rc.collapse(true); rc.insertNode(caret);
-      });
+    function one(email, pr, ta, field) {
+      var host = ta.parentElement, id = "g-" + email + "-" + field, g = host.querySelector('[data-gid="' + id + '"]');
+      if (!g) { g = document.createElement("div"); g.className = "bio-ghost"; g.dataset.gid = id; g.innerHTML = "<div></div>"; host.appendChild(g); }
+      g.dataset.keep = "1";
+      var cs = getComputedStyle(ta), inner = g.firstChild, hue = whoHue(email), len = rtWalk(ta, false).length, a = Math.min(pr.a, len), b = Math.min(pr.b, len);
+      inner.style.cssText = "position:absolute;top:0;left:0;white-space:pre-wrap;overflow-wrap:anywhere;color:transparent;box-sizing:border-box;width:" + ta.clientWidth + "px;font:" + cs.font + ";letter-spacing:" + cs.letterSpacing + ";padding:" + cs.padding + ";direction:" + cs.direction + ";text-align:" + cs.textAlign + ";transform:translateY(" + (-ta.scrollTop) + "px)";
+      inner.innerHTML = ta.innerHTML;
+      var caret = document.createElement("span"); caret.className = "bio-caret"; caret.style.setProperty("--c", "hsl(" + hue + " 62% 38%)"); caret.innerHTML = "<i>" + esc(pr.name) + "</i>";
+      if (a !== b) { try { var p1 = rtPoint(inner, a), p2 = rtPoint(inner, b), rg = document.createRange(); rg.setStart(p1[0], p1[1]); rg.setEnd(p2[0], p2[1]); var mk = document.createElement("mark"); mk.style.background = "hsl(" + hue + " 70% 78% / .75)"; rg.surroundContents(mk); } catch (x) { /* across several tags: the caret alone */ } }
+      var pc = rtPoint(inner, b), rc = document.createRange(); rc.setStart(pc[0], pc[1]); rc.collapse(true); rc.insertNode(caret);
     }
+    Object.keys(cur.peers).forEach(function (email) {
+      var pr = cur.peers[email];
+      if (now - pr.at > 6000) { delete cur.peers[email]; return; }
+      if (!pr.field) return;
+      if (pr.item === "open") {   /* the opening of the evening: the box of that leader */
+        var who = String(pr.field).slice(2), box = [].slice.call(document.querySelectorAll("[data-opening] [data-owho]")).filter(function (x) { return x.dataset.owho === who; })[0];
+        if (box && box.offsetParent) one(email, pr, box, pr.field);
+        return;
+      }
+      if (liveItem && liveItem.fld && liveItem.root.isConnected && pr.item === liveItem.id && liveItem.fld[pr.field]) one(email, pr, liveItem.fld[pr.field], pr.field);
+    });
     document.querySelectorAll(".bio-ghost").forEach(function (g) { if (!g.dataset.keep) g.remove(); });
   }
   (function () {
@@ -3599,7 +3630,7 @@
     st.textContent = ".bio-ghost { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 2 } .bio-ghost mark { color: transparent; border-radius: 2px } .bio-caret { display: inline-block; width: 0; height: 1.1em; vertical-align: text-bottom; border-inline-start: 2px solid var(--c); position: relative } .bio-caret > i { position: absolute; bottom: 100%; inset-inline-start: -2px; padding: 0 5px; border-radius: 4px 4px 4px 0; background: var(--c); color: #fff; font: 600 11px/16px var(--font); font-style: normal; white-space: nowrap }";
     document.head.appendChild(st);
     setInterval(paintGhosts, 1500);   /* a marker that was not renewed goes */
-    function inMyField() { var el = document.activeElement; return !!(liveItem && liveItem.fld && liveItem.root.isConnected && el && el.classList.contains("rf-rich") && ["poetics", "guidance", "notes"].some(function (k) { return liveItem.fld[k] === el; })); }
+    function inMyField() { var el = document.activeElement; if (inOpening(el)) return true; return !!(liveItem && liveItem.fld && liveItem.root.isConnected && el && el.classList.contains("rf-rich") && ["poetics", "guidance", "notes"].some(function (k) { return liveItem.fld[k] === el; })); }
     setInterval(function () { if (cur.topic && inMyField()) curMine(); }, 2500);   /* standing still in a field is still being there */
     document.addEventListener("selectionchange", function () { if (cur.topic && inMyField()) curThrottled(); });
   })();
