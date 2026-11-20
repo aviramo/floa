@@ -778,8 +778,8 @@
   function grow(t) { t.style.height = "auto"; t.style.height = (t.scrollHeight + t.offsetHeight - t.clientHeight) + "px"; var mh = parseFloat(getComputedStyle(t).maxHeight); t.style.overflowY = mh && t.scrollHeight > mh ? "auto" : "hidden"; }   /* rows=1: the height is the text's own, plus the line under it */
   /* the placeholder of an empty list or pane: the curve icon, a title and one line */
   function ph(title, text) { return '<div class="rempty">' + I.curve + '<b>' + esc(title) + '</b>' + (text ? '<span>' + esc(text) + '</span>' : '') + '</div>'; }
-  function phPick() {   /* the empty side of a computer: choose an exercise, or open the catalog from here */
-    return '<div class="rempty">' + I.curve + '<b>בחרו תרגיל</b><span>פרטי התרגיל יופיעו כאן</span><button type="button" class="rbtn" data-catopen aria-pressed="false" style="margin-top:var(--sp-3);gap:var(--sp-1)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.catalog.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span><span>קטלוג</span></button></div>';
+  function phPick(title, text) {   /* the empty side of a computer: choose an exercise, or open the catalog from here */
+    return '<div class="rempty">' + I.curve + '<b>' + esc(title) + '</b><span>' + esc(text) + '</span><button type="button" class="rbtn" data-catopen aria-pressed="false" style="margin-top:var(--sp-3);gap:var(--sp-1)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.catalog.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span><span>קטלוג</span></button></div>';
   }
   function uuid() { return crypto.randomUUID(); }
   var volState = { on: true, v: 1 };   /* the volume gauge in the headers: always shown */
@@ -1054,7 +1054,7 @@
   /* wide screen: the vivencia list on the right, and after choosing one its exercises take that place and the open exercise is on the left. Back from the exercises is the vivencia list again. */
   function homeWide() { state.viv = null; state.lastItem = null; emptyDetail(); home(); }
   function emptyDetail() {
-    if (wide()) show(ph("בחרו ויוונסיה", "התרגילים שלה יופיעו כאן"), null, "d");
+    if (wide()) show(phPick("בחרו ויוונסיה", "התרגילים שלה יופיעו כאן"), null, "d");
     state.viv = null; paintSel(); setUrl(BASE);
   }
   function paintSel() { pl.querySelectorAll("[data-id]").forEach(function (b) { b.closest(".rrow").setAttribute("aria-current", wide() && state.viv && b.dataset.id === state.viv.id ? "true" : "false"); }); }
@@ -1356,7 +1356,7 @@
     });
     dlg.querySelector("#cdel").addEventListener("click", function () {
       api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "DELETE" }).then(function () { dlg.close(); toast("התרגיל הוסר"); state.lastItem = null;
-        if (wide()) { show(phPick(), null, "d"); setUrl(BASE + state.viv.id); loadItems().then(paint, fail); } else back(); }, fail);
+        if (wide()) { show(phPick("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); setUrl(BASE + state.viv.id); loadItems().then(paint, fail); } else back(); }, fail);
     });
   }
   /* the name (the theme) of a vivencia is set here, from the list: the kit's popup with a header check to save */
@@ -1385,7 +1385,7 @@
   }
 
   /* ---------- the vivencia: plan along the curve ---------- */
-  function openViv(id) { if (!state.viv || state.viv.id !== id) state.lastItem = null; state.filter = ""; state.viv = state.vivs.filter(function (v) { return v.id === id; })[0] || { id: id, title: "" }; if (wide()) { stack().length = 0; show(phPick(), null, "d"); } go(editor); paintSel(); }
+  function openViv(id) { if (!state.viv || state.viv.id !== id) state.lastItem = null; state.filter = ""; state.viv = state.vivs.filter(function (v) { return v.id === id; })[0] || { id: id, title: "" }; if (wide()) { stack().length = 0; show(phPick("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); } go(editor); paintSel(); }
   var ITEM_SELECT = "&select=id,position,exercise_id,music_id,backlog,notes,title,poetics,guidance,exercises(title_he,title_en,poetics,guidance,objective,exercise_texts(lang,poetics,guidance,level,curve,level_basis,curve_basis,source)),music!music_id(id,name,title,artist,duration_sec,audio_object,in_catalog),vivencia_item_facilitators(email),item_music_options(music_id,created_at,music(id,name,title,artist,duration_sec,audio_object,in_catalog))&order=position";
   var recvCache = {};   /* the songs of the start and of the end of each vivencia: id|start, id|end */
   function itemsOf(id) {
@@ -1552,7 +1552,7 @@
     var openIt = function (id) {
       var it = state.items.filter(function (x) { return x.id === id; })[0]; if (!it) return;
       if (wide() && liveItem && liveItem.id === id) {   /* a second press on the open exercise closes it */
-        liveItem = null; state.lastItem = null; show(phPick(), null, "d"); markItem(); setUrl(BASE + state.viv.id); return;
+        liveItem = null; state.lastItem = null; show(phPick("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); markItem(); setUrl(BASE + state.viv.id); return;
       }
       if (wide()) itemScreen(it); else go(function () { itemScreen(it); });
     };
@@ -1865,7 +1865,7 @@
       function walk(to) { repNext = true; state.slideFrom = to === nextIt ? -1 : 1; if (wide()) return itemScreen(to); stack().pop(); go(function () { itemScreen(to); }); }
       on(r, "prevW", function () { if (prevIt) walk(prevIt); });
       on(r, "nextW", function () { if (nextIt) walk(nextIt); });
-      on(r, "closeIt", function () { liveItem = null; state.lastItem = null; show(phPick(), null, "d"); markItem(); setUrl(BASE + state.viv.id); });   /* the X: the exercise closes and is no longer the chosen one */
+      on(r, "closeIt", function () { liveItem = null; state.lastItem = null; show(phPick("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); markItem(); setUrl(BASE + state.viv.id); });   /* the X: the exercise closes and is no longer the chosen one */
       var trk = document.querySelector("#itemDlg .bio-tabs__track");
       if (pg) attachPager(pg, { next: nextIt ? function () { walk(nextIt); } : null, prev: prevIt ? function () { walk(prevIt); } : null,
         drag: trk ? function (dx, w) { var dir = dx > 0 ? 1 : -1; trk.classList.add("is-drag"); trk.style.setProperty("--tx", ((trk._base || 0) + dir * tabsDist(trk, dir) * Math.min(1, Math.abs(dx) / w)) + "px"); } : null,
@@ -2596,7 +2596,7 @@
     state.pickerShow = true;
     show('<header class="rhead"><button class="rbtn rbtn--icon rbtn--edge-start" data-act="back" aria-label="חזרה" title="חזרה">' + I.back + '</button><div class="rhead__text">' + searchInput() + '</div></header>' + pickerBody(false), function (r) {
       on(r, "back", !wide() ? back : swapIt ? function () { pending = { item: swapIt.id }; back(); }   /* leaving a replacement: the same exercise is open again on the left */
-        : function () { show(phPick(), null, "d"); back(); });
+        : function () { show(phPick("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); back(); });
       pickerWire(r, swapIt, false);
     });
     state.pickerShow = false;
@@ -2803,7 +2803,7 @@
     var pos = state.items.reduce(function (x, i) { return Math.max(x, i.position); }, 0) + 1;
     api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=minimal", json: { vivencia_id: state.viv.id, position: pos, backlog: true, exercise_id: null, music_id: m.id } }).then(function () {
       if (sheet) { closeSheets(); return loadItems().then(paint, fail); }
-      if (wide()) show(phPick(), null, "d"); else stack().pop(); back();
+      if (wide()) show(phPick("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); else stack().pop(); back();
     }, fail);
   }
   /* An exercise placed in a vivencia is cut loose from the catalog: the item keeps its own copy of the name, the poetics and the guidance as they are
@@ -2841,7 +2841,7 @@
       return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=representation", json: { vivencia_id: state.viv.id, position: pos, backlog: true, exercise_id: null, music_id: m && m[0] ? m[0].music_id : null, title: d.title || null, poetics: d.poetics || null, guidance: d.guidance || null } }).then(function (made) { newId = made && made[0] ? made[0].id : null; return newId ? optionsFor(newId, all) : null; });   /* the songs that were marked come with the exercise, the first as its own; none marked, none comes */
     }).then(function () { toast("התרגיל נוסף"); if (sheet) { closeSheets(); return loadItems().then(openNew, fail); }
       if (catPreview || catPanel || catPrevId) { closeCatPrev(); closeCatPanel(true); return loadItems().then(openNew, fail); }
-      if (wide()) show(phPick(), null, "d"); else stack().pop(); back(); }, fail);
+      if (wide()) show(phPick("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); else stack().pop(); back(); }, fail);
   }
 
   /* ---------- player: the session, one exercise at a time ---------- */
@@ -2938,7 +2938,7 @@
         if (liveItem && liveItem.root.isConnected) {
           var f = state.items.filter(function (x) { return x.id === liveItem.id; })[0];
           if (f) liveItem.apply(f);
-          else { toast("התרגיל הוסר"); liveItem = null; if (wide()) { show(phPick(), null, "d"); state.lastItem = null; setUrl(BASE + state.viv.id); paint(); } else back(); }
+          else { toast("התרגיל הוסר"); liveItem = null; if (wide()) { show(phPick("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); state.lastItem = null; setUrl(BASE + state.viv.id); paint(); } else back(); }
         }
       }, function () { /* the next change will try again */ });
     }
