@@ -993,12 +993,13 @@
     var snap = loadCatSnap(); if (snap) { pk.q = snap.q || ""; pk.open = snap.cats || {}; }   /* back to where it was before the refresh */
     var bg = getComputedStyle(document.body).backgroundColor;
     var d = document.createElement("div"); d.id = "catLayer";
-    d.innerHTML = '<div class="catprev" style="background:' + bg + '"></div><div class="catmain" style="background:' + bg + '"><div class="catbody" inert><header class="rhead"><div class="rhead__text" style="padding-inline-start:0">' + searchInput() + '</div></header>' + pickerBody(false) + '</div></div>';
+    d.innerHTML = '<div class="catprev" style="background:' + bg + '"></div><div class="catmain" style="background:' + bg + '"><div class="catbody" inert><header class="rhead"><div class="rhead__text" style="padding-inline-start:0">' + searchInput() + '</div><button type="button" id="catX" class="rbtn rbtn--icon bio-flat" aria-label="סגירת הקטלוג" title="סגירת הקטלוג">' + I.x + '</button></header>' + pickerBody(false) + '</div></div>';
     document.body.appendChild(d); catLayer = d; catPrev = d.querySelector(".catprev"); (d.querySelector("#catAdd") || document.createElement("i")).addEventListener("click", function (ev) {
       var c = catPrevCtx; if (!c) return;
       if (!state.viv) vivPick(ev.currentTarget, c.e, c.fake.music_id, c.fake.sel);
       else addEx(c.e, undefined, undefined, c.fake.music_id, c.fake.sel);
     });
+    d.querySelector("#catX").addEventListener("click", function () { closeCatPanel(); });
     var drawn = pickerWire(d.querySelector(".catbody"), undefined, false); placeCatLayer();
     if (snap && snap.open) drawn.then(function () {   /* it was open: it opens again, on the same place and on the same exercise */
       if (catPanel || catLayer.hidden || !wide()) return;
@@ -2751,7 +2752,8 @@
           else addEx(e, undefined, undefined, fake.music_id, fake.sel);
         });
       };
-      if (useLayer && catPanel) { catPrev.innerHTML = phtml; pwire(catPrev); catPrevId = e.id; catPrevCtx = { e: e, fake: fake }; refreshPrevLabel(); saveCat(); requestAnimationFrame(function () { catPrev.classList.add("is-open"); }); }
+      if (useLayer && catPanel) { catPrev.innerHTML = phtml; pwire(catPrev);
+        var ph0 = catPrev.querySelector(".rhead"); if (ph0) { var xb = document.createElement("button"); xb.type = "button"; xb.className = "rbtn rbtn--icon bio-flat"; xb.setAttribute("aria-label", "סגירת התרגיל"); xb.title = "סגירת התרגיל"; xb.innerHTML = I.x; xb.addEventListener("click", function () { previewTok++; closeCatPrev(); }); ph0.appendChild(xb); } catPrevId = e.id; catPrevCtx = { e: e, fake: fake }; refreshPrevLabel(); saveCat(); requestAnimationFrame(function () { catPrev.classList.add("is-open"); }); }
       else show(phtml, pwire, "d");
     }, fail);
   }
