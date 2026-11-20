@@ -127,6 +127,7 @@
     grip: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>',
     yt: '<svg viewBox="0 0 24 24" stroke="none" aria-hidden="true" style="width:calc(var(--icon-l) * 1.6);height:calc(var(--icon-l) * 1.6)"><rect x="1" y="5" width="22" height="14" rx="4.500" fill="currentColor"/><path d="M10 9l5.500 3-5.500 3z" style="fill:var(--bg)"/></svg>',   /* the YouTube mark: a song with no file of its own opens on YouTube, and the tile says so */
     dots: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>',
+    copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>',
     share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.3 10.8l7.4-3.6M8.3 13.2l7.4 3.6"/></svg>',
     x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
     check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.500 4.500L19 7"/></svg>',
@@ -1194,7 +1195,7 @@
     if (!l.__arrowRo && window.ResizeObserver) { l.__arrowRo = new ResizeObserver(function () { if (l.querySelector(".rempty")) arrowTo(l); }); l.__arrowRo.observe(l); }
   }
   function vivMenu(v, b) {   /* the owner: rename, share, delete; somebody it is shared with: rename (with edit rights) and taking themselves off it */
-    var items = v.role === "view" ? [] : [{ label: "עריכת שם", icon: I.pen, fn: function () { namePopup(v, false); } }];
+    var items = (v.role === "view" ? [] : [{ label: "עריכת שם", icon: I.pen, fn: function () { namePopup(v, false); } }]).concat([{ label: "שכפול", icon: I.copy || I.plus, fn: function () { dupPopup(v); } }]);
     if (v.role === "owner") items.push({ label: "שיתוף", icon: I.share, fn: function () { sharePopup(v); } }, { label: "מחיקה", icon: I.trash, tone: "danger", fn: function () { confirmDelete(v); } });
     else items.push({ label: "הסרה שלי מהוויוונסיה", icon: I.out, tone: "danger", fn: function () { confirmLeave(v); } });
     if (state.offline) items.length = 0;   /* with no internet nothing changes: only the copy on the device can be taken off it */
@@ -1221,6 +1222,29 @@
     if (wide() && !state.viv) emptyDetail();
   }
 
+  function dupPopup(v) {   /* a copy of a vivencia: the exercises, their music and the start and end music, under a topic of its own (the copy is the caller's own: no shares) */
+    var dlg = document.getElementById("nameDlg");
+    if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "nameDlg"; document.body.appendChild(dlg); }
+    RosterSheet.render(dlg, {
+      title: "שכפול ויוונסיה", from: "bottom", size: "s",
+      body: '<div class="pad"><label class="rfield"><span>נושא</span><input id="nt" placeholder=" " autocomplete="off" value="' + esc((v.title || "") + " (עותק)") + '"></label></div>',
+      foot: '<button class="rbtn rbtn--block" type="button" id="nsave">שכפול</button>'
+    });
+    var inp = dlg.querySelector("#nt"), btn = dlg.querySelector("#nsave");
+    function save() {
+      var t = inp.value.trim(); if (!t) return toast("חסר נושא");
+      if (btn.disabled) return; btn.disabled = true;
+      var nid = uuid();
+      api("/rest/v1/rpc/duplicate_vivencia", { method: "POST", json: { src: v.id, p_id: nid, p_title: t } }).then(function () {
+        dlg.close();
+        state.vivs.unshift({ id: nid, title: t, role: "owner", updated_at: new Date().toISOString() });
+        if (document.getElementById("hl")) renderVivs();
+        persistVivs(0, 0);   /* it goes first, like a new one */
+      }, function (e) { btn.disabled = false; fail(e); });
+    }
+    btn.addEventListener("click", save);
+    inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); save(); } });
+  }
   function newViv() { namePopup({ id: uuid(), title: "" }, true); }
   /* Who guides an exercise: optional, any number of people, offered only when a vivencia has more than two editors (owners and accounts shared with edit rights). */
   function facOn() { return state.members.length >= 2; }   /* the members are the owners and those who may edit: from two of them an exercise can have a facilitator, and its card says who */
@@ -1459,7 +1483,7 @@
       on(r, "back", back); on(r, "add", function () { resetPk(); if (wide()) goSub(picker); else pickerSheet(); });
       on(r, "more", function (b) {
         /* the owner: rename, share, delete; somebody it is shared with: rename (with edit rights) and taking themselves off it */
-        var items = v.role === "view" ? [] : [{ label: "עריכת שם", icon: I.pen, fn: function () { namePopup(v, false); } }];
+        var items = (v.role === "view" ? [] : [{ label: "עריכת שם", icon: I.pen, fn: function () { namePopup(v, false); } }]).concat([{ label: "שכפול", icon: I.copy || I.plus, fn: function () { dupPopup(v); } }]);
         if (v.role === "owner") items.push({ label: "שיתוף", icon: I.share, fn: function () { sharePopup(v); } }, { label: "מחיקה", icon: I.trash, tone: "danger", fn: function () { confirmDelete(v); } });
         else items.push({ label: "הסרה שלי מהוויוונסיה", icon: I.out, tone: "danger", fn: function () { confirmLeave(v); } });
         if (state.offline) items.length = 0;   /* with no internet nothing changes: only the copy on the device can be taken off it */
