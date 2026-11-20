@@ -2638,7 +2638,7 @@
   }
   /* the two tabs of the catalog: exercises (the first, on the right) and music; they are the pager's two pages */
   function pickerTabs() {
-    return '<div class="rtabs" role="tablist" style="position:relative;flex:0 0 auto;width:100%;min-width:0;border-bottom:0"><button type="button" class="rtab" role="tab" data-pkt="ex" aria-selected="true" style="box-shadow:none">תרגילים</button><button type="button" class="rtab" role="tab" data-pkt="mu" aria-selected="false" style="box-shadow:none">מוסיקה</button><i data-pkind aria-hidden="true" style="position:absolute;inset-block-end:0;inset-inline-start:0;width:50%;height:3px;background:var(--accent);pointer-events:none;will-change:transform"></i></div>';
+    return '<div class="rtabs" role="tablist" style="position:relative;flex:0 0 auto;width:100%;min-width:0;border-bottom:0"><button type="button" class="rtab" role="tab" data-pkt="ex" aria-selected="true" style="box-shadow:none">תרגילים</button><button type="button" class="rtab" role="tab" data-pkt="mu" aria-selected="false" style="box-shadow:none">מוסיקה</button><i data-pkind aria-hidden="true" style="position:absolute;inset-block-end:0;inset-inline-start:0;width:50%;height:3px;background:var(--primary);pointer-events:none;will-change:transform"></i></div>';
   }
   /* what the music tab filters by: the three tag columns of the music table. Values stay in English (they are the keys); a value with no entry here shows as it is. */
   var MU_LINE = [["Affectivity", "affectivity", "חיבתיות"], ["Creativity", "creativity", "יצירתיות"], ["Vitality", "vitality", "חיוניות"], ["Sexuality", "sexuality", "מיניות"], ["Trance", "transcendence", "התעלות"], ["Maze", "", "מבוך"]];   /* the app's own line names are used when it has them */
@@ -2807,6 +2807,7 @@
     RosterSheet.render(dlg, { title: "", from: "bottom", body: bleedCss("catDlg") + pickerBody(true, swapIt) });
     bleedSet(dlg);   /* the content sits on the title's own edges, the same on both sides */
     var q0 = dlg.querySelector("#q"); if (q0) q0.blur();   /* the popup opens on the list: the keyboard comes up only when the search is touched */
+    if (document.activeElement && document.activeElement !== document.body && dlg.contains(document.activeElement)) document.activeElement.blur();   /* showModal focuses the first control, now the first tab: it would show a focus frame, so nothing starts focused */
     var r = dlg.querySelector(".sheet-body"), ls = r.querySelector("#pks");
     var ph0 = r.querySelector("[data-pickhead]"); if (ph0) { ph0.style.paddingTop = "0"; ph0.style.paddingInline = "0"; }   /* the popup already leaves its standard step under the title */
     r.style.overflowY = "hidden";   /* the search stays where it is and only the list scrolls, so nothing shows through above it */
