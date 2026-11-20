@@ -439,7 +439,7 @@
       var headH = '<div style="padding:var(--sp-2) var(--sp-3);max-width:28rem"><div dir="auto" style="font:var(--fw-black) var(--fs-m)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(ttl) + '</div>' + (art ? '<div dir="auto" style="margin-top:2px;color:var(--text-2);font:var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(art) + '</div>' : '') + '</div>';
       if (wide()) {   /* a computer: a menu that comes out of the name, upwards */
         var mi = eid ? [{ label: "עריכת שם ומבצע", icon: I.pen, fn: function () { editFromDock(); } }] : [];
-        menu(nmEl, mi, { head: headH, up: true });
+        menu(nmEl, mi, { head: headH, up: true, ref: nmEl.closest(".bio-dock") });
         return;
       }
       var idlg = document.getElementById("songInfoDlg");
@@ -1285,7 +1285,7 @@
     document.body.appendChild(sh); document.body.appendChild(m);
     btn.setAttribute("aria-expanded", "true");   /* the button that opened the menu stays shown while it is open */
     var r = btn.getBoundingClientRect();
-    if (opts && opts.up) { m.style.maxWidth = "min(28rem, calc(100vw - 16px))"; m.style.top = Math.max(8, Math.round(r.top - 4 - m.offsetHeight)) + "px"; m.style.left = Math.min(Math.max(8, Math.round(r.left)), Math.max(8, innerWidth - m.offsetWidth - 8)) + "px"; }
+    if (opts && opts.up) { m.style.maxWidth = "min(28rem, calc(100vw - 16px))"; m.style.top = Math.max(8, Math.round(((opts.ref ? opts.ref.getBoundingClientRect().top : r.top)) - 8 - m.offsetHeight)) + "px"; m.style.left = Math.min(Math.max(8, Math.round(r.left)), Math.max(8, innerWidth - m.offsetWidth - 8)) + "px"; }
     else { m.style.top = Math.round(r.bottom + 4) + "px"; m.style.left = Math.max(8, Math.round(r.left)) + "px"; }
     function close() { m.remove(); sh.remove(); btn.removeAttribute("aria-expanded"); document.removeEventListener("click", away, true); document.removeEventListener("keydown", onKey, true); }
     function away(e) { if (!m.contains(e.target)) { e.preventDefault(); e.stopPropagation(); close(); } }
