@@ -97,7 +97,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
   function shell() {
     app.innerHTML = '<header class="rhead"><a class="rbtn rbtn--icon rbtn--edge-start" href="' + HOME + '" aria-label="חזרה לאפליקציה" title="חזרה לאפליקציה" style="text-decoration:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></a><div class="rhead__text"><h1 class="rhead__title">קטלוג 2014 מול הקטלוג</h1></div></header>' +
       '<div class="pad" style="flex-direction:row;align-items:flex-end;padding-bottom:0"><label class="rfield" style="flex:1 1 auto"><span id="cnt">חיפוש תרגיל</span><input id="q" type="search" placeholder=" " autocomplete="off"></label>' +
-      '<label class="rfield" style="flex:0 0 14rem"><span>הצגה</span><select id="f"><option value="all">הכול</option><option value="match">יש התאמה</option><option value="good">התאמה זהה או חזקה</option><option value="possible">התאמה אפשרית</option><option value="none">אין התאמה</option><option value="music">יש שירים</option></select></label></div>' +
+      '<label class="rfield" style="flex:0 0 14rem"><span>הצגה</span><select id="f"><option value="all">הכול</option><option value="match">יש התאמה</option><option value="good">התאמה זהה או חזקה</option><option value="possible">התאמה אפשרית</option><option value="none">אין התאמה</option><option value="music">יש שירים</option><option value="split">תרגיל קיים עם כמה מ־2014</option></select></label></div>' +
       '<div class="rlist" id="out"></div>';
     app.querySelector("#q").addEventListener("input", function () { clearTimeout(timer); timer = setTimeout(draw, 200); });
     app.querySelector("#f").addEventListener("change", draw);
@@ -127,11 +127,25 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
     if (more.length) h += '<div class="c__more"><span class="c__lbl">מועמדים נוספים</span>' + more.map(function (m) { return '<span class="c__s">' + esc(m.title_en) + ' (' + pct(m.title) + (m.shared ? ', מוסיקה ' + pct(m.jaccard) : '') + ')</span>'; }).join("") + '</div>';
     return h + '</div>';
   }
+  function groups() {
+    var g = {}, out = [];
+    rows.forEach(function (r) { var b = best(r); if (b) (g[b.id] = g[b.id] || { ex: b, items: [] }).items.push({ r: r, b: b }); });
+    Object.keys(g).forEach(function (k) { if (g[k].items.length > 1) { g[k].f = fold(g[k].ex.title_en + " " + g[k].ex.title_he + " " + g[k].items.map(function (i) { return i.r.title_en + " " + i.r.title_he; }).join(" ")); out.push(g[k]); } });
+    return out.sort(function (x, y) { return y.items.length - x.items.length; });
+  }
+  function gcard(g) {
+    var h = '<div class="rcard"><div class="c__blk"><span class="c__lbl">תרגיל בקטלוג הקיים · ' + g.items.length + ' תרגילים מ־2014</span>' + nm(g.ex) + '</div><div class="c__match"><span class="c__lbl">מקטלוג 2014</span>';
+    g.items.sort(function (x, y) { return y.b.title - x.b.title; }).forEach(function (i) {
+      h += '<div class="c__blk" style="margin-bottom:var(--sp-1)"><div class="c__t">' + esc(i.r.title_en) + '</div><div class="c__h">' + esc(i.r.title_he) + '</div><div class="c__s">שם ' + pct(i.b.title) + ' · מוסיקה: ' + i.r.music.length + ' שירים, ' + i.b.shared + ' משותפים' + (i.b.shared ? ' (' + pct(i.b.jaccard) + ')' : '') + '</div></div>';
+    });
+    return h + '</div></div>';
+  }
   function draw() {
     var out = document.getElementById("out"), q = document.getElementById("q").value.trim(), f = document.getElementById("f").value;
-    var list = nearest(rows.filter(function (r) { return pass(r, f); }), function (r) { return r.f; }, q);
-    document.getElementById("cnt").textContent = "חיפוש תרגיל · " + list.length + " מתוך " + rows.length;
-    out.innerHTML = list.length ? list.map(card).join("") : '<div class="rempty"><b>לא נמצא</b></div>';
+    var split = f === "split", all = split ? groups() : rows;
+    var list = nearest(split ? all : rows.filter(function (r) { return pass(r, f); }), function (r) { return r.f; }, q);
+    document.getElementById("cnt").textContent = "חיפוש תרגיל · " + list.length + " מתוך " + all.length;
+    out.innerHTML = list.length ? list.map(split ? gcard : card).join("") : '<div class="rempty"><b>לא נמצא</b></div>';
   }
   function start() {
     if (!window.FLOA_AUTH || !FLOA_AUTH.signedIn()) return msg("קטלוג 2014", "צריך להיכנס קודם דרך האפליקציה.", '<a class="rbtn" href="' + HOME + '">לאפליקציה</a>');
@@ -141,7 +155,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
       document.getElementById("out").innerHTML = '<div class="rskel rskel--title"></div>';
       return FLOA_AUTH.api("/rest/v1/rpc/c14_list", { method: "POST", json: {} }).then(function (r) {
         rows = (r || []).map(function (x) { x.f = fold([x.title_en, x.title_he, x.category, x.music.map(function (m) { return m.name; }).join(" ")].join(" ")); return x; });
-        Array.prototype.forEach.call(document.querySelectorAll("#f option"), function (o) { o.textContent += " (" + rows.filter(function (r) { return pass(r, o.value); }).length + ")"; });
+        Array.prototype.forEach.call(document.querySelectorAll("#f option"), function (o) { o.textContent += " (" + (o.value === "split" ? groups().length : rows.filter(function (r) { return pass(r, o.value); }).length) + ")"; });
         draw();
       });
     }).catch(function () { msg("קטלוג 2014", "לא הצלחנו לטעון. נסו שוב."); });
