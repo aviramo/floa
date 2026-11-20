@@ -9,12 +9,35 @@ pdf = json.load(open(P, encoding='utf8'))['c2014']
 rows = json.load(open(R, encoding='utf8'))
 def cc(x): return re.sub(r'\s+', '', x or '').upper()   # the PDF writes BA13-05, our music BA 13-05
 bycoll, byname = collections.defaultdict(list), {}
+CODE = re.compile(r'[A-Za-z]{2,5}\s*\d{1,3}\s*-\s*\d{1,3}')
 for m in mu:
-    if m['collection']: bycoll[cc(m['collection'])].append(m)
+    if m['collection']:
+        bycoll[cc(m['collection'])].append(m)
+        for c in CODE.findall(m['collection']):
+            if cc(c) != cc(m['collection']): bycoll[cc(c)].append(m)
     byname[(m['name'] or '').lower(), cc(m['collection'])] = m
 
 
 def tk(x): return set(re.findall(r'[a-z0-9]{3,}', re.sub(r'[^\x00-\x7f]', ' ', (x or '').lower())))
+
+
+import difflib
+
+
+def norm(x): return re.sub(r'[^a-z0-9]+', ' ', re.sub(r'[^\x00-\x7f]', ' ', (x or '').lower())).strip()
+
+
+NAMES = [(norm(m['name']), m) for m in mu]
+
+
+def byfuzzy(name, sec):
+    # last resort when no code finds the song: a name that is almost the same, and a length within 6 seconds (or a name that is the same)
+    t = norm(name); best = None
+    for nm, m in NAMES:
+        if not nm or abs(len(nm) - len(t)) > 12: continue
+        r = difflib.SequenceMatcher(None, t, nm).ratio()
+        if r >= 0.85 and (r >= 0.97 or abs((m['duration_sec'] or 0) - sec) <= 6) and (best is None or r > best[0]): best = (r, m)
+    return best[1] if best else None
 
 
 idof = {r['title_en'].lower(): r['id'] for r in rows}
@@ -36,7 +59,9 @@ for dance, songs in pdf.items():
                 if best is None or sc > best[0]: best = (sc, c)
             m = best[1]; how['code'] += 1
         else:
-            how['not in our music'] += 1
+            m = byfuzzy(name, sec)
+            if m: how['name+length'] += 1
+            else: how['not in our music'] += 1
         if m: links.add((cid, m['id']))
         plist[cid].append({'n': name, 'm': m['id'] if m else None})
 print(dict(how), 'links', len(links))
