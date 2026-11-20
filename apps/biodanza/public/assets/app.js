@@ -445,7 +445,7 @@
           '<span style="color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + esc(when(e.at)) + '</span></div></div>';
       }).join("");
       RosterSheet.render(dlg, { title: "היסטוריית האזנה", from: "bottom", size: "l",
-        body: '<div style="padding:calc(var(--pp-head-gap, 12px) + var(--pp-hair)) 0 var(--gutter)">' + (rows.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);align-items:stretch">' + cards + '</div>' : ph("אין עדיין היסטוריה", "מוסיקה שהתחילה להתנגן תופיע כאן")) + '</div>' });
+        body: '<div style="padding:0 0 var(--gutter)">' + (rows.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);align-items:stretch">' + cards + '</div>' : ph("אין עדיין היסטוריה", "מוסיקה שהתחילה להתנגן תופיע כאן")) + '</div>' });
       dlg.onclick = function (ev) {
         var c = ev.target.closest && ev.target.closest("[data-hi]"); if (!c) return;
         var e = rows[+c.dataset.hi]; if (!e) return;
