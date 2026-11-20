@@ -987,10 +987,10 @@
     try {
       if (wide()) {
         if (!catLayer) return;
-        var pks = catLayer.querySelector("#pks"); localStorage.setItem(CAT_KEY, JSON.stringify({ open: !!catPanel, prev: catPrevId || null, q: pk.q || "", tab: pk.tab || "ex", mq: pk.mq || "", mln: pk.mln || "", mrh: pk.mrh || "", mef: pk.mef || "", cats: pk.open || {}, sc: pks ? pks.scrollTop : 0 }));
+        var pks = catLayer.querySelector("#pks"); localStorage.setItem(CAT_KEY, JSON.stringify({ open: !!catPanel, prev: catPrevId || null, q: pk.q || "", tab: pk.tab || "ex", mq: pk.mq || "", mln: pk.mln || "", mch: pk.mch || "", msp: pk.msp || "", mef: pk.mef || "", cats: pk.open || {}, sc: pks ? pks.scrollTop : 0 }));
       } else {   /* a phone: the two popups */
         var cd = document.getElementById("catDlg"), xd = document.getElementById("exDlg"), pk2 = cd && cd.querySelector("#pks");
-        localStorage.setItem(CAT_KEY, JSON.stringify({ open: !!(cd && cd.open), prev: xd && xd.open && xd.dataset.ex ? xd.dataset.ex : null, q: pk.q || "", tab: pk.tab || "ex", mq: pk.mq || "", mln: pk.mln || "", mrh: pk.mrh || "", mef: pk.mef || "", cats: pk.open || {}, sc: pk2 ? pk2.scrollTop : 0 }));
+        localStorage.setItem(CAT_KEY, JSON.stringify({ open: !!(cd && cd.open), prev: xd && xd.open && xd.dataset.ex ? xd.dataset.ex : null, q: pk.q || "", tab: pk.tab || "ex", mq: pk.mq || "", mln: pk.mln || "", mch: pk.mch || "", msp: pk.msp || "", mef: pk.mef || "", cats: pk.open || {}, sc: pk2 ? pk2.scrollTop : 0 }));
       }
     } catch (e) { /* not kept */ }
   }
@@ -998,7 +998,7 @@
     if (wide()) return;
     var snap = loadCatSnap(); if (!snap || !snap.open) return;
     var cd = document.getElementById("catDlg"); if (cd && cd.open) return;
-    resetPk(); pk.q = snap.q || ""; pk.tab = snap.tab === "mu" ? "mu" : "ex"; pk.mq = snap.mq || ""; pk.mln = snap.mln || ""; pk.mrh = snap.mrh || ""; pk.mef = snap.mef || ""; pk.open = snap.cats || {};
+    resetPk(); pk.q = snap.q || ""; pk.tab = snap.tab === "mu" ? "mu" : "ex"; pk.mq = snap.mq || ""; pk.mln = snap.mln || ""; pk.mch = snap.mch || ""; pk.msp = snap.msp || ""; pk.mef = snap.mef || ""; pk.open = snap.cats || {};
     var drawn = pickerSheet(); if (!drawn || !drawn.then) return;
     drawn.then(function () {
       var pks = document.querySelector("#catDlg #pks"); if (pks) pks.scrollTop = snap.sc || 0;
@@ -1033,7 +1033,7 @@
   function ensureCatLayer() {   /* built once, closed, waiting off the right edge of the screen */
     if (catLayer) return;
     resetPk();   /* the search box reads the catalog's state: it must exist before the layer is drawn */
-    var snap = loadCatSnap(); if (snap) { pk.q = snap.q || ""; pk.tab = snap.tab === "mu" ? "mu" : "ex"; pk.mq = snap.mq || ""; pk.mln = snap.mln || ""; pk.mrh = snap.mrh || ""; pk.mef = snap.mef || ""; pk.open = snap.cats || {}; }   /* back to where it was before the refresh */
+    var snap = loadCatSnap(); if (snap) { pk.q = snap.q || ""; pk.tab = snap.tab === "mu" ? "mu" : "ex"; pk.mq = snap.mq || ""; pk.mln = snap.mln || ""; pk.mch = snap.mch || ""; pk.msp = snap.msp || ""; pk.mef = snap.mef || ""; pk.open = snap.cats || {}; }   /* back to where it was before the refresh */
     var bg = getComputedStyle(document.body).backgroundColor;
     var d = document.createElement("div"); d.id = "catLayer";
     d.innerHTML = '<div class="catprev" style="background:' + bg + '"></div><div class="catmain" style="background:' + bg + '"><div class="catbody" inert><header class="rhead"><div class="rhead__text" style="padding-inline-start:0">' + pickerTabs() + '</div><button type="button" id="catX" class="rbtn rbtn--icon bio-flat" aria-label="סגירת הקטלוג" title="סגירת הקטלוג">' + I.x + '</button></header>' + pickerBody(false) + '</div></div>';
@@ -2142,7 +2142,7 @@
     if (exMusicP) return exMusicP;
     var by = {}, order = [], PAGE = 1000;
     function page(off) {
-      return api("/rest/v1/exercise_music?select=exercise_id,exercises(id,title_he,title_en),music(id,name,title,artist,duration_sec,audio_object,in_catalog,line_tags,effect_tags,rhythm_tags)&order=exercise_id,music_id&limit=" + PAGE + "&offset=" + off).then(function (rows) {
+      return api("/rest/v1/exercise_music?select=exercise_id,exercises(id,title_he,title_en),music(id,name,title,artist,duration_sec,audio_object,in_catalog,line_tags,effect_tags,rhythm_char_tags,rhythm_speed_tags)&order=exercise_id,music_id&limit=" + PAGE + "&offset=" + off).then(function (rows) {
         rows = rows || [];
         rows.forEach(function (x) {
           if (!x.exercises || !x.music) return;
@@ -2157,7 +2157,7 @@
       var seen = {}; o.forEach(function (g) { g.songs.forEach(function (m) { seen[m.id] = 1; }); });
       var rest = [];
       function lp(off) {
-        return api("/rest/v1/music?in_catalog=eq.true&select=id,name,title,artist,duration_sec,audio_object,in_catalog,line_tags,effect_tags,rhythm_tags&order=name,id&limit=" + PAGE + "&offset=" + off).then(function (rows) {
+        return api("/rest/v1/music?in_catalog=eq.true&select=id,name,title,artist,duration_sec,audio_object,in_catalog,line_tags,effect_tags,rhythm_char_tags,rhythm_speed_tags&order=name,id&limit=" + PAGE + "&offset=" + off).then(function (rows) {
           rows = rows || []; rows.forEach(function (m) { if (!seen[m.id]) rest.push(m); });
           return rows.length === PAGE ? lp(off + PAGE) : rest;
         });
@@ -2669,8 +2669,8 @@
   }
 
   /* ---------- picker: the catalog ---------- */
-  var pk = { q: "", ln: "", cg: "", lv: "", cv: "", tab: "ex", mq: "", mln: "", mrh: "", mef: "" };   /* the catalog's search, line, category, group level and place on the curve */
-  function resetPk() { pk = { q: "", ln: "", cg: "", lv: "", cv: "", tab: "ex", mq: "", mln: "", mrh: "", mef: "" }; }
+  var pk = { q: "", ln: "", cg: "", lv: "", cv: "", tab: "ex", mq: "", mln: "", mch: "", msp: "", mef: "" };   /* the catalog's search, line, category, group level and place on the curve */
+  function resetPk() { pk = { q: "", ln: "", cg: "", lv: "", cv: "", tab: "ex", mq: "", mln: "", mch: "", msp: "", mef: "" }; }
   var LEVELS_FALLBACK = [{ key: "all", name_he: "מתחילים (מתאים לכל הקבוצות)" }, { key: "exp3", name_he: "לקבוצות עם ניסיון של כמה חודשים" }, { key: "exp6", name_he: "לקבוצות עם ניסיון של חצי שנה ויותר" }, { key: "deep", name_he: "לקבוצות העמקה ומתקדמות" }];   /* the index of group levels (biodanza.levels), when it has not come from the cloud */
   /* the catalog picker: a search and the list of categories; a category opens like an accordion onto its exercises. On a wide screen it is a pane; on a narrow one it is a popup from the bottom. */
   function searchInput(id, label) {
@@ -2683,18 +2683,18 @@
   }
   /* what the music tab filters by: the three tag columns of the music table. Values stay in English (they are the keys); a value with no entry here shows as it is. */
   var MU_LINE = [["Affectivity", "affectivity", "חיבתיות"], ["Creativity", "creativity", "יצירתיות"], ["Vitality", "vitality", "חיוניות"], ["Sexuality", "sexuality", "מיניות"], ["Trance", "transcendence", "התעלות"], ["Maze", "", "מבוך"]];   /* the app's own line names are used when it has them */
-  var MU_RHYTHM = { "Rhythmic": "קצבי", "Rhythm-Melodic": "מלודי", "Rhythm-Slow": "איטי", "Rhythm-Medium": "בינוני", "Rhythm-Fast": "מהיר", "Rhythm- Medium / Slow": "בינוני עד איטי", "Rhythm-Very Slow": "איטי מאוד", "Rhythm- Slow and Fast": "איטי ומהיר", "Rhythm-Very Fast": "מהיר מאוד", "No Rhythm": "בלי קצב", "Rhythm-Repetitive - monotonic": "חוזר ומונוטוני", "Rhythm-Progressive": "מתפתח", "eurythmic": "אאוריתמי" };
+  var MU_CHAR = { "Rhythmic": "קצבי", "Melodic": "מלודי", "Other": "אחר" }, MU_SPEED = { "Slow": "איטי", "Medium": "בינוני", "Fast": "מהיר" };   /* the two new columns: character and speed, fixed order */
   var MU_EFFECT = { "Soft and Sensitive": "רך ורגיש", "Sensual": "חושני", "Joyful": "שמח", "Deep": "עמוק", "Romantic": "רומנטי", "Expressive": "אקספרסיבי", "Playful": "שובב", "Energizing": "מאיץ", "Dramatic": "דרמטי", "Cellestial": "שמימי", "Airy - Cosmic": "אווירי וקוסמי", "Sacred": "מקודש", "Passionate": "נלהב", "Light": "קליל", "Euphoric": "אופורי", "Pulsating": "פועם", "Optimistic": "אופטימי" };
   function muLineLabel(v) { var e = MU_LINE.filter(function (x) { return x[0] === v; })[0]; if (!e) return v; var n = e[1] && state.lines && state.lines.filter(function (l) { return l.key === e[1]; })[0]; return n ? n.name_he : e[2]; }
   function tagHit(m, f) {   /* a song matches when, in every box that is set, its array holds the chosen value; a song with no tags matches only when no box is set */
-    return (!f.ln || (m.line_tags || []).indexOf(f.ln) >= 0) && (!f.rh || (m.rhythm_tags || []).indexOf(f.rh) >= 0) && (!f.ef || (m.effect_tags || []).indexOf(f.ef) >= 0);
+    return (!f.ln || (m.line_tags || []).indexOf(f.ln) >= 0) && (!f.ch || (m.rhythm_char_tags || []).indexOf(f.ch) >= 0) && (!f.sp || (m.rhythm_speed_tags || []).indexOf(f.sp) >= 0) && (!f.ef || (m.effect_tags || []).indexOf(f.ef) >= 0);
   }
   function pickerBody(sheetMode, swapIt) {
-    var pageCss = '<style>.pgp > .pgs { padding-inline: var(--gutter); padding-block: var(--sp-1) 0 } #pgr::-webkit-scrollbar { display: none } ' + (sheetMode ? '#catDlg .sheet-head { display: none } #catDlg [data-accb] > div > div, #catDlg #mgrid { padding-inline: 0 !important } #catDlg .sheet-body > #pgr, #catDlg .sheet-body > .rtabs { padding-inline: 0 } #catDlg .pgp > * { padding-inline: var(--bleed, var(--pp-px)) }' : '') + '</style>';
+    var pageCss = '<style>.mfs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-1) } @media (min-width: 640px) { .mfs { grid-template-columns: repeat(4, minmax(0, 1fr)) } } .pgp > .pgs { padding-inline: var(--gutter); padding-block: var(--sp-1) 0 } #pgr::-webkit-scrollbar { display: none } ' + (sheetMode ? '#catDlg .sheet-head { display: none } #catDlg [data-accb] > div > div, #catDlg #mgrid { padding-inline: 0 !important } #catDlg .sheet-body > #pgr, #catDlg .sheet-body > .rtabs { padding-inline: 0 } #catDlg .pgp > * { padding-inline: var(--bleed, var(--pp-px)) }' : '') + '</style>';
     var pageSt = 'flex:0 0 100%;min-width:0;min-height:0;display:flex;flex-direction:column;scroll-snap-align:start;scroll-snap-stop:always', listSt = 'position:relative;flex:1 1 auto;min-height:0;overflow-y:auto';
     var exPage = '<div class="pgp" role="tabpanel" style="' + pageSt + '"><div class="pgs">' + searchInput("q", "חיפוש תרגילים בקטלוג") + '</div><div class="rlist pgl" id="pks" style="' + listSt + '"><div id="list"><div class="rskel rskel--title"></div></div></div></div>';
-    var muPage = swapIt ? '' : '<div class="pgp" role="tabpanel" style="' + pageSt + '"><div class="pgs">' + searchInput("mq", "חיפוש מוסיקה בקטלוג") + '</div><div class="pgs" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-1)">' +
-      [["mln", "קו"], ["mrh", "קצב"], ["mef", "אפקט"]].map(function (b) { return '<label class="rfield"><select data-mf="' + b[0] + '" aria-label="' + b[1] + '"><option value="">' + b[1] + '</option></select></label>'; }).join("") +
+    var muPage = swapIt ? '' : '<div class="pgp" role="tabpanel" style="' + pageSt + '"><div class="pgs">' + searchInput("mq", "חיפוש מוסיקה בקטלוג") + '</div><div class="pgs mfs">' +
+      [["mln", "קו"], ["mch", "אופי"], ["msp", "מהירות"], ["mef", "אפקט"]].map(function (b) { return '<label class="rfield"><select data-mf="' + b[0] + '" aria-label="' + b[1] + '"><option value="">' + b[1] + '</option></select></label>'; }).join("") +
       '</div><div class="rlist pgl" id="pkl" style="' + listSt + '"><div class="rskel rskel--title"></div></div></div>';
     return pageCss + (sheetMode && !swapIt ? pickerTabs() : '') +
       '<div id="pgr" style="flex:1 1 auto;min-height:0;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none">' + exPage + muPage + '</div>';
@@ -2759,17 +2759,18 @@
       }
       function fillSelects() {
         function count(col) { var c = {}; musicAll.forEach(function (m) { (m[col] || []).forEach(function (v) { c[v] = (c[v] || 0) + 1; }); }); return Object.keys(c).sort(function (a, b) { return c[b] - c[a]; }); }
-        var sets = { mln: MU_LINE.map(function (x) { return x[0]; }).filter(function (v) { return musicAll.some(function (m) { return (m.line_tags || []).indexOf(v) >= 0; }); }), mrh: count("rhythm_tags"), mef: count("effect_tags") };
+        function has(col, v) { return musicAll.some(function (m) { return (m[col] || []).indexOf(v) >= 0; }); }
+        var sets = { mln: MU_LINE.map(function (x) { return x[0]; }).filter(function (v) { return musicAll.some(function (m) { return (m.line_tags || []).indexOf(v) >= 0; }); }), mch: Object.keys(MU_CHAR).filter(function (v) { return has("rhythm_char_tags", v); }), msp: Object.keys(MU_SPEED).filter(function (v) { return has("rhythm_speed_tags", v); }), mef: count("effect_tags") };
         r.querySelectorAll("[data-mf]").forEach(function (sel) {
           var k = sel.dataset.mf, first = sel.options[0].outerHTML;
-          sel.innerHTML = first + sets[k].map(function (v) { var lb = k === "mln" ? muLineLabel(v) : (k === "mrh" ? MU_RHYTHM : MU_EFFECT)[v] || v; return '<option value="' + esc(v) + '">' + esc(lb) + '</option>'; }).join("");
+          sel.innerHTML = first + sets[k].map(function (v) { var lb = k === "mln" ? muLineLabel(v) : ({ mch: MU_CHAR, msp: MU_SPEED, mef: MU_EFFECT })[k][v] || v; return '<option value="' + esc(v) + '">' + esc(lb) + '</option>'; }).join("");
           sel.value = pk[k] || "";
         });
       }
       function paintMu() {
         var l = r.querySelector("#pkl"); if (!l || !musicAll) return;
-        var s = fold(mq.value.trim()), f = { ln: pk.mln, rh: pk.mrh, ef: pk.mef };
-        pk.mq = mq.value; saveCat();   /* the search and the three boxes are kept through a refresh, like the exercises' search */
+        var s = fold(mq.value.trim()), f = { ln: pk.mln, ch: pk.mch, sp: pk.msp, ef: pk.mef };
+        pk.mq = mq.value; saveCat();   /* the search and the four boxes are kept through a refresh, like the exercises' search */
         mList = musicAll.filter(function (m) { return tagHit(m, f) && (!s || fz(songName(m) + " " + songBy(m), s)); });
         mShown = Math.min(MP, mList.length); l.scrollTop = 0;
         l.innerHTML = mList.length ? '<div id="mgrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);padding:var(--gutter)">' + musicCards(0, mShown) + '</div>' : ph("לא נמצאה מוסיקה", "");
