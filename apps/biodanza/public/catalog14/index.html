@@ -103,7 +103,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
   function shell() {
     app.innerHTML = '<header class="rhead"><a class="rbtn rbtn--icon rbtn--edge-start" href="' + HOME + '" aria-label="חזרה לאפליקציה" title="חזרה לאפליקציה" style="text-decoration:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></a><div class="rhead__text"><h1 class="rhead__title">קטלוג 2014 מול הקטלוג</h1></div></header>' +
       '<div class="pad" style="flex-direction:row;align-items:flex-end;padding-bottom:0"><label class="rfield" style="flex:1 1 auto"><span id="cnt">חיפוש תרגיל</span><input id="q" type="search" placeholder=" " autocomplete="off"></label>' +
-      '<label class="rfield" style="flex:0 0 14rem"><span>הצגה</span><select id="f"><option value="all">הכול</option><option value="match">יש התאמה</option><option value="good">התאמה זהה או חזקה</option><option value="possible">התאמה אפשרית</option><option value="none">אין התאמה</option><option value="music">יש שירים</option><option value="split">תרגיל קיים עם כמה מ־2014</option></select></label></div>' +
+      '<label class="rfield" style="flex:0 0 14rem"><span>הצגה</span><select id="f"><option value="all">הכול</option><option value="match">יש התאמה</option><option value="good">התאמה זהה או חזקה</option><option value="possible">התאמה אפשרית</option><option value="none">אין התאמה</option><option value="music">יש מוסיקה</option><option value="split">תרגיל קיים עם כמה מ־2014</option></select></label></div>' +
       '<div class="rlist" id="out"></div>';
     app.querySelector("#q").addEventListener("input", function () { clearTimeout(timer); timer = setTimeout(draw, 200); });
     app.querySelector("#f").addEventListener("change", draw);
@@ -119,7 +119,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
   function why(r, m) {
     var t = m.title >= 0.95 ? "השם זהה" : m.title >= 0.75 ? "השם דומה מאוד (" + pct(m.title) + ")" : "השם דומה בחלקו (" + pct(m.title) + ")";
     var h = '<div class="c__why">' + t;
-    h += '</div><div class="c__why"><b>מוסיקה</b><br>בתרגיל מ־2014: ' + r.music.length + ' שירים<br>בתרגיל הקיים: ' + m.songs_n + ' שירים<br>משותפים: ' + m.shared + (m.shared ? ' (התאמה ' + pct(m.jaccard) + ')' : '') + '</div>';
+    h += '</div><div class="c__why"><b>מוסיקה</b><br>בתרגיל מ־2014: ' + r.music.length + ' מוסיקות<br>בתרגיל הקיים: ' + m.songs_n + ' מוסיקות<br>משותפים: ' + m.shared + (m.shared ? ' (התאמה ' + pct(m.jaccard) + ')' : '') + '</div>';
     return h;
   }
   var opened = {};
@@ -159,7 +159,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
   function gcard(g) {
     var h = '<div class="rcard"><div class="c__blk"><span class="c__lbl">תרגיל בקטלוג הקיים · ' + g.items.length + ' תרגילים מ־2014</span>' + nm(g.ex) + '</div><div class="c__match"><span class="c__lbl">מקטלוג 2014</span>';
     g.items.sort(function (x, y) { return y.b.title - x.b.title; }).forEach(function (i) {
-      h += '<div class="c__blk" style="margin-bottom:var(--sp-1)"><div class="c__t">' + esc(i.r.title_en) + '</div><div class="c__h">' + esc(i.r.title_he) + '</div><div class="c__s">שם ' + pct(i.b.title) + ' · מוסיקה: ' + i.r.music.length + ' שירים, ' + i.b.shared + ' משותפים' + (i.b.shared ? ' (' + pct(i.b.jaccard) + ')' : '') + '</div></div>';
+      h += '<div class="c__blk" style="margin-bottom:var(--sp-1)"><div class="c__t">' + esc(i.r.title_en) + '</div><div class="c__h">' + esc(i.r.title_he) + '</div><div class="c__s">שם ' + pct(i.b.title) + ' · מוסיקה: ' + i.r.music.length + ' מוסיקות, ' + i.b.shared + ' משותפים' + (i.b.shared ? ' (' + pct(i.b.jaccard) + ')' : '') + '</div></div>';
     });
     return h + '</div></div>';
   }

@@ -304,7 +304,7 @@
   /* the song's bar: ONE element everywhere. A song with a file keeps its room for it, the bar shows while that song plays, follows it, and a drag moves the song. */
   function songBar(m, extra, always) {
     if (!m || !m.audio_object) return "";
-    return '<div class="bio-bar" data-for="' + esc(m.audio_object) + '"' + (always ? ' data-always="1"' : '') + ' style="' + (always ? '' : 'visibility:hidden;') + (extra || "flex:0 0 100%;order:3;padding-top:var(--sp-1)") + ';position:relative;z-index:var(--z-raised)"><input type="range" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר" style="display:block;width:100%;margin:0;direction:ltr;accent-color:var(--primary)"></div>';
+    return '<div class="bio-bar" data-for="' + esc(m.audio_object) + '"' + (always ? ' data-always="1"' : '') + ' style="' + (always ? '' : 'visibility:hidden;') + (extra || "flex:0 0 100%;order:3;padding-top:var(--sp-1)") + ';position:relative;z-index:var(--z-raised)"><input type="range" min="0" max="1000" value="0" step="1" aria-label="מקום במוסיקה" style="display:block;width:100%;margin:0;direction:ltr;accent-color:var(--primary)"></div>';
   }
   /* a song's length: the catalog's, else what its own file told the player the first time (kept in this browser) */
   var durKnown = {};
@@ -394,7 +394,7 @@
       var nw = window.__bioNow || {};
       var cards = rows.map(function (e, i) {
         var m = { id: "h" + i, audio_object: e.n, title: e.t, name: e.t, artist: e.a };
-        return cardUi({ attrs: 'data-hi="' + i + '" role="button" tabindex="0"', selected: !!(nw.name && nw.name === e.n), ltr: true, title: e.t || "שיר", sub: e.a || "", pill: cardPill(m),
+        return cardUi({ attrs: 'data-hi="' + i + '" role="button" tabindex="0"', selected: !!(nw.name && nw.name === e.n), ltr: true, title: e.t || "מוסיקה", sub: e.a || "", pill: cardPill(m),
           time: '<span style="color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font)">' + esc(when(e.at)) + '</span>' });
       }).join("");
       histLayer.innerHTML = head("היסטוריית האזנה", "", false, "") + '<div class="rlist">' + (rows.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);padding:var(--gutter)">' + cards + '</div>' : ph("אין עדיין היסטוריה", "מוסיקה שהתחלתם להשמיע תופיע כאן")) + '</div>';
@@ -417,7 +417,7 @@
       if (wide()) { showHistLayer(rows, when); return; }
       var cards = rows.map(function (e, i) {
         return '<div class="rcard rcard--compact bio-card" data-hi="' + i + '"' + (e.n && window.__bioNow && window.__bioNow.name === e.n ? ' aria-current="true"' : '') + ' role="button" tabindex="0" style="cursor:pointer;background:var(--on-primary);margin:0;min-width:0;display:flex;flex-direction:column;gap:2px">' +
-          '<span style="direction:ltr;text-align:left;overflow-wrap:anywhere;font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(e.t || "שיר") + '</span>' +
+          '<span style="direction:ltr;text-align:left;overflow-wrap:anywhere;font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(e.t || "מוסיקה") + '</span>' +
           '<span style="direction:ltr;text-align:left;overflow-wrap:anywhere;color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font)">' + (e.a ? esc(e.a) : "&nbsp;") + '</span>' +
           '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:var(--gap-tight)"><button type="button" class="rbtn rbtn--icon" data-hp="' + i + '" data-hn="' + esc(e.n || "") + '" aria-label="' + (hpOn(e.n) ? "עצירה" : "השמעה") + '" title="' + (hpOn(e.n) ? "עצירה" : "השמעה") + '" style="background:var(--surface-2);border-color:var(--surface-2);width:var(--tag-s);min-height:var(--tag-s);height:var(--tag-s);padding:0;border-radius:999px">' + (hpOn(e.n) ? PAUSE : PLAY) + '</button>' +
           '<span style="color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + esc(when(e.at)) + '</span></div></div>';
@@ -495,8 +495,8 @@
     function clk(s) { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2); }
     function make(cls) {
       var d = document.createElement("div"); d.className = cls + " idle";
-      d.innerHTML = '<button type="button" class="rbtn rbtn--icon" disabled aria-label="השמעה">' + PLAY + '</button><button type="button" class="rbtn bio-dock__cat" data-catopen aria-pressed="false" aria-label="קטלוג התרגילים" title="קטלוג התרגילים" style="flex:none;order:-1">קטלוג</button><span class="rchip rchip--s bio-dock__time" style="direction:ltr;font-variant-numeric:tabular-nums">0:00 / 0:00</span>' + volDock() + '<button type="button" class="rbtn rbtn--ghost" data-addcur hidden title="הוספת השיר שבנגן לתרגיל הפתוח" style="flex:none;gap:var(--sp-1)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span><span data-addcur-label style="max-width:14rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">הוספה לתרגיל</span></button>' +
-        '<div class="bio-dockbar"><input class="bio-dock__bar" type="range" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר" disabled></div><div class="rrow__main bio-dock__name"><b>לא נבחר שיר</b> <span></span></div><span class="rchip rchip--s bio-dock__sync" hidden></span><button type="button" class="rbtn rbtn--icon" data-hist aria-label="היסטוריית האזנה" title="היסטוריית האזנה">' + HIST + '</button>';
+      d.innerHTML = '<button type="button" class="rbtn rbtn--icon" disabled aria-label="השמעה">' + PLAY + '</button><button type="button" class="rbtn bio-dock__cat" data-catopen aria-pressed="false" aria-label="קטלוג התרגילים" title="קטלוג התרגילים" style="flex:none;order:-1">קטלוג</button><span class="rchip rchip--s bio-dock__time" style="direction:ltr;font-variant-numeric:tabular-nums">0:00 / 0:00</span>' + volDock() + '<button type="button" class="rbtn rbtn--ghost" data-addcur hidden title="הוספת המוסיקה שבנגן לתרגיל הפתוח" style="flex:none;gap:var(--sp-1)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span><span data-addcur-label style="max-width:14rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">הוספה לתרגיל</span></button>' +
+        '<div class="bio-dockbar"><input class="bio-dock__bar" type="range" min="0" max="1000" value="0" step="1" aria-label="מקום במוסיקה" disabled></div><div class="rrow__main bio-dock__name"><b>לא נבחרה מוסיקה</b> <span></span></div><span class="rchip rchip--s bio-dock__sync" hidden></span><button type="button" class="rbtn rbtn--icon" data-hist aria-label="היסטוריית האזנה" title="היסטוריית האזנה">' + HIST + '</button>';
       d.querySelector("button").addEventListener("click", function () {
         if (loaded) { if (window.BioAudio && BioAudio.playPause) BioAudio.playPause(); return; }
         if (!last) return;   /* nothing loaded: the last song is loaded and played, as its own button does */
@@ -507,7 +507,7 @@
         var exOpen = !!(it && document.querySelector("#imus [data-addm]"));
         if (!nm || (!exOpen && !state.viv)) return;
         api("/rest/v1/music?audio_object=eq." + encodeURIComponent(nm) + "&select=id,name,title,artist,duration_sec,audio_object,in_catalog&limit=1").then(function (rows) {
-          var m = rows && rows[0]; if (!m) { toast("השיר לא נמצא"); return; }
+          var m = rows && rows[0]; if (!m) { toast("המוסיקה לא נמצאה"); return; }
           var go = function () {
           if (exOpen) return addOpt(it, m).then(function () { var im = document.getElementById("imus"); if (im) im.innerHTML = musCards(it); if (wide()) paint(); toast("נוסף לתרגיל"); });
           var pos = (state.items || []).reduce(function (x, k) { return Math.max(x, k.position); }, 0) + 1;   /* no exercise is open: a new exercise with no name and this song, in "נוספים" */
@@ -552,7 +552,7 @@
           if (ac.hidden === show) ac.hidden = !show;
           if (show) {
             var lb = ac.querySelector("[data-addcur-label]"), nmE = exOpen ? (itemName(itA) || "התרגיל") : (state.viv.title || "הוויוונסיה");
-            if (lb && lb.textContent !== nmE) { lb.textContent = nmE; ac.title = exOpen ? "הוספת השיר שבנגן ל" + nmE : "הוספת השיר שבנגן לוויוונסיה " + nmE + " כתרגיל חדש"; }
+            if (lb && lb.textContent !== nmE) { lb.textContent = nmE; ac.title = exOpen ? "הוספת המוסיקה שבנגן ל" + nmE : "הוספת המוסיקה שבנגן לוויוונסיה " + nmE + " כתרגיל חדש"; }
           }
         }
         var vtE = document.getElementById("vtimer");   /* wide screen: the time left of whichever song of this vivencia plays, in the header of the list */
@@ -579,9 +579,9 @@
         document.documentElement.classList.toggle("bio-docked", on);   /* the page ends above the footer */
         var b = d.querySelector("button"), t = d.querySelector(".bio-dock__time"), r = d.querySelector(".bio-dock__bar"), dd0 = loaded ? curD : (last ? last.d : 0), s = window.matchMedia("(max-width: 700px)").matches ? clk(Math.max(0, Math.ceil(dd0 - curT))) : clk(curT) + " / " + clk(dd0), nm = d.querySelector(".bio-dock__name");
         b.disabled = !loaded && !last; r.disabled = !loaded || !(curD > 0); b.dataset.st = playing ? "playing" : "paused";
-        var lab = playing ? "השהיית השיר" : "השמעה"; if (b.getAttribute("aria-label") !== lab) { b.setAttribute("aria-label", lab); b.title = lab; b.innerHTML = playing ? PAUSE : PLAY; }
+        var lab = playing ? "השהיית המוסיקה" : "השמעה"; if (b.getAttribute("aria-label") !== lab) { b.setAttribute("aria-label", lab); b.title = lab; b.innerHTML = playing ? PAUSE : PLAY; }
         if (t.textContent !== s) t.textContent = s;
-        var nh = '<b>' + esc(loaded ? (curTitle || "שיר") : (last ? last.t || "שיר" : "לא נבחר שיר")) + '</b> <span>' + esc(loaded ? curArtist : (last ? last.a || "" : "")) + '</span>'; if (nm.dataset.h !== nh) { nm.dataset.h = nh; nm.innerHTML = nh; }
+        var nh = '<b>' + esc(loaded ? (curTitle || "מוסיקה") : (last ? last.t || "מוסיקה" : "לא נבחרה מוסיקה")) + '</b> <span>' + esc(loaded ? curArtist : (last ? last.a || "" : "")) + '</span>'; if (nm.dataset.h !== nh) { nm.dataset.h = nh; nm.innerHTML = nh; }
         var who = loaded ? curName : (last && last.n) || "";
         if (nm.dataset.who !== who) {   /* a new song: is it one that is not from the catalog (then its name and performer can be edited by a tap)? */
           nm.dataset.who = who; nm.removeAttribute("data-edit");
@@ -1115,11 +1115,11 @@
   }
   /* the songs I loved: my list, newest first, each as a song row (the heart takes a song off it) */
   function likedScreen() {
-    show(head("שירים שאהבתי", "", true) + '<div class="rlist" id="likl"><div class="rskel rskel--title"></div></div>', function (r) {
+    show(head("מוסיקה שאהבתי", "", true) + '<div class="rlist" id="likl"><div class="rskel rskel--title"></div></div>', function (r) {
       on(r, "back", back);
       api("/rest/v1/song_likes?select=music(id,name,title,artist,duration_sec,audio_object,in_catalog)&order=created_at.desc").then(function (rows) {
         var l = r.querySelector("#likl"), list = (rows || []).map(function (x) { return x.music; }).filter(Boolean);
-        l.innerHTML = list.length ? list.map(function (m) { return songRow(m, false, "data-liked"); }).join("") : ph("עוד אין מוסיקה שאהבת", "לחצו על הלב ליד שיר כדי לשמור אותו כאן");
+        l.innerHTML = list.length ? list.map(function (m) { return songRow(m, false, "data-liked"); }).join("") : ph("עוד אין מוסיקה שאהבת", "לחצו על הלב ליד מוסיקה כדי לשמור אותה כאן");
       }, fail);
     });
   }
@@ -2409,15 +2409,15 @@
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "songDlg"; document.body.appendChild(dlg); }
     RosterSheet.render(dlg, {
       title: "עריכת מוזיקה", from: "bottom", size: "s",
-      body: '<div class="pad"><label class="rfield"><span>שם השיר</span><input id="sn" placeholder=" " autocomplete="off" value="' + esc(m.title || m.name || "") + '"></label><label class="rfield"><span>מבצע</span><input id="sa" placeholder=" " autocomplete="off" value="' + esc(m.artist || "") + '"></label></div>',
-      foot: '<button class="rbtn rbtn--block" type="button" id="ssave">שמירה</button><button class="rbtn rbtn--danger rbtn--ghost rbtn--block" type="button" id="sdel">מחיקת השיר</button>'
+      body: '<div class="pad"><label class="rfield"><span>שם המוסיקה</span><input id="sn" placeholder=" " autocomplete="off" value="' + esc(m.title || m.name || "") + '"></label><label class="rfield"><span>מבצע</span><input id="sa" placeholder=" " autocomplete="off" value="' + esc(m.artist || "") + '"></label></div>',
+      foot: '<button class="rbtn rbtn--block" type="button" id="ssave">שמירה</button><button class="rbtn rbtn--danger rbtn--ghost rbtn--block" type="button" id="sdel">מחיקת המוסיקה</button>'
     });
     var n = dlg.querySelector("#sn"), a = dlg.querySelector("#sa"); n.focus(); n.select();
     dlg.querySelector("#sdel").addEventListener("click", function () {   /* a song that is not from the catalog can be deleted: from every exercise, option and start or end music it is in */
       dlg.close();
       var c = document.getElementById("confirmDlg");
       if (!c) { c = document.createElement("dialog"); c.id = "confirmDlg"; document.body.appendChild(c); }
-      RosterSheet.render(c, { kind: "confirm", title: "מחיקת שיר", from: "bottom", size: "s",
+      RosterSheet.render(c, { kind: "confirm", title: "מחיקת מוסיקה", from: "bottom", size: "s",
         body: '<div class="pad"><span>למחוק את "' + esc(songName(m)) + '" לגמרי? הוא יוסר מכל התרגילים והוויוונסיות שבהם הוא נמצא.</span></div>',
         foot: '<button class="rbtn rbtn--danger rbtn--block" type="button" id="csdel">מחיקה</button>' });
       c.querySelector("#csdel").addEventListener("click", function () {
@@ -2426,7 +2426,7 @@
           RosterSheet.render(c, { kind: "confirm", title: "המחיקה לא בוצעה", from: "bottom", size: "s", body: '<div class="pad"><span>' + esc(text) + '</span></div>' });
         };
         api("/rest/v1/music?id=eq." + m.id, { method: "DELETE", prefer: "return=representation" }).then(function (gone) {
-          if (!gone || !gone.length) { said("אין הרשאה למחוק את השיר הזה. רק מי שהעלה אותו יכול למחוק אותו."); return; }
+          if (!gone || !gone.length) { said("אין הרשאה למחוק את המוסיקה הזאת. רק מי שהעלה אותה יכול למחוק אותו."); return; }
           m.__gone = true;
           (state.items || []).forEach(function (x) {
             if (x.music && x.music.id === m.id) { x.music = null; x.music_id = null; }
