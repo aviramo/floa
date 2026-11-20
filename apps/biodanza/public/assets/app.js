@@ -2571,13 +2571,13 @@
         var q = fold(r.querySelector("#q").value.trim()), l = r.querySelector("#list");
         pk.q = r.querySelector("#q").value; saveCat();
         var by = {}, top = {};
-        nearest(state.cat || [], function (e) { return name(e) + " " + e.title_en + " " + catName(e.category); }, q).forEach(function (e) {
+        catFind(q).forEach(function (e) {
           var k = e.category || ""; (by[k] = by[k] || []).push(e);   /* nearest first inside a category */
         });
         var cats = (state.cats || []).map(function (c) { return c.key; }).filter(function (k) { return by[k]; });
         Object.keys(by).forEach(function (k) { if (cats.indexOf(k) < 0) cats.push(k); });
         if (q) {   /* a search puts the category holding the nearest exercise first */
-          var all = nearest(state.cat || [], function (e) { return name(e) + " " + e.title_en + " " + catName(e.category); }, q);
+          var all = catFind(q);
           all.forEach(function (e, i) { var k = e.category || ""; if (top[k] == null) top[k] = i; });
           cats.sort(function (a, b) { return (top[a] == null ? 1e9 : top[a]) - (top[b] == null ? 1e9 : top[b]); });
         }
@@ -2620,7 +2620,7 @@
         }
       }
       var scEl = r.querySelector("#pks"); if (scEl) scEl.addEventListener("scroll", function () { clearTimeout(scEl._t); scEl._t = setTimeout(saveCat, 250); });
-      r.querySelector("#q").addEventListener("input", function () { var sc = r.querySelector("#pks"); if (sc) sc.scrollTop = 0; paintCat(); });
+      r.querySelector("#q").addEventListener("input", function () { var sc = r.querySelector("#pks"); if (sc) sc.scrollTop = 0; paintCat(); if (!catTx) loadCatTx().then(function () { if (catTx && r.isConnected && r.querySelector("#q").value.trim()) paintCat(); }); });
       return (state.cats ? Promise.resolve() : api("/rest/v1/categories?select=key,name_he&order=sort").then(function (c) {
         state.cats = c || [];
       })).then(function () { return state.cat ? null : loadCatalog().then(function (c) { state.cat = c; }); }).then(paintCat, fail);
@@ -2696,6 +2696,22 @@
     }, fail);
   }
   /* the catalog is over a thousand exercises and the server hands out at most a thousand rows at a time: read it page by page */
+  /* the catalog search: the names first, then the exercises whose poetics or guidance has the words (lower, after all the names). The texts come once, when the first word is typed. */
+  var catTx = null, catTxP = null;
+  function loadCatTx() {
+    if (catTx || catTxP) return catTxP || Promise.resolve();
+    return (catTxP = api("/rest/v1/exercise_texts?lang=eq.he&select=exercise_id,poetics,guidance&limit=1000").then(function (rows) {
+      catTx = {}; (rows || []).forEach(function (x) { catTx[x.exercise_id] = (x.poetics || "") + " " + (x.guidance || ""); });
+    }, function () { catTxP = null; }));
+  }
+  function catFind(q) {
+    var byName = nearest(state.cat || [], function (e) { return name(e) + " " + e.title_en + " " + catName(e.category); }, q);
+    if (!fold(q).trim() || !catTx) return byName;
+    var seen = {}; byName.forEach(function (e) { seen[e.id] = 1; });
+    var tx = (state.cat || []).filter(function (e) { return !seen[e.id] && catTx[e.id]; }).map(function (e) { return { e: e, s: fzs(catTx[e.id], q) }; })
+      .filter(function (o) { return o.s > 0; }).sort(function (a, b) { return b.s - a.s; }).map(function (o) { return o.e; });
+    return byName.concat(tx);
+  }
   function loadCatalog() {
     var all = [], PAGE = 1000;
     function page(off) {
