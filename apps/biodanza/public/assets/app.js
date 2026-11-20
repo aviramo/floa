@@ -912,7 +912,7 @@
     syncSt = { m: mode, t: text };
     if (!syncEl) {
       var st = document.createElement("style");
-      st.textContent = "@keyframes bioDl { 0% { transform: translateY(-3px); opacity: 0 } 40% { opacity: 1 } 100% { transform: translateY(4px); opacity: 0 } } .bio-sync { position: absolute; top: 4px; right: 4px; display: grid; place-items: center; width: 16px; height: 16px; color: var(--danger); pointer-events: none } .bio-sync[hidden] { display: none } .bio-sync svg { width: 14px; height: 14px; overflow: visible } .bio-sync[data-m=\"run\"] .bio-sync__a { animation: bioDl 1.1s ease-in infinite } .bio-sync[data-m=\"stop\"] { color: var(--danger) } @media (prefers-reduced-motion: reduce) { .bio-sync[data-m=\"run\"] .bio-sync__a { animation: none } }";
+      st.textContent = "@keyframes bioDl { 0% { transform: translateY(-3px); opacity: 0 } 40% { opacity: 1 } 100% { transform: translateY(4px); opacity: 0 } } .bio-sync { position: absolute; top: 2px; right: -7px; display: grid; place-items: center; width: 16px; height: 16px; color: var(--danger); pointer-events: none } .bio-sync[hidden] { display: none } .bio-sync svg { width: 14px; height: 14px; overflow: visible } .bio-sync[data-m=\"run\"] .bio-sync__a { animation: bioDl 1.1s ease-in infinite } .bio-sync[data-m=\"stop\"] { color: var(--danger) } @media (prefers-reduced-motion: reduce) { .bio-sync[data-m=\"run\"] .bio-sync__a { animation: none } }";
       document.head.appendChild(st);
       syncEl = document.createElement("span"); syncEl.className = "bio-sync"; syncEl.hidden = true;
       syncEl.addEventListener("click", function () { if (syncSt.t) toast(syncSt.t); });
