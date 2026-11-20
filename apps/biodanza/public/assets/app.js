@@ -2638,7 +2638,7 @@
   }
   /* the two tabs of the catalog: exercises (the first, on the right) and music; they are the pager's two pages */
   function pickerTabs() {
-    return '<div class="rtabs" role="tablist" style="position:relative;flex:1 1 auto;min-width:0;border-bottom:0"><button type="button" class="rtab" role="tab" data-pkt="ex" aria-selected="true" style="box-shadow:none">תרגילים</button><button type="button" class="rtab" role="tab" data-pkt="mu" aria-selected="false" style="box-shadow:none">מוסיקה</button><i data-pkind aria-hidden="true" style="position:absolute;inset-block-end:0;inset-inline-start:0;width:50%;height:3px;background:var(--accent);pointer-events:none;will-change:transform"></i></div>';
+    return '<div class="rtabs" role="tablist" style="position:relative;flex:0 0 auto;width:100%;min-width:0;border-bottom:0"><button type="button" class="rtab" role="tab" data-pkt="ex" aria-selected="true" style="box-shadow:none">תרגילים</button><button type="button" class="rtab" role="tab" data-pkt="mu" aria-selected="false" style="box-shadow:none">מוסיקה</button><i data-pkind aria-hidden="true" style="position:absolute;inset-block-end:0;inset-inline-start:0;width:50%;height:3px;background:var(--accent);pointer-events:none;will-change:transform"></i></div>';
   }
   /* what the music tab filters by: the three tag columns of the music table. Values stay in English (they are the keys); a value with no entry here shows as it is. */
   var MU_LINE = [["Affectivity", "affectivity", "חיבתיות"], ["Creativity", "creativity", "יצירתיות"], ["Vitality", "vitality", "חיוניות"], ["Sexuality", "sexuality", "מיניות"], ["Trance", "transcendence", "התעלות"], ["Maze", "", "מבוך"]];   /* the app's own line names are used when it has them */
@@ -2763,7 +2763,7 @@
           if (!pgr.clientWidth || raf) return;
           raf = requestAnimationFrame(function () { raf = 0; if (!pgr.clientWidth) return; glide(); var i = curIdx(); if (goingTo != null) { if (i === goingTo) goingTo = null; return; } markTab(i); });
         }, { passive: true });
-        tabEls.forEach(function (t, j) { t.addEventListener("click", function () { goTab(j); }); });
+        tabEls.forEach(function (t, j) { t.addEventListener("click", function (ev) { goTab(j); if (ev.detail > 0) t.blur(); }); });   /* a tap or a click leaves no focus frame on the tab (the moving bar marks it); a keyboard press (detail 0) keeps the frame */
         var resnap = function () { var w = pgr.clientWidth; maxS = pgr.scrollWidth - w; if (w && w !== lastW) { lastW = w; var i = TABS.indexOf(pk.tab); goTab(i < 0 ? 0 : i, true); glide(); } };   /* it came on screen (a hidden box forgets its scroll) or changed width: back on the page of the selected tab */
         if (window.ResizeObserver) new ResizeObserver(resnap).observe(pgr); else window.addEventListener("resize", resnap);
         var i0 = TABS.indexOf(pk.tab); markTab(i0 < 0 ? 0 : i0); requestAnimationFrame(resnap);
