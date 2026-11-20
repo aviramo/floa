@@ -2207,7 +2207,26 @@
      The exercise of a vivencia is a copy and has no link to a catalog exercise: the songs are the only thing that finds its likes. */
   /* the network walk is in the database (biodanza.similar_music, apps/biodanza/similar.sql): two steps, edges from the catalog and from real vivencias,
      popular songs weighted down; this reads its answer. If it cannot answer, the one-step count below is used. */
+  /* the suggestions of a start or end slot start with the songs facilitators really used in that role (biodanza.role_music: the number of vivencias
+     that had the song as that kind of reception music), then come the ones the network finds near the slot's own songs */
+  function roleRows(kind) {
+    return api("/rest/v1/rpc/role_music", { method: "POST", json: { p_kind: kind } }).then(function (rows) {
+      rows = rows || []; if (!rows.length) return [];
+      var at = {}; rows.forEach(function (r, i) { at[r.music_id] = i; });
+      return api("/rest/v1/music?id=in.(" + rows.map(function (r) { return r.music_id; }).join(",") + ")&select=id,name,title,artist,duration_sec,audio_object,in_catalog&limit=200").then(function (ms) {
+        return (ms || []).sort(function (a, b) { return at[a.id] - at[b.id]; }).map(function (m) { return { music: m }; });
+      });
+    });
+  }
   function similarRows(it) {
+    if (!it.__recv) return similarBase(it);
+    return Promise.all([roleRows(it.__recv).catch(function () { return []; }), similarBase(it)]).then(function (a) {
+      var seen = {}, out = [];
+      a[0].concat(a[1]).forEach(function (x) { if (x.music && !seen[x.music.id]) { seen[x.music.id] = 1; out.push(x); } });
+      return out;
+    });
+  }
+  function similarBase(it) {
     var ids = optList(it).map(function (m) { return m.id; }).filter(Boolean);
     if (!ids.length) return Promise.resolve([]);
     return api("/rest/v1/rpc/similar_music", { method: "POST", json: { p_music: ids } }).then(function (rows) {
