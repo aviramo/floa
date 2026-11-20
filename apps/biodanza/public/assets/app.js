@@ -213,8 +213,9 @@
     if (!best && h.indexOf(w) >= 0) best = 5;
     return best;
   }
-  function fzs(text, q) {
-    var h = fold(text), words = fold(q).split(/\s+/).filter(Boolean), toks = fzTok(h), sum = 0, k, s;
+  function fzs(text, q) { return fzsF(fold(text), q); }
+  function fzsF(h, q) {   /* the same, for a text that is already folded (the exercises' texts are folded once, when they load) */
+    var words = fold(q).split(/\s+/).filter(Boolean), toks = fzTok(h), sum = 0, k, s;
     if (!words.length) return 1;
     for (k = 0; k < words.length; k++) { s = fzWord(h, toks, words[k]); if (!s) return 0; sum += s; }
     return sum / words.length;
@@ -2230,7 +2231,7 @@
         rows = rows || [];
         rows.forEach(function (x) {
           if (!x.exercises || !x.music) return;
-          var g = by[x.exercise_id]; if (!g) { g = by[x.exercise_id] = { id: x.exercise_id, name: name(x.exercises), songs: [], seen: {} }; order.push(g); }
+          var g = by[x.exercise_id]; if (!g) { g = by[x.exercise_id] = { id: x.exercise_id, name: name(x.exercises), en: x.exercises.title_en || "", songs: [], seen: {} }; order.push(g); }
           if (!g.seen[x.music.id]) { g.seen[x.music.id] = 1; g.songs.push(x.music); }
         });
         return rows.length === PAGE ? page(off + PAGE) : order;
@@ -2526,20 +2527,28 @@
     var listEl = r.querySelector("#amlist"), qi = r.querySelector("#amq");
     qi.blur(); setTimeout(function () { if (document.activeElement === qi) qi.blur(); }, 60);   /* the popup opens on the list: the keyboard comes up only when the search is touched */
     var linked = null, rest = null, shown = 90, fresh = true;
+    var xs = [], xsFor = null, xsT = 0, xsOf = {};
     function cardHtml(m, added) {
-      return cardUi({ attrs: 'data-am="' + esc(m.id) + '" role="button" tabindex="0"', selected: added, ltr: true, title: songName(m), sub: songBy(m), pill: cardPill(m), time: clkSpan(m) });
+      var ex = xsOf[m.id];
+      return cardUi({ attrs: 'data-am="' + esc(m.id) + '" role="button" tabindex="0"', selected: added, ltr: true, title: songName(m), sub: ex ? ex + " \u00b7 " + songBy(m) : songBy(m), subLtr: ex ? false : undefined, pill: cardPill(m), time: clkSpan(m) });
     }
     function draw() {
       if (!linked || !rest) return;
       var s0 = fold(qi.value.trim()), words = s0.split(/\s+/).filter(Boolean);
       var hit = function (m) { return fz(songName(m) + " " + songBy(m), s0); };
       var cur = it.__listen ? [] : it.__preview ? optList(it).filter(function (m) { return it.sel.indexOf(m.id) >= 0; }) : optList(it), has = {}; cur.forEach(function (m) { has[m.id] = 1; });   /* on the catalog's exercise only what was marked counts */
-      var nmOf = function (m) { return songName(m) + " " + songBy(m); }, sl = nearest(cur, nmOf, s0), lk = nearest(linked.filter(function (m) { return !has[m.id]; }), nmOf, s0), ot = it.__listen ? [] : nearest(rest.filter(function (m) { return !has[m.id]; }), nmOf, s0), cut = ot.slice(0, shown);
+      var sl = songTiers(cur, s0), lk = songTiers(linked.filter(function (m) { return !has[m.id]; }), s0), ot = it.__listen ? [] : songTiers(rest.filter(function (m) { return !has[m.id]; }), s0), cut = ot.slice(0, shown);
+      var xl = [], known = {}, got = {}; xsOf = {};   /* the songs found through their exercises: not the ones already shown by name */
+      if (words.length && !it.__listen && xsFor === s0) {
+        linked.concat(rest).forEach(function (m) { known[m.id] = m; }); sl.concat(lk, ot).forEach(function (m) { got[m.id] = 1; });
+        xs.forEach(function (o) { if (!got[o.m.id] && known[o.m.id]) { xl.push(known[o.m.id]); if (o.ex) xsOf[o.m.id] = o.ex; } });
+        xl = xl.slice(0, 90);
+      }
       if (it.__listen) lk = lk.filter(function (m) { return m.id !== it.music_id; });
-      var cnt = r.querySelector("#amc"); if (cnt && it.__listen) cnt.textContent = "חיפוש " + (words.length ? lk.length + " מתוך " : "בין ") + linked.filter(function (m) { return m.id !== it.music_id; }).length + " מוסיקות דומות"; else if (cnt) cnt.textContent = "חיפוש " + (words.length ? (sl.length + lk.length + ot.length) + " מתוך " : "בין ") + (linked.length + rest.length) + " מוסיקות";   /* as the music page says it */
+      var cnt = r.querySelector("#amc"); if (cnt && it.__listen) cnt.textContent = "חיפוש " + (words.length ? lk.length + " מתוך " : "בין ") + linked.filter(function (m) { return m.id !== it.music_id; }).length + " מוסיקות דומות"; else if (cnt) cnt.textContent = "חיפוש " + (words.length ? (sl.length + lk.length + ot.length + xl.length) + " מתוך " : "בין ") + (linked.length + rest.length) + " מוסיקות";   /* as the music page says it */
       var grid = function (arr) { return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(18rem,1fr));gap:var(--sp-1)">' + arr.map(function (m) { return cardHtml(m, !!has[m.id]); }).join("") + '</div>'; };
       var head = function (t, n) { return '<div class="rrow__sub" style="padding:var(--sp-2) 0 var(--sp-1)">' + esc(t) + ' (' + n + ')</div>'; };
-      listEl.innerHTML = (sl.length ? head(it.__listen ? "מתנגנת" : it.__preview ? "נבחרו" : "בתרגיל", sl.length) + grid(sl) : '') + (lk.length ? (it.__listen ? '' : head("הצעות", lk.length)) + grid(lk) : '') + (cut.length ? head("מוסיקה אחרת", ot.length) + grid(cut) : '') + (!sl.length && !lk.length && !cut.length ? ph(it.__listen ? "אין מוסיקה דומה" : "לא נמצא", "") : '');
+      listEl.innerHTML = (sl.length ? head(it.__listen ? "מתנגנת" : it.__preview ? "נבחרו" : "בתרגיל", sl.length) + grid(sl) : '') + (lk.length ? (it.__listen ? '' : head("הצעות", lk.length)) + grid(lk) : '') + (cut.length ? head("מוסיקה אחרת", ot.length) + grid(cut) : '') + (xl.length ? head("מוסיקה מתרגילים תואמים", xl.length) + grid(xl) : '') + (!sl.length && !lk.length && !cut.length && !xl.length ? ph(it.__listen ? "אין מוסיקה דומה" : "לא נמצא", "") : '');
     }
     var upb = r.querySelector("#amup");
     if (upb && it.__listen) { upb.remove(); upb = null; }   /* listening only: nothing is uploaded or added from here */
@@ -2563,7 +2572,13 @@
       });
       inp.click();
     });
-    qi.addEventListener("input", function () { shown = 90; listEl.scrollTop = 0; draw(); });
+    qi.addEventListener("input", function () {
+      shown = 90; listEl.scrollTop = 0; draw();
+      clearTimeout(xsT); if (it.__listen || !fold(qi.value).trim()) return;
+      xsT = setTimeout(function () {   /* the exercises' side of the search waits for a pause in the typing, and for its texts the first time */
+        warmEx().then(function () { var v = fold(qi.value.trim()); if (!listEl.isConnected || !v) return; xs = exSongs(v); xsFor = v; draw(); });
+      }, 150);
+    });
     listEl.addEventListener("scroll", function () { if (listEl.scrollTop + listEl.clientHeight > listEl.scrollHeight - 600 && rest && shown < rest.length) { shown += 90; draw(); } }, { passive: true });
     listEl.addEventListener("click", function (ev) {
       if (ev.target.closest("[data-audio], a")) return;
@@ -2857,10 +2872,10 @@
         var t = "חיפוש " + (n === 1 ? one + " אחת" : "בין " + n + " " + many);
         inp.placeholder = t; inp.setAttribute("aria-label", t);
       }
-      var musicAll = null, musicLoading = false, mById = {}, mList = [], mShown = 0, MP = 100;
+      var musicAll = null, musicLoading = false, mById = {}, mList = [], mShown = 0, MP = 100, mxOf = {}, xs = [], xsFor = null, xsT = 0;
       function musicCards(a, b) {
         return mList.slice(a, b).map(function (m) {
-          return cardUi({ attrs: 'data-sgc="' + esc(m.id) + '"', ltr: true, title: songName(m), sub: songBy(m), pill: cardPill(m), time: clkSpan(m), chip: '<button type="button" class="rchip rchip--s" data-sg="' + esc(m.id) + '" style="cursor:pointer;border:0">הוספה</button>' });
+          return cardUi({ attrs: 'data-sgc="' + esc(m.id) + '"', ltr: true, title: songName(m), sub: mxOf[m.id] ? mxOf[m.id] + " \u00b7 " + songBy(m) : songBy(m), subLtr: mxOf[m.id] ? false : undefined, pill: cardPill(m), time: clkSpan(m), chip: '<button type="button" class="rchip rchip--s" data-sg="' + esc(m.id) + '" style="cursor:pointer;border:0">הוספה</button>' });
         }).join("");
       }
       function fillSelects() {
@@ -2879,7 +2894,8 @@
         pk.mq = mq.value; saveCat();   /* the search and the four boxes are kept through a refresh, like the exercises' search */
         var byTags = musicAll.filter(function (m) { return tagHit(m, f); });
         hint(mq, byTags.length, "מוסיקה", "מוסיקות");
-        mList = byTags.filter(function (m) { return !s || fz(songName(m) + " " + songBy(m), s); });
+        mList = s ? songTiers(byTags, s) : byTags; mxOf = {};
+        if (s && xsFor === s) { var inT = {}, got = {}; byTags.forEach(function (m) { inT[m.id] = 1; }); mList.forEach(function (m) { got[m.id] = 1; }); xs.forEach(function (o) { if (inT[o.m.id] && !got[o.m.id]) { got[o.m.id] = 1; mList.push(mById[o.m.id] || o.m); if (o.ex) mxOf[o.m.id] = o.ex; } }); }
         mShown = Math.min(MP, mList.length); l.scrollTop = 0;
         l.innerHTML = mList.length ? '<div id="mgrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);padding:var(--gutter)">' + musicCards(0, mShown) + '</div>' : ph("לא נמצאה מוסיקה", "");
       }
@@ -2920,7 +2936,10 @@
       }
       if (mq) {
         mq.value = pk.mq || "";
-        mq.addEventListener("input", paintMu);
+        mq.addEventListener("input", function () {
+          paintMu(); clearTimeout(xsT); if (!fold(mq.value).trim()) return;
+          xsT = setTimeout(function () { warmEx().then(function () { var v = fold(mq.value.trim()); if (!r.isConnected || !v || !musicAll) return; xs = exSongs(v); xsFor = v; paintMu(); }); }, 150);
+        });
         r.querySelectorAll("[data-mf]").forEach(function (sel) { sel.addEventListener("change", function () { pk[sel.dataset.mf] = sel.value; paintMu(); }); });
         var ml = r.querySelector("#pkl");
         ml.addEventListener("scroll", function () {
@@ -3033,20 +3052,55 @@
   }
   /* the catalog is over a thousand exercises and the server hands out at most a thousand rows at a time: read it page by page */
   /* the catalog search: the names first, then the exercises whose poetics or guidance has the words (lower, after all the names). The texts come once, when the first word is typed. */
-  var catTx = null, catTxP = null;
+  var catTx = null, catTxP = null;   /* catTx[exercise id] = { p: poetics, g: guidance, a: both }, every language, already folded; read page by page (the server hands out a thousand rows at most) */
   function loadCatTx() {
     if (catTx || catTxP) return catTxP || Promise.resolve();
-    return (catTxP = api("/rest/v1/exercise_texts?lang=eq.he&select=exercise_id,poetics,guidance&limit=1000").then(function (rows) {
-      catTx = {}; (rows || []).forEach(function (x) { catTx[x.exercise_id] = (x.poetics || "") + " " + (x.guidance || ""); });
-    }, function () { catTxP = null; }));
+    var by = {}, PAGE = 1000;
+    function pg(off) {
+      return api("/rest/v1/exercise_texts?select=exercise_id,poetics,guidance&order=exercise_id,lang&limit=" + PAGE + "&offset=" + off).then(function (rows) {
+        rows = rows || [];
+        rows.forEach(function (x) { var o = by[x.exercise_id] || (by[x.exercise_id] = { p: "", g: "" }); o.p += " " + fold(x.poetics || ""); o.g += " " + fold(x.guidance || ""); });
+        return rows.length === PAGE ? pg(off + PAGE) : null;
+      });
+    }
+    return (catTxP = pg(0).then(function () { Object.keys(by).forEach(function (k) { by[k].a = by[k].p + " " + by[k].g; }); catTx = by; }, function () { catTxP = null; }));
   }
   function catFind(q) {
     var byName = nearest(state.cat || [], function (e) { return name(e) + " " + e.title_en + " " + catName(e.category); }, q);
     if (!fold(q).trim() || !catTx) return byName;
     var seen = {}; byName.forEach(function (e) { seen[e.id] = 1; });
-    var tx = (state.cat || []).filter(function (e) { return !seen[e.id] && catTx[e.id]; }).map(function (e) { return { e: e, s: fzs(catTx[e.id], q) }; })
+    var tx = (state.cat || []).filter(function (e) { return !seen[e.id] && catTx[e.id]; }).map(function (e) { return { e: e, s: fzsF(catTx[e.id].a, q) }; })
       .filter(function (o) { return o.s > 0; }).sort(function (a, b) { return b.s - a.s; }).map(function (o) { return o.e; });
     return byName.concat(tx);
+  }
+  /* the music search: a song is found, from the first reason to the last, by (1) its own name, (2) its performer, (3) the name of an exercise it belongs to,
+     (4) that exercise's poetics, (5) its guidance, (6) a tag word (fast, melodic, sensual...). A song found by several is shown once, at the earliest. Inside one reason, nearest first. */
+  var exGroups = null;
+  function warmEx() {   /* the exercises' texts and the exercises with their songs, each read once; the search works with what has arrived */
+    return Promise.all([loadCatTx(), loadExMusic().then(function (g) { exGroups = g; }, function () { })]);
+  }
+  function songTiers(list, q) {   /* the songs whose own name or performer match: name first, then performer, then words split across the two */
+    if (!fold(q).trim()) return list;
+    var seen = {}, mark = function (a) { a.forEach(function (m) { seen[m.id] = 1; }); return a; }, rest = function () { return list.filter(function (m) { return !seen[m.id]; }); };
+    var a = mark(nearest(list, songName, q)), b = mark(nearest(rest(), songBy, q)), c = nearest(rest(), function (m) { return songName(m) + " " + songBy(m); }, q);
+    return a.concat(b, c);
+  }
+  var tagTxt = {};
+  function tagText(m) {
+    return tagTxt[m.id] || (tagTxt[m.id] = fold((m.line_tags || []).map(function (v) { return muLineLabel(v) + " " + v; }).concat((m.rhythm_char_tags || []).map(function (v) { return (MU_CHAR[v] || "") + " " + v; }), (m.rhythm_speed_tags || []).map(function (v) { return (MU_SPEED[v] || "") + " " + v; }), (m.effect_tags || []).map(function (v) { return (MU_EFFECT[v] || "") + " " + v; })).join(" ")));
+  }
+  function exSongs(q) {   /* [{ m, ex }]: the songs found through their exercises (and their tags), best reason first */
+    if (!exGroups || !fold(q).trim()) return [];
+    var best = {}, n = 0;
+    exGroups.forEach(function (g) {
+      if (g.id === "_loose") return;
+      var nm = fzs(g.name + " " + (g.en || ""), q), tx = catTx && catTx[g.id], ps = tx ? fzsF(tx.p, q) : 0, gs = tx ? fzsF(tx.g, q) : 0;
+      var tier = nm ? 3 : ps ? 4 : gs ? 5 : 0; if (!tier) return;
+      var sc = nm || ps || gs;
+      g.songs.forEach(function (m) { var b = best[m.id]; if (!b || tier < b.tier || (tier === b.tier && sc > b.s)) best[m.id] = { m: m, ex: g.name, tier: tier, s: sc, i: b ? b.i : n++ }; });
+    });
+    exGroups.forEach(function (g) { g.songs.forEach(function (m) { if (best[m.id]) return; var sc = fzsF(tagText(m), q); if (sc) best[m.id] = { m: m, ex: "", tier: 6, s: sc, i: n++ }; }); });
+    return Object.keys(best).map(function (k) { return best[k]; }).sort(function (a, b) { return a.tier - b.tier || b.s - a.s || a.i - b.i; });
   }
   function loadCatalog() {
     var all = [], PAGE = 1000;
