@@ -2647,8 +2647,8 @@
     var d = durOf(m), pill = o.pill || "", keep = !!o.keepPlay, hasAud = pill.indexOf("data-audio") >= 0, hide = hasAud && !keep;
     var heart = m && m.id && !/^h[0-9]/.test(m.id) ? cardHeart(m) : "";
     return '<div class="rcard rcard--compact bio-card bio-mcard' + (o.cls ? ' ' + o.cls : '') + '" ' + (o.attrs || '') + (o.selected ? ' aria-current="true"' : '') + ' style="margin:0;min-width:0;display:flex;flex-direction:column;gap:2px;padding:var(--sp-2);cursor:pointer;position:relative;direction:ltr;text-align:left">' +
-      '<span style="display:block;overflow-wrap:anywhere;font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(o.title) + '</span>' +
-      '<div style="display:flex;align-items:center;gap:var(--sp-1);min-height:var(--tag-s);margin-top:auto"><span class="bio-dur" style="flex:none;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + (d ? clock(d) : '') + '</span>' +
+      '<span style="display:flex;align-items:center;min-height:var(--tag-s);overflow-wrap:anywhere;font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(o.title) + '</span>' +
+      '<div style="display:flex;align-items:center;gap:var(--sp-1);min-height:var(--tag-s)"><span class="bio-dur" style="flex:none;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + (d ? clock(d) : '') + '</span>' +
       '<span style="flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;text-align:left;color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font)">' + esc(o.by || "") + '</span>' +
       '<span style="flex:none;display:flex;align-items:center;gap:var(--gap-tight)">' + (o.act || '') + (hide ? '' : pill) + heart + '</span></div>' +
       (hide ? '<span hidden>' + pill + '</span>' : '') + (o.corner || '') + '</div>';
