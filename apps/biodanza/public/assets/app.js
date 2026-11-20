@@ -907,9 +907,9 @@
     syncSt = { m: mode, t: text };
     if (!syncEl) {
       var st = document.createElement("style");
-      st.textContent = "@keyframes bioDl { 0% { transform: translateY(-3px); opacity: 0 } 40% { opacity: 1 } 100% { transform: translateY(4px); opacity: 0 } } .bio-sync { flex: none; display: grid; place-items: center; width: var(--ctl); height: var(--ctl); border: 0; background: none; color: var(--primary); padding: 0; cursor: pointer } .bio-sync[hidden] { display: none } .bio-sync svg { width: var(--icon-m); height: var(--icon-m); overflow: visible } .bio-sync[data-m=\"run\"] .bio-sync__a { animation: bioDl 1.1s ease-in infinite } .bio-sync[data-m=\"stop\"] { color: var(--danger) } @media (prefers-reduced-motion: reduce) { .bio-sync[data-m=\"run\"] .bio-sync__a { animation: none } }";
+      st.textContent = "@keyframes bioDl { 0% { transform: translateY(-3px); opacity: 0 } 40% { opacity: 1 } 100% { transform: translateY(4px); opacity: 0 } } .bio-sync { position: absolute; top: 4px; right: 4px; display: grid; place-items: center; width: 16px; height: 16px; color: var(--danger); pointer-events: none } .bio-sync[hidden] { display: none } .bio-sync svg { width: 14px; height: 14px; overflow: visible } .bio-sync[data-m=\"run\"] .bio-sync__a { animation: bioDl 1.1s ease-in infinite } .bio-sync[data-m=\"stop\"] { color: var(--danger) } @media (prefers-reduced-motion: reduce) { .bio-sync[data-m=\"run\"] .bio-sync__a { animation: none } }";
       document.head.appendChild(st);
-      syncEl = document.createElement("button"); syncEl.type = "button"; syncEl.className = "bio-sync"; syncEl.hidden = true;
+      syncEl = document.createElement("span"); syncEl.className = "bio-sync"; syncEl.hidden = true;
       syncEl.addEventListener("click", function () { if (syncSt.t) toast(syncSt.t); });
     }
     syncEl.dataset.m = mode; syncEl.hidden = !mode; syncEl.setAttribute("aria-label", text || "הורדה למכשיר"); syncEl.title = text || "";
@@ -920,8 +920,10 @@
   }
   function syncPlace(root) {
     if (!syncEl) return;
-    var h = (root || document).querySelector(".rhead"); if (!h || h.querySelector(".bio-sync") === syncEl && syncEl.parentNode === h) return;
-    h.insertBefore(syncEl, h.lastElementChild);
+    var h = (root || document).querySelector(".rhead"); if (!h) return;
+    var last = h.querySelector(":scope > button:last-of-type") || h.lastElementChild;   /* a mark at the upper right corner of the last button of the header (the three dots), not a button of its own */
+    if (!last || last.contains(syncEl)) return;
+    last.style.position = "relative"; last.appendChild(syncEl);
   }
   function show(html, wire, pane) { if (!wide() && pane === "d") return itemSheet(html, wire);   /* narrow: the exercise is a popup from the bottom, not a page */
     var isPrev = html.indexOf('data-act="doswap"') >= 0;   /* a catalog exercise (it has the add button) is the one thing on the left that stays lit while the catalog is open */
@@ -1121,7 +1123,7 @@
     if (!wide()) { stack().length = 0; stack().push(home); setUrl(BASE); }
     show(head("הוויוונסיות שלי", "", false,
       '<button class="rbtn rbtn--icon bio-flat" data-act="new" aria-label="ויוונסיה חדשה" title="ויוונסיה חדשה">' + I.plus + '</button><button class="rbtn rbtn--icon bio-flat" data-act="homemore" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>',
-      '<img src="favicon.png" alt="" style="flex:none;width:var(--ctl);height:var(--ctl);border-radius:var(--r-ctl)">') +
+      (wide() ? '<img src="favicon.png" alt="" style="flex:none;width:var(--ctl);height:var(--ctl);border-radius:var(--r-ctl)">' : '<img src="bird.png" alt="" style="flex:none;width:var(--ctl);height:var(--ctl);object-fit:contain">')) +
       '<div class="rlist" data-fab-room id="hl"><div class="rskel rskel--title"></div></div>' +
       '', function (r) {
       on(r, "homemore", function (b) {   /* one menu: the songs I loved, who may enter (the manager), leaving */
