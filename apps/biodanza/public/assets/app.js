@@ -419,7 +419,7 @@
         return cardUi({ attrs: 'data-hi="' + i + '" role="button" tabindex="0"', selected: !!(nw.name && nw.name === e.n), ltr: true, title: e.t || "מוסיקה", sub: e.a || "", pill: cardPill(m),
           time: '<span style="color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font)">' + esc(when(e.at)) + '</span>' });
       }).join("");
-      histLayer.innerHTML = head("היסטוריית האזנה", "", false, "") + '<div class="rlist">' + (rows.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);padding:var(--gutter)">' + cards + '</div>' : ph("אין עדיין היסטוריה", "מוסיקה שהתחלתם להשמיע תופיע כאן")) + '</div>';
+      histLayer.innerHTML = head("היסטוריית האזנה", "", false, "") + '<div class="rlist">' + (rows.length ? cardGrid(cards) : ph("אין עדיין היסטוריה", "מוסיקה שהתחלתם להשמיע תופיע כאן")) + '</div>';
       placeHist(); histOpen = true; pl.classList.add("bio-dim");
       requestAnimationFrame(function () { histLayer.classList.add("is-open"); });
     }
@@ -710,17 +710,42 @@
       b.innerHTML = on ? I.heart.replace('fill="none"', 'fill="currentColor"') : I.heart;
     });
   }
-  document.addEventListener("click", function (e) {
-    var b = e.target.closest && e.target.closest("[data-like]"); if (!b) return;
-    e.preventDefault(); e.stopPropagation();
-    var id = b.dataset.like, was = !!likes[id];
+  function toggleLike(id) {
+    var was = !!likes[id];
     if (was) delete likes[id]; else likes[id] = true;
     paintHearts(id);
     (was ? api("/rest/v1/song_likes?music_id=eq." + id, { method: "DELETE" })
          : api("/rest/v1/song_likes", { method: "POST", json: { music_id: id }, prefer: "resolution=ignore-duplicates,return=minimal" })).catch(function () {
       if (was) likes[id] = true; else delete likes[id]; paintHearts(id); toast("אי אפשר לשמור עכשיו");   /* it did not reach the server: back as it was */
     });
+  }
+  /* the heart of a song card: a loved song that is not playing is unmarked only after the kit's confirm popup (closing it is the cancel); on the red card of the song that plays it toggles freely */
+  var RED_CARD = '.is-play, :has([data-audio][data-st="pause"])';
+  function confirmUnlike(id, card) {
+    var dlg = document.getElementById("confirmDlg");
+    if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
+    RosterSheet.render(dlg, { kind: "confirm", title: "הסרת סימון אהבתי", from: "bottom", size: "s",
+      body: '<div class="pad"><span>להסיר את הסימון אהבתי מהשיר?</span></div>',
+      foot: '<button class="rbtn rbtn--danger rbtn--block" type="button" id="cunlk">הסרת הסימון</button>' });
+    dlg.querySelector("#cunlk").addEventListener("click", function () {
+      dlg.close(); toggleLike(id);
+      var lst = card && card.closest("#likl");   /* in my loved music the card leaves the list */
+      if (lst) { card.remove(); if (!lst.querySelector(".bio-card")) lst.innerHTML = ph("עוד אין מוסיקה שאהבת", "לחצו על הלב ליד מוסיקה כדי לשמור אותה כאן"); }
+    });
+  }
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("[data-like]"); if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    var id = b.dataset.like, card = b.classList.contains("bio-lk") ? b.closest(".bio-card") : null;
+    if (card && likes[id] && !card.matches(RED_CARD)) { confirmUnlike(id, card); return; }
+    toggleLike(id);
   }, true);
+  /* the heart on a song card: the same button, only placed in the card's bottom right corner (see .bio-lk) */
+  function cardHeart(m) {
+    return m && m.id ? heartBtn(m).replace(" rrow__trail", " bio-lk").replace('style="flex:none;width:var(--ctl);height:var(--ctl);min-height:var(--ctl);', 'style="') : "";
+  }
+  /* a grid of cards: the history's and my loved music's */
+  function cardGrid(cards) { return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);padding:var(--gutter)">' + cards + '</div>'; }
   /* the heart of an exercise: in the exercise page's header, and in my list of loved exercises */
   function heartBtnEx(exId, cls) {
     var on = !!likesEx[exId];
@@ -1161,12 +1186,19 @@
     });
   }
   /* the songs I loved: my list, newest first, each as a song row (the heart takes a song off it) */
+  function likedCard(m) {
+    return cardUi({ attrs: 'data-liked="' + esc(m.id) + '" role="button" tabindex="0"', ltr: true, footEnd: true, title: songName(m), sub: songBy(m), pill: cardPill(m), time: clkSpan(m), actions: cardHeart(m) });   /* footEnd: the play tile at the left end, so the heart has the bottom right to itself */
+  }
   function likedScreen() {
     show(head("מוסיקה שאהבתי", "", true) + '<div class="rlist" id="likl"><div class="rskel rskel--title"></div></div>', function (r) {
       on(r, "back", back);
       api("/rest/v1/song_likes?select=music(id,name,title,artist,duration_sec,audio_object,in_catalog)&order=created_at.desc").then(function (rows) {
         var l = r.querySelector("#likl"), list = (rows || []).map(function (x) { return x.music; }).filter(Boolean);
-        l.innerHTML = list.length ? list.map(function (m) { return songRow(m, false, "data-liked"); }).join("") : ph("עוד אין מוסיקה שאהבת", "לחצו על הלב ליד מוסיקה כדי לשמור אותה כאן");
+        l.innerHTML = list.length ? cardGrid(list.map(function (m) { return likedCard(m); }).join("")) : ph("עוד אין מוסיקה שאהבת", "לחצו על הלב ליד מוסיקה כדי לשמור אותה כאן");
+        l.addEventListener("click", function (ev) {   /* a tap on the card plays or pauses its song, as the history's cards do */
+          var c = ev.target.closest && ev.target.closest("[data-liked]"); if (!c || ev.target.closest("[data-audio], a, [data-like], [data-yt], [data-upl]")) return;
+          var pb = c.querySelector("[data-audio]"); if (pb) pb.click();
+        });
       }, fail);
     });
   }
@@ -1244,7 +1276,7 @@
     if (state.offline) items.length = 0;   /* with no internet nothing changes: only the copy on the device can be taken off it */
     if (items.length) menu(b, items);
   }
-  (function () { var st = document.createElement("style"); st.textContent = ".bio-card .bio-ha { position: absolute; opacity: 0; flex: none; width: var(--tag-s); height: var(--tag-s); min-height: var(--tag-s); padding: 0; background: transparent; border-color: transparent; transition: opacity var(--t-base) var(--ease) } .bio-card [data-audio] svg, .bio-card [data-hp] svg, #imus .bio-card [data-audio] svg { width: calc(var(--icon-s) * .75); height: calc(var(--icon-s) * .75) } .bio-card [data-orm] { opacity: 0; transition: opacity var(--t-base) var(--ease) } .bio-card [data-orm] > svg { width: var(--icon-m); height: var(--icon-m) } .bio-card:hover [data-orm], .bio-card [data-orm]:focus-visible { opacity: 1 } @media (hover: none) { .bio-card [data-orm] { opacity: 1 } } .bio-card .bio-ha.bio-ha--tl[data-likex] { right: auto; bottom: auto; left: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2); top: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2) } .bio-card .bio-ha > svg { width: var(--icon-m); height: var(--icon-m) } .bio-card .bio-ha[data-likex] { right: calc(var(--sp-2) + (var(--ctl) - var(--icon-m)) / 2 - (var(--tag-s) - var(--icon-m)) / 2); bottom: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2) } .bio-card .bio-ha[data-idel] { left: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2); top: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2) }   /* the icon itself is a full card step from the card's edges */ .bio-card:hover .bio-ha, .bio-card .bio-ha:focus-visible, .bio-card .bio-ha[aria-pressed=\"true\"] { opacity: 1 } @media (hover: none) { .bio-card .bio-ha { opacity: 1 } } #list[data-fab-room] { padding-bottom: var(--sp-1) } .rbtn[data-recvloop], .rbtn[data-recvloop]:hover, .rbtn[data-recvloop]:active, .rbtn[data-recvloop]:focus, .rbtn[data-recvloop][aria-pressed=\"true\"], .rhead .rbtn[data-recvloop]:hover, .rhead .rbtn[data-recvloop]:active { background: transparent; border-color: transparent; box-shadow: none; color: var(--text-2) } .rbtn[data-recvloop][aria-pressed=\"true\"], .rbtn[data-recvloop][aria-pressed=\"true\"]:hover, .rbtn[data-recvloop][aria-pressed=\"true\"]:active { color: var(--danger) } .rhead .rbtn--icon[data-act=\"back\"] { margin-inline-start: 0 } .rhead .rbtn--icon[data-act=\"back\"], .rhead .rbtn--icon[data-act=\"back\"]:hover, .rhead .rbtn--icon[data-act=\"back\"]:active { background: transparent; border-color: transparent } .bio-vm { opacity: 0; transition: opacity var(--t-base) var(--ease) } .rrow:hover .bio-vm, .bio-vm:focus-visible, .bio-vm[aria-expanded=\"true\"] { opacity: 1 } @media (hover: none) { .bio-vm { opacity: 1 } }"; document.head.appendChild(st); })();
+  (function () { var st = document.createElement("style"); st.textContent = ".bio-card .bio-lk { position: absolute; right: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2); bottom: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2); display: none; place-items: center; width: var(--tag-s); height: var(--tag-s); min-height: var(--tag-s); padding: 0; background: transparent; border-color: transparent } .bio-card .bio-lk > svg { width: var(--icon-m); height: var(--icon-m) } .bio-card .bio-lk[aria-pressed=\"true\"], .bio-card.is-play .bio-lk, .bio-card:has([data-audio][data-st=\"pause\"]) .bio-lk { display: grid } .bio-card .bio-ha { position: absolute; opacity: 0; flex: none; width: var(--tag-s); height: var(--tag-s); min-height: var(--tag-s); padding: 0; background: transparent; border-color: transparent; transition: opacity var(--t-base) var(--ease) } .bio-card [data-audio] svg, .bio-card [data-hp] svg, #imus .bio-card [data-audio] svg { width: calc(var(--icon-s) * .75); height: calc(var(--icon-s) * .75) } .bio-card [data-orm] { opacity: 0; transition: opacity var(--t-base) var(--ease) } .bio-card [data-orm] > svg { width: var(--icon-m); height: var(--icon-m) } .bio-card:hover [data-orm], .bio-card [data-orm]:focus-visible { opacity: 1 } @media (hover: none) { .bio-card [data-orm] { opacity: 1 } } .bio-card .bio-ha.bio-ha--tl[data-likex] { right: auto; bottom: auto; left: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2); top: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2) } .bio-card .bio-ha > svg { width: var(--icon-m); height: var(--icon-m) } .bio-card .bio-ha[data-likex] { right: calc(var(--sp-2) + (var(--ctl) - var(--icon-m)) / 2 - (var(--tag-s) - var(--icon-m)) / 2); bottom: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2) } .bio-card .bio-ha[data-idel] { left: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2); top: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2) }   /* the icon itself is a full card step from the card's edges */ .bio-card:hover .bio-ha, .bio-card .bio-ha:focus-visible, .bio-card .bio-ha[aria-pressed=\"true\"] { opacity: 1 } @media (hover: none) { .bio-card .bio-ha { opacity: 1 } } #list[data-fab-room] { padding-bottom: var(--sp-1) } .rbtn[data-recvloop], .rbtn[data-recvloop]:hover, .rbtn[data-recvloop]:active, .rbtn[data-recvloop]:focus, .rbtn[data-recvloop][aria-pressed=\"true\"], .rhead .rbtn[data-recvloop]:hover, .rhead .rbtn[data-recvloop]:active { background: transparent; border-color: transparent; box-shadow: none; color: var(--text-2) } .rbtn[data-recvloop][aria-pressed=\"true\"], .rbtn[data-recvloop][aria-pressed=\"true\"]:hover, .rbtn[data-recvloop][aria-pressed=\"true\"]:active { color: var(--danger) } .rhead .rbtn--icon[data-act=\"back\"] { margin-inline-start: 0 } .rhead .rbtn--icon[data-act=\"back\"], .rhead .rbtn--icon[data-act=\"back\"]:hover, .rhead .rbtn--icon[data-act=\"back\"]:active { background: transparent; border-color: transparent } .bio-vm { opacity: 0; transition: opacity var(--t-base) var(--ease) } .rrow:hover .bio-vm, .bio-vm:focus-visible, .bio-vm[aria-expanded=\"true\"] { opacity: 1 } @media (hover: none) { .bio-vm { opacity: 1 } }"; document.head.appendChild(st); })();
   function renderVivs() {
     var l = document.getElementById("hl"); if (!l) return;
     l.innerHTML = state.vivs.length ? state.vivs.map(function (v) {
@@ -2397,7 +2429,7 @@
   function optCardHtml(m, sel, withRm, plain, listKey) {   /* plain: the catalog's exercise, only its songs: no chip to choose, no green frame */
     return cardUi({ attrs: 'data-opt="' + esc(m.id) + '" role="button" tabindex="0"', selected: sel, ltr: true, title: songName(m), sub: songBy(m), pill: cardPill(m, listKey),
       chip: sel || plain ? '' : '<button type="button" class="rchip rchip--s" data-choose="' + esc(m.id) + '" title="לבחור אותה לתרגיל בוויוונסיה" style="cursor:pointer;border:0">בחירה</button>',
-      time: clkSpan(m), corner: withRm ? '<button type="button" class="rbtn rbtn--icon" data-orm="' + esc(m.id) + '" aria-label="מחיקה מהתרגיל" title="מחיקה מהתרגיל" ' + CARD_BIN + '>' + I.trash + '</button>' : '' });
+      time: clkSpan(m), actions: cardHeart(m), corner: withRm ? '<button type="button" class="rbtn rbtn--icon" data-orm="' + esc(m.id) + '" aria-label="מחיקה מהתרגיל" title="מחיקה מהתרגיל" ' + CARD_BIN + '>' + I.trash + '</button>' : '' });
   }
   /* deleting a song from an exercise: asked in the kit's popup; closing it is the cancel */
   function confirmRemoveOpt(it, m, done) {
