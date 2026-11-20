@@ -864,12 +864,12 @@
   })();
   /* the exercise as a pager: drag the page sideways to go to the next or the previous one (to the right = the next, as in a right to left book); the page follows the finger, a short drag springs back */
   function attachPager(pg, to, el) {   /* el: where the finger is (default: the page itself); the page moves either way */
-    el = el || pg;
+    el = el || pg; var ac = new AbortController(), sg = { signal: ac.signal };
     var x0 = 0, y0 = 0, t0 = 0, dx = 0, mode = 0;
     el.addEventListener("pointerdown", function (e) {
       if (e.target.closest && e.target.closest(".bio-bar")) return;   /* a drag on the song's bar moves the song, never the page */
       if (e.pointerType !== "touch" && (e.button > 0 || (e.target.closest && e.target.closest("input, textarea, select, a, button, .rf-rich")))) return;   /* a finger anywhere; a mouse (a narrow window) only off the fields and buttons */
-      x0 = e.clientX; y0 = e.clientY; t0 = performance.now(); dx = 0; mode = 1; });
+      x0 = e.clientX; y0 = e.clientY; t0 = performance.now(); dx = 0; mode = 1; }, sg);
     el.addEventListener("pointermove", function (e) {
       if (mode === 0 || mode === 3) return;
       var mx = e.clientX - x0, my = e.clientY - y0;
@@ -880,7 +880,7 @@
       dx = mx;
       pg.style.transform = "translateX(" + ((dx > 0 ? to.next : to.prev) ? dx : dx * 0.3) + "px)";   /* no page that way: it only gives a little */
       if (to.drag) to.drag((dx > 0 ? to.next : to.prev) ? dx : dx * 0.3, pg.getBoundingClientRect().width || 320);
-    });
+    }, sg);
     function end() {
       if (mode !== 2) { mode = 0; return; }
       mode = 0;
@@ -891,7 +891,8 @@
         setTimeout(go, 150);
       } else { pg.style.transition = "transform .22s cubic-bezier(.2, .8, .2, 1)"; pg.style.transform = ""; if (to.settle) to.settle(); }
     }
-    el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
+    el.addEventListener("pointerup", end, sg); el.addEventListener("pointercancel", end, sg);
+    return function () { ac.abort(); };   /* the listeners go, when the exercise changes and the header stays */
   }
   function toast(msg) { /* no black messages at the bottom, by the owner's word: what happened shows on the screen itself; the text goes to the console only */ if (window.console) console.info(msg); }
   function fail(e) { console.error(e); toast("משהו השתבש, נסו שוב"); }
@@ -1872,7 +1873,7 @@
         settle: trk ? function () { trk.classList.remove("is-drag"); trk.style.setProperty("--tx", (trk._base || 0) + "px"); } : null,
         leave: trk ? function (dir) { trk.classList.remove("is-drag"); trk.style.setProperty("--tx", ((trk._base || 0) + dir * tabsDist(trk, dir)) + "px"); } : null });   /* the tabs follow the finger, the same way the page does */
       var hdrEl0 = document.querySelector("#itemDlg .bio-ihead--m"), hdrEl = hdrEl0 && (hdrEl0.closest("[data-rs-drag]") || hdrEl0);   /* the popup's own header owns the finger (it captures it for the pull-down), so the swipe listens there */
-      if (pg && hdrEl && !hdrEl.__sw) { hdrEl.__sw = 1; attachPager(pg, { next: nextIt ? function () { walk(nextIt); } : null, prev: prevIt ? function () { walk(prevIt); } : null,
+      if (pg && hdrEl) { if (hdrEl.__swOff) hdrEl.__swOff(); hdrEl.__swOff = attachPager(pg, { next: nextIt ? function () { walk(nextIt); } : null, prev: prevIt ? function () { walk(prevIt); } : null,
         drag: trk ? function (dx, w) { var dir = dx > 0 ? 1 : -1; trk.classList.add("is-drag"); trk.style.setProperty("--tx", ((trk._base || 0) + dir * tabsDist(trk, dir) * Math.min(1, Math.abs(dx) / w)) + "px"); } : null,
         settle: trk ? function () { trk.classList.remove("is-drag"); trk.style.setProperty("--tx", (trk._base || 0) + "px"); } : null,
         leave: trk ? function (dir) { trk.classList.remove("is-drag"); trk.style.setProperty("--tx", ((trk._base || 0) + dir * tabsDist(trk, dir)) + "px"); } : null }, hdrEl); }   /* a swipe on the header moves the page too */
