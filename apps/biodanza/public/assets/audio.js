@@ -88,7 +88,8 @@
   function ramp(to, done, ms) {   /* the volume goes from where it is to `to` in a second (or ms) */
     clearInterval(fadeT); var from = el.volume, t0 = Date.now(), len = ms || FADE;
     fadeT = setInterval(function () {
-      var k = Math.min(1, (Date.now() - t0) / len); el.volume = Math.max(0, Math.min(1, from + (to - from) * k));
+      var k = Math.min(1, (Date.now() - t0) / len), c = to >= from ? k * k * k : 1 - Math.pow(1 - k, 3);   /* the ear hears loudness in steps, not in amounts: the way up is slow at first, the way down falls fast and trails off, never a straight line */
+      el.volume = Math.max(0, Math.min(1, from + (to - from) * c));
       if (k >= 1) { clearInterval(fadeT); fadeT = 0; if (done) done(); }
     }, 40);
   }
@@ -116,7 +117,7 @@
     ghosts.push(g);
     var from = a.volume, t0 = Date.now();
     g.t = setInterval(function () {
-      var k = Math.min(1, (Date.now() - t0) / SEEK_FADE); a.volume = Math.max(0, from * (1 - k));
+      var k = Math.min(1, (Date.now() - t0) / SEEK_FADE); a.volume = Math.max(0, from * Math.pow(1 - k, 3));
       if (k >= 1) { clearInterval(g.t); try { a.pause(); a.removeAttribute("src"); } catch (e) { /* gone */ } var i = ghosts.indexOf(g); if (i >= 0) ghosts.splice(i, 1); }
     }, 30);
     el.currentTime = t; el.volume = 0; ramp(target(), function () { el.volume = target(); }, SEEK_FADE);
