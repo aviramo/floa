@@ -320,7 +320,7 @@
       ".bio-dock__btn { flex: none; display: grid; place-items: center; width: var(--fab); height: var(--fab); padding: 0; border: 0; border-radius: var(--r-fab); background: var(--danger); color: var(--on-primary); cursor: pointer } " +
       ".bio-dock__btn[data-st=\"paused\"] { background: var(--surface-2); color: var(--text) } .bio-dock__btn:disabled { background: var(--surface-2); color: var(--text-3); cursor: default } " +
       ".bio-bar input, .bio-dock__bar { -webkit-appearance: none; appearance: none; background: transparent; height: 20px; margin: 0; cursor: pointer; --p: 0%; --c: var(--primary) } .bio-bar input:hover { --c: var(--danger) } .bio-bar input::-webkit-slider-runnable-track, .bio-dock__bar::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--c) var(--p), var(--track, var(--surface-2)) var(--p)) } .bio-bar input::-webkit-slider-thumb, .bio-dock__bar::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border: 0; border-radius: 50%; background: var(--c) } .bio-bar input::-moz-range-track, .bio-dock__bar::-moz-range-track { height: 4px; border-radius: 2px; background: var(--track, var(--surface-2)) } .bio-bar input::-moz-range-progress, .bio-dock__bar::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--c) } .bio-bar input::-moz-range-thumb, .bio-dock__bar::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: var(--c) } .bio-bar input:focus, .bio-bar input:focus-visible, .bio-dock__bar:focus, .bio-dock__bar:focus-visible, .bio-dock__btn:focus, .bio-dock__btn:focus-visible, .bio-dock__x:focus, .bio-dock__x:focus-visible { outline: none } .bio-dock .bio-vol { margin: 0 } @media (max-width: 1023px) { .bio-dock .bio-vol, .bio-dock .bio-volume { display: none !important } } .bio-volume { flex: none; display: flex; align-items: center; gap: var(--gap-tight); --c: var(--primary) } .bio-volume input { -webkit-appearance: none; appearance: none; background: transparent; width: 7rem; height: 20px; margin: 0; cursor: pointer; direction: ltr; --p: 0% } .bio-volume { direction: ltr; margin-left: var(--sp-3) } .bio-volume input::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--c) var(--p), var(--track, var(--on-primary)) var(--p)) } .bio-volume input::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border: 0; border-radius: 50%; background: var(--c) } .bio-volume input::-moz-range-track { height: 4px; border-radius: 2px; background: var(--track, var(--on-primary)) } .bio-volume input::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--c) } .bio-volume input::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: var(--c) } .bio-volume input:focus, .bio-volume input:focus-visible { outline: none } .bio-volume > .rbtn > svg { width: var(--icon-m); height: var(--icon-m) } .bio-dock__x { flex: none; display: grid; place-items: center; width: var(--icon-m, 20px); height: var(--ctl); padding: 0; border: 0; border-radius: var(--r-ctl); background: transparent; color: var(--text-2); cursor: pointer } .bio-dock__x > svg { width: var(--icon-m, 20px); height: var(--icon-m, 20px); stroke-width: var(--icon-w) } .bio-dock.idle .bio-dock__x { display: none } " +
-      "@media (min-width: 701px) { .bio-dock > .bio-volume { order: 1 } .bio-dock > .bio-dock__time { order: 2 } .bio-dock > .rbtn:first-child { order: 3; margin-inline-end: var(--sp-1) } .bio-dock > .bio-dockbar, .bio-dock > .bio-dock__name, .bio-dock > .bio-dock__sync, .bio-dock > [data-hist] { order: 4 } } .bio-dock [data-addcur][hidden], .bio-dock .bio-dock__sync[hidden] { display: none } .bio-dock > .bio-dock__cat { display: none !important }  .bio-dock .bio-dock__sync { position: absolute; top: 3px; left: var(--gutter); margin: 0; pointer-events: none } @media (min-width: 701px) { .bio-dock .bio-dock__sync { left: calc(var(--gutter) + var(--ib) + var(--gap-button)) } } .bio-dock .rbtn > svg { width: var(--icon-l); height: var(--icon-l) } @media (min-width: 760px) { html.bio-docked #addMusDlg, html.bio-docked #histDlg { inset-block-end: var(--dockfull); max-height: calc(100dvh - var(--dockfull) - 48px) } html.bio-docked #addMusDlg #amlist { padding-bottom: var(--gutter) } html.bio-docked #histDlg .sheet-body { padding-bottom: var(--gutter) } } .bio-card [data-fac] { font-size: var(--fs-xs); min-height: 0; padding-block: 2px } .bio-card [data-fac][aria-pressed=\"true\"] { background: var(--surface-2); color: var(--text); border-color: var(--surface-2) } #pl { position: relative } #pl:has(> .bio-banner) { padding-inline-start: 44px } .bio-banner { position: absolute; inset-block: 0; inset-inline-start: 0; width: 44px; height: 100%; border: 0; border-radius: 0; background: var(--primary); color: var(--on-primary); writing-mode: vertical-rl; font: var(--fw-bold) var(--fs-l)/1 var(--font); letter-spacing: .12em; cursor: pointer; z-index: 3 } .bio-banner:hover { filter: brightness(1.1) } #pd { position: relative } #pd::after { content: \"\"; position: absolute; inset: 0; z-index: 5; background: var(--pp-scrim, rgba(16, 20, 26, .55)); opacity: 0; pointer-events: none; transition: opacity .25s var(--ease) } #pd.bio-dim::after { opacity: 1; pointer-events: auto } @media (prefers-reduced-motion: reduce) { #pd::after { transition: none } } #pl .rhead, #pd .rhead { padding-inline-end: calc(var(--gutter) + var(--sbw, 0px)) } [data-recvloop][aria-pressed=\"true\"] { background: var(--primary); color: var(--on-primary) } .bio-card[aria-current=\"true\"] { border-color: #14110E; box-shadow: inset 0 0 0 1px #14110E } @media (max-width: 1023.98px) { .bio-card[aria-current=\"true\"]:not([data-opt]) { border-color: var(--line); box-shadow: none } } .rrow[aria-current=\"true\"] { box-shadow: inset 3px 0 0 #14110E } .bio-card:has([data-audio][data-st=\"pause\"])[aria-current] { box-shadow: none } .bio-card [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important } [data-opt] [data-audio] svg, [data-am] [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important } .bio-dock > .rbtn:first-child:not(:disabled) { background: var(--primary); border-color: var(--primary); color: var(--on-primary) } .bio-dock.playing > .rbtn:first-child:not(:disabled) { color: #C42B1E } .bio-dock.playing { --primary: #FFFFFF; --text: #FFFFFF; --text-2: #FFFFFF; --text-3: #FFFFFF; --surface-2: #B3261E; --line: #C8564D; --track: #D98A83; background: #B3261E }  " +
+      "@media (min-width: 701px) { .bio-dock > .bio-volume { order: 1 } .bio-dock > .bio-dock__time { order: 2 } .bio-dock > .rbtn:first-child { order: 3; margin-inline-end: var(--sp-1) } .bio-dock > .bio-dockbar, .bio-dock > .bio-dock__name, .bio-dock > .bio-dock__sync, .bio-dock > [data-hist] { order: 4 } } .bio-dock [data-addcur][hidden], .bio-dock .bio-dock__sync[hidden] { display: none } .bio-dock > .bio-dock__cat { display: none !important }  .bio-dock .bio-dock__sync { position: absolute; top: 3px; left: var(--gutter); margin: 0; pointer-events: none } @media (min-width: 701px) { .bio-dock .bio-dock__sync { left: calc(var(--gutter) + var(--ib) + var(--gap-button)) } } .bio-dock .rbtn > svg { width: var(--icon-l); height: var(--icon-l) } @media (min-width: 760px) { html.bio-docked #addMusDlg, html.bio-docked #histDlg { inset-block-end: var(--dockfull); max-height: calc(100dvh - var(--dockfull) - 48px) } html.bio-docked #addMusDlg #amlist { padding-bottom: var(--gutter) } html.bio-docked #histDlg .sheet-body { padding-bottom: var(--gutter) } } .bio-card [data-fac] { font-size: var(--fs-xs); min-height: 0; padding-block: 2px } .bio-card [data-fac][aria-pressed=\"true\"] { background: var(--surface-2); color: var(--text); border-color: var(--surface-2) } #pl { position: relative } #pl:has(> .bio-banner) { padding-inline-start: 44px } .bio-banner { position: absolute; inset-block: 0; inset-inline-start: 0; width: 44px; height: 100%; border: 0; border-radius: 0; background: var(--primary); color: var(--on-primary); writing-mode: vertical-rl; font: var(--fw-bold) var(--fs-l)/1 var(--font); letter-spacing: .12em; cursor: pointer; z-index: 3 } .bio-banner:hover { filter: brightness(1.1) } #pd { position: relative } #pd::after { content: \"\"; position: absolute; inset: 0; z-index: 5; background: var(--pp-scrim, rgba(16, 20, 26, .55)); opacity: 0; pointer-events: none; transition: opacity .25s var(--ease) } #pd.bio-dim::after { opacity: 1; pointer-events: auto } @media (prefers-reduced-motion: reduce) { #pd::after { transition: none } } #pl .rhead, #pd .rhead { padding-inline-end: calc(var(--gutter) + var(--sbw, 0px)) } .bio-card[aria-current=\"true\"] { border-color: #14110E; box-shadow: inset 0 0 0 1px #14110E } @media (max-width: 1023.98px) { .bio-card[aria-current=\"true\"]:not([data-opt]) { border-color: var(--line); box-shadow: none } } .rrow[aria-current=\"true\"] { box-shadow: inset 3px 0 0 #14110E } .bio-card:has([data-audio][data-st=\"pause\"])[aria-current] { box-shadow: none } .bio-card [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important } [data-opt] [data-audio] svg, [data-am] [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important } .bio-dock > .rbtn:first-child:not(:disabled) { background: var(--primary); border-color: var(--primary); color: var(--on-primary) } .bio-dock.playing > .rbtn:first-child:not(:disabled) { color: #C42B1E } .bio-dock.playing { --primary: #FFFFFF; --text: #FFFFFF; --text-2: #FFFFFF; --text-3: #FFFFFF; --surface-2: #B3261E; --line: #C8564D; --track: #D98A83; background: #B3261E }  " +
       ".bio-dock .bio-dockbar { flex: 1 1 8rem; min-width: 0; padding: 0; touch-action: none } .bio-dock .bio-dockbar .bio-dock__bar { width: 100%; display: block; direction: ltr } .bio-dock .bio-dockbar input::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--c) var(--p), var(--track, var(--on-primary)) var(--p)) } .bio-dock .bio-dockbar input::-moz-range-track { background: var(--track, var(--on-primary)) } " +
       ".bio-dock { --surface-2: #14110E; --text: #F4EEE4; --text-2: #BFB5A6; --text-3: #8E8576; --line: #3A342C; --track: #5A5247; --primary: #FFFFFF; --on-primary: #14110E; --danger: #E0402F; --ghost: rgba(244, 238, 228, .12) } .bio-dock .bio-dock__time { color: #FFFFFF !important } .bio-dock__name { cursor: pointer; flex: 0 1 28rem; min-width: 8rem; direction: ltr; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis } .bio-dock__name span { color: var(--text-2) } .bio-dock__name[data-edit] { cursor: pointer } .bio-dock .bio-dock__cat { background: var(--surface-2); color: var(--text); border-color: var(--surface-2) } .bio-dock .bio-dock__cat[aria-pressed=\"true\"] { background: var(--primary); color: var(--on-primary); border-color: var(--primary) } @media (min-width: 701px) and (max-width: 1023px) { .bio-dock__cat { display: none } } .bio-dock__name span:not(:empty)::before { content: \"· \" } " +
       "@media (max-width: 700px) { .bio-dock { flex-wrap: wrap } .bio-dock__name { flex: 1 1 100%; order: 4 } .bio-dock .bio-dockbar { flex: 0 0 100%; order: 3 } .bio-dock [data-hist] { margin-inline-end: calc((var(--ib) - 22px) / -2) } } " +
@@ -966,10 +966,10 @@
     try {
       if (wide()) {
         if (!catLayer) return;
-        var pks = catLayer.querySelector("#pks"); localStorage.setItem(CAT_KEY, JSON.stringify({ open: !!catPanel, prev: catPrevId || null, q: pk.q || "", cats: pk.open || {}, sc: pks ? pks.scrollTop : 0 }));
+        var pks = catLayer.querySelector("#pks"); localStorage.setItem(CAT_KEY, JSON.stringify({ open: !!catPanel, prev: catPrevId || null, q: pk.q || "", tab: pk.tab || "ex", cats: pk.open || {}, sc: pks ? pks.scrollTop : 0 }));
       } else {   /* a phone: the two popups */
         var cd = document.getElementById("catDlg"), xd = document.getElementById("exDlg"), pk2 = cd && cd.querySelector("#pks");
-        localStorage.setItem(CAT_KEY, JSON.stringify({ open: !!(cd && cd.open), prev: xd && xd.open && xd.dataset.ex ? xd.dataset.ex : null, q: pk.q || "", cats: pk.open || {}, sc: pk2 ? pk2.scrollTop : 0 }));
+        localStorage.setItem(CAT_KEY, JSON.stringify({ open: !!(cd && cd.open), prev: xd && xd.open && xd.dataset.ex ? xd.dataset.ex : null, q: pk.q || "", tab: pk.tab || "ex", cats: pk.open || {}, sc: pk2 ? pk2.scrollTop : 0 }));
       }
     } catch (e) { /* not kept */ }
   }
@@ -977,7 +977,7 @@
     if (wide()) return;
     var snap = loadCatSnap(); if (!snap || !snap.open) return;
     var cd = document.getElementById("catDlg"); if (cd && cd.open) return;
-    resetPk(); pk.q = snap.q || ""; pk.open = snap.cats || {};
+    resetPk(); pk.q = snap.q || ""; pk.tab = snap.tab === "mu" ? "mu" : "ex"; pk.open = snap.cats || {};
     var drawn = pickerSheet(); if (!drawn || !drawn.then) return;
     drawn.then(function () {
       var pks = document.querySelector("#catDlg #pks"); if (pks) pks.scrollTop = snap.sc || 0;
@@ -1012,10 +1012,10 @@
   function ensureCatLayer() {   /* built once, closed, waiting off the right edge of the screen */
     if (catLayer) return;
     resetPk();   /* the search box reads the catalog's state: it must exist before the layer is drawn */
-    var snap = loadCatSnap(); if (snap) { pk.q = snap.q || ""; pk.open = snap.cats || {}; }   /* back to where it was before the refresh */
+    var snap = loadCatSnap(); if (snap) { pk.q = snap.q || ""; pk.tab = snap.tab === "mu" ? "mu" : "ex"; pk.open = snap.cats || {}; }   /* back to where it was before the refresh */
     var bg = getComputedStyle(document.body).backgroundColor;
     var d = document.createElement("div"); d.id = "catLayer";
-    d.innerHTML = '<div class="catprev" style="background:' + bg + '"></div><div class="catmain" style="background:' + bg + '"><div class="catbody" inert><header class="rhead"><div class="rhead__text" style="padding-inline-start:0">' + searchInput() + '</div><button type="button" id="catX" class="rbtn rbtn--icon bio-flat" aria-label="סגירת הקטלוג" title="סגירת הקטלוג">' + I.x + '</button></header>' + pickerBody(false) + '</div></div>';
+    d.innerHTML = '<div class="catprev" style="background:' + bg + '"></div><div class="catmain" style="background:' + bg + '"><div class="catbody" inert><header class="rhead"><div class="rhead__text" style="padding-inline-start:0">' + pickerTabs() + '</div><button type="button" id="catX" class="rbtn rbtn--icon bio-flat" aria-label="סגירת הקטלוג" title="סגירת הקטלוג">' + I.x + '</button></header>' + pickerBody(false) + '</div></div>';
     document.body.appendChild(d); catLayer = d; catPrev = d.querySelector(".catprev"); (d.querySelector("#catAdd") || document.createElement("i")).addEventListener("click", function (ev) {
       var c = catPrevCtx; if (!c) return;
       if (!state.viv) vivPick(ev.currentTarget, c.e, c.fake.music_id, c.fake.sel);
@@ -1201,7 +1201,7 @@
     if (state.offline) items.length = 0;   /* with no internet nothing changes: only the copy on the device can be taken off it */
     if (items.length) menu(b, items);
   }
-  (function () { var st = document.createElement("style"); st.textContent = ".bio-card .bio-ha { position: absolute; opacity: 0; flex: none; width: var(--tag-s); height: var(--tag-s); min-height: var(--tag-s); padding: 0; background: transparent; border-color: transparent; transition: opacity var(--t-base) var(--ease) } .bio-card [data-audio] svg, .bio-card [data-hp] svg, #imus .bio-card [data-audio] svg { width: calc(var(--icon-s) * .75); height: calc(var(--icon-s) * .75) } .bio-card [data-orm] { opacity: 0; transition: opacity var(--t-base) var(--ease) } .bio-card [data-orm] > svg { width: var(--icon-m); height: var(--icon-m) } .bio-card:hover [data-orm], .bio-card [data-orm]:focus-visible { opacity: 1 } @media (hover: none) { .bio-card [data-orm] { opacity: 1 } } .bio-card .bio-ha.bio-ha--tl[data-likex] { right: auto; bottom: auto; left: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2); top: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2) } .bio-card .bio-ha > svg { width: var(--icon-m); height: var(--icon-m) } .bio-card .bio-ha[data-likex] { right: calc(var(--sp-2) + (var(--ctl) - var(--icon-m)) / 2 - (var(--tag-s) - var(--icon-m)) / 2); bottom: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2) } .bio-card .bio-ha[data-idel] { left: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2); top: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2) }   /* the icon itself is a full card step from the card's edges */ .bio-card:hover .bio-ha, .bio-card .bio-ha:focus-visible, .bio-card .bio-ha[aria-pressed=\"true\"] { opacity: 1 } @media (hover: none) { .bio-card .bio-ha { opacity: 1 } } #list[data-fab-room] { padding-bottom: 0 } [data-recvloop].is-live[aria-pressed=\"true\"] { background: var(--danger); border-color: var(--danger); color: var(--on-primary) } .rhead .rbtn--icon[data-act=\"back\"] { margin-inline-start: 0 } .rhead .rbtn--icon[data-act=\"back\"], .rhead .rbtn--icon[data-act=\"back\"]:hover, .rhead .rbtn--icon[data-act=\"back\"]:active { background: transparent; border-color: transparent } .bio-vm { opacity: 0; transition: opacity var(--t-base) var(--ease) } .rrow:hover .bio-vm, .bio-vm:focus-visible, .bio-vm[aria-expanded=\"true\"] { opacity: 1 } @media (hover: none) { .bio-vm { opacity: 1 } }"; document.head.appendChild(st); })();
+  (function () { var st = document.createElement("style"); st.textContent = ".bio-card .bio-ha { position: absolute; opacity: 0; flex: none; width: var(--tag-s); height: var(--tag-s); min-height: var(--tag-s); padding: 0; background: transparent; border-color: transparent; transition: opacity var(--t-base) var(--ease) } .bio-card [data-audio] svg, .bio-card [data-hp] svg, #imus .bio-card [data-audio] svg { width: calc(var(--icon-s) * .75); height: calc(var(--icon-s) * .75) } .bio-card [data-orm] { opacity: 0; transition: opacity var(--t-base) var(--ease) } .bio-card [data-orm] > svg { width: var(--icon-m); height: var(--icon-m) } .bio-card:hover [data-orm], .bio-card [data-orm]:focus-visible { opacity: 1 } @media (hover: none) { .bio-card [data-orm] { opacity: 1 } } .bio-card .bio-ha.bio-ha--tl[data-likex] { right: auto; bottom: auto; left: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2); top: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2) } .bio-card .bio-ha > svg { width: var(--icon-m); height: var(--icon-m) } .bio-card .bio-ha[data-likex] { right: calc(var(--sp-2) + (var(--ctl) - var(--icon-m)) / 2 - (var(--tag-s) - var(--icon-m)) / 2); bottom: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2) } .bio-card .bio-ha[data-idel] { left: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2); top: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2) }   /* the icon itself is a full card step from the card's edges */ .bio-card:hover .bio-ha, .bio-card .bio-ha:focus-visible, .bio-card .bio-ha[aria-pressed=\"true\"] { opacity: 1 } @media (hover: none) { .bio-card .bio-ha { opacity: 1 } } #list[data-fab-room] { padding-bottom: 0 } .rbtn[data-recvloop], .rbtn[data-recvloop]:hover, .rbtn[data-recvloop]:active, .rbtn[data-recvloop]:focus, .rbtn[data-recvloop][aria-pressed=\"true\"], .rhead .rbtn[data-recvloop]:hover, .rhead .rbtn[data-recvloop]:active { background: transparent; border-color: transparent; box-shadow: none; color: var(--text-2) } .rbtn[data-recvloop][aria-pressed=\"true\"], .rbtn[data-recvloop][aria-pressed=\"true\"]:hover, .rbtn[data-recvloop][aria-pressed=\"true\"]:active { color: var(--danger) } .rhead .rbtn--icon[data-act=\"back\"] { margin-inline-start: 0 } .rhead .rbtn--icon[data-act=\"back\"], .rhead .rbtn--icon[data-act=\"back\"]:hover, .rhead .rbtn--icon[data-act=\"back\"]:active { background: transparent; border-color: transparent } .bio-vm { opacity: 0; transition: opacity var(--t-base) var(--ease) } .rrow:hover .bio-vm, .bio-vm:focus-visible, .bio-vm[aria-expanded=\"true\"] { opacity: 1 } @media (hover: none) { .bio-vm { opacity: 1 } }"; document.head.appendChild(st); })();
   function renderVivs() {
     var l = document.getElementById("hl"); if (!l) return;
     l.innerHTML = state.vivs.length ? state.vivs.map(function (v) {
@@ -2120,7 +2120,7 @@
     if (exMusicP) return exMusicP;
     var by = {}, order = [], PAGE = 1000;
     function page(off) {
-      return api("/rest/v1/exercise_music?select=exercise_id,exercises(id,title_he,title_en),music(id,name,title,artist,duration_sec,audio_object,in_catalog)&order=exercise_id,music_id&limit=" + PAGE + "&offset=" + off).then(function (rows) {
+      return api("/rest/v1/exercise_music?select=exercise_id,exercises(id,title_he,title_en),music(id,name,title,artist,duration_sec,audio_object,in_catalog,line_tags,effect_tags,rhythm_tags)&order=exercise_id,music_id&limit=" + PAGE + "&offset=" + off).then(function (rows) {
         rows = rows || [];
         rows.forEach(function (x) {
           if (!x.exercises || !x.music) return;
@@ -2135,7 +2135,7 @@
       var seen = {}; o.forEach(function (g) { g.songs.forEach(function (m) { seen[m.id] = 1; }); });
       var rest = [];
       function lp(off) {
-        return api("/rest/v1/music?in_catalog=eq.true&select=id,name,title,artist,duration_sec,audio_object,in_catalog&order=name,id&limit=" + PAGE + "&offset=" + off).then(function (rows) {
+        return api("/rest/v1/music?in_catalog=eq.true&select=id,name,title,artist,duration_sec,audio_object,in_catalog,line_tags,effect_tags,rhythm_tags&order=name,id&limit=" + PAGE + "&offset=" + off).then(function (rows) {
           rows = rows || []; rows.forEach(function (m) { if (!seen[m.id]) rest.push(m); });
           return rows.length === PAGE ? lp(off + PAGE) : rest;
         });
@@ -2279,10 +2279,12 @@
      o: attrs (what the card is for the code: data-..., role), cls, selected, ltr (a Latin name: left to right), lead, title, titleAttr (the name is a button with these attributes), sub, subLtr, pill, chip, time, corner */
   function cardUi(o) {
     var dir = o.ltr ? "direction:ltr;text-align:left;" : "";
+    /* a heart or a bin in the card's top left corner: no line of the title or of the sub line may reach it (its box and one step) */
+    var pl = /bio-ha--tl|data-idel/.test(o.actions || "") ? "padding-left:calc((var(--tag-s) + var(--icon-m)) / 2 + var(--sp-1));" : "";
     var title = o.titleAttr
-      ? '<button type="button" class="rrow__main" ' + o.titleAttr + ' style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:var(--fw-bold) ' + (o.big ? 'var(--fs-l)' : 'var(--fs-s)') + '/var(--lh-tight) var(--font);color:inherit;' + dir + (o.corner ? 'padding-inline-end:var(--ctl)' : '') + '">' + esc(o.title) + '</button>'
-      : '<span style="display:block;' + dir + 'overflow-wrap:anywhere;' + (o.corner ? 'padding-right:var(--ctl);' : '') + 'font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(o.title) + '</span>';
-    var sub = '<span style="display:block;' + (o.subRight ? 'direction:ltr;text-align:right;' : o.subLtr !== false ? 'direction:ltr;text-align:left;' : '') + 'overflow-wrap:anywhere;color:var(--text-2);font:var(--fw-regular) ' + (o.big ? 'var(--fs-m)' : 'var(--fs-xs)') + '/var(--lh-tight) var(--font)">' + (o.sub ? esc(o.sub) : '&nbsp;') + '</span>';
+      ? '<button type="button" class="rrow__main" ' + o.titleAttr + ' style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:var(--fw-bold) ' + (o.big ? 'var(--fs-l)' : 'var(--fs-s)') + '/var(--lh-tight) var(--font);color:inherit;' + dir + (o.corner ? 'padding-inline-end:var(--ctl);' : '') + pl + '">' + esc(o.title) + '</button>'
+      : '<span style="display:block;' + dir + 'overflow-wrap:anywhere;' + (o.corner ? 'padding-right:var(--ctl);' : '') + pl + 'font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(o.title) + '</span>';
+    var sub = '<span style="display:block;' + (o.subRight ? 'direction:ltr;text-align:right;' : o.subLtr !== false ? 'direction:ltr;text-align:left;' : '') + 'overflow-wrap:anywhere;' + pl + 'color:var(--text-2);font:var(--fw-regular) ' + (o.big ? 'var(--fs-m)' : 'var(--fs-xs)') + '/var(--lh-tight) var(--font)">' + (o.sub ? esc(o.sub) : '&nbsp;') + '</span>';
     var foot = o.footEnd ? '<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-1);margin-top:auto;padding-top:var(--gap-tight);min-height:calc(var(--tag-s) + var(--gap-tight))"><div style="display:flex;align-items:center;gap:var(--sp-1)">' + (o.chip || '') + '</div><div style="display:flex;align-items:center;gap:var(--sp-1)">' + (o.time || '') + (o.pill || '') + '</div></div>'   /* the leader chip at the right end, under the song; the play tile at the left end, its time on its right */
       : '<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-1);margin-top:auto;padding-top:var(--gap-tight)"><div style="display:flex;align-items:center;gap:var(--sp-1)">' + (o.pill || '') + (o.chip || '') + '</div>' + (o.time || '') + '</div>';
     var lead = o.lead ? (o.bigLead
@@ -2626,16 +2628,35 @@
   }
 
   /* ---------- picker: the catalog ---------- */
-  var pk = { q: "", ln: "", cg: "", lv: "", cv: "" };   /* the catalog's search, line, category, group level and place on the curve */
-  function resetPk() { pk = { q: "", ln: "", cg: "", lv: "", cv: "" }; }
+  var pk = { q: "", ln: "", cg: "", lv: "", cv: "", tab: "ex", mq: "", mln: "", mrh: "", mef: "" };   /* the catalog's search, line, category, group level and place on the curve */
+  function resetPk() { pk = { q: "", ln: "", cg: "", lv: "", cv: "", tab: "ex", mq: "", mln: "", mrh: "", mef: "" }; }
   var LEVELS_FALLBACK = [{ key: "all", name_he: "מתחילים (מתאים לכל הקבוצות)" }, { key: "exp3", name_he: "לקבוצות עם ניסיון של כמה חודשים" }, { key: "exp6", name_he: "לקבוצות עם ניסיון של חצי שנה ויותר" }, { key: "deep", name_he: "לקבוצות העמקה ומתקדמות" }];   /* the index of group levels (biodanza.levels), when it has not come from the cloud */
   /* the catalog picker: a search and the list of categories; a category opens like an accordion onto its exercises. On a wide screen it is a pane; on a narrow one it is a popup from the bottom. */
-  function searchInput() {
-    return '<div style="display:flex;align-items:center;gap:var(--sp-2)"><input id="q" class="rhead__title" type="text" placeholder="חיפוש תרגילים ומוסיקה בקטלוג" autocomplete="off" aria-label="חיפוש תרגילים ומוסיקה בקטלוג" style="width:100%;min-width:0;border:0;background:transparent;padding-inline:0;margin:0;color:inherit;text-align:start;outline:0;text-overflow:ellipsis;text-box:normal;line-height:1.4;padding-block:4px">' + '<span aria-hidden="true" style="flex:none;display:grid;width:var(--icon-m);height:var(--icon-m);color:var(--text-2)"><svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></span></div>';
+  function searchInput(id, label) {
+    id = id || "q"; label = label || "חיפוש תרגילים בקטלוג";
+    return '<div style="display:flex;align-items:center;gap:var(--sp-2)"><input id="' + id + '" class="rhead__title" type="text" placeholder="' + label + '" autocomplete="off" aria-label="' + label + '" style="width:100%;min-width:0;border:0;background:transparent;padding-inline:0;margin:0;color:inherit;text-align:start;outline:0;text-overflow:ellipsis;text-box:normal;line-height:1.4;padding-block:4px">' + '<span aria-hidden="true" style="flex:none;display:grid;width:var(--icon-m);height:var(--icon-m);color:var(--text-2)"><svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></span></div>';
   }
-  function pickerBody(sheetMode) {
-    return (sheetMode ? '<style>#catDlg .sheet-head { display: none } #catDlg [data-accb] > div > div, #catDlg [data-songsb] > div > div { padding-inline: 0 !important }</style><div style="padding-block:var(--sp-1) 0">' + searchInput() + '</div>' : '') +
-      '<div class="rlist" id="pks" style="position:relative"><div id="list"><div class="rskel rskel--title"></div></div></div>';
+  /* the two tabs of the catalog: exercises (the first, on the right) and music; they are the pager's two pages */
+  function pickerTabs() {
+    return '<div class="rtabs" role="tablist" style="flex:1 1 auto;min-width:0;border-bottom:0"><button type="button" class="rtab" role="tab" data-pkt="ex" aria-selected="true">תרגילים</button><button type="button" class="rtab" role="tab" data-pkt="mu" aria-selected="false">מוסיקה</button></div>';
+  }
+  /* what the music tab filters by: the three tag columns of the music table. Values stay in English (they are the keys); a value with no entry here shows as it is. */
+  var MU_LINE = [["Affectivity", "affectivity", "חיבתיות"], ["Creativity", "creativity", "יצירתיות"], ["Vitality", "vitality", "חיוניות"], ["Sexuality", "sexuality", "מיניות"], ["Trance", "transcendence", "התעלות"], ["Maze", "", "מבוך"]];   /* the app's own line names are used when it has them */
+  var MU_RHYTHM = { "Rhythmic": "קצבי", "Rhythm-Melodic": "מלודי", "Rhythm-Slow": "איטי", "Rhythm-Medium": "בינוני", "Rhythm-Fast": "מהיר", "Rhythm- Medium / Slow": "בינוני עד איטי", "Rhythm-Very Slow": "איטי מאוד", "Rhythm- Slow and Fast": "איטי ומהיר", "Rhythm-Very Fast": "מהיר מאוד", "No Rhythm": "בלי קצב", "Rhythm-Repetitive - monotonic": "חוזר ומונוטוני", "Rhythm-Progressive": "מתפתח", "eurythmic": "אאוריתמי" };
+  var MU_EFFECT = { "Soft and Sensitive": "רך ורגיש", "Sensual": "חושני", "Joyful": "שמח", "Deep": "עמוק", "Romantic": "רומנטי", "Expressive": "אקספרסיבי", "Playful": "שובב", "Energizing": "מאיץ", "Dramatic": "דרמטי", "Cellestial": "שמימי", "Airy - Cosmic": "אווירי וקוסמי", "Sacred": "מקודש", "Passionate": "נלהב", "Light": "קליל", "Euphoric": "אופורי", "Pulsating": "פועם", "Optimistic": "אופטימי" };
+  function muLineLabel(v) { var e = MU_LINE.filter(function (x) { return x[0] === v; })[0]; if (!e) return v; var n = e[1] && state.lines && state.lines.filter(function (l) { return l.key === e[1]; })[0]; return n ? n.name_he : e[2]; }
+  function tagHit(m, f) {   /* a song matches when, in every box that is set, its array holds the chosen value; a song with no tags matches only when no box is set */
+    return (!f.ln || (m.line_tags || []).indexOf(f.ln) >= 0) && (!f.rh || (m.rhythm_tags || []).indexOf(f.rh) >= 0) && (!f.ef || (m.effect_tags || []).indexOf(f.ef) >= 0);
+  }
+  function pickerBody(sheetMode, swapIt) {
+    var pageCss = '<style>.pgp > .pgs { padding-inline: var(--gutter); padding-block: var(--sp-1) 0 } #pgr::-webkit-scrollbar { display: none } ' + (sheetMode ? '#catDlg .sheet-head { display: none } #catDlg [data-accb] > div > div { padding-inline: 0 !important } #catDlg .sheet-body > #pgr, #catDlg .sheet-body > .rtabs { padding-inline: 0 } #catDlg .pgp > * { padding-inline: var(--bleed, var(--pp-px)) }' : '') + '</style>';
+    var pageSt = 'flex:0 0 100%;min-width:0;min-height:0;display:flex;flex-direction:column;scroll-snap-align:start;scroll-snap-stop:always', listSt = 'position:relative;flex:1 1 auto;min-height:0;overflow-y:auto';
+    var exPage = '<div class="pgp" role="tabpanel" style="' + pageSt + '"><div class="pgs">' + searchInput("q", "חיפוש תרגילים בקטלוג") + '</div><div class="rlist pgl" id="pks" style="' + listSt + '"><div id="list"><div class="rskel rskel--title"></div></div></div></div>';
+    var muPage = swapIt ? '' : '<div class="pgp" role="tabpanel" style="' + pageSt + '"><div class="pgs">' + searchInput("mq", "חיפוש מוסיקה בקטלוג") + '</div><div class="pgs" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-1)">' +
+      [["mln", "קו"], ["mrh", "קצב"], ["mef", "אפקט"]].map(function (b) { return '<label class="rfield"><select data-mf="' + b[0] + '" aria-label="' + b[1] + '"><option value="">' + b[1] + '</option></select></label>'; }).join("") +
+      '</div><div class="rlist pgl" id="pkl" style="' + listSt + '"><div class="rskel rskel--title"></div></div></div>';
+    return pageCss + (sheetMode && !swapIt ? pickerTabs() : '') +
+      '<div id="pgr" style="flex:1 1 auto;min-height:0;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none">' + exPage + muPage + '</div>';
   }
   function pickerWire(r, swapIt, sheet) {
       var open = pk.open || (pk.open = {});   /* the categories that are open, kept while an exercise is looked at and back again */
@@ -2682,41 +2703,85 @@
         }
         catBy = by;
         l.innerHTML = cats.length ? cats.map(function (k) {
-          var on = open[k] != null ? open[k] : !!q;   /* a search opens the categories that have something in it */
-          var head = '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-1);min-height:0;border-bottom-color:' + (on ? "transparent" : "var(--line)") + '"><button type="button" class="rrow__main" data-cat="' + esc(k) + '" aria-expanded="' + on + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit;display:flex;align-items:center;gap:var(--sp-2)"><span style="flex:1 1 auto;min-width:0"><span class="rrow__title" style="font-weight:var(--fw-black)">' + esc(catName(k) || "ללא קטגוריה") + '</span></span><span style="flex:none;width:20px;height:20px;transition:transform .25s var(--ease);' + (on ? 'transform:rotate(180deg)' : '') + '">' + I.down + '</span></button></div>';
+          var on = open[k] != null ? open[k] : false;   /* a category opens only when it is tapped: typing a search opens nothing */
+          var head = '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-1);min-height:0;border-bottom-color:' + (on ? "transparent" : "var(--line)") + '"><button type="button" class="rrow__main" data-cat="' + esc(k) + '" aria-expanded="' + on + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit;display:flex;align-items:center;gap:var(--sp-2)"><span style="flex:1 1 auto;min-width:0"><span class="rrow__title" style="font-weight:var(--fw-black)">' + esc(catName(k) || "ללא קטגוריה") + '</span></span><span data-catn style="flex:none;color:var(--text-2);font:var(--fw-regular) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + by[k].length + '</span><span style="flex:none;width:20px;height:20px;transition:transform .25s var(--ease);' + (on ? 'transform:rotate(180deg)' : '') + '">' + I.down + '</span></button></div>';
           return head + '<div data-accb="' + esc(k) + '" style="border-bottom:1px solid ' + (on ? "var(--line)" : "transparent") + ';display:grid;grid-template-rows:' + (on ? '1fr' : '0fr') + ';transition:grid-template-rows .25s var(--ease)"><div style="overflow:hidden;min-height:0">' + (on ? catCards(k) : '') + '</div></div>';
-        }).join("") : (q && !swapIt ? "" : ph("לא נמצא תרגיל", ""));   /* a search with no exercise shows the songs it found, and "not found" only if there are none either */
-        /* a typed search also finds songs (any exercise's); choosing one adds an exercise with no name and that song */
-        if (q && !swapIt) {
-          var box = document.createElement("div"); l.appendChild(box);
-          var tok = ++sgTok;
-          loadExMusic().then(function (gs) {
-            if (tok !== sgTok || !box.isConnected) return;
-            var seen = {}, songs = [];
-            gs.forEach(function (g) { g.songs.forEach(function (m) { if (!seen[m.id] && fz(songName(m) + " " + songBy(m), q)) { seen[m.id] = 1; songs.push(m); } }); });
-            if (!songs.length) { box.remove(); if (!cats.length) l.innerHTML = ph("לא נמצא", ""); return; }
-            var shown = songs.slice(0, 60);
-            var on0 = open.__songs != null ? open.__songs : true;
-            box.innerHTML = '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-1);min-height:0;border-bottom-color:' + (on0 ? "transparent" : "var(--line)") + '"><button type="button" class="rrow__main" data-songs aria-expanded="' + on0 + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit;display:flex;align-items:center;gap:var(--sp-2)"><span style="flex:1 1 auto;min-width:0"><span class="rrow__title" style="font-weight:var(--fw-black)">מוזיקות</span></span><span style="flex:none;width:20px;height:20px;transition:transform .25s var(--ease);' + (on0 ? 'transform:rotate(180deg)' : '') + '">' + I.down + '</span></button></div>' +
-              '<div data-songsb style="border-bottom:1px solid ' + (on0 ? "var(--line)" : "transparent") + ';display:grid;grid-template-rows:' + (on0 ? '1fr' : '0fr') + ';transition:grid-template-rows .25s var(--ease)"><div style="overflow:hidden;min-height:0"><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);padding:var(--gutter)">' + shown.map(function (m) {
-                return cardUi({ attrs: 'data-sgc="' + esc(m.id) + '"', ltr: true, title: songName(m), sub: songBy(m), pill: cardPill(m), time: clkSpan(m), chip: '<button type="button" class="rchip rchip--s" data-sg="' + esc(m.id) + '" style="cursor:pointer;border:0">הוספה</button>' });
-              }).join("") + '</div></div></div>';
-            box.addEventListener("click", function (ev) {
-              var sb = ev.target.closest("[data-songs]");
-              if (sb) {
-                var nowS = sb.getAttribute("aria-expanded") !== "true"; open.__songs = nowS; sb.setAttribute("aria-expanded", String(nowS));
-                if (sb.lastElementChild) sb.lastElementChild.style.transform = nowS ? "rotate(180deg)" : "";
-                var bodyS = box.querySelector("[data-songsb]"); if (bodyS) { bodyS.style.gridTemplateRows = nowS ? "1fr" : "0fr"; bodyS.style.borderBottomColor = nowS ? "var(--line)" : "transparent"; }
-                var hs = sb.closest(".rrow"); if (hs) hs.style.borderBottomColor = nowS ? "transparent" : "var(--line)";
-                return;
-              }
-              if (ev.target.closest("[data-audio], a")) return;
-              var bt = ev.target.closest("[data-sg]");
-              if (!bt) { var cd = ev.target.closest("[data-sgc]"), pb = cd && cd.querySelector("[data-audio]"); if (pb) pb.click(); return; }
-              var m = songs.filter(function (x) { return x.id === bt.dataset.sg; })[0]; if (m) confirmAddMusic(songName(m), state.viv ? (state.viv.title || "הוויוונסיה") : "", function () { addSongOnly(m, sheet); });
-            });
-          }, function () { box.remove(); });
-        }
+        }).join("") : ph("לא נמצא תרגיל", "");   /* the exercises tab holds exercises only: the songs have their own tab */
+      }
+      /* the pager: two pages side by side in one horizontal scroller with scroll snap. In RTL the first page (exercises) is on the right and scrollLeft runs negative, so the target is signed by the direction. A tap on a tab scrolls the pager; a swipe changes the tab; the tab marker is the kit's own (aria-selected). */
+      var pgr = r.querySelector("#pgr"), tabEls = r.querySelectorAll("[data-pkt]"), TABS = ["ex", "mu"], goingTo = null, goT = 0, mq = r.querySelector("#mq");
+      var musicAll = null, musicLoading = false, mById = {}, mList = [], mShown = 0, MP = 100;
+      function musicCards(a, b) {
+        return mList.slice(a, b).map(function (m) {
+          return cardUi({ attrs: 'data-sgc="' + esc(m.id) + '"', ltr: true, title: songName(m), sub: songBy(m), pill: cardPill(m), time: clkSpan(m), chip: '<button type="button" class="rchip rchip--s" data-sg="' + esc(m.id) + '" style="cursor:pointer;border:0">הוספה</button>' });
+        }).join("");
+      }
+      function fillSelects() {
+        function count(col) { var c = {}; musicAll.forEach(function (m) { (m[col] || []).forEach(function (v) { c[v] = (c[v] || 0) + 1; }); }); return Object.keys(c).sort(function (a, b) { return c[b] - c[a]; }); }
+        var sets = { mln: MU_LINE.map(function (x) { return x[0]; }).filter(function (v) { return musicAll.some(function (m) { return (m.line_tags || []).indexOf(v) >= 0; }); }), mrh: count("rhythm_tags"), mef: count("effect_tags") };
+        r.querySelectorAll("[data-mf]").forEach(function (sel) {
+          var k = sel.dataset.mf, first = sel.options[0].outerHTML;
+          sel.innerHTML = first + sets[k].map(function (v) { var lb = k === "mln" ? muLineLabel(v) : (k === "mrh" ? MU_RHYTHM : MU_EFFECT)[v] || v; return '<option value="' + esc(v) + '">' + esc(lb) + '</option>'; }).join("");
+          sel.value = pk[k] || "";
+        });
+      }
+      function paintMu() {
+        var l = r.querySelector("#pkl"); if (!l || !musicAll) return;
+        var s = fold(mq.value.trim()), f = { ln: pk.mln, rh: pk.mrh, ef: pk.mef };
+        pk.mq = mq.value;
+        mList = musicAll.filter(function (m) { return tagHit(m, f) && (!s || fz(songName(m) + " " + songBy(m), s)); });
+        mShown = Math.min(MP, mList.length); l.scrollTop = 0;
+        l.innerHTML = mList.length ? '<div id="mgrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);padding:var(--gutter)">' + musicCards(0, mShown) + '</div>' : ph("לא נמצאה מוסיקה", "");
+      }
+      function ensureMusic() {
+        if (!pgr || !r.querySelector("#pkl") || musicLoading || musicAll) return;
+        musicLoading = true;
+        loadExMusic().then(function (gs) {
+          var seen = {}, all = [];
+          gs.forEach(function (g) { g.songs.forEach(function (m) { if (!seen[m.id]) { seen[m.id] = 1; all.push(m); mById[m.id] = m; } }); });
+          all.sort(function (a, b) { return songName(a).localeCompare(songName(b), "he"); });
+          musicAll = all; fillSelects(); paintMu();
+        }, function () { musicLoading = false; var l = r.querySelector("#pkl"); if (l) l.innerHTML = ph("לא ניתן לטעון את המוסיקה", ""); });
+      }
+      function dirSign() { return getComputedStyle(pgr).direction === "rtl" ? -1 : 1; }
+      function curIdx() { var w = pgr.clientWidth || 1; return Math.max(0, Math.min(TABS.length - 1, Math.round(Math.abs(pgr.scrollLeft) / w))); }
+      function markTab(i) {
+        tabEls.forEach(function (t, j) { t.setAttribute("aria-selected", String(i === j)); });
+        if (pk.tab !== TABS[i]) { pk.tab = TABS[i]; saveCat(); }
+        if (i === 1) ensureMusic();
+      }
+      function goTab(i, instant) {
+        var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        goingTo = instant || reduce ? null : i; clearTimeout(goT); if (goingTo != null) goT = setTimeout(function () { goingTo = null; }, 700);   /* the scroll listener leaves the tabs alone until the animation arrives */
+        pgr.scrollTo({ left: dirSign() * i * pgr.clientWidth, behavior: instant || reduce ? "auto" : "smooth" });
+        markTab(i);
+      }
+      if (pgr && tabEls.length) {
+        var raf = 0, lastW = 0;
+        pgr.addEventListener("scroll", function () {
+          if (!pgr.clientWidth || raf) return;
+          raf = requestAnimationFrame(function () { raf = 0; if (!pgr.clientWidth) return; var i = curIdx(); if (goingTo != null) { if (i === goingTo) goingTo = null; return; } markTab(i); });
+        }, { passive: true });
+        tabEls.forEach(function (t, j) { t.addEventListener("click", function () { goTab(j); }); });
+        var resnap = function () { var w = pgr.clientWidth; if (w && w !== lastW) { lastW = w; var i = TABS.indexOf(pk.tab); goTab(i < 0 ? 0 : i, true); } };   /* it came on screen (a hidden box forgets its scroll) or changed width: back on the page of the selected tab */
+        if (window.ResizeObserver) new ResizeObserver(resnap).observe(pgr); else window.addEventListener("resize", resnap);
+        var i0 = TABS.indexOf(pk.tab); markTab(i0 < 0 ? 0 : i0); requestAnimationFrame(resnap);
+      }
+      if (mq) {
+        mq.value = pk.mq || "";
+        mq.addEventListener("input", paintMu);
+        r.querySelectorAll("[data-mf]").forEach(function (sel) { sel.addEventListener("change", function () { pk[sel.dataset.mf] = sel.value; paintMu(); }); });
+        var ml = r.querySelector("#pkl");
+        ml.addEventListener("scroll", function () {
+          if (mShown >= mList.length || ml.scrollTop + ml.clientHeight < ml.scrollHeight - 400) return;
+          var g = ml.querySelector("#mgrid"), to = Math.min(mList.length, mShown + MP); if (g) g.insertAdjacentHTML("beforeend", musicCards(mShown, to)); mShown = to;
+        }, { passive: true });
+        ml.addEventListener("click", function (ev) {   /* the same as before: a tap on a card plays, the chip adds an exercise with no name and that song */
+          if (ev.target.closest("[data-audio], a")) return;
+          var bt = ev.target.closest("[data-sg]");
+          if (!bt) { var cd = ev.target.closest("[data-sgc]"), pb = cd && cd.querySelector("[data-audio]"); if (pb) pb.click(); return; }
+          var m = mById[bt.dataset.sg]; if (m) confirmAddMusic(songName(m), state.viv ? (state.viv.title || "הוויוונסיה") : "", function () { addSongOnly(m, sheet); });
+        });
       }
       var scEl = r.querySelector("#pks"); if (scEl) scEl.addEventListener("scroll", function () { clearTimeout(scEl._t); scEl._t = setTimeout(saveCat, 250); });
       r.querySelector("#q").addEventListener("input", function () { var sc = r.querySelector("#pks"); if (sc) sc.scrollTop = 0; paintCat(); if (!catTx) loadCatTx().then(function () { if (catTx && r.isConnected && r.querySelector("#q").value.trim()) paintCat(); }); });
@@ -2726,7 +2791,7 @@
   }
   function picker(swapIt) {
     state.pickerShow = true;
-    show('<header class="rhead"><button class="rbtn rbtn--icon rbtn--edge-start" data-act="back" aria-label="חזרה" title="חזרה">' + I.back + '</button><div class="rhead__text">' + searchInput() + '</div></header>' + pickerBody(false), function (r) {
+    show('<header class="rhead"><button class="rbtn rbtn--icon rbtn--edge-start" data-act="back" aria-label="חזרה" title="חזרה">' + I.back + '</button><div class="rhead__text">' + (swapIt ? '<span class="rhead__title">הקטלוג</span>' : pickerTabs()) + '</div></header>' + pickerBody(false, swapIt), function (r) {
       on(r, "back", !wide() ? back : swapIt ? function () { pending = { item: swapIt.id }; back(); }   /* leaving a replacement: the same exercise is open again on the left */
         : function () { show(phPick("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); back(); });
       pickerWire(r, swapIt, false);
@@ -2738,7 +2803,7 @@
   function pickerSheet(swapIt) {
     var dlg = document.getElementById("catDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "catDlg"; document.body.appendChild(dlg); }
-    RosterSheet.render(dlg, { title: "", from: "bottom", body: bleedCss("catDlg") + pickerBody(true) });
+    RosterSheet.render(dlg, { title: "", from: "bottom", body: bleedCss("catDlg") + pickerBody(true, swapIt) });
     bleedSet(dlg);   /* the content sits on the title's own edges, the same on both sides */
     var q0 = dlg.querySelector("#q"); if (q0) q0.blur();   /* the popup opens on the list: the keyboard comes up only when the search is touched */
     var r = dlg.querySelector(".sheet-body"), ls = r.querySelector("#pks");
