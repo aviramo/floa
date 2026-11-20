@@ -112,8 +112,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
   function why(r, m) {
     var t = m.title >= 0.95 ? "השם זהה" : m.title >= 0.75 ? "השם דומה מאוד (" + pct(m.title) + ")" : "השם דומה בחלקו (" + pct(m.title) + ")";
     var h = '<div class="c__why">' + t;
-    h += '</div><div class="c__why"><b>מוסיקה משותפת:</b> ' + (m.shared ? m.shared + ' מתוך ' + r.music.length + ' של התרגיל מ־2014' : 'אין') + '</div>';
-    if (m.songs && m.songs.length) h += '<div class="c__s" style="direction:ltr;text-align:start">' + m.songs.map(esc).join('<br>') + '</div>';
+    h += '</div><div class="c__why"><b>התאמת מוסיקה:</b> ' + (m.shared ? pct(m.jaccard) + ' (' + m.shared + ' שירים משותפים)' : 'אין שירים משותפים') + '</div>';
     return h;
   }
   function card(r) {
@@ -125,7 +124,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
       h += '<div class="c__match"><span class="c__lbl">אין התאמה בקטלוג הקיים</span>' + (m0 ? '<span class="c__s">הדומה ביותר: ' + esc(m0.title_en) + ' (' + pct(m0.title) + ')</span>' : '') + '</div>';
     }
     var more = r.matches.slice(b ? 1 : 1).filter(function (m) { return m.strength === "candidate"; });
-    if (more.length) h += '<div class="c__more"><span class="c__lbl">מועמדים נוספים</span>' + more.map(function (m) { return '<span class="c__s">' + esc(m.title_en) + ' (' + pct(m.title) + (m.shared ? ', ' + m.shared + ' שירים משותפים' : '') + ')</span>'; }).join("") + '</div>';
+    if (more.length) h += '<div class="c__more"><span class="c__lbl">מועמדים נוספים</span>' + more.map(function (m) { return '<span class="c__s">' + esc(m.title_en) + ' (' + pct(m.title) + (m.shared ? ', מוסיקה ' + pct(m.jaccard) : '') + ')</span>'; }).join("") + '</div>';
     return h + '</div>';
   }
   function draw() {
