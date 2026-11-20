@@ -849,7 +849,7 @@ create trigger item_no_catalog_link before insert or update of exercise_id on bi
 
 -- a side table to look at the 2014 catalog beside the catalog: nothing here is read by the app, and nothing in the catalog is touched
 create table if not exists biodanza.c14_exercises (
-  id uuid primary key, title_en text, title_he text, category text, raw_sources jsonb
+  id uuid primary key, title_en text, title_he text, category text, raw_sources jsonb, category_brush text
 );
 create table if not exists biodanza.c14_music (
   c14_id uuid not null references biodanza.c14_exercises(id) on delete cascade, music_id uuid not null, phase_hint text, note text,
@@ -869,7 +869,7 @@ begin
   if not biodanza.is_admin() then raise exception 'admins only'; end if;
   return coalesce((select jsonb_agg(x order by x->>'title_en') from (
     select jsonb_build_object(
-      'id', c.id, 'title_en', c.title_en, 'title_he', c.title_he, 'category', c.category, 'pdf', c.raw_sources,
+      'id', c.id, 'title_en', c.title_en, 'title_he', c.title_he, 'category', c.category, 'category_brush', c.category_brush, 'pdf', c.raw_sources,
       'music', coalesce((select jsonb_agg(jsonb_build_object('id', m.id, 'name', m.name, 'object', m.audio_object) order by m.name)
                          from biodanza.c14_music cm join biodanza.music m on m.id = cm.music_id where cm.c14_id = c.id), '[]'::jsonb),
       'matches', coalesce((select jsonb_agg(jsonb_build_object('id', e.id, 'title_en', e.title_en, 'title_he', e.title_he, 'strength', k.strength, 'title', k.title_score, 'shared', k.shared_music, 'jaccard', k.jaccard, 'songs_n', (select count(*) from biodanza.exercise_music em2 where em2.exercise_id = e.id), 'objs', coalesce((select jsonb_agg(m3.audio_object order by m3.name) from biodanza.exercise_music em3 join biodanza.music m3 on m3.id = em3.music_id where em3.exercise_id = e.id and m3.audio_object is not null), '[]'::jsonb), 'nofile', coalesce((select jsonb_agg(m4.name order by m4.name) from biodanza.exercise_music em4 join biodanza.music m4 on m4.id = em4.music_id where em4.exercise_id = e.id and m4.audio_object is null), '[]'::jsonb)) order by k.rank)
