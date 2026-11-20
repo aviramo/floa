@@ -852,7 +852,7 @@
       '<div class="rhead__text" style="flex-direction:row;align-items:center;gap:var(--sp-2);padding-inline-start:0;justify-content:flex-start">' + (numText ? '<span aria-hidden="true" style="flex:none;font:var(--fw-black) calc(2.75 * var(--fs-m))/.95 var(--font);font-variant-numeric:tabular-nums">' + esc(numText) + '</span>' : "") + '<input id="ina" class="rhead__title" placeholder="ללא שם" autocomplete="off" aria-label="שם התרגיל"' + (ro ? ' readonly' : '') + ' value="' + esc(nameText || "") + '" style="flex:1 1 0;width:auto;min-width:0;border:0;background:transparent;padding-inline:0;margin:0;color:inherit;text-align:start;outline:0;text-overflow:ellipsis;text-box:normal;line-height:1.4;padding-block:4px"></div>' +
       (ro && roLabel ? '<button type="button" class="rbtn" style="flex:none;gap:var(--sp-1);margin-inline-end:var(--gutter)" data-act="doswap"' + (roPlus ? ' aria-label="הוספה לוויוונסיה ' + esc(roLabel) + '" title="הוספה לוויוונסיה"' : '') + '>' + (roPlus ? '<span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span><span style="max-width:14rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(roLabel) + '</span>' : esc(roLabel)) + '</button>' : "") +
       "" +   /* the heart of a catalog exercise is on its card in the catalog, on hover */
-      "" + "" + (ro || wide() ? "" : '<span id="itimer" hidden aria-live="off" style="flex:none;font:var(--fw-black) calc(2.75 * var(--fs-m))/.95 var(--font);font-variant-numeric:tabular-nums;color:var(--text);direction:ltr"></span>') + (nav ? arrow("nextW", I.fwd, "הבא", !hasNext) : "") + '</header>';
+      "" + "" + (ro || wide() ? "" : '<span id="itimer" hidden aria-live="off" style="flex:none;font:var(--fw-black) calc(2.75 * var(--fs-m))/.95 var(--font);font-variant-numeric:tabular-nums;color:var(--text);direction:ltr"></span>') + (nav ? arrow("nextW", I.fwd, "הבא", !hasNext) : "") + (wide() && !ro ? '<button type="button" class="rbtn rbtn--icon bio-flat" data-act="closeIt" aria-label="סגירת התרגיל" title="סגירת התרגיל">' + I.x + '</button>' : "") + '</header>';
   }
   (function () {
     var st = document.createElement("style");
@@ -1862,6 +1862,7 @@
       function walk(to) { repNext = true; state.slideFrom = to === nextIt ? -1 : 1; if (wide()) return itemScreen(to); stack().pop(); go(function () { itemScreen(to); }); }
       on(r, "prevW", function () { if (prevIt) walk(prevIt); });
       on(r, "nextW", function () { if (nextIt) walk(nextIt); });
+      on(r, "closeIt", function () { liveItem = null; state.lastItem = null; show(ph("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); markItem(); setUrl(BASE + state.viv.id); });   /* the X: the exercise closes and is no longer the chosen one */
       var trk = document.querySelector("#itemDlg .bio-tabs__track");
       if (pg) attachPager(pg, { next: nextIt ? function () { walk(nextIt); } : null, prev: prevIt ? function () { walk(prevIt); } : null,
         drag: trk ? function (dx, w) { var dir = dx > 0 ? 1 : -1; trk.classList.add("is-drag"); trk.style.setProperty("--tx", ((trk._base || 0) + dir * tabsDist(trk, dir) * Math.min(1, Math.abs(dx) / w)) + "px"); } : null,
