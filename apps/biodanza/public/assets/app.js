@@ -169,7 +169,14 @@
     })(root);
     return res || [root, root.childNodes.length];
   }
+  function rtKeep(el, v) {   /* new words in a box I am standing in: the cursor stays at the same place in the text, not at the start */
+    var on = el === document.activeElement, sel = on ? rtSel(el) : null;
+    el.value = v;
+    if (!on || !sel) return;
+    try { var a = rtPoint(el, sel.a), b = rtPoint(el, sel.b), rg = document.createRange(); rg.setStart(a[0], a[1]); rg.setEnd(b[0], b[1]); var sl = window.getSelection(); sl.removeAllRanges(); sl.addRange(rg); } catch (x) { /* no caret */ }
+  }
   function rtInit(el) {   /* a box that answers like a textarea: .value */
+    el.addEventListener("input", function () { el._typed = Date.now(); });
     function mark() { if (el.parentElement) el.parentElement.dataset.rf = el.textContent ? "v" : "e"; }
     Object.defineProperty(el, "value", { configurable: true, get: function () { return rtWalk(el, true); }, set: function (v) { el.innerHTML = rtHtml(v); mark(); } });
     mark();
@@ -1900,12 +1907,12 @@
     var totSec = main.reduce(function (n, i) { return n + (i.music ? (durOf(i.music) || 0) : 0); }, 0);   /* the length of the chosen songs of the exercises, one after the other */
     var totTxt = totSec > 0 ? (totSec >= 3600 ? Math.floor(totSec / 3600) + ":" + ("0" + Math.floor(totSec % 3600 / 60)).slice(-2) + ":" + ("0" + Math.floor(totSec % 60)).slice(-2) : Math.floor(totSec / 60) + ":" + ("0" + Math.floor(totSec % 60)).slice(-2)) : "";
     var exHead = '<div class="bio-sech" style="display:flex;align-items:center;justify-content:space-between;padding:var(--gutter) var(--gutter) 0">' + accHead("ex", "ויוונסיה (" + main.length + ")") + '<span style="display:flex;align-items:center;gap:var(--sp-1)">' + (totTxt ? '<span class="bio-total" title="משך המוסיקה הנבחרת בכל התרגילים" style="flex:none;box-sizing:border-box;width:var(--ctl);padding-left:calc((var(--ctl) - var(--icon-m)) / 2);direction:ltr;text-align:left;color:var(--text-2);font:var(--fw-medium) var(--fs-m)/1 var(--font);font-variant-numeric:tabular-nums;white-space:nowrap">' + totTxt + '</span>' : '') + (canEdit() ? '<button type="button" class="rbtn rbtn--icon" data-addex aria-haspopup="menu" aria-label="הוספת תרגיל" title="הוספת תרגיל">' + I.plus + '</button>' : '') + '</span></div>';   /* the exercises have a title like the songs of the start, with a plus at its other end */
-    var fo = document.activeElement, foId = fo && l.contains(fo) && /^opt[0-9]+$/.test(fo.id) ? fo.id : "";   /* a repaint while somebody types in the opening keeps the cursor there */
+    var fo = document.activeElement, foId = fo && l.contains(fo) && /^opt[0-9]+$/.test(fo.id) ? fo.id : "", foSel = foId ? rtSel(fo) : null;   /* a repaint while somebody types in the opening keeps the cursor there */
     l.innerHTML = recvHtml("start") + openingHtml() + exHead + accOpenTag("ex") + '<div id="plist" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);align-items:stretch;padding:var(--gutter)">' + main.map(function (i, k) { return rowOf(i, k + 1); }).join("") +
       '<div data-div style="grid-column:1 / -1;padding:var(--sp-2) 0 var(--sp-1);margin-top:var(--sp-1);min-height:var(--ctl)"><div class="bio-divl"><span class="rrow__sub" style="margin:0">נוספים</span></div>' + (back.length || !canEdit() ? '' : '<div class="rrow__sub" style="margin-top:var(--sp-1);text-align:center">גררו לכאן תרגיל שעוד לא החלטתם עליו</div>') + '</div>' +
       back.map(function (i) { return rowOf(i, "•"); }).join("") + '</div>' + ACC_CLOSE + recvHtml("end");
     wireOpening(l);
-    if (foId) { var fe = l.querySelector("#" + foId); if (fe) { fe.focus(); try { var rg = document.createRange(); rg.selectNodeContents(fe); rg.collapse(false); var sl = window.getSelection(); sl.removeAllRanges(); sl.addRange(rg); } catch (x) { /* no caret */ } } }
+    if (foId) { var fe = l.querySelector("#" + foId); if (fe) { fe.focus(); try { var rg = document.createRange(), pa = rtPoint(fe, foSel.a), pb = rtPoint(fe, foSel.b); rg.setStart(pa[0], pa[1]); rg.setEnd(pb[0], pb[1]); var sl = window.getSelection(); sl.removeAllRanges(); sl.addRange(rg); } catch (x) { /* no caret */ } } }
     /* the list has a scrollbar at its left edge that takes room from the cards: the header above gives its left side the same room, so its button is over the cards' edge */
     var sbw = Math.max(0, l.offsetWidth - l.clientWidth); pl.style.setProperty("--sbw", sbw + "px");
     var openIt = function (id) {
@@ -2439,7 +2446,8 @@
         Object.keys(fld).forEach(function (k) {
           var el = fld[k], rv = remoteVal(k, fresh);
           if (el === document.activeElement && el.value !== el.dataset.base) return;   /* I am in the middle of changing this one: mine stays */
-          if (el.value !== rv) { el.value = rv; el.style.color = ""; el.style.background = ""; }
+          if (el === document.activeElement && Date.now() - (el._typed || 0) < 3000) return;   /* typed a moment ago: what comes back may be an older save of mine, and mine is newer */
+          if (el.value !== rv) { if (el.classList.contains("rf-rich")) rtKeep(el, rv); else el.value = rv; el.style.color = ""; el.style.background = ""; }
           el.dataset.base = rv;
         });
         layoutFields(); it = fresh;
