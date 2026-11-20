@@ -2491,7 +2491,7 @@
     return '<div style="display:flex;align-items:center;gap:var(--sp-2)"><input id="q" class="rhead__title" type="text" placeholder="חיפוש תרגילים ומוסיקה בקטלוג" autocomplete="off" aria-label="חיפוש תרגילים ומוסיקה בקטלוג" style="width:100%;min-width:0;border:0;background:transparent;padding-inline:0;margin:0;color:inherit;text-align:start;outline:0;text-overflow:ellipsis;text-box:normal;line-height:1.4;padding-block:4px">' + '<span aria-hidden="true" style="flex:none;display:grid;width:var(--icon-m);height:var(--icon-m);color:var(--text-2)"><svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></span></div>';
   }
   function pickerBody(sheetMode) {
-    return (sheetMode ? '<style>#catDlg .sheet-head { display: none } #catDlg [data-accb] > div > div, #catDlg [data-songsb] > div > div { padding-inline: 0 !important }</style><div style="padding-block:0">' + searchInput() + '</div>' : '') +
+    return (sheetMode ? '<style>#catDlg .sheet-head { display: none } #catDlg .sheet-body { padding-top: 0 !important } #catDlg #q { padding-block: 0 !important } #catDlg [data-accb] > div > div, #catDlg [data-songsb] > div > div { padding-inline: 0 !important }</style><div style="padding-block:0">' + searchInput() + '</div>' : '') +
       '<div class="rlist" id="pks" style="position:relative"><div id="list"><div class="rskel rskel--title"></div></div></div>';
   }
   function pickerWire(r, swapIt, sheet) {
