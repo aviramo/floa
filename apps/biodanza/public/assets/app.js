@@ -1697,7 +1697,7 @@
     var m = document.createElement("div"); m.id = "moreMenu"; m.className = "rmenu rmenu--fixed"; m.setAttribute("role", "menu");
     var seen = {}, have = {}; openRows().forEach(function (x) { have[x.who] = 1; });
     m.innerHTML = state.members.filter(function (x) { var n = facShort(x.email); if (seen[n] || have[n]) return false; return (seen[n] = 1); }).map(function (x) { return '<button type="button" class="rmenu__item" role="menuitem" data-n="' + esc(facShort(x.email)) + '"><span>' + esc(facShort(x.email)) + '</span></button>'; }).join("");
-    if (!m.children.length) { toast("כל המובילים כבר כאן"); return; }
+    if (!m.children.length) m.innerHTML = '<div class="rmenu__item" role="menuitem" aria-disabled="true" style="opacity:.6;pointer-events:none"><span>' + (state.members.length < 2 ? "אין עוד מובילים בשיתוף" : "כל המובילים כבר כאן") + '</span></div>';
     var sh = document.createElement("div"); sh.style.cssText = "position:fixed;inset:0;z-index:var(--z-menu);background:transparent;touch-action:none";
     document.body.appendChild(sh); document.body.appendChild(m);
     var r = btn.getBoundingClientRect();
