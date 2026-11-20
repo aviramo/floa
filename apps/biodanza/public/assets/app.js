@@ -1690,7 +1690,11 @@
     return '<div data-opening><div class="bio-sech" style="display:flex;align-items:center;justify-content:space-between;padding:var(--gutter) var(--gutter) 0">' + accHead("open", "פתיחת הערב") + '</div>' + accOpenTag("open") +
       '<div style="padding:0 var(--gutter)">' + (facOn() && !free ? '' : '<label class="rfield" style="flex:none;margin:calc(-1 * var(--sp-3)) 0 0"><span>טקסט חופשי</span><div id="opt0" data-owho="" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true">' + rtHtml(free) + '</div></label>') +
       secs.map(function (q, k) { return openSecHtml(q, k + 1, ro); }).join("") +
-      (!ro && facOn() ? '<div style="display:flex;justify-content:flex-start"><button type="button" class="rbtn rbtn--icon" data-secadd style="margin-inline-start:calc(-1 * (var(--ctl) - var(--icon-m)) / 2)" aria-haspopup="menu" aria-label="הוספת מוביל" title="הוספת מוביל">' + I.plus + '</button></div>' : '') + '</div>' + ACC_CLOSE + '</div>';
+      (!ro && facOn() && openLeft().length ? '<div style="display:flex;justify-content:flex-start"><button type="button" class="rbtn rbtn--icon" data-secadd style="margin-inline-start:calc(-1 * (var(--ctl) - var(--icon-m)) / 2)" aria-haspopup="menu" aria-label="הוספת מוביל" title="הוספת מוביל">' + I.plus + '</button></div>' : '') + '</div>' + ACC_CLOSE + '</div>';
+  }
+  function openLeft() {   /* the leaders who have no section yet */
+    var seen = {}, have = {}; openRows().forEach(function (x) { have[x.who] = 1; });
+    return state.members.filter(function (x) { var n = facShort(x.email); if (seen[n] || have[n]) return false; return (seen[n] = 1); });
   }
   function openMenu(btn, onPick) {   /* the leaders; one tap picks */
     var old = document.getElementById("moreMenu"); if (old) old.remove();
