@@ -610,6 +610,8 @@ dialog.rsheet .sheet-head > .rs-act[aria-busy="true"] { pointer-events: none; }
 @media (max-width: 759px) {
   dialog.rsheet:not([data-size="s"]):not([data-size="sm"]) { height: var(--rs-vvh, 100dvh); max-height: var(--rs-vvh, 100dvh); max-width: none; }
   dialog.rsheet:not([data-size="s"]):not([data-size="sm"])[data-from="top"] { margin-block: 0; }
+  /* the keyboard is up (sheet.js sets html.rs-kbd): the popup is as tall as the visible window and starts where that window starts, so no gap is left above it whichever way the browser scrolled */
+  html.rs-kbd dialog.rsheet:not([data-size="s"]):not([data-size="sm"]), html.rs-kbd dialog.rsheet:not([data-size="s"]):not([data-size="sm"])[data-from] { margin-block: var(--rs-top, 0px) 0; }
 }
 
 /* a sheet on a narrow screen (touch) opens the full width of the window, whatever its size parameter (owner 2026-11-17) */

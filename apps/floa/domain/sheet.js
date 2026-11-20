@@ -43,6 +43,7 @@
     dlg.style.setProperty("--rs-vvh", Math.round(v.height) + "px");
     dlg.style.setProperty("--rs-top", Math.round(v.offsetTop) + "px");
     dlg.style.setProperty("--rs-kb", Math.max(0, Math.round(window.innerHeight - v.height - v.offsetTop)) + "px");
+    html.classList.toggle("rs-kbd", Math.round(window.innerHeight - v.height) > 120);   /* the keyboard is up: a tall popup is pinned to the top of what can be seen (see kit.css) */
   }
 
   function ensureGrab(dlg) {
@@ -188,6 +189,10 @@
 
     var vv = window.visualViewport;
     if (vv) { var upd = function () { if (dlg.open) viewport(dlg); }; vv.addEventListener("resize", upd); vv.addEventListener("scroll", upd); }
+    /* an iPhone moves the visible window a little after the keyboard comes or goes, and not every step is announced: measure again as it settles */
+    var settle = function () { if (!dlg.open) return; viewport(dlg); [80, 200, 400, 750].forEach(function (t) { setTimeout(function () { if (dlg.open) viewport(dlg); }, t); }); };
+    dlg.addEventListener("focusin", settle); dlg.addEventListener("focusout", settle); window.addEventListener("orientationchange", settle);
+    dlg.addEventListener("close", function () { html.classList.remove("rs-kbd"); });
 
     /* backdrop: a press that starts and ends on the backdrop closes, a drag that merely ends there does not */
     var downOnBackdrop = false;
