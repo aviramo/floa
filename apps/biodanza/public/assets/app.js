@@ -439,8 +439,8 @@
       var acb = dock.querySelector("[data-addcur]"), canAdd = !!acb && !acb.hidden, addTo = canAdd ? ((acb.querySelector("[data-addcur-label]") || {}).textContent || "") : "";   /* a phone: adding the song that plays is here, not in the player */
       var headH = '<div style="padding:var(--sp-2) var(--sp-3);max-width:28rem"><div dir="auto" style="font:var(--fw-black) var(--fs-m)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(ttl) + '</div>' + (art ? '<div dir="auto" style="margin-top:2px;color:var(--text-2);font:var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(art) + '</div>' : '') + '</div>';
       if (wide()) {   /* a computer: a menu that comes out of the name, upwards */
-        var mi = (canAdd ? [{ label: "הוספה ל" + addTo, icon: I.plus, fn: function () { acb.click(); } }] : []).concat(eid ? [{ label: "עריכת שם ומבצע", icon: I.pen, fn: function () { editFromDock(); } }] : []);
-        menu(nmEl, mi, { head: headH, up: true, ref: nmEl.closest(".bio-dock") });
+        var mi = (canAdd ? [{ label: "הוספה ל" + addTo, primary: true, fn: function () { acb.click(); } }] : []).concat(eid ? [{ label: "עריכת שם ומבצע", fn: function () { editFromDock(); } }] : []);
+        menu(nmEl, [], { foot: mi, head: headH, up: true, ref: nmEl.closest(".bio-dock") });
         return;
       }
       var idlg = document.getElementById("songInfoDlg");
@@ -1280,7 +1280,7 @@
   function menu(btn, items, opts) {   /* opts.head: a block of text above the items; opts.up: the menu opens upwards from the button (the player is at the bottom) */
     var old = document.getElementById("moreMenu"); if (old) old.remove();
     var m = document.createElement("div"); m.id = "moreMenu"; m.className = "rmenu rmenu--fixed"; m.setAttribute("role", "menu");
-    m.innerHTML = (opts && opts.head ? opts.head : "") + items.map(function (it, k) { return '<button type="button" class="rmenu__item" role="menuitem" data-k="' + k + '"' + (it.tone ? ' data-tone="' + it.tone + '"' : '') + '>' + it.icon + '<span>' + esc(it.label) + '</span></button>'; }).join("");
+    m.innerHTML = (opts && opts.head ? opts.head : "") + items.map(function (it, k) { return '<button type="button" class="rmenu__item" role="menuitem" data-k="' + k + '"' + (it.tone ? ' data-tone="' + it.tone + '"' : '') + '>' + it.icon + '<span>' + esc(it.label) + '</span></button>'; }).join("") + (opts && opts.foot ? '<div style="display:flex;flex-direction:column;gap:var(--sp-1);padding:var(--sp-2) var(--sp-3) var(--sp-3)">' + opts.foot.map(function (f, k) { return '<button type="button" class="rbtn rbtn--block' + (f.primary ? ' rbtn--primary' : '') + '" data-f="' + k + '">' + esc(f.label) + '</button>'; }).join("") + '</div>' : "");
     var sh = document.createElement("div"); sh.style.cssText = "position:fixed;inset:0;z-index:var(--z-menu);background:transparent;touch-action:none";   /* an open menu blocks everything outside it: a touch there only closes the menu */
     document.body.appendChild(sh); document.body.appendChild(m);
     btn.setAttribute("aria-expanded", "true");   /* the button that opened the menu stays shown while it is open */
@@ -1292,6 +1292,7 @@
     function onKey(e) { if (e.key === "Escape") close(); }
     setTimeout(function () { document.addEventListener("click", away, true); document.addEventListener("keydown", onKey, true); }, 0);
     m.querySelectorAll("[data-k]").forEach(function (b) { b.addEventListener("click", function () { var it = items[+b.dataset.k]; if (it.keep) { it.fn(b, close); return; } var f = it.fn; close(); f(); }); });   /* an item with `keep` leaves the menu open: it shows its own progress */
+    if (opts && opts.foot) m.querySelectorAll("[data-f]").forEach(function (b) { b.addEventListener("click", function () { var f = opts.foot[+b.dataset.f].fn; close(); f(); }); });
     var first = m.querySelector(".rmenu__item"); if (first) first.focus({ preventScroll: true });
   }
 
