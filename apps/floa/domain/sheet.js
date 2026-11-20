@@ -23,8 +23,9 @@
   function lock() {
     if (locks++ > 0) return;
     savedY = window.pageYOffset || 0;
-    body.style.top = -savedY + "px";
-    html.classList.add("rs-lock"); body.classList.add("rs-lock");
+    if (!wide()) body.style.top = -savedY + "px";
+    html.classList.add("rs-lock");
+    if (!wide()) body.classList.add("rs-lock");   /* a computer: the page behind does not scroll anyway, and pinning the body is what made everything shift when a popup opened */
   }
   function unlock() {
     if (locks === 0 || --locks > 0) return;
