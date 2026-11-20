@@ -1547,7 +1547,7 @@
     var main = state.items.filter(function (i) { return !i.backlog; }), back = state.items.filter(function (i) { return i.backlog; });
     var rowOf = function (i, tile) {
       var m = i.music;
-      return cardUi({ cls: "bio-icard", attrs: 'data-icard="' + i.id + '"' + (i.backlog ? ' data-back="1"' : ''), selected: state.lastItem === i.id, lead: tile, bigLead: true, title: itemName(i), titleAttr: 'data-edit="' + i.id + '"',
+      return cardUi({ cls: "bio-icard", attrs: 'data-icard="' + i.id + '"' + (i.backlog ? ' data-back="1"' : ''), selected: wide() && state.lastItem === i.id, lead: tile, bigLead: true, title: itemName(i), titleAttr: 'data-edit="' + i.id + '"',
         sub: m ? songName(m) : "בלי מוזיקה", subRight: !!m, subLtr: m ? undefined : false, footEnd: true, pill: m ? cardPill(m) : "", chip: facChip(i, " rchip--s"), time: m ? clkSpan(m) : "",
         actions: (canEdit() ? '<button type="button" class="rbtn rbtn--icon bio-ha" data-idel="' + i.id + '" aria-label="הסרה מהוויוונסיה" title="הסרה מהוויוונסיה">' + I.trash + '</button>' : '') + heartBtnEx(i.exercise_id || ("item:" + i.id), "bio-ha") });   /* on hover: the bin at the right, the heart at its left */
     };
@@ -1595,7 +1595,7 @@
   /* beside the list the open exercise's strip is marked at once, wherever it was opened from (a click, the arrows, a swap) */
   function markItem() {
     var l = document.getElementById("list"); if (!l || !l.hasAttribute("data-fab-room")) return;
-    l.querySelectorAll("[data-edit]").forEach(function (b) { (b.closest(".bio-icard") || b.closest(".rrow")).setAttribute("aria-current", b.dataset.edit === state.lastItem ? "true" : "false"); });
+    l.querySelectorAll("[data-edit]").forEach(function (b) { (b.closest(".bio-icard") || b.closest(".rrow")).setAttribute("aria-current", wide() && b.dataset.edit === state.lastItem ? "true" : "false"); });
   }
   function persistGroups(mainIds, backIds) {
     var by = {}; state.items.forEach(function (i) { by[i.id] = i; });
