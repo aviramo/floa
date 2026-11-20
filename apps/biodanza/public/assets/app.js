@@ -1658,6 +1658,7 @@
       d.live = true; d.c.setPointerCapture && d.c.setPointerCapture(d.pid);
       d.c.style.transition = "none"; d.c.style.zIndex = "var(--z-raised)"; d.c.style.boxShadow = "var(--sh-card)";
       cards.forEach(function (r) { if (r !== d.c) r.style.transition = "transform var(--t-base) var(--ease)"; });
+      if (div) div.style.transition = "transform var(--t-base) var(--ease)";
     }
     function virtualSlot(g, sl, idxs) {   /* the place after the last one of a group, for the card that moves into it */
       var last = sl[idxs[idxs.length - 1]], xs = sl.map(function (t) { return t.x; }), right = Math.max.apply(null, xs), left = Math.min.apply(null, xs);
@@ -1678,10 +1679,15 @@
       cards.forEach(function (r, i) { slots[grpOf(r)].push(i); if (i !== d.k) grp[grpOf(r)].push(i); });
       var ins = 0; grp[back].forEach(function (i, n) { var t = d.sl[i]; if (t.y < cy - t.h / 2 || (Math.abs(t.y - cy) <= t.h / 2 && t.x > cx)) ins = n + 1; });
       var order = [grp[0].slice(), grp[1].slice()]; order[back].splice(ins, 0, d.k); d.order = order;
+      /* a card that crosses the divider needs room on the other side: the divider and the "נוספים" cards go down by the room of a card (it enters the numbered ones) or up (it leaves them), in a single column */
+      var from = grpOf(d.c), oneCol = d.sl.every(function (t) { return Math.abs(t.x - d.sl[0].x) < 3; }), gapPx = parseFloat(getComputedStyle(div.parentElement).rowGap) || 8, room = d.sl[d.k].h + gapPx;
+      var extra = !oneCol ? 0 : (from === 1 && back === 0) ? room : (from === 0 && back === 1) ? -room : 0;
+      div.style.transform = extra ? "translateY(" + Math.round(extra) + "px)" : "";
       [0, 1].forEach(function (g) { order[g].forEach(function (ci, pos) {
         if (ci === d.k) return;
         var slot = pos < slots[g].length ? d.sl[slots[g][pos]] : (slots[g].length ? virtualSlot(g, d.sl, slots[g]) : null), r = cards[ci];
-        r.style.transform = slot && !(pos < slots[g].length && slots[g][pos] === ci) ? "translate(" + Math.round(slot.x - d.sl[ci].x) + "px, " + Math.round(slot.y - d.sl[ci].y) + "px)" : "";
+        var ex = g === 1 ? extra : 0, mv = slot && !(pos < slots[g].length && slots[g][pos] === ci);
+        r.style.transform = mv || ex ? "translate(" + Math.round(mv ? slot.x - d.sl[ci].x : 0) + "px, " + Math.round((mv ? slot.y - d.sl[ci].y : 0) + ex) + "px)" : "";
       }); });
     }
     l.addEventListener("pointermove", move);
@@ -1691,6 +1697,7 @@
       var was = d; d = null;
       if (!was.live) return;
       cards.forEach(function (r) { r.style.transform = ""; r.style.transition = ""; r.style.zIndex = ""; r.style.boxShadow = ""; });
+      if (div) { div.style.transform = ""; div.style.transition = ""; }
       var eat = function (ev) { ev.stopPropagation(); ev.preventDefault(); };
       l.addEventListener("click", eat, true); setTimeout(function () { l.removeEventListener("click", eat, true); }, 80);
       if (!was.order) return;
