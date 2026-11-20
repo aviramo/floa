@@ -872,7 +872,7 @@ begin
       'id', c.id, 'title_en', c.title_en, 'title_he', c.title_he, 'category', c.category,
       'music', coalesce((select jsonb_agg(jsonb_build_object('id', m.id, 'name', m.name, 'object', m.audio_object) order by m.name)
                          from biodanza.c14_music cm join biodanza.music m on m.id = cm.music_id where cm.c14_id = c.id), '[]'::jsonb),
-      'matches', coalesce((select jsonb_agg(jsonb_build_object('id', e.id, 'title_en', e.title_en, 'title_he', e.title_he, 'strength', k.strength, 'title', k.title_score, 'shared', k.shared_music, 'jaccard', k.jaccard, 'songs_n', (select count(*) from biodanza.exercise_music em2 where em2.exercise_id = e.id)) order by k.rank)
+      'matches', coalesce((select jsonb_agg(jsonb_build_object('id', e.id, 'title_en', e.title_en, 'title_he', e.title_he, 'strength', k.strength, 'title', k.title_score, 'shared', k.shared_music, 'jaccard', k.jaccard, 'songs_n', (select count(*) from biodanza.exercise_music em2 where em2.exercise_id = e.id), 'objs', coalesce((select jsonb_agg(m3.audio_object order by m3.name) from biodanza.exercise_music em3 join biodanza.music m3 on m3.id = em3.music_id where em3.exercise_id = e.id and m3.audio_object is not null), '[]'::jsonb)) order by k.rank)
                            from biodanza.c14_matches k join biodanza.exercises e on e.id = k.exercise_id where k.c14_id = c.id), '[]'::jsonb)
     ) x from biodanza.c14_exercises c) s), '[]'::jsonb);
 end $f$;

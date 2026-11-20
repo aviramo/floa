@@ -29,6 +29,10 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
 .c__match { border-top: 1px solid var(--line); padding-top: var(--sp-1); display: flex; flex-direction: column; gap: 2px; }
 .c__lbl { color: var(--text-2); font: var(--fw-medium) var(--fs-xs)/1 var(--font); margin-bottom: 2px; }
 .c__why { color: var(--text); font: var(--fw-regular) var(--fs-xs)/var(--lh-body) var(--font); margin-top: var(--sp-1); }
+.c__accs { border-top: 1px solid var(--line); padding-top: var(--sp-1); display: flex; flex-direction: column; }
+.c__accb { all: unset; box-sizing: border-box; width: 100%; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); padding-block: var(--sp-1); cursor: pointer; font: var(--fw-medium) var(--fs-s)/var(--lh-tight) var(--font); color: var(--text); }
+.c__accb:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.c__plays { display: flex; flex-wrap: wrap; gap: var(--sp-1); padding-bottom: var(--sp-1); }
 .c__more { border-top: 1px solid var(--line); padding-top: var(--sp-1); display: flex; flex-direction: column; gap: 2px; }
 </style>
 </head>
@@ -36,6 +40,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
 <div id="app"></div>
 <script src="/supabase.js"></script>
 <script src="/auth.js"></script>
+<script>document.write('<script src="' + (/^(localhost|127[.])/.test(location.hostname) ? '/biodanza/' : '/') + 'assets/audio.js"><\/script>')</script>
 <script>
 (function () {
   "use strict";
@@ -101,6 +106,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
       '<div class="rlist" id="out"></div>';
     app.querySelector("#q").addEventListener("input", function () { clearTimeout(timer); timer = setTimeout(draw, 200); });
     app.querySelector("#f").addEventListener("change", draw);
+    app.querySelector("#out").addEventListener("click", function (e) { var x = e.target.closest("[data-acc]"); if (x) { opened[x.dataset.acc] = !opened[x.dataset.acc]; draw(); } });
   }
   function best(r) { var m = r.matches[0]; return m && m.strength !== "candidate" && m.strength !== "none" ? m : null; }
   function pass(r, f) {
@@ -115,6 +121,14 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
     h += '</div><div class="c__why"><b>מוסיקה</b><br>בתרגיל מ־2014: ' + r.music.length + ' שירים<br>בתרגיל הקיים: ' + m.songs_n + ' שירים<br>משותפים: ' + m.shared + (m.shared ? ' (התאמה ' + pct(m.jaccard) + ')' : '') + '</div>';
     return h;
   }
+  var opened = {};
+  var CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:20px;height:20px"><path d="M6 9l6 6 6-6"/></svg>';
+  function acc(key, label, objs) {
+    var on = !!opened[key];
+    var h = '<div class="c__acc"><button type="button" class="c__accb" data-acc="' + key + '" aria-expanded="' + on + '"><span>' + label + ' · ' + objs.length + ' מוזיקות</span><span style="flex:none;display:flex;transition:transform .2s;' + (on ? 'transform:rotate(180deg)' : '') + '">' + CHEV + '</span></button>';
+    if (on) h += '<div class="c__plays">' + (objs.length ? objs.map(function (o) { return window.BioAudio ? BioAudio.button(o) : ''; }).join("") : '<span class="c__s">אין מוזיקות עם קובץ</span>') + '</div>';
+    return h + '</div>';
+  }
   function card(r) {
     var b = best(r), m0 = r.matches[0];
     var h = '<div class="rcard"><div class="c__blk"><span class="c__lbl">מקטלוג 2014</span>' + nm(r) + '</div>';
@@ -125,6 +139,8 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
     }
     var more = r.matches.slice(b ? 1 : 1).filter(function (m) { return m.strength === "candidate"; });
     if (more.length) h += '<div class="c__more"><span class="c__lbl">מועמדים נוספים</span>' + more.map(function (m) { return '<span class="c__s">' + esc(m.title_en) + ' (' + pct(m.title) + (m.shared ? ', מוסיקה ' + pct(m.jaccard) : '') + ')</span>'; }).join("") + '</div>';
+    var o14 = r.music.map(function (m) { return m.object; }).filter(Boolean);
+    h += '<div class="c__accs">' + acc("14-" + r.id, "2014", o14) + (b ? acc("12-" + r.id, "2012", b.objs || []) : '') + '</div>';
     return h + '</div>';
   }
   function groups() {
