@@ -966,10 +966,10 @@
     try {
       if (wide()) {
         if (!catLayer) return;
-        var pks = catLayer.querySelector("#pks"); localStorage.setItem(CAT_KEY, JSON.stringify({ open: !!catPanel, prev: catPrevId || null, q: pk.q || "", tab: pk.tab || "ex", cats: pk.open || {}, sc: pks ? pks.scrollTop : 0 }));
+        var pks = catLayer.querySelector("#pks"); localStorage.setItem(CAT_KEY, JSON.stringify({ open: !!catPanel, prev: catPrevId || null, q: pk.q || "", tab: pk.tab || "ex", mq: pk.mq || "", mln: pk.mln || "", mrh: pk.mrh || "", mef: pk.mef || "", cats: pk.open || {}, sc: pks ? pks.scrollTop : 0 }));
       } else {   /* a phone: the two popups */
         var cd = document.getElementById("catDlg"), xd = document.getElementById("exDlg"), pk2 = cd && cd.querySelector("#pks");
-        localStorage.setItem(CAT_KEY, JSON.stringify({ open: !!(cd && cd.open), prev: xd && xd.open && xd.dataset.ex ? xd.dataset.ex : null, q: pk.q || "", tab: pk.tab || "ex", cats: pk.open || {}, sc: pk2 ? pk2.scrollTop : 0 }));
+        localStorage.setItem(CAT_KEY, JSON.stringify({ open: !!(cd && cd.open), prev: xd && xd.open && xd.dataset.ex ? xd.dataset.ex : null, q: pk.q || "", tab: pk.tab || "ex", mq: pk.mq || "", mln: pk.mln || "", mrh: pk.mrh || "", mef: pk.mef || "", cats: pk.open || {}, sc: pk2 ? pk2.scrollTop : 0 }));
       }
     } catch (e) { /* not kept */ }
   }
@@ -977,7 +977,7 @@
     if (wide()) return;
     var snap = loadCatSnap(); if (!snap || !snap.open) return;
     var cd = document.getElementById("catDlg"); if (cd && cd.open) return;
-    resetPk(); pk.q = snap.q || ""; pk.tab = snap.tab === "mu" ? "mu" : "ex"; pk.open = snap.cats || {};
+    resetPk(); pk.q = snap.q || ""; pk.tab = snap.tab === "mu" ? "mu" : "ex"; pk.mq = snap.mq || ""; pk.mln = snap.mln || ""; pk.mrh = snap.mrh || ""; pk.mef = snap.mef || ""; pk.open = snap.cats || {};
     var drawn = pickerSheet(); if (!drawn || !drawn.then) return;
     drawn.then(function () {
       var pks = document.querySelector("#catDlg #pks"); if (pks) pks.scrollTop = snap.sc || 0;
@@ -1012,7 +1012,7 @@
   function ensureCatLayer() {   /* built once, closed, waiting off the right edge of the screen */
     if (catLayer) return;
     resetPk();   /* the search box reads the catalog's state: it must exist before the layer is drawn */
-    var snap = loadCatSnap(); if (snap) { pk.q = snap.q || ""; pk.tab = snap.tab === "mu" ? "mu" : "ex"; pk.open = snap.cats || {}; }   /* back to where it was before the refresh */
+    var snap = loadCatSnap(); if (snap) { pk.q = snap.q || ""; pk.tab = snap.tab === "mu" ? "mu" : "ex"; pk.mq = snap.mq || ""; pk.mln = snap.mln || ""; pk.mrh = snap.mrh || ""; pk.mef = snap.mef || ""; pk.open = snap.cats || {}; }   /* back to where it was before the refresh */
     var bg = getComputedStyle(document.body).backgroundColor;
     var d = document.createElement("div"); d.id = "catLayer";
     d.innerHTML = '<div class="catprev" style="background:' + bg + '"></div><div class="catmain" style="background:' + bg + '"><div class="catbody" inert><header class="rhead"><div class="rhead__text" style="padding-inline-start:0">' + pickerTabs() + '</div><button type="button" id="catX" class="rbtn rbtn--icon bio-flat" aria-label="סגירת הקטלוג" title="סגירת הקטלוג">' + I.x + '</button></header>' + pickerBody(false) + '</div></div>';
@@ -2728,7 +2728,7 @@
       function paintMu() {
         var l = r.querySelector("#pkl"); if (!l || !musicAll) return;
         var s = fold(mq.value.trim()), f = { ln: pk.mln, rh: pk.mrh, ef: pk.mef };
-        pk.mq = mq.value;
+        pk.mq = mq.value; saveCat();   /* the search and the three boxes are kept through a refresh, like the exercises' search */
         mList = musicAll.filter(function (m) { return tagHit(m, f) && (!s || fz(songName(m) + " " + songBy(m), s)); });
         mShown = Math.min(MP, mList.length); l.scrollTop = 0;
         l.innerHTML = mList.length ? '<div id="mgrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);padding:var(--gutter)">' + musicCards(0, mShown) + '</div>' : ph("לא נמצאה מוסיקה", "");
