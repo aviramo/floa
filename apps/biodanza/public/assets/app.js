@@ -448,6 +448,11 @@
       RosterSheet.render(idlg, { title: "המוסיקה שמתנגנת", from: "bottom", size: "s",
         body: '<div class="pad"><div dir="auto" style="font:var(--fw-black) var(--fs-l)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(ttl) + '</div>' + (art ? '<div dir="auto" style="margin-top:var(--sp-1);color:var(--text-2);font:var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(art) + '</div>' : '') + '</div>',
         foot: (canAdd || eid) ? (canAdd ? '<button class="rbtn rbtn--block rbtn--primary" type="button" id="siadd">הוספה ל' + esc(addTo) + '</button>' : '') + (eid ? '<button class="rbtn rbtn--block" type="button" id="siedit">עריכת שם ומבצע</button>' : '') : undefined });
+      if (who) api("/rest/v1/music?audio_object=eq." + encodeURIComponent(who) + "&select=id&limit=1").then(function (rows) {   /* the heart of the song that plays: loved or not, at the left of the header */
+        var mr = rows && rows[0], hd = idlg.querySelector(".sheet-head"); if (!mr || !hd || hd.querySelector("[data-like]")) return;
+        hd.insertAdjacentHTML("beforeend", heartBtn(mr).replace(" rrow__trail", ""));
+        paintHearts(mr.id);
+      }, function () { /* no heart without the answer */ });
       var ab2 = idlg.querySelector("#siadd"); if (ab2) ab2.addEventListener("click", function () { idlg.close(); acb.click(); });
       var eb = idlg.querySelector("#siedit"); if (!eb) return;
       eb.addEventListener("click", function () { idlg.close(); editFromDock(); });
