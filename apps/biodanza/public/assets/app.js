@@ -326,7 +326,7 @@
       ".bio-dock__time { flex: none; min-width: 2.6em; text-align: center; font: var(--fw-bold) var(--fs-xs)/1 var(--font); font-variant-numeric: tabular-nums } " +
       ".bio-dock__bar { flex: 1 1 0; width: auto; max-width: none; min-width: 0; display: block; margin: 0; padding: 0; direction: ltr; accent-color: var(--primary); touch-action: none } " +
       ".bio-dock__none { flex: 1 1 auto; min-width: 0; text-align: center; color: var(--text-2); font: var(--fw-regular) var(--fs-xs)/1.2 var(--font) } " +
-      ".bio-dock:not(.idle) .bio-dock__none, .bio-dock.idle .bio-dock__bar, .bio-dock.idle .bio-dock__time { display: none } " +
+      ".bio-dock:not(.idle) .bio-dock__none, .bio-dock.idle .bio-dock__time { display: none } .bio-dock.idle .bio-dock__bar { opacity: .6; cursor: default } " +
       "";
     document.head.appendChild(st);
     var PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
