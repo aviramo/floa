@@ -17,17 +17,19 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
 #app > .rlist { flex: 1 1 auto; }
 #out, #out * { user-select: text; -webkit-user-select: text; }
 .pad { padding: var(--gutter); display: flex; flex-direction: column; gap: var(--gap-field); }
-#out { display: grid; grid-template-columns: repeat(auto-fill, minmax(24rem, 1fr)); gap: var(--sp-1); padding: 0 var(--gutter) var(--gutter); align-content: start; align-items: stretch; }
+#out { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 24rem), 1fr)); gap: var(--sp-1); padding: 0 var(--gutter) var(--gutter); align-content: start; align-items: stretch; }
 #out > .rempty, #out > .rhint, #out > .rskel { grid-column: 1 / -1; }
 #out > .rcard { background: var(--on-primary); margin: 0; min-width: 0; display: flex; flex-direction: column; gap: var(--sp-1); }
 #out > * { flex-shrink: 0; }
-.c__t, .c__s { direction: ltr; text-align: left; overflow-wrap: anywhere; }
-.c__t { font: var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font); }
+.c__t, .c__s, .c__h { overflow-wrap: anywhere; }
+.c__t { direction: ltr; text-align: start; font: var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font); }
+.c__h { font: var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font); color: var(--text-2); }
 .c__s { color: var(--text-2); font: var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font); }
-.c__h { font: var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font); }
-.c__m { color: var(--text-2); font: var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font); direction: ltr; text-align: left; overflow-wrap: anywhere; }
+.c__blk { display: flex; flex-direction: column; gap: 2px; }
 .c__match { border-top: 1px solid var(--line); padding-top: var(--sp-1); display: flex; flex-direction: column; gap: 2px; }
-.c__lbl { color: var(--text-2); font: var(--fw-medium) var(--fs-xs)/1 var(--font); }
+.c__lbl { color: var(--text-2); font: var(--fw-medium) var(--fs-xs)/1 var(--font); margin-bottom: 2px; }
+.c__why { color: var(--text); font: var(--fw-regular) var(--fs-xs)/var(--lh-body) var(--font); margin-top: var(--sp-1); }
+.c__more { border-top: 1px solid var(--line); padding-top: var(--sp-1); display: flex; flex-direction: column; gap: 2px; }
 </style>
 </head>
 <body>
@@ -105,18 +107,25 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
     var b = best(r);
     return f === "all" || (f === "match" && b) || (f === "good" && b && (b.strength === "exact" || b.strength === "strong")) || (f === "possible" && b && b.strength === "possible") || (f === "none" && !b) || (f === "music" && r.music.length);
   }
+  function pct(x) { return Math.round(x * 100) + "%"; }
+  function nm(e) { return '<div class="c__t">' + esc(e.title_en) + '</div><div class="c__h">' + esc(e.title_he) + '</div>'; }
+  function why(r, m) {
+    var t = m.title >= 0.95 ? "השם זהה" : m.title >= 0.75 ? "השם דומה מאוד (" + pct(m.title) + ")" : "השם דומה בחלקו (" + pct(m.title) + ")";
+    var h = '<div class="c__why">' + t;
+    if (m.shared) h += '<br>' + m.shared + ' שירים משותפים מתוך ' + r.music.length + ' של התרגיל מ־2014';
+    return h + '</div>';
+  }
   function card(r) {
-    var b = best(r), h = '<div class="rcard"><div><div class="c__t">' + esc(r.title_en) + '</div><div class="c__h">' + esc(r.title_he) + '</div>' + (r.category && r.category !== "unclassified" ? '<div class="c__s">' + esc(r.category) + '</div>' : '') + '</div>';
-    h += '<div class="c__m">' + (r.music.length ? r.music.slice(0, 4).map(function (m) { return esc(m.name); }).join("<br>") + (r.music.length > 4 ? '<br>+' + (r.music.length - 4) : '') : 'אין שירים משויכים') + '</div>';
-    h += '<div class="c__match">';
+    var b = best(r), m0 = r.matches[0];
+    var h = '<div class="rcard"><div class="c__blk"><span class="c__lbl">מקטלוג 2014</span>' + nm(r) + '</div>';
     if (b) {
-      h += '<span class="c__lbl">התאמה ' + STR[b.strength] + (b.shared ? ' · ' + b.shared + ' שירים משותפים' : '') + '</span><span class="c__h">' + esc(b.title_he) + '</span><span class="c__s">' + esc(b.title_en) + '</span>';
-      r.matches.slice(1).filter(function (m) { return m.strength === "candidate"; }).forEach(function (m) { h += '<span class="c__s" style="margin-top:4px">' + esc(m.title_he) + ' · ' + esc(m.title_en) + '</span>'; });
+      h += '<div class="c__match"><span class="c__lbl">התאמה בקטלוג הקיים: ' + STR[b.strength] + '</span>' + nm(b) + why(r, b) + '</div>';
     } else {
-      h += '<span class="c__lbl">אין התאמה</span>';
-      if (r.matches[0]) h += '<span class="c__s">הקרוב ביותר: ' + esc(r.matches[0].title_he) + ' · ' + esc(r.matches[0].title_en) + '</span>';
+      h += '<div class="c__match"><span class="c__lbl">אין התאמה בקטלוג הקיים</span>' + (m0 ? '<span class="c__s">הדומה ביותר: ' + esc(m0.title_en) + ' (' + pct(m0.title) + ')</span>' : '') + '</div>';
     }
-    return h + '</div></div>';
+    var more = r.matches.slice(b ? 1 : 1).filter(function (m) { return m.strength === "candidate"; });
+    if (more.length) h += '<div class="c__more"><span class="c__lbl">מועמדים נוספים</span>' + more.map(function (m) { return '<span class="c__s">' + esc(m.title_en) + ' (' + pct(m.title) + (m.shared ? ', ' + m.shared + ' שירים משותפים' : '') + ')</span>'; }).join("") + '</div>';
+    return h + '</div>';
   }
   function draw() {
     var out = document.getElementById("out"), q = document.getElementById("q").value.trim(), f = document.getElementById("f").value;
