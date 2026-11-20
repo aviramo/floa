@@ -2108,7 +2108,20 @@
   /* similar songs: the songs that sit, in the catalog, in the same exercises as the songs this exercise already has (that is what "similar" means for now).
      Each song is scored by the number of those exercises it shares with the exercise's songs (and, when equal, by how many of its songs sit there): the nearest first.
      The exercise of a vivencia is a copy and has no link to a catalog exercise: the songs are the only thing that finds its likes. */
+  /* the network walk is in the database (biodanza.similar_music, apps/biodanza/similar.sql): two steps, edges from the catalog and from real vivencias,
+     popular songs weighted down; this reads its answer. If it cannot answer, the one-step count below is used. */
   function similarRows(it) {
+    var ids = optList(it).map(function (m) { return m.id; }).filter(Boolean);
+    if (!ids.length) return Promise.resolve([]);
+    return api("/rest/v1/rpc/similar_music", { method: "POST", json: { p_music: ids } }).then(function (rows) {
+      rows = rows || []; if (!rows.length) return [];
+      var at = {}; rows.forEach(function (r, i) { at[r.music_id] = i; });
+      return api("/rest/v1/music?id=in.(" + rows.map(function (r) { return r.music_id; }).join(",") + ")&select=id,name,title,artist,duration_sec,audio_object,in_catalog&limit=200").then(function (ms) {
+        return (ms || []).sort(function (a, b) { return at[a.id] - at[b.id]; }).map(function (m) { return { music: m }; });
+      });
+    }).catch(function () { return similarRowsOld(it); });
+  }
+  function similarRowsOld(it) {
     var own = {}, ids = optList(it).map(function (m) { own[m.id] = 1; return m.id; }).filter(Boolean);
     if (!ids.length) return Promise.resolve([]);
     return api("/rest/v1/exercise_music?music_id=in.(" + ids.join(",") + ")&select=exercise_id&limit=1000").then(function (rows) {
