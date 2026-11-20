@@ -145,6 +145,7 @@
       for (var c = n.firstChild; c; c = c.nextSibling) {
         if (c.nodeType === 3) put(c.nodeValue.replace(/ /g, " "), b);
         else if (c.nodeType === 1) {
+          if (c.hasAttribute("data-mention")) { put("@" + c.textContent, b); continue; }   /* a leader chip is kept as @name and drawn as a chip without the @ */
           if (c.tagName === "BR") { put("\n", b); continue; }
           if ((c.tagName === "DIV" || c.tagName === "P") && out && out.slice(-1) !== "\n") put("\n", b);
           walk(c, b || isB(c));
@@ -177,6 +178,30 @@
     el.addEventListener("paste", function (e) { e.preventDefault(); document.execCommand("insertText", false, (e.clipboardData || window.clipboardData).getData("text/plain")); });
     el.addEventListener("blur", function () { el.dispatchEvent(new Event("change")); });
   }
+  /* a selection in any text box that can be written in: a small button under it makes the words bold (a phone has no Ctrl+B); the box already keeps bold as ** */
+  (function () {
+    var btn = null, T = 0;
+    function hide() { if (btn) { btn.remove(); btn = null; } }
+    function show() {
+      var sel = window.getSelection(), box = sel && sel.rangeCount && !sel.isCollapsed && sel.anchorNode ? (sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentElement) : null;
+      box = box && box.closest && box.closest('.rf-rich[contenteditable="true"]');
+      if (!box || !box.contains(sel.focusNode)) return hide();
+      var r = sel.getRangeAt(0).getBoundingClientRect(); if (!r.width && !r.height) return hide();
+      if (!btn) {
+        btn = document.createElement("button"); btn.type = "button"; btn.className = "rbtn rbtn--icon"; btn.setAttribute("aria-label", "הדגשה"); btn.title = "הדגשה";
+        btn.style.cssText = "position:fixed;z-index:var(--z-menu);width:var(--tag-s);height:var(--tag-s);min-height:var(--tag-s);padding:0;border-radius:999px;background:var(--primary);border-color:var(--primary);color:var(--on-primary);font:var(--fw-black) var(--fs-m)/1 var(--font)";
+        btn.textContent = "B";
+        btn.addEventListener("pointerdown", function (e) { e.preventDefault(); });   /* the selection stays */
+        btn.addEventListener("click", function (e) { e.preventDefault(); document.execCommand("bold"); box.dispatchEvent(new Event("input", { bubbles: true })); show(); });
+        document.body.appendChild(btn);
+      }
+      var w = btn.offsetWidth || 36;
+      btn.style.top = Math.round(r.bottom + 10) + "px"; btn.style.left = Math.max(8, Math.min(Math.round(r.left + r.width / 2 - w / 2), window.innerWidth - w - 8)) + "px";
+    }
+    document.addEventListener("selectionchange", function () { clearTimeout(T); T = setTimeout(show, 80); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") hide(); });
+    window.addEventListener("scroll", hide, true);
+  })();
   /* a search ignores capitals and marks: "marron" finds "Marrón", "cafe" finds "café" (also Hebrew points) */
   function fold(t) { return String(t == null ? "" : t).normalize("NFD").replace(new RegExp("[" + String.fromCharCode(0x300) + "-" + String.fromCharCode(0x36f) + String.fromCharCode(0x591) + "-" + String.fromCharCode(0x5c7) + "]", "g"), "").toLowerCase(); }
   /* a smart search: finds what is NEAR the words, not only what contains them. Every typed word must match some word of the text, by the
@@ -925,7 +950,7 @@
   }
   (function () {
     var st = document.createElement("style");
-    st.textContent = ":root { --primary: #14110E; --on-primary: #FFFFFF; --bg: #F7F5F1; --surface: #EEEBE5; --surface-2: #E5E1DA; --line: #E3DFD7; --sh-card: 0 6px 18px -4px rgba(40, 30, 15, .26), 0 1px 3px rgba(40, 30, 15, .10) } .bio-card [data-upl-wrap] { gap: var(--sp-1) !important } .bio-card [data-yt], .bio-card [data-upl] { display: grid; place-items: center; width: var(--tag-s) !important; height: var(--tag-s) !important; min-height: var(--tag-s) !important; padding: 0 !important; border-radius: 999px !important; background: var(--surface-2) !important; border-color: var(--surface-2) !important } .bio-card [data-yt] svg { width: 62%; height: auto } .bio-card [data-upl] svg { width: 54%; height: 54% } .bio-card.is-play-opt { border-color: #B3261E !important; box-shadow: inset 0 0 0 1px #B3261E, var(--sh-card) !important } [data-recv] [data-audio] { display: none !important } .bio-tab.is-play .bio-tab__n, .bio-tab.is-play .bio-tab__t { color: #B3261E !important } .bio-tab.is-play .rchip[data-fac-label] { background: #B3261E !important; color: #FFFFFF !important } .bio-tab.is-play .rchip:not([data-fac-label]) { border-color: #B3261E !important; color: #B3261E !important } .bio-card:has([data-choose]) { --text: rgba(20, 17, 14, .5); --text-2: rgba(20, 17, 14, .42); --text-3: rgba(20, 17, 14, .38); background: rgba(255, 255, 255, .55) !important; border-color: rgba(20, 17, 14, .1) } .bio-card:has([data-choose]) [data-audio] { opacity: .55 } button.rchip { background: transparent !important; border: 1px solid #14110E !important; color: #14110E !important } button.rchip[aria-pressed=\"true\"]:not([data-fac]) { background: #14110E !important; color: #FFFFFF !important } button.rchip[data-fac][aria-pressed=\"true\"], .rchip[data-fac-label] { background: #14110E !important; color: #FFFFFF !important; border: 0 !important } button.rchip[data-fac][aria-pressed=\"false\"] { background: transparent !important; color: #14110E !important; border: 1px solid #14110E !important } [data-audio] { background: var(--danger) !important; border-color: var(--danger) !important; color: #FFFFFF !important } .bio-card, .bio-card * { user-select: none; -webkit-user-select: none } .bio-card.is-play, .bio-card:has([data-audio][data-st=\"pause\"]) { background: #B3261E !important; border-color: transparent !important; color: #FFFFFF; --text: #FFFFFF; --text-2: #FFFFFF; --text-3: #FFFFFF; --danger: #FFFFFF } .bio-card.is-play [data-audio], .bio-card.is-play [data-hp], .bio-card:has([data-audio][data-st=\"pause\"]) [data-audio] { background: #FFFFFF !important; border-color: transparent !important; color: #B3261E !important } .bio-card.is-play button.rchip, .bio-card:has([data-audio][data-st=\"pause\"]) button.rchip { background: transparent !important; color: #FFFFFF !important; border-color: #FFFFFF !important } .bio-pair > .rbtn, .bio-pair > .bio-flat { min-width: 0; padding-inline: var(--sp-1) } .bio-flat, .rhead .bio-flat, .rhead .bio-flat:hover, .rhead .bio-flat:active, .rhead .bio-flat[aria-expanded] { background: transparent; border-color: transparent } @keyframes bioNum { from { opacity: 0; transform: translateX(var(--nx, 0)) } to { opacity: 1; transform: none } } @media (prefers-reduced-motion: reduce) { .bio-num { animation: none !important } } .bio-bar, .bio-bar * { touch-action: none } .bio-vol { display: none; position: relative; flex: none; place-items: center; width: var(--ctl); height: var(--ctl); border-radius: var(--r-ctl); background: var(--surface-2); overflow: hidden; touch-action: none; cursor: ns-resize; user-select: none; margin-inline-end: var(--sp-1) } .bio-vol.on { display: grid } @media (max-width: 1023px) { .bio-vol { display: none } } .bio-vol > i { position: absolute; inset: auto 0 0 0; height: calc(var(--v) * 100%); background: color-mix(in srgb, var(--primary) 32%, transparent); transition: height var(--t-fast) var(--ease) } .bio-vol > b { position: relative; font: var(--fw-bold) var(--fs-s)/1 var(--font); font-variant-numeric: tabular-nums; color: var(--text) } #pd .bio-vol { display: none !important } /* the volume button is in the list's header, once */ .bio-vol:focus { outline: none } .bio-vol:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px } /* a page header (not a popup's) has no line under it: the standard soft edge shows under it while its list is scrolled, like a popup's title */ .rhead.rhead:not(dialog *) { border-bottom: 0; position: relative; z-index: 2 } .rhead.rhead:not(dialog *)::after { content: \"\"; position: absolute; inset-inline: 0; top: 100%; height: var(--edge-shadow-h, 6px); background: var(--edge-shadow, linear-gradient(rgba(0, 0, 0, .12), rgba(0, 0, 0, 0))); opacity: 0; transition: opacity .18s ease; pointer-events: none } .rhead.rhead[data-scrolled]:not(dialog *)::after { opacity: 1 } @media (prefers-reduced-motion: reduce) { .rhead.rhead:not(dialog *)::after { transition: none } }";
+    st.textContent = ":root { --primary: #14110E; --on-primary: #FFFFFF; --bg: #F7F5F1; --surface: #EEEBE5; --surface-2: #E5E1DA; --line: #E3DFD7; --sh-card: 0 6px 18px -4px rgba(40, 30, 15, .26), 0 1px 3px rgba(40, 30, 15, .10) } [data-opening] .bio-chipb { display: inline-flex; flex: none; justify-content: space-between; align-items: center; gap: var(--sp-1); min-height: var(--tag-s); padding: 0 var(--sp-2); border: 0; border-radius: 999px; background: var(--primary); color: var(--on-primary); font: var(--fw-bold) var(--fs-s)/1 var(--font); cursor: pointer } [data-opening] .bio-chipb > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap } [data-opening] .bio-secf { margin-inline-start: var(--sp-3) !important; margin-top: calc(-1 * var(--sp-2)) !important } [data-opening] .rfield > span:first-child { transform: translateY(16px) !important; inset-inline-end: 0 !important; pointer-events: none; transition: opacity .12s ease } [data-opening] .rfield[data-rf=\"v\"] > span:first-child { opacity: 0 } .bio-card [data-upl-wrap] { gap: var(--sp-1) !important } .bio-card [data-yt], .bio-card [data-upl] { display: grid; place-items: center; width: var(--tag-s) !important; height: var(--tag-s) !important; min-height: var(--tag-s) !important; padding: 0 !important; border-radius: 999px !important; background: var(--surface-2) !important; border-color: var(--surface-2) !important } .bio-card [data-yt] svg { width: 62%; height: auto } .bio-card [data-upl] svg { width: 54%; height: 54% } .bio-card.is-play-opt { border-color: #B3261E !important; box-shadow: inset 0 0 0 1px #B3261E, var(--sh-card) !important } [data-recv] [data-audio] { display: none !important } .bio-tab.is-play .bio-tab__n, .bio-tab.is-play .bio-tab__t { color: #B3261E !important } .bio-tab.is-play .rchip[data-fac-label] { background: #B3261E !important; color: #FFFFFF !important } .bio-tab.is-play .rchip:not([data-fac-label]) { border-color: #B3261E !important; color: #B3261E !important } .bio-card:has([data-choose]) { --text: rgba(20, 17, 14, .5); --text-2: rgba(20, 17, 14, .42); --text-3: rgba(20, 17, 14, .38); background: rgba(255, 255, 255, .55) !important; border-color: rgba(20, 17, 14, .1) } .bio-card:has([data-choose]) [data-audio] { opacity: .55 } button.rchip { background: transparent !important; border: 1px solid #14110E !important; color: #14110E !important } button.rchip[aria-pressed=\"true\"]:not([data-fac]) { background: #14110E !important; color: #FFFFFF !important } button.rchip[data-fac][aria-pressed=\"true\"], .rchip[data-fac-label] { background: #14110E !important; color: #FFFFFF !important; border: 0 !important } button.rchip[data-fac][aria-pressed=\"false\"] { background: transparent !important; color: #14110E !important; border: 1px solid #14110E !important } [data-audio] { background: var(--danger) !important; border-color: var(--danger) !important; color: #FFFFFF !important } .bio-card, .bio-card * { user-select: none; -webkit-user-select: none } .bio-card.is-play, .bio-card:has([data-audio][data-st=\"pause\"]) { background: #B3261E !important; border-color: transparent !important; color: #FFFFFF; --text: #FFFFFF; --text-2: #FFFFFF; --text-3: #FFFFFF; --danger: #FFFFFF } .bio-card.is-play [data-audio], .bio-card.is-play [data-hp], .bio-card:has([data-audio][data-st=\"pause\"]) [data-audio] { background: #FFFFFF !important; border-color: transparent !important; color: #B3261E !important } .bio-card.is-play button.rchip, .bio-card:has([data-audio][data-st=\"pause\"]) button.rchip { background: transparent !important; color: #FFFFFF !important; border-color: #FFFFFF !important } .bio-pair > .rbtn, .bio-pair > .bio-flat { min-width: 0; padding-inline: var(--sp-1) } .bio-flat, .rhead .bio-flat, .rhead .bio-flat:hover, .rhead .bio-flat:active, .rhead .bio-flat[aria-expanded] { background: transparent; border-color: transparent } @keyframes bioNum { from { opacity: 0; transform: translateX(var(--nx, 0)) } to { opacity: 1; transform: none } } @media (prefers-reduced-motion: reduce) { .bio-num { animation: none !important } } .bio-bar, .bio-bar * { touch-action: none } .bio-vol { display: none; position: relative; flex: none; place-items: center; width: var(--ctl); height: var(--ctl); border-radius: var(--r-ctl); background: var(--surface-2); overflow: hidden; touch-action: none; cursor: ns-resize; user-select: none; margin-inline-end: var(--sp-1) } .bio-vol.on { display: grid } @media (max-width: 1023px) { .bio-vol { display: none } } .bio-vol > i { position: absolute; inset: auto 0 0 0; height: calc(var(--v) * 100%); background: color-mix(in srgb, var(--primary) 32%, transparent); transition: height var(--t-fast) var(--ease) } .bio-vol > b { position: relative; font: var(--fw-bold) var(--fs-s)/1 var(--font); font-variant-numeric: tabular-nums; color: var(--text) } #pd .bio-vol { display: none !important } /* the volume button is in the list's header, once */ .bio-vol:focus { outline: none } .bio-vol:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px } /* a page header (not a popup's) has no line under it: the standard soft edge shows under it while its list is scrolled, like a popup's title */ .rhead.rhead:not(dialog *) { border-bottom: 0; position: relative; z-index: 2 } .rhead.rhead:not(dialog *)::after { content: \"\"; position: absolute; inset-inline: 0; top: 100%; height: var(--edge-shadow-h, 6px); background: var(--edge-shadow, linear-gradient(rgba(0, 0, 0, .12), rgba(0, 0, 0, 0))); opacity: 0; transition: opacity .18s ease; pointer-events: none } .rhead.rhead[data-scrolled]:not(dialog *)::after { opacity: 1 } @media (prefers-reduced-motion: reduce) { .rhead.rhead:not(dialog *)::after { transition: none } }";
     document.head.appendChild(st);
     /* the same edge from the header's side: a scroller under a page header (outside any popup) sets data-scrolled on that header while it is scrolled away from its top, same 2px threshold as sheet.js */
     (function () {
@@ -1239,7 +1264,7 @@
   /* my vivencias, with my role and my order in each */
   function loadVivs() {
     var uid = FLOA_AUTH.userId();
-    return Promise.all([api("/rest/v1/vivencias?select=id,title,updated_at,vivencia_items(count)&vivencia_items.backlog=not.is.true"), api("/rest/v1/vivencia_owners?user_id=eq." + uid + "&select=vivencia_id,position"),
+    return Promise.all([api("/rest/v1/vivencias?select=id,title,updated_at,opening_name,opening_text,vivencia_items(count)&vivencia_items.backlog=not.is.true"), api("/rest/v1/vivencia_owners?user_id=eq." + uid + "&select=vivencia_id,position"),
       api("/rest/v1/vivencia_shares?email=eq." + encodeURIComponent(FLOA_AUTH.email().toLowerCase()) + "&select=vivencia_id,role,position")]).then(function (r) {
       var pos = {}, role = {};
       (r[2] || []).forEach(function (o) { pos[o.vivencia_id] = o.position; role[o.vivencia_id] = o.role; });   /* shared with me */
@@ -1556,6 +1581,7 @@
     document.querySelectorAll("[data-recvplay]").forEach(function (b) { var on = recvPlaying(b.dataset.recvplay) && !!(window.__bioNow || {}).playing; b.innerHTML = on ? PAUSEI : I.play; b.style.color = on ? "var(--danger)" : "var(--text)"; b.setAttribute("aria-label", on ? "השהיה" : "השמעה"); });
   });
   /* a section of only songs: "מוסיקת התחלה" above the exercises, "מוסיקת סיום" under them */
+  function cntHtml(n) { return '<span class="bio-cnt" aria-label="' + n + '" style="font:var(--fw-bold) var(--fs-m)/1 var(--font);font-variant-numeric:tabular-nums;color:var(--text-2);min-width:1.4em;text-align:center">' + n + '</span>'; }
   function recvHtml(kind) {
     var list = optList(recvItem(kind)), edit = canEdit();
     if (!edit && !list.length) return "";
@@ -1567,6 +1593,106 @@
     var add = edit ? '<div class="rcard rcard--compact" data-addm role="button" tabindex="0" style="margin:0;min-width:0;display:flex;align-items:center;justify-content:center;gap:var(--sp-1);cursor:pointer;min-height:var(--tag-s);border:1px dashed var(--line-strong);background:transparent;box-shadow:none;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>הוספת מוזיקה</div>' : '';
     return '<div data-recv="' + kind + '" style="' + (kind === "start" ? '' : 'margin-top:var(--sp-2)') + '"><div class="bio-sech" style="display:flex;align-items:center;justify-content:space-between;padding:var(--gutter) var(--gutter) 0">' + accHead(kind, label + " (" + list.length + ")") + '<span style="display:flex;align-items:center;gap:var(--sp-1)">' + playBtn + play + (edit ? '<button type="button" class="rbtn rbtn--icon" data-addm aria-label="הוספת מוזיקה" title="הוספת מוזיקה">' + I.plus + '</button>' : '') + '</span></div>' + accOpenTag(kind) +
       '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);padding:var(--gutter)">' + list.map(function (m) { var nw = window.__bioNow || {}; return optCardHtml(m, !!(nw.playing && m.audio_object && nw.name === m.audio_object), edit, true, key); }).join("") + '</div>' + ACC_CLOSE + '</div>';
+  }
+  /* the opening of the evening: free text first, then a section for each leader who says something before the evening (a black chip, the words under it, indented; the chip folds the section).
+     It is kept as ONE text: the free part, then "@name" on a line of its own with that leader's words under it. */
+  function openParse(t) {
+    var parts = [{ who: "", text: "" }], names = {}; state.members.forEach(function (m) { names[facShort(m.email)] = 1; });
+    String(t || "").split("\n").forEach(function (ln) {
+      var m = /^@(.+)$/.exec(ln);
+      if (m && names[m[1].trim()]) parts.push({ who: m[1].trim(), text: "" });
+      else { var q = parts[parts.length - 1]; q.text += (q.started ? "\n" : "") + ln; q.started = true; }
+    });
+    return parts;
+  }
+  function openJoin(parts) {
+    return parts.map(function (q) { return q.who ? "@" + q.who + (q.text ? "\n" + q.text : "") : q.text; }).filter(function (x, i) { return i || x; }).join("\n");
+  }
+  function openSum(t) { return String(t || "").replace(/[*]{2}/g, "").replace(/\s+/g, " ").trim(); }   /* a folded section tells its words in one line, up to the bin */
+  function openSecHtml(q, i, ro) {
+    var on = accOpen[(state.viv.id) + "|sec|" + q.who] === true;   /* folded when the vivencia opens, each leader's words in one line */
+    return '<div data-sec="' + i + '" data-who="' + esc(q.who) + '" style="margin-top:calc(var(--sp-1) / 2)"><div style="display:flex;align-items:center;gap:var(--sp-1)">' +
+      '<button type="button" class="bio-chipb" data-sech aria-expanded="' + on + '"><span>' + esc(q.who) + '</span><span aria-hidden="true" style="display:grid;width:var(--icon-s);height:var(--icon-s);transition:transform .2s var(--ease);' + (on ? 'transform:rotate(180deg)' : '') + '">' + I.down.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span></button>' +
+      '<span data-secsum dir="auto" style="flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-2);font:var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font)">' + (on ? '' : esc(openSum(q.text))) + '</span>' +
+      (ro ? '' : '<button type="button" class="rbtn rbtn--icon" data-secx aria-label="הסרת המקטע" title="הסרת המקטע" style="flex:none;height:var(--tag-s);min-height:var(--tag-s);background:transparent;border-color:transparent;color:var(--text-3)">' + I.trash + '</button>') + '</div>' +
+      '<div class="bio-accb" data-secb' + (on ? '' : ' data-closed') + '><div><label class="rfield bio-secf" style="flex:none;margin:0"><span>מה אומר/ת</span><div id="opt' + i + '" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true">' + rtHtml(q.text) + '</div></label></div></div></div>';
+  }
+  function openingHtml() {   /* between the start music and the vivencia */
+    var v = state.viv, ro = !canEdit(); if (!v) return "";
+    if (ro && !v.opening_text) return "";
+    var parts = openParse(v.opening_text);
+    return '<div data-opening><div class="bio-sech" style="display:flex;align-items:center;justify-content:space-between;padding:var(--gutter) var(--gutter) 0">' + accHead("open", "פתיחת הערב") + '</div>' + accOpenTag("open") +
+      '<div style="padding:0 var(--gutter)">' + (facOn() && !parts[0].text ? '' : '<label class="rfield" style="flex:none;margin:calc(-1 * var(--sp-3)) 0 0"><span>טקסט חופשי</span><div id="opt0" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true">' + rtHtml(parts[0].text) + '</div></label>') +   /* with leaders to add, the opening is their sections; the free text stays only where there is nobody to add, or where it already has words */
+      parts.slice(1).map(function (q, k) { return openSecHtml(q, k + 1, ro); }).join("") +
+      (!ro && facOn() ? '<div style="display:flex;justify-content:flex-start"><button type="button" class="rbtn rbtn--icon" data-secadd style="margin-inline-start:calc(-1 * (var(--ctl) - var(--icon-m)) / 2)" aria-haspopup="menu" aria-label="הוספת מוביל" title="הוספת מוביל">' + I.plus + '</button></div>' : '') + '</div>' + ACC_CLOSE + '</div>';
+  }
+  function openMenu(btn, onPick) {   /* the leaders; one tap picks */
+    var old = document.getElementById("moreMenu"); if (old) old.remove();
+    var m = document.createElement("div"); m.id = "moreMenu"; m.className = "rmenu rmenu--fixed"; m.setAttribute("role", "menu");
+    var seen = {};
+    m.innerHTML = state.members.filter(function (x) { var n = facShort(x.email); if (seen[n]) return false; return (seen[n] = 1); }).map(function (x) { return '<button type="button" class="rmenu__item" role="menuitem" data-n="' + esc(facShort(x.email)) + '"><span>' + esc(facShort(x.email)) + '</span></button>'; }).join("");
+    var sh = document.createElement("div"); sh.style.cssText = "position:fixed;inset:0;z-index:var(--z-menu);background:transparent;touch-action:none";
+    document.body.appendChild(sh); document.body.appendChild(m);
+    var r = btn.getBoundingClientRect();
+    m.style.minWidth = "0"; m.style.width = "max-content";   /* as wide as the names, not as the menus of the app */
+    m.style.top = Math.round(r.bottom + 6) + "px"; m.style.left = Math.max(8, Math.min(Math.round(r.right - m.offsetWidth), window.innerWidth - m.offsetWidth - 8)) + "px";
+    function close() { m.remove(); sh.remove(); document.removeEventListener("keydown", onKey, true); }
+    function onKey(e) { if (e.key === "Escape") close(); }
+    sh.addEventListener("click", close); document.addEventListener("keydown", onKey, true);
+    m.querySelectorAll("[data-n]").forEach(function (x) { x.addEventListener("click", function () { var n = x.dataset.n; close(); onPick(n); }); });
+  }
+  function wireOpening(l) {
+    var root = l.querySelector("[data-opening]"); if (!root) return;
+    var v = state.viv, t = 0, last = v.opening_text || "";   /* last: what the server has; v keeps what is typed, so a repaint draws the same words */
+    var boxes = function () { return [].slice.call(root.querySelectorAll("[id^=opt]")); };
+    boxes().forEach(rtInit);
+    (function () {   /* the chips are all as wide as the widest name needs, no wider */
+      var cs = [].slice.call(root.querySelectorAll(".bio-chipb")), w = 0;
+      cs.forEach(function (c) { c.style.width = ""; w = Math.max(w, c.offsetWidth); });
+      if (w) cs.forEach(function (c) { c.style.width = w + "px"; });
+    })();
+    function gather() {
+      var free = root.querySelector("#opt0"), parts = [{ who: "", text: free ? free.value : "" }];
+      [].forEach.call(root.querySelectorAll("[data-sec]"), function (sec) { parts.push({ who: sec.dataset.who, text: sec.querySelector("[id^=opt]").value }); });
+      return openJoin(parts);
+    }
+    function save(text) {   /* text: a change made in the structure (a section added), not yet in the boxes */
+      var b = typeof text === "string" ? text : gather(); v.opening_text = b;
+      if (b === last) return;
+      last = b; var body = { opening_text: b || null };
+      var row = state.vivs.filter(function (x) { return x.id === v.id; })[0]; if (row && row !== v) Object.assign(row, body);
+      api("/rest/v1/vivencias?id=eq." + v.id, { method: "PATCH", json: body, prefer: "return=minimal" }).then(function () { refreshOffline(v); }, fail);
+    }
+    boxes().forEach(function (el) {
+      el.addEventListener("input", function () { v.opening_text = gather(); clearTimeout(t); t = setTimeout(function () { save(); }, 700); });
+      el.addEventListener("change", function () { clearTimeout(t); save(); });
+    });
+    [].forEach.call(root.querySelectorAll("[data-sech]"), function (b) { b.addEventListener("click", function () {
+      var sec = b.closest("[data-sec]"), body = sec.querySelector("[data-secb]"), on = body.hasAttribute("data-closed");
+      accOpen[v.id + "|sec|" + sec.dataset.who] = on;
+      b.setAttribute("aria-expanded", String(on)); b.lastElementChild.style.transform = on ? "rotate(180deg)" : "";
+      if (on) body.removeAttribute("data-closed"); else body.setAttribute("data-closed", "");
+      var sm = sec.querySelector("[data-secsum]"); if (sm) sm.textContent = on ? "" : openSum(sec.querySelector("[id^=opt]").value);
+    }); });
+    [].forEach.call(root.querySelectorAll("[data-secx]"), function (b) { b.addEventListener("click", function () {
+      var sec = b.closest("[data-sec]"), who = sec.dataset.who, has = !!sec.querySelector("[id^=opt]").value.trim();
+      var dlg = document.getElementById("confirmDlg");
+      if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
+      RosterSheet.render(dlg, { kind: "confirm", title: "מחיקת מקטע", from: "bottom", size: "s",
+        body: '<div class="pad"><span>למחוק את המקטע של "' + esc(who) + '" מפתיחת הערב?' + (has ? ' הטקסט שלו יימחק.' : '') + '</span></div>',
+        foot: '<button class="rbtn rbtn--danger rbtn--block" type="button" id="csecx">מחיקה</button>' });
+      dlg.querySelector("#csecx").addEventListener("click", function () {
+        dlg.close(); delete accOpen[v.id + "|sec|" + who];
+        sec.remove(); clearTimeout(t); save(); paint();
+      });
+    }); });
+    var add = root.querySelector("[data-secadd]");
+    if (add) add.addEventListener("click", function () {
+      openMenu(add, function (n) {
+        var cur = gather(), nt = (cur ? cur + "\n" : "") + "@" + n; accOpen[v.id + "|sec|" + n] = true; clearTimeout(t); save(nt); paint();
+        setTimeout(function () { var sc = [].slice.call(document.querySelectorAll("[data-sec]")).filter(function (x) { return x.dataset.who === n; })[0]; var bx = sc && sc.querySelector("[id^=opt]"); if (bx) bx.focus(); }, 0);
+      });
+    });
   }
   function loadItems() {
     return itemsOf(state.viv.id).then(function (r) { r = r || []; state.items = r.filter(function (i) { return !i.backlog; }).concat(r.filter(function (i) { return i.backlog; })); if (state.viv) refreshOffline(state.viv); });   /* every change is also in the device copy, so the next open draws it at once */   /* the numbered exercises, then the backlog */
@@ -1620,14 +1746,14 @@
     BioOffline.sync(state.vivs, function (v) {
       return Promise.all([itemsOf(v.id), api("/rest/v1/rpc/vivencia_members", { method: "POST", json: { v: v.id } })]).then(function (r) {
         var items = r[0] || [];
-        return { id: v.id, row: { id: v.id, title: v.title, updated_at: v.updated_at, vivencia_items: [{ count: items.filter(function (i) { return !i.backlog; }).length }] }, role: v.role, pos: v.pos, items: items, members: r[1] || [], reception: recvRows(v.id) };
+        return { id: v.id, row: { id: v.id, title: v.title, updated_at: v.updated_at, opening_name: v.opening_name, opening_text: v.opening_text, vivencia_items: [{ count: items.filter(function (i) { return !i.backlog; }).length }] }, role: v.role, pos: v.pos, items: items, members: r[1] || [], reception: recvRows(v.id) };
       });
     });
   }
   function refreshOffline(v) {   /* an open vivencia is already read: its copy is made current from that, quietly */
     if (state.offline || !window.BioOffline) return;
     api("/rest/v1/rpc/vivencia_members", { method: "POST", json: { v: v.id } }).then(function (mm) {
-      return BioOffline.update({ id: v.id, row: { id: v.id, title: v.title, updated_at: v.updated_at, vivencia_items: [{ count: state.items.filter(function (i) { return !i.backlog; }).length }] }, role: v.role, pos: v.pos, items: state.items, members: mm || [], reception: recvRows(v.id) });
+      return BioOffline.update({ id: v.id, row: { id: v.id, title: v.title, updated_at: v.updated_at, opening_name: v.opening_name, opening_text: v.opening_text, vivencia_items: [{ count: state.items.filter(function (i) { return !i.backlog; }).length }] }, role: v.role, pos: v.pos, items: state.items, members: mm || [], reception: recvRows(v.id) });
     }, function () { /* the old copy stays */ });
   }
   /* coming back to the app, or the internet coming back, is another comparison (not more than once a minute) */
@@ -1682,10 +1808,13 @@
         sub: m ? songName(m) : "בלי מוזיקה", subRight: !!m, subLtr: m ? undefined : false, footEnd: true, pill: m ? cardPill(m) : "", chip: facChip(i, " rchip--s"), time: m ? clkSpan(m) : "",
         actions: (canEdit() ? '<button type="button" class="rbtn rbtn--icon bio-ha" data-idel="' + i.id + '" aria-label="הסרה מהוויוונסיה" title="הסרה מהוויוונסיה">' + I.trash + '</button>' : '') + heartBtnEx(i.exercise_id || ("item:" + i.id), "bio-ha") });   /* on hover: the bin at the right, the heart at its left */
     };
-    var exHead = '<div class="bio-sech" style="display:flex;align-items:center;justify-content:space-between;padding:var(--gutter) var(--gutter) 0">' + accHead("ex", "ויוונסיה (" + main.length + ")") + '' + (canEdit() ? '<button type="button" class="rbtn rbtn--icon" data-addex aria-haspopup="menu" aria-label="הוספת תרגיל" title="הוספת תרגיל">' + I.plus + '</button>' : '') + '</div>';   /* the exercises have a title like the songs of the start, with a plus at its other end */
-    l.innerHTML = recvHtml("start") + exHead + accOpenTag("ex") + '<div id="plist" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);align-items:stretch;padding:var(--gutter)">' + main.map(function (i, k) { return rowOf(i, k + 1); }).join("") +
+    var exHead = '<div class="bio-sech" style="display:flex;align-items:center;justify-content:space-between;padding:var(--gutter) var(--gutter) 0">' + accHead("ex", "ויוונסיה (" + main.length + ")") + '<span style="display:flex;align-items:center;gap:var(--sp-1)">' + (canEdit() ? '<button type="button" class="rbtn rbtn--icon" data-addex aria-haspopup="menu" aria-label="הוספת תרגיל" title="הוספת תרגיל">' + I.plus + '</button>' : '') + '</span></div>';   /* the exercises have a title like the songs of the start, with a plus at its other end */
+    var fo = document.activeElement, foId = fo && l.contains(fo) && /^opt[0-9]+$/.test(fo.id) ? fo.id : "";   /* a repaint while somebody types in the opening keeps the cursor there */
+    l.innerHTML = recvHtml("start") + openingHtml() + exHead + accOpenTag("ex") + '<div id="plist" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);align-items:stretch;padding:var(--gutter)">' + main.map(function (i, k) { return rowOf(i, k + 1); }).join("") +
       '<div data-div style="grid-column:1 / -1;padding:var(--sp-2) 0 var(--sp-1);margin-top:var(--sp-1);min-height:var(--ctl)"><div class="rrow__sub">נוספים</div>' + (back.length || !canEdit() ? '' : '<div class="rrow__sub" style="margin-top:var(--sp-1)">גררו לכאן תרגיל שעוד לא החלטתם עליו</div>') + '</div>' +
       back.map(function (i) { return rowOf(i, "•"); }).join("") + '</div>' + ACC_CLOSE + recvHtml("end");
+    wireOpening(l);
+    if (foId) { var fe = l.querySelector("#" + foId); if (fe) { fe.focus(); try { var rg = document.createRange(); rg.selectNodeContents(fe); rg.collapse(false); var sl = window.getSelection(); sl.removeAllRanges(); sl.addRange(rg); } catch (x) { /* no caret */ } } }
     /* the list has a scrollbar at its left edge that takes room from the cards: the header above gives its left side the same room, so its button is over the cards' edge */
     var sbw = Math.max(0, l.offsetWidth - l.clientWidth); pl.style.setProperty("--sbw", sbw + "px");
     var openIt = function (id) {
