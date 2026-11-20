@@ -2518,7 +2518,7 @@
     var v = 'var(--bleed, var(--pp-px))', q = '#' + id;
     /* the body is as wide as the popup, its content keeps the title's side room, and a row pulls back out to the edges, so its background and stripe reach the popup's walls */
     return '<style>' + q + ' .sheet-body { overflow-x: hidden; margin-inline: calc(' + v + ' * -1); padding-inline: 0 } ' + q + ' .sheet-body > * { padding-inline: ' + v + ' } ' + q + ' #imus, ' + q + ' #ifields { padding-inline: 0 !important } ' +   /* the popup already pads the sides: the song cards and the fields of an exercise do not pad them again */
-      
+      q + ' #ipg { padding-inline: 0 } ' + q + ' #iscroll { padding-inline: ' + v + ' } ' +   /* the exercise page's scroller is as wide as the popup and pads the sides itself: a scroller clips a shadow at its padding box, so the cards' shadow gets its room */
       q + ' .rrow { margin-inline: calc(' + v + ' * -1); padding-inline: ' + v + ' } ' + q + ' .rrow[aria-current="true"] { background: var(--surface); box-shadow: inset 3px 0 0 #14110E }</style>';
   }
   function bleedSet(dlg) {
