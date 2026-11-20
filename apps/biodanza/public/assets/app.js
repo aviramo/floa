@@ -2309,7 +2309,7 @@
         draw(); if (changed) changed(); return;
       }
       if (optList(it).some(function (x) { return x.id === m.id; })) {   /* a marked song: the mark comes off and it is disconnected from the exercise */
-        dropOpt(it, m).then(function () { draw(); if (changed) changed(); }, fail);
+        confirmRemoveOpt(it, m, function () { draw(); if (changed) changed(); });   /* taking a song off asks first, in the kit's popup */
         return;
       }
       confirmAddMusic(songName(m), it.__recv ? (it.__recv === "start" ? "מוסיקת ההתחלה" : "מוסיקת הסיום") : (itemName(it) || "התרגיל"), function () { addOpt(it, m).then(function () { draw(); if (changed) changed(); }, fail); });
