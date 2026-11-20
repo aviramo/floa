@@ -993,8 +993,8 @@
     var snap = loadCatSnap(); if (snap) { pk.q = snap.q || ""; pk.open = snap.cats || {}; }   /* back to where it was before the refresh */
     var bg = getComputedStyle(document.body).backgroundColor;
     var d = document.createElement("div"); d.id = "catLayer";
-    d.innerHTML = '<div class="catprev" style="background:' + bg + '"></div><div class="catmain" style="background:' + bg + '"><div class="catbody" inert><header class="rhead"><div class="rhead__text" style="padding-inline-start:0">' + searchInput() + '</div>' + catAddHtml() + '</header>' + pickerBody(false) + '</div></div>';
-    document.body.appendChild(d); catLayer = d; catPrev = d.querySelector(".catprev"); d.querySelector("#catAdd").addEventListener("click", function (ev) {
+    d.innerHTML = '<div class="catprev" style="background:' + bg + '"></div><div class="catmain" style="background:' + bg + '"><div class="catbody" inert><header class="rhead"><div class="rhead__text" style="padding-inline-start:0">' + searchInput() + '</div></header>' + pickerBody(false) + '</div></div>';
+    document.body.appendChild(d); catLayer = d; catPrev = d.querySelector(".catprev"); (d.querySelector("#catAdd") || document.createElement("i")).addEventListener("click", function (ev) {
       var c = catPrevCtx; if (!c) return;
       if (!state.viv) vivPick(ev.currentTarget, c.e, c.fake.music_id, c.fake.sel);
       else addEx(c.e, undefined, undefined, c.fake.music_id, c.fake.sel);
@@ -2742,7 +2742,7 @@
       var fake = itemFake(e, rows, songs);
       var word = swapIt ? "החלפה בתרגיל הזה" : state.viv ? (state.viv.title || "הוויוונסיה") : "ויוונסיה";   /* adding: a plus with the vivencia's name; in no vivencia, a plus with the word, and a tap asks which of the last three */
       /* the same page as the exercise of a vivencia, only read: its header, its song cards, its texts; the action is the green button in the header, where the delete is in the vivencia */
-      var phtml = itemHead(false, false, "", e.id, name(e), true, useLayer ? "" : word, undefined, undefined, !swapIt) + itemPageHtml(fake, true);
+      var phtml = itemHead(false, false, "", e.id, name(e), true, word, undefined, undefined, !swapIt) + itemPageHtml(fake, true);
       var pwire = function (r) {
         wireRoMusic(r, fake); sbSync(r); catPreview = true;
         on(r, "doswap", function (btn) {
