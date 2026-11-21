@@ -323,7 +323,7 @@
   }, true);
   /* ONE way to show a song, in the exercise list and in the exercise's own card: the song's name (up to two lines) and the performer on the left of the text, and at the left the play tile (the size of the number tile) with the song's time under it */
   function songLines(m) {
-    return '<span style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin-top:var(--gap-tight);color:var(--text-2);font:var(--fw-medium) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(songName(m)) + '</span>' +
+    return '<span style="display:block;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;margin-top:var(--gap-tight);color:var(--text-2);font:var(--fw-medium) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(songName(m)) + '</span>' +
       (songBy(m) ? '<span style="display:block;margin-top:var(--gap-tight);color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(songBy(m)) + '</span>' : '');
   }
   /* while a song plays, the time under its button counts down to 0 (audio.js tells the page); the others show their whole length */
@@ -2679,7 +2679,7 @@
     var title = o.titleAttr
       ? '<button type="button" class="rrow__main" ' + o.titleAttr + ' style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:var(--fw-bold) ' + (o.big ? 'var(--fs-l)' : 'var(--fs-s)') + '/var(--lh-tight) var(--font);color:inherit;display:block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;' + dir + (o.corner ? 'padding-inline-end:var(--ctl);' : '') + pl + '">' + esc(o.title) + '</button>'
       : '<span style="display:block;' + dir + 'overflow-wrap:anywhere;' + (o.corner ? 'padding-right:var(--ctl);' : '') + pl + 'font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(o.title) + '</span>';
-    var sub = '<span style="display:block;' + (o.subRight ? 'direction:ltr;text-align:right;' : o.subLtr !== false ? 'direction:ltr;text-align:left;' : '') + 'overflow-wrap:anywhere;' + pl + 'color:var(--text-2);font:var(--fw-regular) ' + (o.big ? 'var(--fs-m)' : 'var(--fs-xs)') + '/var(--lh-tight) var(--font)">' + (o.sub ? esc(o.sub) : '&nbsp;') + '</span>';
+    var sub = '<span style="display:block;' + (o.subRight ? 'direction:ltr;text-align:right;' : o.subLtr !== false ? 'direction:ltr;text-align:left;' : '') + 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;' + pl + 'color:var(--text-2);font:var(--fw-regular) ' + (o.big ? 'var(--fs-m)' : 'var(--fs-xs)') + '/var(--lh-tight) var(--font)">' + (o.sub ? esc(o.sub) : '&nbsp;') + '</span>';
     var foot = o.footEnd ? '<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-1);margin-top:auto;padding-top:var(--gap-tight);min-height:calc(var(--tag-s) + var(--gap-tight))"><div style="display:flex;align-items:center;gap:var(--sp-1)">' + (o.chip || '') + '</div><div style="display:flex;align-items:center;gap:var(--sp-1)">' + (o.time || '') + (o.pill || '') + '</div></div>'   /* the leader chip at the right end, under the song; the play tile at the left end, its time on its right */
       : '<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-1);margin-top:auto;padding-top:var(--gap-tight)"><div style="display:flex;align-items:center;gap:var(--sp-1)">' + (o.pill || '') + (o.chip || '') + '</div>' + (o.time || '') + '</div>';
     var lead = o.lead ? (o.bigLead
