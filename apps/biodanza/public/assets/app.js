@@ -2519,7 +2519,7 @@
     if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return null;
     var pg = document.querySelector("#itemDlg #ipg"); if (!pg || !pg.parentElement) return null;
     var host = pg.parentElement, hr = host.getBoundingClientRect(), r = pg.getBoundingClientRect(), g = pg.cloneNode(true);
-    g.removeAttribute("id"); [].forEach.call(g.querySelectorAll("[id]"), function (e) { e.removeAttribute("id"); });
+    g.removeAttribute("id");   /* the ids inside stay (the styles are by id); the new page is before the copy in the document */
     return { g: g, left: r.left - hr.left, top: r.top - hr.top, w: r.width, h: r.height, tf: pg.style.transform || "" };
   }
   function ghostRun(o, dir) {
@@ -2556,7 +2556,7 @@
         [[prevIt, 1], [nextIt, -1]].forEach(function (pair) {
           var x = pair[0]; if (!x) return;
           var d = document.createElement("div"); d.className = "bio-nbpage"; d.setAttribute("aria-hidden", "true");
-          d.innerHTML = itemPageHtml(x, false); [].forEach.call(d.querySelectorAll("[id]"), function (e) { e.removeAttribute("id"); });
+          d.innerHTML = itemPageHtml(x, false);   /* the ids stay: the styles of the page are by id; the real page comes first in the document, so it is the one every lookup finds */
           d.style.cssText = "position:absolute;left:" + pg.offsetLeft + "px;top:" + pg.offsetTop + "px;width:" + pg.offsetWidth + "px;height:" + pg.offsetHeight + "px;overflow:hidden;pointer-events:none;z-index:0;transform:translateX(" + (pair[1] * 100) + "%)";
           host.appendChild(d); nb[pair[1]] = d;
         });
