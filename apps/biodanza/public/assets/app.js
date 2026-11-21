@@ -576,8 +576,7 @@
           var pos = (state.items || []).reduce(function (x, k) { return Math.max(x, k.position); }, 0) + 1;   /* no exercise is open: a new exercise with no name and this song, in "נוספים" */
           return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=minimal", json: { vivencia_id: state.viv.id, position: pos, backlog: true, exercise_id: null, music_id: m.id } }).then(function () { return loadItems(); }).then(function () { paint(); toast("נוסף לוויוונסיה"); });
           };
-          var toL = exOpen ? (itemName(it) || "התרגיל") : (state.viv.title || "הוויוונסיה");
-          confirmAddMusic(songName(m), toL, function () { var pr = go(); if (pr && pr.then) pr.then(null, fail); });
+          chooseDest(songName(m), { vivId: state.viv && state.viv.id, itemId: exOpen && it ? it.id : null }, function (d) { addMusicTo(m, d); });
         }).then(null, fail);
       });
       var r = d.querySelector(".bio-dock__bar");
@@ -2801,7 +2800,8 @@
     var xs = [], xsFor = null, xsT = 0, xsOf = {};
     function cardHtml(m, added) {
       var ex = xsOf[m.id];
-      return songCardUi(m, { attrs: 'data-am="' + esc(m.id) + '" role="button" tabindex="0"', selected: added, title: songName(m), by: ex ? ex + " \u00b7 " + songBy(m) : songBy(m), pill: cardPill(m), keepPlay: !!it.__preview });
+      return songCardUi(m, { attrs: 'data-am="' + esc(m.id) + '" role="button" tabindex="0"', selected: added, title: songName(m), by: ex ? ex + " \u00b7 " + songBy(m) : songBy(m), pill: cardPill(m), keepPlay: false,
+        act: it.__listen ? '' : (added ? '<button type="button" class="rbtn rbtn--icon bio-act" data-amrm aria-label="הסרה מהתרגיל" title="הסרה מהתרגיל">' + I.x + '</button>' : '<button type="button" class="rbtn rbtn--icon bio-act" data-amadd aria-label="הוספה לתרגיל" title="הוספה לתרגיל">' + I.plus + '</button>') });
     }
     function draw() {
       if (!linked || !rest) return;
@@ -2854,7 +2854,7 @@
     listEl.addEventListener("click", function (ev) {
       if (ev.target.closest("[data-audio], a")) return;
       var c = ev.target.closest("[data-am]"); if (!c) return;
-      if (it.__listen) { var pb = c.querySelector("[data-audio]"); if (pb) pb.click(); return; }
+      if (it.__listen || !ev.target.closest("[data-amadd], [data-amrm]")) { var pb = c.querySelector("[data-audio]"); if (pb) pb.click(); return; }   /* a tap on a card always plays; the plus and the cross add and remove */
       var all = (linked || []).concat(rest || []), m = all.filter(function (x) { return x.id === c.dataset.am; })[0]; if (!m) return;
       if (it.__preview) {   /* the catalog's exercise: a tap marks the song, a second tap takes the mark off */
         var ix = it.sel.indexOf(m.id);
@@ -3221,7 +3221,7 @@
           if (ev.target.closest("[data-audio], a")) return;
           var bt = ev.target.closest("[data-sg]");
           if (!bt) { var cd = ev.target.closest("[data-sgc]"), pb = cd && cd.querySelector("[data-audio]"); if (pb) pb.click(); return; }
-          var m = mById[bt.dataset.sg]; if (m) confirmAddMusic(songName(m), state.viv ? (state.viv.title || "הוויוונסיה") : "", function () { addSongOnly(m, sheet); });
+          var m = mById[bt.dataset.sg]; if (m) chooseDest(songName(m), { vivId: state.viv && state.viv.id, itemId: liveItem && liveItem.id }, function (d) { addMusicTo(m, d, sheet); });
         });
       }
       r.querySelectorAll(".pgp").forEach(function (P) {   /* the header (the boxes and the search) leaves with the scroll and comes back with it: the cards reach the tabs */
@@ -3510,6 +3510,76 @@
       body: '<div class="pad"><span>להוסיף את "' + esc(songLabel) + '" ל' + (toLabel ? '"' + esc(toLabel) + '"' : "") + '?</span></div>',
       foot: '<button class="rbtn rbtn--block" type="button" id="cadd">הוספה</button>' });
     dlg.querySelector("#cadd").addEventListener("click", function () { dlg.close(); fn(); });
+  }
+  /* WHERE A SONG GOES: a popup with the vivencias as an accordion, each opening to its exercises. It opens on the vivencia (and the exercise) the person is in, and the choice is marked; the button at the bottom adds. A vivencia with no exercise marked takes the song as a new exercise with no name. */
+  function chooseDest(songLabel, cur, fn) {
+    var dlg = document.getElementById("confirmDlg");
+    if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
+    var vivs = (state.vivs || []).filter(function (v) { return v.role !== "view"; });
+    var dest = { vivId: cur && cur.vivId || null, itemId: cur && cur.itemId || null };
+    if (dest.vivId && !vivs.some(function (v) { return v.id === dest.vivId; })) dest = { vivId: null, itemId: null };
+    var open = {}, cache = {};
+    if (dest.vivId) { open[dest.vivId] = 1; if (state.viv && state.viv.id === dest.vivId && state.items) cache[dest.vivId] = state.items; }
+    function body() {
+      return '<div class="pad" style="display:flex;flex-direction:column;gap:var(--sp-1)"><span style="color:var(--text-2);font:var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font)">להוסיף את "' + esc(songLabel) + '" אל:</span>' +
+        '<div id="cdbox" style="max-height:min(50vh,26rem);overflow-y:auto;display:flex;flex-direction:column;gap:2px">' + vivs.map(function (v) {
+          var isOpen = !!open[v.id], selV = dest.vivId === v.id && !dest.itemId, items = cache[v.id];
+          var rows = !isOpen ? '' : !items ? '<div style="padding:var(--sp-1) var(--sp-2);color:var(--text-2);font:var(--fw-regular) var(--fs-s)/1 var(--font)">טוען</div>' :
+            (function () { var n = 0; return items.map(function (i) { var label = itemName(i) || "ללא שם", num = i.backlog ? "" : (++n); var sel = dest.itemId === i.id;
+              return '<button type="button" data-cdi="' + esc(i.id) + '" data-cdv="' + esc(v.id) + '" aria-pressed="' + sel + '" style="display:flex;align-items:center;gap:var(--sp-1);width:100%;border:0;border-radius:var(--r-ctl);padding:var(--sp-1) var(--sp-2);padding-inline-start:calc(var(--sp-2) * 2);cursor:pointer;text-align:start;font:var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font);color:var(--text);background:' + (sel ? 'var(--ex-tint)' : 'transparent') + '"><span style="flex:none;min-width:1.4em;color:var(--text-2);font-variant-numeric:tabular-nums">' + num + '</span><span style="flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(label) + '</span>' + (sel ? '<span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m);color:var(--primary)">' + I.check.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>' : '') + '</button>'; }).join(""); })();
+          return '<button type="button" data-cdh="' + esc(v.id) + '" aria-expanded="' + isOpen + '" aria-pressed="' + selV + '" style="display:flex;align-items:center;gap:var(--sp-1);width:100%;border:0;border-radius:var(--r-ctl);padding:var(--sp-1) var(--sp-2);cursor:pointer;text-align:start;font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font);color:var(--text);background:' + (selV ? 'var(--ex-tint)' : 'transparent') + '"><span style="flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(v.title || "ויוונסיה חדשה") + '</span>' + (selV ? '<span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m);color:var(--primary)">' + I.check.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>' : '') + '<span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m);color:var(--text-2)">' + (isOpen ? I.up : I.down) + '</span></button>' + rows;
+        }).join("") + '</div></div>';
+    }
+    function foot() { return '<button class="rbtn rbtn--block" type="button" id="cdadd"' + (dest.vivId ? '' : ' disabled') + '>הוספה</button>'; }
+    function draw(keep) {
+      var sc = keep ? (dlg.querySelector("#cdbox") || {}).scrollTop : 0;
+      RosterSheet.render(dlg, { kind: "confirm", title: "הוספת מוזיקה", from: "bottom", size: "m", body: body(), foot: foot() });
+      var bx = dlg.querySelector("#cdbox"); if (bx && sc) bx.scrollTop = sc;
+      wire();
+    }
+    function load(vid) {
+      if (cache[vid]) return;
+      itemsOf(vid).then(function (r) { r = r || []; cache[vid] = r.filter(function (i) { return !i.backlog; }).concat(r.filter(function (i) { return i.backlog; })); draw(true); }, function () { cache[vid] = []; draw(true); });
+    }
+    function wire() {
+      dlg.addEventListener("click", onClick);
+    }
+    function onClick(ev) {
+      var h = ev.target.closest("[data-cdh]"), it = ev.target.closest("[data-cdi]"), ad = ev.target.closest("#cdadd");
+      if (h) {
+        var v = h.dataset.cdh;
+        if (dest.vivId === v && !dest.itemId) open[v] = !open[v]; else { dest = { vivId: v, itemId: null }; open[v] = 1; }
+        load(v); draw(true); return;
+      }
+      if (it) { dest = { vivId: it.dataset.cdv, itemId: it.dataset.cdi }; draw(true); return; }
+      if (ad && dest.vivId) { dlg.removeEventListener("click", onClick); var d = { vivId: dest.vivId, itemId: dest.itemId, items: cache[dest.vivId] || null }; dlg.close(); fn(d); }
+    }
+    draw(false);
+    if (dest.vivId) load(dest.vivId);
+  }
+  /* the song goes where the popup said: into an exercise (as one of its songs), or into a vivencia as an exercise with no name and that song */
+  function addMusicTo(m, d, sheet) {
+    var same = !!(state.viv && state.viv.id === d.vivId), v = (state.vivs || []).filter(function (x) { return x.id === d.vivId; })[0], to = (v && v.title) || "הוויוונסיה";
+    var itemsP = d.items ? Promise.resolve(d.items) : itemsOf(d.vivId);
+    return itemsP.then(function (items) {
+      items = items || [];
+      if (d.itemId) {
+        var it = (same && state.items && state.items.filter(function (x) { return x.id === d.itemId; })[0]) || items.filter(function (x) { return x.id === d.itemId; })[0];
+        if (!it) { toast("התרגיל לא נמצא"); return; }
+        return addOpt(it, m).then(function () { return afterAdd(same, sheet, "נוסף לתרגיל", it.id); });
+      }
+      var pos = items.reduce(function (x, i) { return Math.max(x, i.position || 0); }, 0) + 1;
+      return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=minimal", json: { vivencia_id: d.vivId, position: pos, backlog: true, exercise_id: null, music_id: m.id } }).then(function () { return afterAdd(same, sheet, "נוסף ל" + to); });
+    }).then(null, fail);
+  }
+  function afterAdd(same, sheet, msg, itemId) {
+    if (sheet) closeSheets();
+    var chain = same ? loadItems().then(paint) : Promise.resolve();
+    return chain.then(function () {
+      var im = document.getElementById("imus"), li = same && itemId && state.items && state.items.filter(function (x) { return x.id === itemId; })[0];
+      if (im && li && liveItem && liveItem.id === itemId) im.innerHTML = musCards(li);
+      toast(msg);
+    });
   }
   function addSongOnly(m, sheet) {
     var pos = state.items.reduce(function (x, i) { return Math.max(x, i.position); }, 0) + 1;
