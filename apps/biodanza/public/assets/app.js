@@ -483,6 +483,7 @@
       if (catPanel) closeCatPanel(true);
       histLayer._rows = [];
       histLayer.innerHTML = html; placeHist(); histOpen = true; pl.classList.add("bio-dim");
+      var bk = histLayer.querySelector('[data-act="back"]'); if (bk) { bk.innerHTML = I.x; bk.setAttribute("aria-label", "סגירה"); bk.title = "סגירה"; }   /* a popup that comes from the left closes with a cross, not an arrow */
       requestAnimationFrame(function () { histLayer.classList.add("is-open"); });
       if (wire) wire(histLayer);
       return histLayer;
@@ -507,7 +508,8 @@
         var rid = histIds[e.n], m = { id: rid || "h" + i, audio_object: e.n, title: e.t, name: e.t, artist: e.a };
         return songCardUi(m, { act: exBtnG(m) + (rid ? '<button type="button" class="rbtn rbtn--icon bio-act" data-addto="' + esc(rid) + '" aria-label="הוספה" title="הוספה לוויוונסיה או לתרגיל">' + I.plus + '</button>' : ''), attrs: 'data-hi="' + i + '" role="button" tabindex="0"', selected: !!(nw.name && nw.name === e.n), title: e.t || "מוסיקה", by: [e.a || "", when(e.at)].filter(Boolean).join(" \u00b7 "), pill: cardPill(m) });
       }).join("");
-      histLayer.innerHTML = head("היסטוריית האזנה", "", false, "") + '<div class="rlist">' + (rows.length ? cardGrid(cards) : ph("אין עדיין היסטוריה", "מוסיקה שהתחלתם להשמיע תופיע כאן")) + '</div>';
+      histLayer.innerHTML = head("היסטוריית האזנה", "", true, "") + '<div class="rlist">' + (rows.length ? cardGrid(cards) : ph("אין עדיין היסטוריה", "מוסיקה שהתחלתם להשמיע תופיע כאן")) + '</div>';
+      var hb = histLayer.querySelector('[data-act="back"]'); if (hb) { hb.innerHTML = I.x; hb.setAttribute("aria-label", "סגירה"); hb.title = "סגירה"; hb.addEventListener("click", closeHist); }
       placeHist(); histOpen = true; pl.classList.add("bio-dim");
       requestAnimationFrame(function () { histLayer.classList.add("is-open"); });
     }
