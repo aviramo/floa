@@ -1096,8 +1096,8 @@
   function refreshPrevLabel() {   /* it always says the vivencia that is open now, and is on only while an exercise is looked at */
     if (!catLayer) return;
     var b = catLayer.querySelector("#catAdd"); if (!b) return;
-    var t = state.viv ? (state.viv.title || "הוויוונסיה") : "ויוונסיה", sp = b.querySelector("span:last-child");
-    if (sp && sp.textContent !== t) sp.textContent = t; b.setAttribute("aria-label", "הוספה לוויוונסיה " + t); b.disabled = !catPrevCtx;
+    var t = "הוספה", sp = b.querySelector("span:last-child");
+    if (sp && sp.textContent !== t) sp.textContent = t; b.setAttribute("aria-label", "הוספה לוויוונסיה"); b.disabled = !catPrevCtx;
   }
   function loadCatSnap() { try { return JSON.parse(localStorage.getItem(CAT_KEY) || "null"); } catch (e) { return null; } }
   function ensureCatPrev() { /* the left part is built with the layer */ }
@@ -1122,8 +1122,7 @@
     d.insertAdjacentHTML("beforeend", '<div class="catsh" role="separator" aria-orientation="vertical" aria-label="רוחב הרשימה (גרירה, חצים במקלדת, לחיצה כפולה לברירת המחדל)" title="גרירה לשינוי הרוחב · לחיצה כפולה: ברירת מחדל" tabindex="0"></div>'); if (window.__bioSplitWire) window.__bioSplitWire(d.querySelector(".catsh"));
     document.body.appendChild(d); catLayer = d; catPrev = d.querySelector(".catprev"); (d.querySelector("#catAdd") || document.createElement("i")).addEventListener("click", function (ev) {
       var c = catPrevCtx; if (!c) return;
-      if (!state.viv) vivPick(ev.currentTarget, c.e, c.fake.music_id, c.fake.sel);
-      else addEx(c.e, undefined, undefined, c.fake.music_id, c.fake.sel);
+      chooseDest(name(c.e), { vivId: state.viv && state.viv.id }, function (d) { addExTo(c.e, d.vivId, c.fake.music_id, c.fake.sel); }, { vivOnly: true });
     });
     d.querySelector("#catX").addEventListener("click", function () { closeCatPanel(); });
     var drawn = pickerWire(d.querySelector(".catbody"), undefined, false); placeCatLayer();
@@ -3328,8 +3327,7 @@
       var shd = dlg.querySelector(".sheet-head"); if (shd) shd.appendChild(gob);
       gob.addEventListener("click", function () {
         if (swapIt) confirmSwap(e, swapIt, true, fake.music_id, fake.sel);
-        else if (!state.viv) vivPick(gob, e, fake.music_id, fake.sel);
-        else confirmAddEx(name(e), state.viv.title || "הוויוונסיה", function () { addEx(e, undefined, true, fake.music_id, fake.sel); }, !(fake.sel && fake.sel.length) && !fake.music_id);
+        else chooseDest(name(e), { vivId: state.viv && state.viv.id }, function (d) { addExTo(e, d.vivId, fake.music_id, fake.sel, true); }, { vivOnly: true });
       });
     }, fail);
   }
@@ -3551,15 +3549,14 @@
     loadPreview(e.id).then(function (res) { var rows = res.rows, songs = res.songs;
       if (tok !== previewTok) return;   /* a later row was chosen meanwhile */
       var fake = itemFake(e, rows, songs);
-      var word = swapIt ? "החלפה בתרגיל הזה" : state.viv ? (state.viv.title || "הוויוונסיה") : "ויוונסיה";   /* adding: a plus with the vivencia's name; in no vivencia, a plus with the word, and a tap asks which of the last three */
+      var word = swapIt ? "החלפה בתרגיל הזה" : "הוספה";   /* adding: a plus with the vivencia's name; in no vivencia, a plus with the word, and a tap asks which of the last three */
       /* the same page as the exercise of a vivencia, only read: its header, its song cards, its texts; the action is the green button in the header, where the delete is in the vivencia */
       var phtml = itemHead(false, false, "", e.id, name(e), true, word, undefined, undefined, !swapIt) + itemPageHtml(fake, true);
       var pwire = function (r) {
         wireRoMusic(r, fake); sbSync(r); catPreview = true;
         on(r, "doswap", function (btn) {
           if (swapIt) confirmSwap(e, swapIt, undefined, fake.music_id, fake.sel);
-          else if (!state.viv) vivPick(btn, e, fake.music_id, fake.sel);
-          else addEx(e, undefined, undefined, fake.music_id, fake.sel);
+          else chooseDest(name(e), { vivId: state.viv && state.viv.id }, function (d) { addExTo(e, d.vivId, fake.music_id, fake.sel); }, { vivOnly: true });
         });
       };
       if (useLayer && catPanel) { catPrev.innerHTML = phtml; pwire(catPrev);
@@ -3598,22 +3595,23 @@
     dlg.querySelector("#cadd").addEventListener("click", function () { dlg.close(); fn(); });
   }
   /* WHERE A SONG GOES: a popup with the vivencias as an accordion, each opening to its exercises. It opens on the vivencia (and the exercise) the person is in, and the choice is marked; the button at the bottom adds. A vivencia with no exercise marked takes the song as a new exercise with no name. */
-  function chooseDest(songLabel, cur, fn) {
+  function chooseDest(songLabel, cur, fn, opts) {
+    var vivOnly = !!(opts && opts.vivOnly);
     var dlg = document.getElementById("confirmDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
     var vivs = (state.vivs || []).filter(function (v) { return v.role !== "view"; });
     var dest = { vivId: cur && cur.vivId || null, itemId: cur && cur.itemId || null };
     if (dest.vivId && !vivs.some(function (v) { return v.id === dest.vivId; })) dest = { vivId: null, itemId: null };
     var open = {}, cache = {};
-    if (dest.vivId) { open[dest.vivId] = 1; if (state.viv && state.viv.id === dest.vivId && state.items) cache[dest.vivId] = state.items; }
+    if (dest.vivId && !vivOnly) { open[dest.vivId] = 1; if (state.viv && state.viv.id === dest.vivId && state.items) cache[dest.vivId] = state.items; }
     function body() {
       return '<div class="pad" style="display:flex;flex-direction:column;gap:var(--sp-1)"><span style="color:var(--text-2);font:var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font)">להוסיף את "' + esc(songLabel) + '" אל:</span>' +
         '<div id="cdbox" style="max-height:min(50vh,26rem);overflow-y:auto;display:flex;flex-direction:column;gap:2px">' + vivs.map(function (v) {
-          var isOpen = !!open[v.id], selV = dest.vivId === v.id && !dest.itemId, items = cache[v.id];
+          var isOpen = !vivOnly && !!open[v.id], selV = dest.vivId === v.id && !dest.itemId, items = cache[v.id];
           var rows = !isOpen ? '' : !items ? '<div style="padding:var(--sp-1) var(--sp-2);color:var(--text-2);font:var(--fw-regular) var(--fs-s)/1 var(--font)">טוען</div>' :
             (function () { var n = 0; return items.map(function (i) { var label = itemName(i) || "ללא שם", num = i.backlog ? "" : (++n); var sel = dest.itemId === i.id;
               return '<button type="button" data-cdi="' + esc(i.id) + '" data-cdv="' + esc(v.id) + '" aria-pressed="' + sel + '" style="display:flex;align-items:center;gap:var(--sp-1);width:100%;border:0;border-radius:var(--r-ctl);padding:var(--sp-1) var(--sp-2);padding-inline-start:calc(var(--sp-2) * 2);cursor:pointer;text-align:start;font:var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font);color:var(--text);background:' + (sel ? 'var(--ex-tint)' : 'transparent') + '"><span style="flex:none;min-width:1.4em;color:var(--text-2);font-variant-numeric:tabular-nums">' + num + '</span><span style="flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(label) + '</span>' + (sel ? '<span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m);color:var(--primary)">' + I.check.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>' : '') + '</button>'; }).join(""); })();
-          return '<button type="button" data-cdh="' + esc(v.id) + '" aria-expanded="' + isOpen + '" aria-pressed="' + selV + '" style="display:flex;align-items:center;gap:var(--sp-1);width:100%;border:0;border-radius:var(--r-ctl);padding:var(--sp-1) var(--sp-2);cursor:pointer;text-align:start;font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font);color:var(--text);background:' + (selV ? 'var(--ex-tint)' : 'transparent') + '"><span style="flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(v.title || "ויוונסיה חדשה") + '</span>' + (selV ? '<span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m);color:var(--primary)">' + I.check.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>' : '') + '<span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m);color:var(--text-2)">' + (isOpen ? I.up : I.down) + '</span></button>' + rows;
+          return '<button type="button" data-cdh="' + esc(v.id) + '" aria-expanded="' + isOpen + '" aria-pressed="' + selV + '" style="display:flex;align-items:center;gap:var(--sp-1);width:100%;border:0;border-radius:var(--r-ctl);padding:var(--sp-1) var(--sp-2);cursor:pointer;text-align:start;font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font);color:var(--text);background:' + (selV ? 'var(--ex-tint)' : 'transparent') + '"><span style="flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(v.title || "ויוונסיה חדשה") + '</span>' + (selV ? '<span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m);color:var(--primary)">' + I.check.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>' : '') + '<span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m);color:var(--text-2)">' + (vivOnly ? '' : isOpen ? I.up : I.down) + '</span></button>' + rows;
         }).join("") + '</div></div>';
     }
     function foot() { return '<button class="rbtn rbtn--block" type="button" id="cdadd"' + (dest.vivId ? '' : ' disabled') + '>הוספה</button>'; }
@@ -3634,6 +3632,7 @@
       var h = ev.target.closest("[data-cdh]"), it = ev.target.closest("[data-cdi]"), ad = ev.target.closest("#cdadd");
       if (h) {
         var v = h.dataset.cdh;
+        if (vivOnly) { dest = { vivId: v, itemId: null }; draw(true); return; }
         if (dest.vivId === v && !dest.itemId) open[v] = !open[v]; else { dest = { vivId: v, itemId: null }; open[v] = 1; }
         load(v); draw(true); return;
       }
@@ -3641,7 +3640,7 @@
       if (ad && dest.vivId) { dlg.removeEventListener("click", onClick); var d = { vivId: dest.vivId, itemId: dest.itemId, items: cache[dest.vivId] || null }; dlg.close(); fn(d); }
     }
     draw(false);
-    if (dest.vivId) load(dest.vivId);
+    if (dest.vivId && !vivOnly) load(dest.vivId);
   }
   /* the song goes where the popup said: into an exercise (as one of its songs), or into a vivencia as an exercise with no name and that song */
   function addMusicTo(m, d, sheet) {
@@ -3666,6 +3665,11 @@
       if (im && li && liveItem && liveItem.id === itemId) im.innerHTML = musCards(li);
       toast(msg);
     });
+  }
+  function addExTo(e, vivId, mid, all, sheet) {   /* a catalog exercise goes into the vivencia the popup said: the open one as usual, another one is opened after */
+    if (state.viv && state.viv.id === vivId) return addEx(e, undefined, sheet, mid, all);
+    var v = (state.vivs || []).filter(function (x) { return x.id === vivId; })[0];
+    if (v) { if (sheet) closeSheets(); addExToViv(v, e, mid, all); }
   }
   function addSongOnly(m, sheet) {
     var pos = state.items.reduce(function (x, i) { return Math.max(x, i.position); }, 0) + 1;
