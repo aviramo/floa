@@ -3481,16 +3481,16 @@
     var useLayer = !!(catPanel && wide());
     if (useLayer && catPrevMus === m.id && catPrev && catPrev.classList.contains("is-open")) { closeMusPrev(); return; }
     var tok = ++previewTok;
-    api("/rest/v1/exercise_music?music_id=eq." + m.id + "&select=exercises(id,title_he,title_en,exercise_lines(line_key))&limit=500").then(function (rows) {
+    Promise.all([api("/rest/v1/exercise_music?music_id=eq." + m.id + "&select=exercises(id,title_he,title_en,category)&limit=500"), state.cats ? null : api("/rest/v1/categories?select=key,name_he&order=sort").then(function (c) { state.cats = c || []; }, function () { return null; })]).then(function (rr) { var rows = rr[0];
       if (tok !== previewTok) return;
       var seen = {}, exs = [];
       (rows || []).forEach(function (x) { var e = x.exercises; if (e && !seen[e.id]) { seen[e.id] = 1; exs.push(e); } });
       exs.sort(function (a, b) { return name(a).localeCompare(name(b), "he"); });
       var byLine = {}, order = [];   /* under each category of the catalog, its exercises */
-      exs.forEach(function (e) { var ks = (e.exercise_lines || []).map(function (x) { return x.line_key; }); if (!ks.length) ks = [""]; ks.forEach(function (k) { if (!byLine[k]) { byLine[k] = []; order.push(k); } byLine[k].push(e); }); });
-      var rank = function (k) { var i = state.lines.map(function (x) { return x.key; }).indexOf(k); return i < 0 ? 999 : i; };
+      exs.forEach(function (e) { var k = e.category || ""; if (!byLine[k]) { byLine[k] = []; order.push(k); } byLine[k].push(e); });
+      var rank = function (k) { var i = (state.cats || []).map(function (x) { return x.key; }).indexOf(k); return i < 0 ? 999 : i; };
       order.sort(function (a, b) { return rank(a) - rank(b); });
-      var groups = order.map(function (k) { return { name: k ? lineName(k) : "ללא קטגוריה", list: byLine[k] }; });
+      var groups = order.map(function (k) { return { name: catName(k) || "ללא קטגוריה", list: byLine[k] }; });
       var plusI = I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ');
       var addBtn = '<button type="button" class="rbtn" data-mpadd style="flex:none;gap:var(--sp-1);margin-inline-end:var(--gutter)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + plusI + '</span><span>הוספה</span></button>';
       var body = '<div style="padding:var(--gutter);display:flex;flex-direction:column;gap:var(--sp-2)">' +
