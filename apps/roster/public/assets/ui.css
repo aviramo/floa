@@ -113,7 +113,7 @@
 .rcount { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 var(--gap-tight); border-radius: var(--r-chip); background: var(--text); color: var(--bg); font: var(--fw-bold) var(--fs-xs)/1 var(--font); font-variant-numeric: tabular-nums; }
 
 /* ============================ LIST, ROW, SWIPE ============================ */
-.rlist { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; overscroll-behavior-y: auto; padding-bottom: var(--end-pad); }   /* the ONE scroll region of a page */
+.rlist { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; padding-bottom: var(--end-pad); }   /* the ONE scroll region of a page */
 .rlist[data-fab-room] { padding-bottom: var(--end-pad-fab); }
 /* LIST ROW: a simple line. slots: lead, main (title, meta), trail. variants: --link (whole row is the tap target), --compact. */
 .rrow { position: relative; display: flex; align-items: center; gap: var(--gap-button); min-height: var(--row); padding: var(--sp-1) var(--gutter); border-bottom: 1px solid var(--line); background: var(--bg); }
@@ -229,7 +229,7 @@ html.rs-lock .rfab:not(.rfab--in), html.dlg-lock .rfab:not(.rfab--in), html.kb-o
 
 /* ============================ PULL TO REFRESH ============================ */
 .rptr { position: fixed; inset-inline: 0; top: var(--rptr-top, 0); display: grid; place-items: center; height: 48px; pointer-events: none; z-index: var(--z-sticky); transform: translateY(calc(var(--rptr-pull, 0) * 1px - 48px)); opacity: var(--rptr-o, 0); }
-html.rk-ptr, html.rk-ptr body { overscroll-behavior-y: auto; }   /* our pull to refresh replaces the browser's (Android Chrome reloads the page by itself otherwise) */
+html.rk-ptr, html.rk-ptr body { overscroll-behavior-y: none; }   /* our pull to refresh replaces the browser's (Android Chrome reloads the page by itself otherwise) */
 .rptr__dot { width: 24px; height: 24px; border: var(--icon-w) solid var(--line-strong); border-top-color: var(--text); border-radius: 50%; transform: rotate(calc(var(--rptr-pull, 0) * 4deg)); }
 .rptr[data-state="loading"] .rptr__dot { animation: rk-spin .8s linear infinite; }
 @media (prefers-reduced-motion: reduce) { .rptr[data-state="loading"] .rptr__dot, .rbtn--icon[aria-busy="true"] > svg { animation: none; } }

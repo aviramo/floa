@@ -26,7 +26,7 @@
 /* ---------- 2. בסיס ---------- */
 *, *::before, *::after { box-sizing: border-box; border-radius: var(--r); }   /* פינות מעוגלות ממש קצת בכל האלמנטים (2.11.26); החריגים בסוף הקובץ */
 html, body { margin: 0; }
-html, body { height: 100%; overflow: hidden; overscroll-behavior-y: auto; }   /* an app page never scrolls (owner 2026-11-19): only the list does, inside its own box; the browser pull down to refresh stays on (owner 2026-11-19) */
+html, body { height: 100%; overflow: hidden; overscroll-behavior-y: none; }   /* an app page never scrolls (owner 2026-11-19): only the list does, inside its own box; the browser pull down to refresh stays on (owner 2026-11-19) */
 html { scrollbar-width: none; }
 html::-webkit-scrollbar { display: none; }
 body { padding-top: 0; background: var(--bg); color: var(--text); font: var(--fw-regular) var(--fs-m)/1.45 var(--font); -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
@@ -256,7 +256,7 @@ body.locked .wrap, body.locked #statsBtn { display: none !important; }
 .wrap { width: 100%; height: 100vh; height: 100dvh; margin-top: 0; display: flex; flex-direction: column; padding: 0; }
 .wrap > header.top { flex: 0 0 auto; position: relative; z-index: var(--z-sticky); background: var(--surface); border-bottom: 1px solid var(--line-strong); padding-top: calc(var(--sp-2) + var(--safe-t)); }   /* מעל תיבת החיפוש הפתוחה (z-index 6) כדי שתפריט המפגשים והתפריט הראשי, שבתוך הכותרת, יוצגו מעליה (1.11.26) */   /* בלי קו מעל שורת החיפוש (31.10.26) */
 .wrap > #status { flex: 0 0 auto; }
-.wrap > .list { flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior-y: auto; scrollbar-width: none; padding-bottom: var(--end-pad); }   /* הרשימה מסתיימת מעל פס המחוות של המכשיר (31.10.26): השורה האחרונה נגללת עד אזור בטוח */
+.wrap > .list { flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; scrollbar-width: none; padding-bottom: var(--end-pad); }   /* הרשימה מסתיימת מעל פס המחוות של המכשיר (31.10.26): השורה האחרונה נגללת עד אזור בטוח */
 .wrap > .list:has(~ .addbox:not(:empty)) { padding-bottom: 0; }   /* כשכרטיס "הוספת משתתף חדש" מתחתיה, האזור הבטוח נשאר מתחתיו */
 .wrap > .list::-webkit-scrollbar { display: none; }
 .wrap > .list:empty { display: block; }   /* an empty list keeps its grey ground to the bottom of the screen, like a full one */

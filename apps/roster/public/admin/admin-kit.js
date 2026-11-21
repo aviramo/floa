@@ -47,6 +47,7 @@
 
   /* ---------- 2. pull to refresh ---------- */
   if (list && window.RosterUI && RosterUI.ptr) {
+    doc.documentElement.style.setProperty("--rptr-top", Math.round(list.getBoundingClientRect().top) + "px");
     RosterUI.ptr.attach({ scroller: list, onRefresh: function () { return K.load(true); }, enabled: function () { return !doc.querySelector("dialog[open]"); } });
   }
 
