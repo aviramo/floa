@@ -3718,7 +3718,7 @@
     function foot() { return '<button class="rbtn rbtn--block" type="button" id="cdadd"' + (dest.vivId ? '' : ' disabled') + '>הוספה</button>'; }
     function draw(keep) {
       var sc = keep ? (dlg.querySelector("#cdbox") || {}).scrollTop : 0;
-      RosterSheet.render(dlg, { kind: "confirm", title: "הוספת מוזיקה", from: "bottom", size: "m", body: body(), foot: foot() });
+      RosterSheet.render(dlg, { kind: "confirm", title: vivOnly ? "הוספת תרגיל" : "הוספת מוזיקה", from: "bottom", size: "m", body: body(), foot: foot() });
       var bx = dlg.querySelector("#cdbox"); if (bx && sc) bx.scrollTop = sc;
       wire();
     }
