@@ -2420,7 +2420,7 @@
           var ch = ev.target.closest("[data-choose]");
           if (ch) {   /* the one that plays in the vivencia */
             var m = optList(it).filter(function (x) { return x.id === ch.dataset.choose; })[0]; if (!m || m.id === it.music_id) return;
-            setChosen(it, m).then(function () { repaintMus(); if (wide()) paint(); }, fail);
+            confirmChoose(songName(m), itemName(it) || "התרגיל", function () { setChosen(it, m).then(function () { repaintMus(); if (wide()) paint(); }, fail); });
             return;
           }
           var c = ev.target.closest("[data-opt]"); if (!c) return;   /* a tap on the card plays the song, as on the music page */
@@ -3712,6 +3712,14 @@
       body: '<div class="pad"><span>להוסיף את "' + esc(exLabel) + '" ל"' + esc(toLabel) + '"?</span>' + (noMusic ? '<div style="margin-top:var(--sp-2);font-weight:var(--fw-black)">שימו לב: לא נבחרה מוסיקה</div>' : '') + '</div>',
       foot: '<button class="rbtn rbtn--block" type="button" id="caddex">הוספה</button>' });
     dlg.querySelector("#caddex").addEventListener("click", function () { dlg.close(); fn(); });
+  }
+  function confirmChoose(songLabel, exLabel, fn) {   /* choosing the song that plays in the vivencia asks first, in the kit's popup with ONE action */
+    var dlg = document.getElementById("confirmDlg");
+    if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
+    RosterSheet.render(dlg, { kind: "confirm", title: "בחירת מוזיקה", from: "bottom", size: "s",
+      body: '<div class="pad"><span>לבחור את "' + esc(songLabel) + '" כמוזיקה של "' + esc(exLabel) + '"? היא תתנגן בוויוונסיה.</span></div>',
+      foot: '<button class="rbtn rbtn--block" type="button" id="cchoose">בחירה</button>' });
+    dlg.querySelector("#cchoose").addEventListener("click", function () { dlg.close(); fn(); });
   }
   function confirmAddMusic(songLabel, toLabel, fn) {   /* every adding of a song asks first, in the kit's popup with ONE action */
     var dlg = document.getElementById("confirmDlg");
