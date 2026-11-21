@@ -3381,11 +3381,28 @@
       var mfx = ev.target.closest("[data-mfx]");
       if (mfx) { var mm = (fake.item_music_options || []).map(function (o) { return o.music; }).filter(function (x) { return x && x.id === mfx.dataset.mfx; })[0]; if (mm) setExFilter(mm); return; }   /* the catalog's exercises narrowed to this song's */
       if (!pk) { var au = c.querySelector("[data-audio]"); if (au) au.click(); return; }   /* a tap on the card plays; the add button marks the song for the exercise */
-      var id = pk.dataset.pick, k = fake.sel.indexOf(id); if (k >= 0) fake.sel.splice(k, 1); else fake.sel.push(id);
+      var id = pk.dataset.pick, k = fake.sel.indexOf(id); fake.manual = fake.manual || {};
+      if (k >= 0 && !fake.manual[id]) { fake.manual[id] = true; if (fake.auto === id) fake.auto = null; }   /* marked only because it plays: the tap makes the mark its own, it stays when the song stops */
+      else if (k >= 0) { fake.sel.splice(k, 1); delete fake.manual[id]; }
+      else { fake.sel.push(id); fake.manual[id] = true; }
+      syncFake(); imus.innerHTML = musCards(fake, true);
+    });
+    function syncFake() {
       var first = (fake.item_music_options || []).map(function (o) { return o.music; }).filter(function (x) { return x && x.id === fake.sel[0]; })[0];
       fake.music_id = fake.sel[0] || null; fake.music = first || null;
-      imus.innerHTML = musCards(fake, true);
-    });
+    }
+    /* the song that plays is marked as belonging to the exercise; when it stops (or another one starts) that mark comes off. What was marked by hand stays, played or not. */
+    var onAudio = function (ev) {
+      if (!imus.isConnected) { document.removeEventListener("bioaudio", onAudio); return; }
+      var d = ev.detail || {}, pid = null;
+      if (d.playing && d.name) (fake.item_music_options || []).forEach(function (o) { if (o.music && o.music.audio_object === d.name) pid = o.music.id; });
+      fake.manual = fake.manual || {};
+      var changed = false;
+      if (fake.auto && fake.auto !== pid) { var j = fake.sel.indexOf(fake.auto); if (j >= 0 && !fake.manual[fake.auto]) fake.sel.splice(j, 1); fake.auto = null; changed = true; }
+      if (pid && fake.sel.indexOf(pid) < 0) { fake.sel.push(pid); fake.auto = pid; changed = true; }
+      if (changed) { syncFake(); imus.innerHTML = musCards(fake, true); }
+    };
+    document.addEventListener("bioaudio", onAudio);
   }
   function previewSheet(e, swapIt) {
     var tok = ++previewTok;
