@@ -2012,7 +2012,7 @@
 
   async function setLinked(pid, mid, on, mode) {
     if (on) {
-      const row = Object.assign({ participant_id: pid, meeting_id: mid, paid: false }, firstArrive(pid));
+      const row = Object.assign({ participant_id: pid, meeting_id: mid }, firstArrive(pid));
       state.att.push(row); render(); refreshSheetMeetings();
       try { await api(T.a, { method: 'POST', body: row, prefer: 'resolution=ignore-duplicates' }); }
       catch (err) { state.att = state.att.filter((a) => a !== row); render(); refreshSheetMeetings(); fail(err); return; }
