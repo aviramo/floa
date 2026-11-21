@@ -2223,10 +2223,21 @@
         if (e.pointerType === "touch" && !d.grip) d.timer = setTimeout(function () { if (d && !d.live) begin(); }, 160);
       });
     });
+    function scroller() { for (var n = l; n && n !== document.body; n = n.parentElement) { var oy = getComputedStyle(n).overflowY; if ((oy === "auto" || oy === "scroll") && n.scrollHeight > n.clientHeight + 2) return n; } return null; }
+    var raf = 0;
+    function auto() {   /* the finger near the top or the bottom of the list: the list scrolls under it, the carried card stays under the finger */
+      raf = 0; if (!d || !d.live || !d.sc || !d.last) return;
+      var r = d.sc.getBoundingClientRect(), y = d.last.clientY, zone = 72, v = 0;
+      if (y > r.bottom - zone) v = Math.min(1, (y - (r.bottom - zone)) / zone) * 16; else if (y < r.top + zone) v = -Math.min(1, ((r.top + zone) - y) / zone) * 16;
+      if (v) { var before = d.sc.scrollTop; d.sc.scrollTop += v; if (d.sc.scrollTop !== before) apply(); }
+      raf = requestAnimationFrame(auto);
+    }
     function begin() {
+      d.sc = scroller(); d.sc0 = d.sc ? d.sc.scrollTop : 0;
       d.live = true; d.row.setPointerCapture && d.row.setPointerCapture(d.pid);
       d.row.style.transition = "none"; d.row.style.zIndex = "var(--z-raised)"; d.row.style.boxShadow = "var(--sh-card)"; d.row.style.position = "relative";
       rows.forEach(function (r) { if (r !== d.row) r.style.transition = "transform var(--t-base) var(--ease)"; });
+      if (d.sc && !raf) raf = requestAnimationFrame(auto);
     }
     function move(e) {
       if (!d) return;
@@ -2236,7 +2247,12 @@
         if (Math.abs(dy) < 6) return;
         begin();
       }
-      var dx = e.clientX - d.x0;
+      d.last = { clientX: e.clientX, clientY: e.clientY };
+      apply();
+    }
+    function apply() {
+      var dy = d.last.clientY - d.y0 + (d.sc ? d.sc.scrollTop - d.sc0 : 0);   /* what the list scrolled is part of the way the card travelled */
+      var dx = d.last.clientX - d.x0;
       d.row.style.transform = "translate(" + dx + "px, " + dy + "px)";
       var cx = d.tops[d.k].x + dx, cy = d.tops[d.k].y + dy, to = d.k, best = Infinity;   /* the place nearest to the card that is carried */
       d.tops.forEach(function (t, i) { var dd = (t.x - cx) * (t.x - cx) + (t.y - cy) * (t.y - cy); if (dd < best) { best = dd; to = i; } });
@@ -2253,6 +2269,7 @@
     function finish() {
       if (!d) return;
       clearTimeout(d.timer);
+      if (raf) { cancelAnimationFrame(raf); raf = 0; }
       var was = d; d = null;
       if (!was.live) return;
       rows.forEach(function (r) { r.style.transform = ""; r.style.transition = ""; r.style.zIndex = ""; r.style.boxShadow = ""; r.style.position = ""; });
