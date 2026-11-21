@@ -1220,6 +1220,7 @@
     document.querySelectorAll("[data-catopen]").forEach(function (b) { b.setAttribute("aria-pressed", "true"); });
     catPanel = catLayer; state.pickerShow = true; catPreview = !!catPrevId;
     pd.classList.add("bio-dim"); refreshPrevLabel(); saveCat();
+    alignCatX(); setTimeout(alignCatX, 80); setTimeout(alignCatX, 600);   /* the cross over the search sign: first the kept shift, then the measured one */
     if (typeof syncLeftToTab === "function") setTimeout(syncLeftToTab, 0);   /* the left side already says what to do: choose an exercise or a song */
   }
   document.addEventListener("click", function (ev) { var ab = ev.target.closest && ev.target.closest("[data-addex]"); if (ab) {   /* the plus beside the exercises' title: an empty exercise at the end of the numbered ones, opened to be filled in */
@@ -1409,6 +1410,16 @@
     var has = function (m) { return !!(m && m.audio_object === name); };
     return (items || []).some(function (x) { return has(x.music) || (x.item_music_options || []).some(function (o) { return has(o.music); }); }) || (recv || []).some(function (o) { return has(o.music); });
   }
+  function alignCatX() {   /* the cross that closes the catalog is over the sign of the search: the same centre */
+    var x = document.getElementById("catX"), ic = document.querySelector("#catLayer [data-sicon]");
+    if (!x) return;
+    var saved = null; try { saved = localStorage.getItem("biodanza.catxdx"); } catch (e) { /* none */ }
+    if (!ic || !ic.getBoundingClientRect().width) { if (saved != null && saved !== "") x.style.transform = "translateX(" + saved + "px)"; return; }
+    x.style.transform = "";
+    var xr = x.getBoundingClientRect(), ir = ic.getBoundingClientRect(); if (!xr.width) return;
+    var dx = Math.round(ir.left + ir.width / 2 - (xr.left + xr.width / 2)); x.style.transform = "translateX(" + dx + "px)"; try { localStorage.setItem("biodanza.catxdx", String(dx)); } catch (e) { /* kept only for this visit */ }
+  }
+  window.addEventListener("resize", function () { alignCatX(); });
   function alignPlus() {   /* the + of the header is over the sign of the exercises of the rows, the same centre */
     var plus = document.querySelector('#pl [data-act="new"]'), ic = document.querySelector("#hl .bio-vcnt__c");
     if (!plus) return; plus.style.transform = "";
@@ -3288,7 +3299,7 @@
   /* the catalog picker: a search and the list of categories; a category opens like an accordion onto its exercises. On a wide screen it is a pane; on a narrow one it is a popup from the bottom. */
   function searchInput(id, label) {
     id = id || "q"; label = label || "חיפוש תרגילים בקטלוג";
-    return '<div style="display:flex;align-items:center;gap:var(--sp-2)"><input id="' + id + '" class="rhead__title" type="text" placeholder="' + label + '" autocomplete="off" aria-label="' + label + '" style="width:100%;min-width:0;border:0;background:transparent;padding-inline:0;margin:0;color:inherit;text-align:start;outline:0;text-overflow:ellipsis;text-box:normal;line-height:1.4;padding-block:4px">' + '<span aria-hidden="true" style="flex:none;display:grid;width:var(--icon-m);height:var(--icon-m);color:var(--text-2)"><svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></span></div>';
+    return '<div style="display:flex;align-items:center;gap:var(--sp-2)"><input id="' + id + '" class="rhead__title" type="text" placeholder="' + label + '" autocomplete="off" aria-label="' + label + '" style="width:100%;min-width:0;border:0;background:transparent;padding-inline:0;margin:0;color:inherit;text-align:start;outline:0;text-overflow:ellipsis;text-box:normal;line-height:1.4;padding-block:4px">' + '<span data-sicon aria-hidden="true" style="flex:none;display:grid;width:var(--icon-m);height:var(--icon-m);color:var(--text-2)"><svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></span></div>';
   }
   /* the two tabs of the catalog: exercises (the first, on the right) and music; they are the pager's two pages */
   function pickerTabs() {
