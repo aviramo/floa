@@ -1732,7 +1732,7 @@
   function printOpening() {   /* only the opening of the evening: the free text and every leader's words, on paper */
     var v = state.viv; if (!v) return;
     var free = openFreeText(), secs = openRows().filter(function (x) { return x.who !== ""; });
-    var html = '<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>' + esc(v.title || "פתיחת הערב") + '</title><style>@page { margin: 18mm } body { font: 16px/1.7 Heebo, Arial, sans-serif; color: #111; margin: 0 } h1 { font-size: 22px; margin: 0 0 4px } h2 { font-size: 15px; margin: 22px 0 4px; color: #1B5AA0 } .sub { color: #555; margin: 0 0 18px } p { margin: 0; white-space: normal }</style></head><body>' +
+    var html = '<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>' + esc(v.title || "פתיחת הערב") + '</title><style>@page { margin: 16mm } body { font: 26px/1.65 Heebo, Arial, sans-serif; color: #000; margin: 0 } h1 { font-size: 44px; font-weight: 900; margin: 0 0 6px; line-height: 1.2 } h2 { font-size: 40px; font-weight: 900; line-height: 1.2; margin: 38px 0 10px; padding-bottom: 6px; border-bottom: 4px solid #000; color: #000; break-after: avoid } .sub { font-size: 26px; font-weight: 700; color: #333; margin: 0 0 24px } p { margin: 0 0 10px; white-space: normal }</style></head><body>' +
       '<h1>' + esc(v.title || "ויוונסיה") + '</h1><div class="sub">פתיחת הערב</div>' +
       (free ? '<p>' + rtHtml(free) + '</p>' : '') +
       secs.map(function (q) { return '<h2>' + esc(openName(q.who)) + '</h2><p>' + rtHtml(q.body || "") + '</p>'; }).join("") +
