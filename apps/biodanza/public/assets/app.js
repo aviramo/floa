@@ -3036,6 +3036,7 @@
         return;
       }
       if (!it.__recv && !it.__preview && !it.__listen && it.id && state.viv) { chooseDest(songName(m), { vivId: state.viv.id, itemId: it.id }, function (d) { addMusicTo(m, d).then(function () { draw(); refreshSimilar(); if (changed) changed(); }); }); return; }   /* the plus asks where: the exercise is marked, a vivencia or another exercise can be chosen */
+      if (it.__recv && state.viv) { chooseRecv(songName(m), it.__recv, function (kind) { var tgt = kind === it.__recv ? it : recvItem(kind); addOpt(tgt, m).then(function () { draw(); refreshSimilar(); if (changed) changed(); if (tgt !== it) { paint(); toast(kind === "end" ? "נוסף למוסיקת הסיום" : "נוסף למוסיקת ההתחלה"); } }, fail); }); return; }
       confirmAddMusic(songName(m), it.__recv ? (it.__recv === "start" ? "מוסיקת ההתחלה" : "מוסיקת הסיום") : (itemName(it) || "התרגיל"), function () { addOpt(it, m).then(function () { draw(); refreshSimilar(); if (changed) changed(); }, fail); });
     });
     var allSongs = null;
@@ -3844,6 +3845,23 @@
     if (dest.vivId && !vivOnly) load(dest.vivId);
   }
   /* the song goes where the popup said: into an exercise (as one of its songs), or into a vivencia as an exercise with no name and that song */
+  /* the song goes to the start music or to the end music of the vivencia: the song as a chip, an arrow, the place as a chip; the one the popup was opened for is marked */
+  function chooseRecv(songLabel, cur, fn) {
+    var dlg = document.getElementById("confirmDlg");
+    if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
+    var sel = cur === "end" ? "end" : "start", names = { start: "מוסיקת התחלה", end: "מוסיקת סיום" };
+    function draw() {
+      var chipSt = 'display:inline-flex;align-items:center;gap:var(--sp-1);min-width:0;max-width:100%;padding:6px 14px;border-radius:999px;font:var(--fw-bold) var(--fs-s)/1.2 var(--font)';
+      var noteSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>';
+      var arrowSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:var(--icon-m);height:var(--icon-m);flex:none;color:var(--primary)"><path d="M20 12H5"/><path d="M11 6l-6 6 6 6"/></svg>';
+      var flow = '<div style="display:flex;align-items:center;gap:var(--sp-1);flex-wrap:wrap;padding-bottom:var(--sp-1)"><span style="' + chipSt + ';background:var(--mus-tint);color:var(--ex-ink)"><span aria-hidden="true" style="display:grid;flex:none;width:var(--icon-s);height:var(--icon-s)">' + noteSvg + '</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(songLabel) + '</span></span>' + arrowSvg + '<span style="' + chipSt + ';background:var(--ex-solid);color:#FFFFFF">' + esc(names[sel]) + '</span></div>';
+      var row = function (k) { var on = sel === k; return '<button type="button" data-rk="' + k + '" aria-pressed="' + on + '" style="display:flex;align-items:center;gap:var(--sp-1);width:100%;border:0;border-radius:var(--r-ctl);padding:var(--sp-1) var(--sp-2);cursor:pointer;text-align:start;font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font);color:var(--text);background:' + (on ? 'var(--ex-tint)' : 'transparent') + '"><span style="flex:1 1 auto">' + names[k] + '</span>' + (on ? '<span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m);color:var(--primary)">' + I.check.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>' : '') + '</button>'; };
+      RosterSheet.render(dlg, { kind: "confirm", title: "הוספת מוזיקה", from: "bottom", size: "s", body: '<div class="pad" style="display:flex;flex-direction:column;gap:2px">' + flow + row("start") + row("end") + '</div>', foot: '<button class="rbtn rbtn--block" type="button" id="cradd">הוספה</button>' });
+      dlg.querySelectorAll("[data-rk]").forEach(function (b) { b.addEventListener("click", function () { sel = b.dataset.rk; draw(); }); });
+      dlg.querySelector("#cradd").addEventListener("click", function () { dlg.close(); fn(sel); });
+    }
+    draw();
+  }
   function addMusicTo(m, d, sheet) {
     var same = !!(state.viv && state.viv.id === d.vivId), v = (state.vivs || []).filter(function (x) { return x.id === d.vivId; })[0], to = (v && v.title) || "הוויוונסיה";
     var itemsP = d.items ? Promise.resolve(d.items) : itemsOf(d.vivId);
