@@ -1193,7 +1193,7 @@
     d.insertAdjacentHTML("beforeend", '<div class="catsh" role="separator" aria-orientation="vertical" aria-label="רוחב הרשימה (גרירה, חצים במקלדת, לחיצה כפולה לברירת המחדל)" title="גרירה לשינוי הרוחב · לחיצה כפולה: ברירת מחדל" tabindex="0"></div>'); if (window.__bioSplitWire) window.__bioSplitWire(d.querySelector(".catsh"));
     document.body.appendChild(d); catLayer = d; catPrev = d.querySelector(".catprev"); (d.querySelector("#catAdd") || document.createElement("i")).addEventListener("click", function (ev) {
       var c = catPrevCtx; if (!c) return;
-      chooseDest(name(c.e), { vivId: state.viv && state.viv.id }, function (d) { addExTo(c.e, d.vivId, c.fake.music_id, c.fake.sel); }, { vivOnly: true });
+      chooseDest(name(c.e), { vivId: state.viv && state.viv.id }, function (d) { var es = effSel(c.fake); addExTo(c.e, d.vivId, es.mid, es.all); }, { vivOnly: true });
     });
     d.querySelector("#catX").addEventListener("click", function () { closeCatPanel(); });
     var drawn = pickerWire(d.querySelector(".catbody"), undefined, false); placeCatLayer();
@@ -3568,7 +3568,7 @@
       var shd = dlg.querySelector(".sheet-head"); if (shd) shd.appendChild(gob);
       gob.addEventListener("click", function () {
         if (swapIt) confirmSwap(e, swapIt, true, fake.music_id, fake.sel);
-        else chooseDest(name(e), { vivId: state.viv && state.viv.id }, function (d) { addExTo(e, d.vivId, fake.music_id, fake.sel, true); }, { vivOnly: true });
+        else chooseDest(name(e), { vivId: state.viv && state.viv.id }, function (d) { var es = effSel(fake); addExTo(e, d.vivId, es.mid, es.all, true); }, { vivOnly: true });
       });
     }, fail);
   }
@@ -3676,7 +3676,11 @@
     return Promise.all([api("/rest/v1/exercise_texts?exercise_id=eq." + id + "&select=lang,poetics,guidance,level,curve,level_basis,curve_basis,source"), api("/rest/v1/exercise_music?exercise_id=eq." + id + "&select=music(id,name,title,artist,duration_sec,audio_object,in_catalog)")]).then(function (r) {
       var seen = {}, songs = [];
       (r[1] || []).forEach(function (x) { if (x.music && !seen[x.music.id]) { seen[x.music.id] = 1; songs.push(x.music); } });
-      return { rows: r[0] || [], songs: songs };
+      return ensureExCnt().then(function () {   /* the most popular first: the song linked to the most exercises of the catalog */
+        var c = function (m) { return (exCnt && exCnt[m.id]) || 0; };
+        songs.sort(function (a, b) { return c(b) - c(a) || songName(a).localeCompare(songName(b)); });
+        return { rows: r[0] || [], songs: songs };
+      });
     });
   }
   function musicRows(songs, sel) {
@@ -3804,7 +3808,7 @@
         wireRoMusic(r, fake); sbSync(r); catPreview = true;
         on(r, "doswap", function (btn) {
           if (swapIt) confirmSwap(e, swapIt, undefined, fake.music_id, fake.sel);
-          else chooseDest(name(e), { vivId: state.viv && state.viv.id }, function (d) { addExTo(e, d.vivId, fake.music_id, fake.sel); }, { vivOnly: true });
+          else chooseDest(name(e), { vivId: state.viv && state.viv.id }, function (d) { var es = effSel(fake); addExTo(e, d.vivId, es.mid, es.all); }, { vivOnly: true });
         });
       };
       if (useLayer && catPanel) { catPrev.innerHTML = phtml; pwire(catPrev);
@@ -3965,6 +3969,11 @@
       if (im && li && liveItem && liveItem.id === itemId) im.innerHTML = musCards(li);
       toast(msg);
     });
+  }
+  function effSel(fake) {   /* nothing marked: the three most popular songs of the exercise go with it; marked: what was marked */
+    if (fake.sel && fake.sel.length) return { mid: fake.music_id || fake.sel[0], all: fake.sel };
+    var top = (fake.item_music_options || []).map(function (o) { return o.music; }).filter(Boolean).slice(0, 3).map(function (m) { return m.id; });
+    return { mid: top[0] || null, all: top };
   }
   function addExTo(e, vivId, mid, all, sheet) {   /* a catalog exercise goes into the vivencia the popup said: the open one as usual, another one is opened after */
     if (state.viv && state.viv.id === vivId) return addEx(e, undefined, sheet, mid, all);
