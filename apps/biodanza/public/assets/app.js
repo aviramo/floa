@@ -1239,9 +1239,12 @@
 
   /* ---------- home: my vivencias ---------- */
   /* the vivencias I loved: my list, newest first; a row opens the vivencia */
+  /* the lists of what I loved open on the left side on a wide screen (the right side keeps the list of vivencias), and as before on a narrow one */
+  function showL(html, wire) { return show(html, wire, wide() ? "d" : undefined); }
+  function closeLeft() { if (state.viv) show(phPick("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); else emptyDetail(); }
   function likedVivScreen() {
-    show(head("ויוונסיות שאהבתי", "", true) + '<div class="rlist" id="likv"><div class="rskel rskel--title"></div></div>', function (r) {
-      on(r, "back", back);
+    showL(head("ויוונסיות שאהבתי", "", true) + '<div class="rlist" id="likv"><div class="rskel rskel--title"></div></div>', function (r) {
+      on(r, "back", wide() ? closeLeft : back);
       api("/rest/v1/vivencia_likes?select=vivencia_id&order=created_at.desc").then(function (rows) {
         var l = r.querySelector("#likv"), list = (rows || []).map(function (x) { return state.vivs.filter(function (v) { return v.id === x.vivencia_id; })[0]; }).filter(Boolean);
         l.innerHTML = list.length ? list.map(function (v) {
@@ -1254,8 +1257,8 @@
   }
   /* the exercises I loved: my list, newest first; the heart takes one off it */
   function likedExScreen() {
-    show(head("תרגילים שאהבתי", "", true) + '<div class="rlist" id="likx"><div class="rskel rskel--title"></div></div>', function (r) {
-      on(r, "back", back);
+    showL(head("תרגילים שאהבתי", "", true) + '<div class="rlist" id="likx"><div class="rskel rskel--title"></div></div>', function (r) {
+      on(r, "back", wide() ? closeLeft : back);
       api("/rest/v1/exercise_likes?select=exercises(id,title_he,title_en,category)&order=created_at.desc").then(function (rows) {
         var l = r.querySelector("#likx"), list = (rows || []).map(function (x) { return x.exercises; }).filter(Boolean);
         l.innerHTML = list.length ? list.map(function (e) {
@@ -1269,8 +1272,8 @@
     return songCardUi(m, { attrs: 'data-liked="' + esc(m.id) + '" role="button" tabindex="0"', title: songName(m), by: songBy(m), pill: cardPill(m), act: exBtnG(m) + '<button type="button" class="rbtn rbtn--icon bio-act" data-addto="' + esc(m.id) + '" aria-label="הוספה" title="הוספה לוויוונסיה או לתרגיל">' + I.plus + '</button>' });   /* footEnd: the play tile at the left end, so the heart has the bottom right to itself */
   }
   function likedScreen() {
-    show(head("מוסיקה שאהבתי", "", true) + '<div class="rlist" id="likl"><div class="rskel rskel--title"></div></div>', function (r) {
-      on(r, "back", back);
+    showL(head("מוסיקה שאהבתי", "", true) + '<div class="rlist" id="likl"><div class="rskel rskel--title"></div></div>', function (r) {
+      on(r, "back", wide() ? closeLeft : back);
       api("/rest/v1/song_likes?select=music(id,name,title,artist,duration_sec,audio_object,in_catalog)&order=created_at.desc").then(function (rows) {
         var l = r.querySelector("#likl"), list = (rows || []).map(function (x) { return x.music; }).filter(Boolean);
         l.innerHTML = list.length ? cardGrid(list.map(function (m) { return likedCard(m); }).join("")) : ph("עוד אין מוסיקה שאהבת", "לחצו על הלב ליד מוסיקה כדי לשמור אותה כאן");
@@ -1290,7 +1293,7 @@
       '<div class="rlist" data-fab-room id="hl"><div class="rskel rskel--title"></div></div>' +
       '', function (r) {
       on(r, "homemore", function (b) {   /* one menu: the songs I loved, who may enter (the manager), leaving */
-        var items = state.offline ? [] : [{ label: "קטלוג", icon: I.catalog, fn: function () { if (wide()) openCatPanel(); else { resetPk(); pickerSheet(); } } }, { label: "ויוונסיות שאהבתי", icon: I.heart, fn: function () { goSub(likedVivScreen); } }, { label: "תרגילים שאהבתי", icon: I.heart, fn: function () { goSub(likedExScreen); } }, { label: "מוסיקה שאהבתי", icon: I.heart, fn: function () { goSub(likedScreen); } }];   /* in the order of the app: vivencias, exercises, songs */
+        var items = state.offline ? [] : [{ label: "קטלוג", icon: I.catalog, fn: function () { if (wide()) openCatPanel(); else { resetPk(); pickerSheet(); } } }, { label: "ויוונסיות שאהבתי", icon: I.heart, fn: function () { if (wide()) likedVivScreen(); else goSub(likedVivScreen); } }, { label: "תרגילים שאהבתי", icon: I.heart, fn: function () { if (wide()) likedExScreen(); else goSub(likedExScreen); } }, { label: "מוסיקה שאהבתי", icon: I.heart, fn: function () { if (wide()) likedScreen(); else goSub(likedScreen); } }];   /* in the order of the app: vivencias, exercises, songs */
         if (state.me.admin) items.push({ label: "ניהול משתמשים", icon: I.users, fn: allowPopup });
         items.push({ label: "יציאה", icon: I.out, tone: "danger", fn: function () { Promise.resolve(FLOA_AUTH.signOut()).then(function () { location.reload(); }); } });
         menu(b, items);
@@ -3957,6 +3960,8 @@
     var dlg = document.getElementById("allowDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "allowDlg"; document.body.appendChild(dlg); }
     var rows = [];
+    if (wide()) { var a0 = pd.getBoundingClientRect(), set = function (k, v) { dlg.style.setProperty(k, v, "important"); };
+      set("position", "fixed"); set("margin", "0"); set("inset", "auto"); set("left", a0.left + "px"); set("top", a0.top + "px"); set("width", a0.width + "px"); set("height", a0.height + "px"); set("max-width", "none"); set("max-height", "none"); set("transform", "none"); set("border-radius", "0"); }
     RosterSheet.render(dlg, {
       title: "ניהול משתמשים", from: "bottom",
       body: '<div class="pad">' +
