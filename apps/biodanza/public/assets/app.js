@@ -2645,7 +2645,7 @@
   /* THE SONG CARD: the same on every screen. The name at the top left; under it the length (fixed, it never counts while the song plays), then the performer (cut with dots when it is long); at the right end the action as an icon and, at its right, the heart. A tap on the card plays and stops the song: its play tile is kept in the card, hidden. */
   function songCardUi(m, o) {
     var d = durOf(m), pill = o.pill || "", keep = !!o.keepPlay, hasAud = pill.indexOf("data-audio") >= 0, hide = hasAud && !keep;
-    var heart = m && m.id && !/^h[0-9]/.test(m.id) ? cardHeart(m) : "";
+    var heart = m && m.id && !/^h[0-9]/.test(m.id) && !o.noHeart ? cardHeart(m) : "";
     var act = o.act || "", rmX = "";
     var rmM = act.match(/<button[^>]*data-orm[\s\S]*?<\/button>/);
     if (rmM) { act = act.replace(rmM[0], ""); rmX = '<span style="position:absolute;top:28px;right:28px;transform:translate(50%,-50%);display:flex">' + rmM[0] + '</span>'; }   /* the remove cross sits in the card's top right corner */
@@ -2701,8 +2701,8 @@
   var CARD_BIN = 'style="position:absolute;top:calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2);right:calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2);color:var(--text-3);min-height:var(--tag-s);height:var(--tag-s);width:var(--tag-s);padding:0;background:transparent;border-color:transparent"';
   /* the card of a music option: the song, its performer, the play tile, the chip that chooses it, the time, the bin */
   function optCardHtml(m, sel, withRm, plain, listKey) {   /* plain: the catalog's exercise, only its songs: no chip to choose, no green frame */
-    return songCardUi(m, { attrs: 'data-opt="' + esc(m.id) + '" role="button" tabindex="0"', selected: sel, title: songName(m), by: songBy(m), pill: cardPill(m, listKey), keepPlay: !!plain,
-      act: (withRm ? '<button type="button" class="rbtn rbtn--icon bio-act" data-orm="' + esc(m.id) + '" aria-label="הסרה מהתרגיל" title="הסרה מהתרגיל">' + I.x + '</button>' : '') + (sel || plain ? '' : '<button type="button" class="rbtn rbtn--icon bio-act" data-choose="' + esc(m.id) + '" aria-label="בחירה" title="לבחור אותה לתרגיל בוויוונסיה">' + I.check + '</button>') });
+    return songCardUi(m, { attrs: 'data-opt="' + esc(m.id) + '" role="button" tabindex="0"', selected: sel, title: songName(m), by: songBy(m), pill: cardPill(m, listKey), keepPlay: false, noHeart: !!plain,
+      act: (plain ? '<button type="button" class="rbtn rbtn--ghost" data-pick="' + esc(m.id) + '" aria-label="' + (sel ? 'נבחר לתרגיל' : 'הוספה לתרגיל') + '" title="בחירת המוזיקה לתרגיל" style="display:inline-flex;align-items:center;gap:var(--gap-tight);background:none !important;box-shadow:none !important;border:0 !important;padding:0;min-width:0;min-height:0;color:var(--primary) !important;font:var(--fw-bold) var(--fs-s)/1 var(--font)">' + (sel ? I.check : I.plus) + '<span>' + (sel ? 'נבחר' : 'הוספה') + '</span></button>' : '') + (withRm ? '<button type="button" class="rbtn rbtn--icon bio-act" data-orm="' + esc(m.id) + '" aria-label="הסרה מהתרגיל" title="הסרה מהתרגיל">' + I.x + '</button>' : '') + (sel || plain ? '' : '<button type="button" class="rbtn rbtn--icon bio-act" data-choose="' + esc(m.id) + '" aria-label="בחירה" title="לבחור אותה לתרגיל בוויוונסיה">' + I.check + '</button>') });
   }
   /* deleting a song from an exercise: asked in the kit's popup; closing it is the cancel */
   function confirmRemoveOpt(it, m, done) {
@@ -2721,7 +2721,7 @@
   }
   function musCards(it, ro) {   /* the songs of an exercise: a small header with the pencil that opens the editing of its music (add, remove, choose), then the cards */
     var list = optList(it), cur = it.music_id;
-    var head = function (n) { return '<div style="display:flex;align-items:center;justify-content:flex-start;gap:var(--sp-2);min-height:var(--ctl)"><span style="font:var(--fw-bold) var(--fs-s)/1 var(--font);color:var(--text-2)">מוזיקה' + (n ? ' (' + n + ')' : '') + '</span><button type="button" class="rbtn rbtn--ghost" data-addm aria-label="עריכת מוזיקה" title="עריכת מוזיקה" style="display:inline-flex;align-items:center;gap:var(--gap-tight);background:none !important;box-shadow:none !important;border:0 !important;outline:0;text-shadow:none;filter:none;padding-inline:0;min-width:0;color:var(--primary) !important;font-weight:var(--fw-bold)">' + I.pen + '<span>עריכה</span></button></div>'; };
+    var head = function (n) { return '<div style="display:flex;align-items:center;justify-content:flex-start;gap:var(--sp-2);min-height:var(--ctl)"><span style="font:var(--fw-bold) var(--fs-s)/1 var(--font);color:var(--text-2)">מוזיקה' + (n ? ' (' + n + ')' : '') + '</span>' + (ro ? '' : '<button type="button" class="rbtn rbtn--ghost" data-addm aria-label="עריכת מוזיקה" title="עריכת מוזיקה" style="display:inline-flex;align-items:center;gap:var(--gap-tight);background:none !important;box-shadow:none !important;border:0 !important;outline:0;text-shadow:none;filter:none;padding-inline:0;min-width:0;color:var(--primary) !important;font-weight:var(--fw-bold)">' + I.pen + '<span>עריכה</span></button>') + '</div>'; };
     var grid = function (c) { return c ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);align-items:stretch">' + c + '</div>' : ''; };
     if (ro) { var base = (it.item_music_options || []).map(function (o) { return o.music; }).filter(Boolean); return head(base.length) + grid(base.map(function (m) { return optCardHtml(m, !!(it.sel && it.sel.indexOf(m.id) >= 0), false, true); }).join("")); }
     return head(list.length) + grid(list.map(function (m) { return optCardHtml(m, m.id === cur, true); }).join(""));
@@ -3288,8 +3288,10 @@
     imus.addEventListener("click", function (ev) {
       if (ev.target.closest("[data-audio], a")) return;
       if (ev.target.closest("[data-addm]")) { openAddMusic(fake, function () { imus.innerHTML = musCards(fake, true); }); return; }   /* more songs for what is shown: not for the catalog */
-      var c = ev.target.closest("[data-opt]"); if (!c) return;   /* a tap marks the song (green frame), a second tap takes the mark off; the play tile plays */
-      var id = c.dataset.opt, k = fake.sel.indexOf(id); if (k >= 0) fake.sel.splice(k, 1); else fake.sel.push(id);
+      var c = ev.target.closest("[data-opt]"); if (!c) return;
+      var pk = ev.target.closest("[data-pick]");
+      if (!pk) { var au = c.querySelector("[data-audio]"); if (au) au.click(); return; }   /* a tap on the card plays; the add button marks the song for the exercise */
+      var id = pk.dataset.pick, k = fake.sel.indexOf(id); if (k >= 0) fake.sel.splice(k, 1); else fake.sel.push(id);
       var first = (fake.item_music_options || []).map(function (o) { return o.music; }).filter(function (x) { return x && x.id === fake.sel[0]; })[0];
       fake.music_id = fake.sel[0] || null; fake.music = first || null;
       imus.innerHTML = musCards(fake, true);
