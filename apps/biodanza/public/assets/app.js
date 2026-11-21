@@ -3184,7 +3184,7 @@
       function curIdx() { var w = pgr.clientWidth || 1; return Math.max(0, Math.min(TABS.length - 1, Math.round(Math.abs(pgr.scrollLeft) / w))); }
       function markTab(i) {
         tabEls.forEach(function (t, j) { t.setAttribute("aria-selected", String(i === j)); });
-        if (pk.tab !== TABS[i]) { pk.tab = TABS[i]; saveCat(); }
+        if (pk.tab !== TABS[i]) { pk.tab = TABS[i]; saveCat(); syncLeftToTab(); }
         if (i === 1) ensureMusic();
       }
       function goTab(i, instant) {
@@ -3459,10 +3459,21 @@
     }, fail);
   }
   /* THE MUSIC PAGE of the catalog: the song as a card (a tap plays), and the exercises of the catalog that it belongs to. At the top left, the add button asks where to add the song. Beside the catalog it opens on the left, on a phone in a popup of its own. */
-  var catPrevMus = null;
+  var catPrevMus = null, lastExPrev = null, lastMusPrev = null;
+  function syncLeftToTab() {   /* the left side follows the tab: the exercise that was looked at, or the song that was looked at, or nothing */
+    if (!(wide() && catPanel && catPrev)) return;
+    var isOpen = catPrev.classList.contains("is-open");
+    if (pk.tab === "mu") {
+      if (!lastMusPrev) { if (isOpen) closeCatPrev(); return; }
+      if (!(isOpen && catPrevMus === lastMusPrev.id)) { if (isOpen) { catPrevMus = null; } previewMusic(lastMusPrev); }
+    } else {
+      if (!lastExPrev) { if (isOpen) closeCatPrev(); return; }
+      if (!(isOpen && catPrevId === lastExPrev.id)) previewEx(lastExPrev);
+    }
+  }
   function previewMusic(m) {
     var useLayer = !!(catPanel && wide());
-    if (useLayer && catPrevMus === m.id && catPrev && catPrev.classList.contains("is-open")) { catPrevMus = null; closeCatPrev(); return; }
+    if (useLayer && catPrevMus === m.id && catPrev && catPrev.classList.contains("is-open")) { catPrevMus = null; lastMusPrev = null; closeCatPrev(); return; }
     var tok = ++previewTok;
     api("/rest/v1/exercise_music?music_id=eq." + m.id + "&select=exercises(id,title_he,title_en)&limit=500").then(function (rows) {
       if (tok !== previewTok) return;
@@ -3488,8 +3499,8 @@
       if (useLayer) {
         catPrev.innerHTML = '<header class="rhead bio-ihead"><div class="rhead__text" style="flex-direction:row;align-items:center;gap:var(--sp-2);padding-inline-start:0;justify-content:flex-start"><span class="rhead__title" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(songName(m)) + '</span></div>' + addBtn + '</header>' + body;
         wire(catPrev);
-        var ph = catPrev.querySelector(".rhead"); if (ph) { var xb = document.createElement("button"); xb.type = "button"; xb.className = "rbtn rbtn--icon bio-flat"; xb.setAttribute("aria-label", "סגירה"); xb.title = "סגירה"; xb.innerHTML = I.x; xb.addEventListener("click", function () { previewTok++; catPrevMus = null; closeCatPrev(); }); ph.appendChild(xb); }
-        catPrevId = null; catPrevCtx = null; catPrevMus = m.id; refreshPrevLabel();
+        var ph = catPrev.querySelector(".rhead"); if (ph) { var xb = document.createElement("button"); xb.type = "button"; xb.className = "rbtn rbtn--icon bio-flat"; xb.setAttribute("aria-label", "סגירה"); xb.title = "סגירה"; xb.innerHTML = I.x; xb.addEventListener("click", function () { previewTok++; catPrevMus = null; lastMusPrev = null; closeCatPrev(); }); ph.appendChild(xb); }
+        catPrevId = null; catPrevCtx = null; catPrevMus = m.id; lastMusPrev = m; refreshPrevLabel();
         requestAnimationFrame(function () { catPrev.classList.add("is-open"); });
       } else {
         var dlg = document.getElementById("mpDlg");
@@ -3502,7 +3513,7 @@
   }
   function previewEx(e, swapIt) {
     var useLayer = !!(catPanel && wide() && !swapIt);
-    if (useLayer && catPrevId === e.id && catPrev && catPrev.classList.contains("is-open")) { previewTok++; closeCatPrev(); return; }   /* a second tap on the chosen one: it closes, with its animation */
+    if (useLayer && catPrevId === e.id && catPrev && catPrev.classList.contains("is-open")) { previewTok++; lastExPrev = null; closeCatPrev(); return; }   /* a second tap on the chosen one: it closes, with its animation */
     var tok = ++previewTok;
     loadPreview(e.id).then(function (res) { var rows = res.rows, songs = res.songs;
       if (tok !== previewTok) return;   /* a later row was chosen meanwhile */
@@ -3519,7 +3530,7 @@
         });
       };
       if (useLayer && catPanel) { catPrev.innerHTML = phtml; pwire(catPrev);
-        var ph0 = catPrev.querySelector(".rhead"); if (ph0) { var xb = document.createElement("button"); xb.type = "button"; xb.className = "rbtn rbtn--icon bio-flat"; xb.setAttribute("aria-label", "סגירת התרגיל"); xb.title = "סגירת התרגיל"; xb.innerHTML = I.x; xb.addEventListener("click", function () { previewTok++; closeCatPrev(); }); ph0.insertAdjacentHTML("beforeend", heartBtnEx(e.id, "bio-flat")); ph0.appendChild(xb); } catPrevId = e.id; catPrevCtx = { e: e, fake: fake }; refreshPrevLabel(); saveCat(); requestAnimationFrame(function () { catPrev.classList.add("is-open"); }); }
+        var ph0 = catPrev.querySelector(".rhead"); if (ph0) { var xb = document.createElement("button"); xb.type = "button"; xb.className = "rbtn rbtn--icon bio-flat"; xb.setAttribute("aria-label", "סגירת התרגיל"); xb.title = "סגירת התרגיל"; xb.innerHTML = I.x; xb.addEventListener("click", function () { previewTok++; lastExPrev = null; closeCatPrev(); }); ph0.insertAdjacentHTML("beforeend", heartBtnEx(e.id, "bio-flat")); ph0.appendChild(xb); } catPrevId = e.id; lastExPrev = e; catPrevCtx = { e: e, fake: fake }; refreshPrevLabel(); saveCat(); requestAnimationFrame(function () { catPrev.classList.add("is-open"); }); }
       else show(phtml, pwire, "d");
     }, fail);
   }
