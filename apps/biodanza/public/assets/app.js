@@ -495,7 +495,7 @@
       var headH = '<div style="padding:var(--sp-2) var(--sp-3);max-width:28rem"><div dir="auto" style="font:var(--fw-black) var(--fs-m)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(ttl) + '</div>' + (art ? '<div dir="auto" style="margin-top:0;color:var(--text-2);font:var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(art) + '</div>' : '') + '</div>';
       if (wide()) {   /* a computer: a menu that comes out of the name, upwards */
         var openMenu = function (sn) {
-        var mi = (who ? [{ label: simLabel(sn), ghost: true, disabled: sn === 0, fn: function () { if (sn !== 0) similarToPlaying(who); } }] : []).concat(eid ? [{ label: "עריכת שם ומבצע", fn: function () { editFromDock(); } }] : []).concat(canAdd ? [{ label: "הוספה ל" + addTo, primary: true, fn: function () { acb.click(); } }] : []);
+        var mi = (who ? [{ label: simLabel(sn), ghost: true, disabled: sn === 0, fn: function () { if (sn !== 0) similarToPlaying(who); } }] : []).concat(eid ? [{ label: "עריכת שם ומבצע", fn: function () { editFromDock(); } }] : []).concat(canAdd ? [{ label: "הוספה", primary: true, fn: function () { acb.click(); } }] : []);
         menu(nmEl, [], { foot: mi, head: headH, up: true, ref: nmEl.closest(".bio-dock") });
         };
         if (who) simOf(who).then(function (o) { openMenu(o.n); }, function () { openMenu(null); }); else openMenu(null);
@@ -614,7 +614,7 @@
           if (ac.hidden === show) ac.hidden = !show;
           if (show) {
             var lb = ac.querySelector("[data-addcur-label]"), nmE = exOpen ? (itemName(itA) || "התרגיל") : (state.viv.title || "הוויוונסיה");
-            if (lb && lb.textContent !== nmE) { lb.textContent = nmE; ac.title = exOpen ? "הוספת המוסיקה שבנגן ל" + nmE : "הוספת המוסיקה שבנגן לוויוונסיה " + nmE + " כתרגיל חדש"; }
+            if (lb && lb.textContent !== "הוספה") { lb.textContent = "הוספה"; ac.title = "הוספת המוסיקה שבנגן: בחירה לאן"; }   /* the popup asks where: a vivencia or an exercise */
           }
         }
         var vtE = document.getElementById("vtimer");   /* wide screen: the time left of whichever song of this vivencia plays, in the header of the list */
