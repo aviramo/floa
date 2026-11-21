@@ -2696,7 +2696,7 @@
   }
   function pillCount(pill, n) {   /* an exercise with several songs: how many, on the corner of the play button; it takes no room, so nothing moves */
     if (!(n > 1)) return pill;
-    return '<span style="position:relative;display:inline-flex;flex:none">' + pill + '<b class="bio-cnt2" aria-label="' + n + ' מוסיקות" style="position:absolute;top:-5px;left:-5px;min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:999px;background:var(--primary);color:var(--on-primary);font:var(--fw-bold) 11px/16px var(--font);text-align:center;font-variant-numeric:tabular-nums;box-shadow:0 1px 3px rgba(0,0,0,.35);pointer-events:none">' + n + '</b></span>';
+    return '<span style="display:inline-flex;align-items:center;gap:var(--gap-tight);flex:none"><b class="bio-cnt2" aria-label="' + n + ' מוסיקות" style="min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:999px;background:var(--primary);color:var(--on-primary);font:var(--fw-bold) 11px/16px var(--font);text-align:center;font-variant-numeric:tabular-nums;pointer-events:none">' + n + '</b>' + pill + '</span>';
   }
   var CARD_BIN = 'style="position:absolute;top:calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2);right:calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2);color:var(--text-3);min-height:var(--tag-s);height:var(--tag-s);width:var(--tag-s);padding:0;background:transparent;border-color:transparent"';
   /* the card of a music option: the song, its performer, the play tile, the chip that chooses it, the time, the bin */
