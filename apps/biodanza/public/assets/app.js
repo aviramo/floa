@@ -1063,9 +1063,10 @@
           var ae = document.activeElement; if (ae && ae !== document.body && ae.blur && pg.contains(ae)) { ae.blur(); try { window.getSelection().removeAllRanges(); } catch (x2) { /* none */ } }   /* a swipe that began over a field: the field lets go (its label comes back down, the keyboard goes) */ }
         else { if (Math.abs(my) > 10) mode = 3; return; }
       }
-      dx = mx;
+      var pw = pg.offsetWidth || 320;
+      dx = Math.max(-pw, Math.min(pw, mx));   /* never further than one page: the neighbour is there, and beyond it nothing */
       pg.style.transform = "translateX(" + ((dx > 0 ? to.next : to.prev) ? dx : dx * 0.3) + "px)";   /* no page that way: it only gives a little */
-      if (to.drag) to.drag((dx > 0 ? to.next : to.prev) ? dx : dx * 0.3, pg.getBoundingClientRect().width || 320);
+      if (to.drag) to.drag((dx > 0 ? to.next : to.prev) ? dx : dx * 0.3, pw);
     }, sg);
     function end() {
       if (mode !== 2) { mode = 0; return; }
