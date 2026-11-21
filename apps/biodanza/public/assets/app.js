@@ -2757,7 +2757,7 @@
   }
   function pillCount(pill, n) {   /* an exercise with several songs: how many, on the corner of the play button; it takes no room, so nothing moves */
     if (!(n > 1)) return pill;
-    return '<span style="display:inline-flex;align-items:center;gap:2px;flex:none"><b class="bio-cnt2" aria-label="' + n + ' מוסיקות" style="color:var(--primary);font:var(--fw-bold) var(--fs-s)/1 var(--font);text-align:center;font-variant-numeric:tabular-nums;pointer-events:none">' + n + '</b>' + pill + '</span>';
+    return '<span style="display:inline-flex;align-items:center;gap:2px;flex:none"><b class="bio-cnt2" aria-label="' + n + ' מוסיקות" style="color:var(--primary);font:var(--fw-bold) var(--fs-s)/1 var(--font);text-align:center;font-variant-numeric:tabular-nums;pointer-events:none" dir="ltr">+' + (n - 1) + '</b>' + pill + '</span>';
   }
   /* a song with no file: the card has no YouTube sign, a tap on it opens YouTube; the only mark is the upload (a file from this device), with no background */
   (function () {
