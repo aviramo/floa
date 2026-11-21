@@ -2721,7 +2721,7 @@
   }
   function musCards(it, ro) {   /* the songs of an exercise: a small header with the pencil that opens the editing of its music (add, remove, choose), then the cards */
     var list = optList(it), cur = it.music_id;
-    var head = function (n) { return '<div style="display:flex;align-items:center;justify-content:flex-start;gap:var(--sp-2);min-height:var(--ctl)"><span style="font:var(--fw-bold) var(--fs-s)/1 var(--font);color:var(--text-2)">מוזיקה' + (n ? ' (' + n + ')' : '') + '</span><button type="button" class="rbtn rbtn--ghost" data-addm aria-label="עריכת מוזיקה" title="עריכת מוזיקה">עריכה</button></div>'; };
+    var head = function (n) { return '<div style="display:flex;align-items:center;justify-content:flex-start;gap:var(--sp-2);min-height:var(--ctl)"><span style="font:var(--fw-bold) var(--fs-s)/1 var(--font);color:var(--text-2)">מוזיקה' + (n ? ' (' + n + ')' : '') + '</span><button type="button" class="rbtn rbtn--ghost" data-addm aria-label="עריכת מוזיקה" title="עריכת מוזיקה" style="display:inline-flex;align-items:center;gap:var(--gap-tight)">' + I.pen + '<span>עריכה</span></button></div>'; };
     var grid = function (c) { return c ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);align-items:stretch">' + c + '</div>' : ''; };
     if (ro) { var base = (it.item_music_options || []).map(function (o) { return o.music; }).filter(Boolean); return head(base.length) + grid(base.map(function (m) { return optCardHtml(m, !!(it.sel && it.sel.indexOf(m.id) >= 0), false, true); }).join("")); }
     return head(list.length) + grid(list.map(function (m) { return optCardHtml(m, m.id === cur, true); }).join(""));
