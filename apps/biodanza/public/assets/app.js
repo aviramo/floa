@@ -264,6 +264,20 @@
   function phaseName(k) { var p = state.phases.filter(function (x) { return x.key === k; })[0]; return p ? p.name_he : ""; }
   function catName(k) { var c = (state.cats || []).filter(function (x) { return x.key === k; })[0]; return c ? c.name_he : ""; }
   /* under the name of a catalog exercise: the catalog it comes from (one; the older first), HEB when it is in Hebrew there, and the note with how many songs are linked */
+  /* on a song of the catalog: the curve sign and, at its right, how many catalog exercises the song is linked to (read once, page by page) */
+  var exCnt = null, exCntP = null;
+  function ensureExCnt() {
+    if (exCnt || exCntP) return exCntP || Promise.resolve();
+    var all = {};
+    function page(off) { return api("/rest/v1/exercise_music?select=music_id&order=music_id&limit=1000&offset=" + off).then(function (rows) { rows = rows || []; rows.forEach(function (x) { all[x.music_id] = (all[x.music_id] || 0) + 1; }); return rows.length === 1000 ? page(off + 1000) : null; }); }
+    exCntP = page(0).then(function () { exCnt = all; paintExCnt(); }, function () { exCntP = null; });
+    return exCntP;
+  }
+  function paintExCnt() { if (!exCnt) return; [].forEach.call(document.querySelectorAll("[data-exn]"), function (n) { var v = exCnt[n.dataset.exn] || 0; if (n.textContent !== String(v)) n.textContent = v; n.closest("button").setAttribute("aria-label", v + " תרגילים"); }); }
+  function exBtnInner(mid) {
+    ensureExCnt();
+    return '<span style="display:inline-flex;align-items:center;gap:4px;direction:ltr"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.curve.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span><span data-exn="' + esc(mid) + '" style="font-variant-numeric:tabular-nums">' + (exCnt ? (exCnt[mid] || 0) : "") + '</span></span>';
+  }
   function exSubHtml(e) {
     var src = String(e.source || ""), y = (src.match(/(d{4})/) || [])[1], label = y || src.toUpperCase();
     var heb = (e.exercise_texts || []).some(function (t) { return t.lang === "he" && t.source === "catalog"; });
@@ -2767,7 +2781,7 @@
   /* the card of a music option: the song, its performer, the play tile, the chip that chooses it, the time, the bin */
   function optCardHtml(m, sel, withRm, plain, listKey) {   /* plain: the catalog's exercise, only its songs: no chip to choose, no green frame */
     return songCardUi(m, { attrs: 'data-opt="' + esc(m.id) + '" role="button" tabindex="0"', selected: sel, title: songName(m), by: songBy(m), pill: cardPill(m, listKey), keepPlay: false, noHeart: !!plain,
-      corner: plain ? '<button type="button" class="rbtn rbtn--ghost" data-mfx="' + esc(m.id) + '" aria-label="התרגילים של המוזיקה" title="התרגילים של המוזיקה בקטלוג" style="position:absolute;top:var(--sp-1);right:var(--sp-2);background:none !important;box-shadow:none !important;border:0 !important;padding:0;min-width:0;min-height:var(--tag-s);color:var(--pick-ink, var(--primary)) !important;font:var(--fw-bold) var(--fs-s)/1 var(--font)">תרגילים</button>' : '',
+      corner: plain ? '<button type="button" class="rbtn rbtn--ghost" data-mfx="' + esc(m.id) + '" aria-label="התרגילים של המוזיקה" title="התרגילים של המוזיקה בקטלוג" style="position:absolute;top:var(--sp-1);right:var(--sp-2);background:none !important;box-shadow:none !important;border:0 !important;padding:0;min-width:0;min-height:var(--tag-s);color:var(--pick-ink, var(--primary)) !important;font:var(--fw-bold) var(--fs-s)/1 var(--font)">' + exBtnInner(m.id) + '</button>' : '',
       act: (plain ? '<button type="button" class="rbtn rbtn--ghost" data-pick="' + esc(m.id) + '" aria-label="' + (sel ? 'נבחר לתרגיל' : 'הוספה לתרגיל') + '" title="בחירת המוזיקה לתרגיל" style="display:inline-flex;align-items:center;gap:var(--gap-tight);background:none !important;box-shadow:none !important;border:0 !important;padding:0;min-width:0;min-height:0;color:var(--pick-ink, var(--primary)) !important;font:var(--fw-bold) var(--fs-s)/1 var(--font)">' + (sel ? I.check : I.plus) + '<span>' + (sel ? 'נבחר' : 'הוספה') + '</span></button>' : '') + (withRm ? '<button type="button" class="rbtn rbtn--icon bio-act" data-orm="' + esc(m.id) + '" aria-label="הסרה מהתרגיל" title="הסרה מהתרגיל">' + I.x + '</button>' : '') + (sel || plain ? '' : '<button type="button" class="rbtn rbtn--icon bio-act" data-choose="' + esc(m.id) + '" aria-label="בחירה" title="לבחור אותה לתרגיל בוויוונסיה">' + I.check + '</button>') });
   }
   /* deleting a song from an exercise: asked in the kit's popup; closing it is the cancel */
@@ -3220,7 +3234,7 @@
       var musicAll = null, musicLoading = false, mById = {}, mList = [], mShown = 0, MP = 100, mxOf = {}, xs = [], xsFor = null, xsT = 0;
       function musicCards(a, b) {
         return mList.slice(a, b).map(function (m) {
-          return songCardUi(m, { heartFirst: true, attrs: 'data-sgc="' + esc(m.id) + '"', title: songName(m), by: mxOf[m.id] ? mxOf[m.id] + " \u00b7 " + songBy(m) : songBy(m), pill: cardPill(m), act: '<button type="button" class="rbtn rbtn--ghost" data-sg="' + esc(m.id) + '" aria-label="התרגילים של המוזיקה" title="התרגילים של המוזיקה" style="background:none !important;box-shadow:none !important;border:0 !important;padding:0;min-width:0;min-height:0;color:var(--pick-ink, var(--primary)) !important;font:var(--fw-bold) var(--fs-s)/1 var(--font)">תרגילים</button>' });
+          return songCardUi(m, { heartFirst: true, attrs: 'data-sgc="' + esc(m.id) + '"', title: songName(m), by: mxOf[m.id] ? mxOf[m.id] + " \u00b7 " + songBy(m) : songBy(m), pill: cardPill(m), act: '<button type="button" class="rbtn rbtn--ghost" data-sg="' + esc(m.id) + '" aria-label="התרגילים של המוזיקה" title="התרגילים של המוזיקה" style="background:none !important;box-shadow:none !important;border:0 !important;padding:0;min-width:0;min-height:0;color:var(--pick-ink, var(--primary)) !important;font:var(--fw-bold) var(--fs-s)/1 var(--font)">' + exBtnInner(m.id) + '</button>' });
         }).join("");
       }
       function fillSelects() {
