@@ -737,11 +737,11 @@
   /* the heart: the songs I loved. At the right edge of a song's row, in line with the play tile and with the back button above. */
   function heartBtn(m) {
     var on = !!likes[m.id];
-    return '<button type="button" class="rbtn rbtn--icon rrow__trail" data-like="' + m.id + '" aria-pressed="' + on + '" aria-label="' + (on ? "הסרה מהמוסיקה שאהבתי" : "מוסיקה שאהבתי") + '" title="' + (on ? "הסרה מהמוסיקה שאהבתי" : "מוסיקה שאהבתי") + '" style="flex:none;width:var(--ctl);height:var(--ctl);min-height:var(--ctl);color:' + (on ? "var(--danger)" : "var(--text-3)") + '">' + (on ? I.heart.replace('fill="none"', 'fill="currentColor"') : I.heart) + '</button>';
+    return '<button type="button" class="rbtn rbtn--icon rrow__trail" data-like="' + m.id + '" aria-pressed="' + on + '" aria-label="' + (on ? "הסרה מהמוסיקה שאהבתי" : "מוסיקה שאהבתי") + '" title="' + (on ? "הסרה מהמוסיקה שאהבתי" : "מוסיקה שאהבתי") + '" style="flex:none;width:var(--ctl);height:var(--ctl);min-height:var(--ctl);color:' + (on ? "var(--danger)" : "var(--primary)") + '">' + (on ? I.heart.replace('fill="none"', 'fill="currentColor"') : I.heart) + '</button>';
   }
   function paintHearts(id) {
     document.querySelectorAll('[data-like="' + id + '"]').forEach(function (b) {
-      var on = !!likes[id]; b.setAttribute("aria-pressed", on); b.style.color = on ? "var(--danger)" : "var(--text-3)";
+      var on = !!likes[id]; b.setAttribute("aria-pressed", on); b.style.color = on ? "var(--danger)" : "var(--primary)";
       b.title = b.ariaLabel = on ? "הסרה מהמוסיקה שאהבתי" : "מוסיקה שאהבתי"; b.setAttribute("aria-label", b.title);
       b.innerHTML = on ? I.heart.replace('fill="none"', 'fill="currentColor"') : I.heart;
     });
@@ -785,12 +785,12 @@
   /* the heart of an exercise: in the exercise page's header, and in my list of loved exercises */
   function heartBtnEx(exId, cls) {
     var on = !!likesEx[exId];
-    return '<button type="button" class="rbtn rbtn--icon ' + (cls || "") + '" data-likex="' + exId + '" aria-pressed="' + on + '" aria-label="' + (on ? "הסרה מהתרגילים שאהבתי" : "תרגיל שאהבתי") + '" title="' + (on ? "הסרה מהתרגילים שאהבתי" : "תרגיל שאהבתי") + '" style="color:' + (on ? "var(--danger)" : "var(--text-3)") + '">' + (on ? I.heart.replace('fill="none"', 'fill="currentColor"') : I.heart) + '</button>';
+    return '<button type="button" class="rbtn rbtn--icon ' + (cls || "") + '" data-likex="' + exId + '" aria-pressed="' + on + '" aria-label="' + (on ? "הסרה מהתרגילים שאהבתי" : "תרגיל שאהבתי") + '" title="' + (on ? "הסרה מהתרגילים שאהבתי" : "תרגיל שאהבתי") + '" style="color:' + (on ? "var(--danger)" : "var(--primary)") + '">' + (on ? I.heart.replace('fill="none"', 'fill="currentColor"') : I.heart) + '</button>';
   }
   function paintHeartsEx(id) {
     document.querySelectorAll('[data-likex="' + id + '"]').forEach(function (b) {
       var on = !!likesEx[id], tt = on ? "הסרה מהתרגילים שאהבתי" : "תרגיל שאהבתי";
-      b.setAttribute("aria-pressed", on); b.style.color = on ? "var(--danger)" : "var(--text-3)"; b.title = tt; b.setAttribute("aria-label", tt);
+      b.setAttribute("aria-pressed", on); b.style.color = on ? "var(--danger)" : "var(--primary)"; b.title = tt; b.setAttribute("aria-label", tt);
       b.innerHTML = on ? I.heart.replace('fill="none"', 'fill="currentColor"') : I.heart;
     });
   }
@@ -824,12 +824,12 @@
   /* the heart of a vivencia: at the right edge of its row, in line with the logo above */
   function heartBtnViv(id, cls) {
     var on = !!likesViv[id], tt = on ? "הסרה מהוויוונסיות שאהבתי" : "ויוונסיה שאהבתי";
-    return '<button type="button" class="rbtn rbtn--icon ' + (cls || "") + '" data-likev="' + id + '" aria-pressed="' + on + '" aria-label="' + tt + '" title="' + tt + '" style="flex:none;width:var(--ctl);height:var(--ctl);min-height:var(--ctl);color:' + (on ? "var(--danger)" : "var(--text-3)") + '">' + (on ? I.heart.replace('fill="none"', 'fill="currentColor"') : I.heart) + '</button>';
+    return '<button type="button" class="rbtn rbtn--icon ' + (cls || "") + '" data-likev="' + id + '" aria-pressed="' + on + '" aria-label="' + tt + '" title="' + tt + '" style="flex:none;width:var(--ctl);height:var(--ctl);min-height:var(--ctl);color:' + (on ? "var(--danger)" : "var(--primary)") + '">' + (on ? I.heart.replace('fill="none"', 'fill="currentColor"') : I.heart) + '</button>';
   }
   function paintHeartsViv(id) {
     document.querySelectorAll('[data-likev="' + id + '"]').forEach(function (b) {
       var on = !!likesViv[id], tt = on ? "הסרה מהוויוונסיות שאהבתי" : "ויוונסיה שאהבתי";
-      b.setAttribute("aria-pressed", on); b.style.color = on ? "var(--danger)" : "var(--text-3)"; b.title = tt; b.setAttribute("aria-label", tt);
+      b.setAttribute("aria-pressed", on); b.style.color = on ? "var(--danger)" : "var(--primary)"; b.title = tt; b.setAttribute("aria-label", tt);
       b.innerHTML = on ? I.heart.replace('fill="none"', 'fill="currentColor"') : I.heart;
     });
   }
