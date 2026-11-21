@@ -2737,6 +2737,32 @@
       chooseDest(songName(m), { vivId: state.viv && state.viv.id, itemId: liveItem && liveItem.id }, function (d) { addMusicTo(m, d); });
     }, fail);
   }, true);
+  /* every popup on a wide screen can be moved: hold its top (the title, or the empty strip above its content) and drag it anywhere; it comes back to its place the next time it opens */
+  (function () {
+    var st = document.createElement("style");
+    st.textContent = "dialog[open] .sheet-head { cursor: grab } dialog.bio-moving, dialog.bio-moving * { cursor: grabbing !important; user-select: none }";
+    document.head.appendChild(st);
+    var d = null;
+    document.addEventListener("pointerdown", function (ev) {
+      if (ev.button > 0 || !wide()) return;
+      var dlg = ev.target.closest && ev.target.closest("dialog[open]"); if (!dlg) return;
+      if (ev.target.closest("button, a, input, select, textarea, label, [data-audio], [role=button], [role=menuitem]")) return;
+      var rc = dlg.getBoundingClientRect(); if (ev.clientY - rc.top > 64) return;
+      var cur = (dlg.style.translate || "0px 0px").split(" ");
+      d = { dlg: dlg, x: ev.clientX, y: ev.clientY, ox: parseFloat(cur[0]) || 0, oy: parseFloat(cur[1]) || 0, rc: rc };
+      dlg.classList.add("bio-moving");
+      try { dlg.setPointerCapture(ev.pointerId); } catch (e) { /* no capture: the document still hears the move */ }
+    });
+    document.addEventListener("pointermove", function (ev) {
+      if (!d) return;
+      var dx = ev.clientX - d.x, dy = ev.clientY - d.y, vw = window.innerWidth, vh = window.innerHeight;
+      dx = Math.max(-d.rc.left + 8 - d.ox + d.ox, Math.min(vw - d.rc.right - 8, dx + 0)) ; dy = Math.max(-d.rc.top + 8, Math.min(vh - d.rc.bottom - 8, dy));
+      d.dlg.style.translate = (d.ox + dx) + "px " + (d.oy + dy) + "px";
+    });
+    var end = function () { if (!d) return; d.dlg.classList.remove("bio-moving"); d = null; };
+    document.addEventListener("pointerup", end); document.addEventListener("pointercancel", end);
+    document.addEventListener("close", function (ev) { if (ev.target && ev.target.tagName === "DIALOG") ev.target.style.translate = ""; }, true);
+  })();
   var CARD_BIN = 'style="position:absolute;top:calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2);right:calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2);color:var(--text-3);min-height:var(--tag-s);height:var(--tag-s);width:var(--tag-s);padding:0;background:transparent;border-color:transparent"';
   /* the card of a music option: the song, its performer, the play tile, the chip that chooses it, the time, the bin */
   function optCardHtml(m, sel, withRm, plain, listKey) {   /* plain: the catalog's exercise, only its songs: no chip to choose, no green frame */
