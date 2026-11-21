@@ -2548,20 +2548,38 @@
       }
       on(r, "list", function () { /* beside the list, or in the popup over it, the counter is a display: nothing to go back to */ });   /* beside the list there is nowhere to go back to */
       wireFac(r);
+      /* the neighbours of the page are made when a finger starts to drag, and wait beside it (the next on the left, the previous on the right): the screen shows pages, never white */
+      var nb = null;
+      function nbEnsure() {
+        if (nb || !pg || !pg.parentElement || wide()) return; nb = {};
+        var host = pg.parentElement;
+        [[prevIt, 1], [nextIt, -1]].forEach(function (pair) {
+          var x = pair[0]; if (!x) return;
+          var d = document.createElement("div"); d.className = "bio-nbpage"; d.setAttribute("aria-hidden", "true");
+          d.innerHTML = itemPageHtml(x, false); [].forEach.call(d.querySelectorAll("[id]"), function (e) { e.removeAttribute("id"); });
+          d.style.cssText = "position:absolute;left:" + pg.offsetLeft + "px;top:" + pg.offsetTop + "px;width:" + pg.offsetWidth + "px;height:" + pg.offsetHeight + "px;overflow:hidden;pointer-events:none;z-index:0;transform:translateX(" + (pair[1] * 100) + "%)";
+          host.appendChild(d); nb[pair[1]] = d;
+        });
+      }
+      function nbDrag(dx) { nbEnsure(); if (!nb) return; Object.keys(nb).forEach(function (k) { nb[k].style.transition = "none"; nb[k].style.transform = "translateX(calc(" + (k * 100) + "% + " + dx + "px))"; }); }
+      function nbDrop() { if (!nb) return; Object.keys(nb).forEach(function (k) { nb[k].remove(); }); nb = null; }
+      function nbSettle() { if (!nb) return; var o = nb; nb = null; Object.keys(o).forEach(function (k) { o[k].style.transition = "transform .22s cubic-bezier(.2, .8, .2, 1)"; o[k].style.transform = "translateX(" + (k * 100) + "%)"; }); setTimeout(function () { Object.keys(o).forEach(function (k) { o[k].remove(); }); }, 260); }
+      function nbLeave(dir) { if (!nb) return; var el = nb[-dir]; if (el) { el.style.transition = "transform .16s ease-in"; el.style.transform = "translateX(0)"; } }   /* the page that was beside comes to the middle as the old one goes */
+      function walkSwipe(to) { var keep = nb; nb = null; repNext = true; state.slideFrom = 0; stack().pop(); go(function () { itemScreen(to); }); if (keep) Object.keys(keep).forEach(function (k) { keep[k].remove(); }); }
       function walk(to) { repNext = true; var dir = to === nextIt ? -1 : 1; state.slideFrom = dir; if (wide()) return itemScreen(to); var ghost = ghostOfPage(); stack().pop(); go(function () { itemScreen(to); }); ghostRun(ghost, dir); }
       on(r, "prevW", function () { if (prevIt) walk(prevIt); });
       on(r, "nextW", function () { if (nextIt) walk(nextIt); });
       on(r, "closeIt", function () { liveItem = null; state.lastItem = null; show(phPick("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); markItem(); setUrl(BASE + state.viv.id); });   /* the X: the exercise closes and is no longer the chosen one */
       var trk = document.querySelector("#itemDlg .bio-tabs__track");
-      if (pg) attachPager(pg, { next: nextIt ? function () { walk(nextIt); } : null, prev: prevIt ? function () { walk(prevIt); } : null,
-        drag: trk ? function (dx, w) { var dir = dx > 0 ? 1 : -1; trk.classList.add("is-drag"); trk.style.setProperty("--tx", ((trk._base || 0) + dir * tabsDist(trk, dir) * Math.min(1, Math.abs(dx) / w)) + "px"); } : null,
-        settle: trk ? function () { trk.classList.remove("is-drag"); trk.style.setProperty("--tx", (trk._base || 0) + "px"); } : null,
-        leave: trk ? function (dir) { trk.classList.remove("is-drag"); trk.style.setProperty("--tx", ((trk._base || 0) + dir * tabsDist(trk, dir)) + "px"); } : null });   /* the tabs follow the finger, the same way the page does */
+      if (pg) attachPager(pg, { next: nextIt ? function () { walkSwipe(nextIt); } : null, prev: prevIt ? function () { walkSwipe(prevIt); } : null,
+        drag: function (dx, w) { nbDrag(dx); if (!trk) return; var dir = dx > 0 ? 1 : -1; trk.classList.add("is-drag"); trk.style.setProperty("--tx", ((trk._base || 0) + dir * tabsDist(trk, dir) * Math.min(1, Math.abs(dx) / w)) + "px"); },
+        settle: function () { nbSettle(); if (!trk) return; trk.classList.remove("is-drag"); trk.style.setProperty("--tx", (trk._base || 0) + "px"); },
+        leave: function (dir) { nbLeave(dir); if (!trk) return; trk.classList.remove("is-drag"); trk.style.setProperty("--tx", ((trk._base || 0) + dir * tabsDist(trk, dir)) + "px"); } });   /* the tabs follow the finger, the same way the page does */
       var hdrEl0 = document.querySelector("#itemDlg .bio-ihead--m"), hdrEl = hdrEl0 && (hdrEl0.closest("[data-rs-drag]") || hdrEl0);   /* the popup's own header owns the finger (it captures it for the pull-down), so the swipe listens there */
-      if (pg && hdrEl) { if (hdrEl.__swOff) hdrEl.__swOff(); hdrEl.__swOff = attachPager(pg, { next: nextIt ? function () { walk(nextIt); } : null, prev: prevIt ? function () { walk(prevIt); } : null,
-        drag: trk ? function (dx, w) { var dir = dx > 0 ? 1 : -1; trk.classList.add("is-drag"); trk.style.setProperty("--tx", ((trk._base || 0) + dir * tabsDist(trk, dir) * Math.min(1, Math.abs(dx) / w)) + "px"); } : null,
-        settle: trk ? function () { trk.classList.remove("is-drag"); trk.style.setProperty("--tx", (trk._base || 0) + "px"); } : null,
-        leave: trk ? function (dir) { trk.classList.remove("is-drag"); trk.style.setProperty("--tx", ((trk._base || 0) + dir * tabsDist(trk, dir)) + "px"); } : null }, hdrEl); }   /* a swipe on the header moves the page too */
+      if (pg && hdrEl) { if (hdrEl.__swOff) hdrEl.__swOff(); hdrEl.__swOff = attachPager(pg, { next: nextIt ? function () { walkSwipe(nextIt); } : null, prev: prevIt ? function () { walkSwipe(prevIt); } : null,
+        drag: function (dx, w) { nbDrag(dx); if (!trk) return; var dir = dx > 0 ? 1 : -1; trk.classList.add("is-drag"); trk.style.setProperty("--tx", ((trk._base || 0) + dir * tabsDist(trk, dir) * Math.min(1, Math.abs(dx) / w)) + "px"); },
+        settle: function () { nbSettle(); if (!trk) return; trk.classList.remove("is-drag"); trk.style.setProperty("--tx", (trk._base || 0) + "px"); },
+        leave: function (dir) { nbLeave(dir); if (!trk) return; trk.classList.remove("is-drag"); trk.style.setProperty("--tx", ((trk._base || 0) + dir * tabsDist(trk, dir)) + "px"); } }, hdrEl); }   /* a swipe on the header moves the page too */
       if (trk) trk.addEventListener("click", function (ev) {   /* a tap on a tab (its number or its name) goes to that exercise */
         var tab = ev.target.closest(".bio-tab"); if (!tab) return;
         var idx = [].indexOf.call(trk.querySelectorAll(".bio-tab"), tab), to2 = state.items[k + (2 - idx)];
