@@ -764,7 +764,7 @@
   function renderChipRow() {
     const el = $('#chipRow'); if (!el) return;
     /* המונים לפי הרשימה: כל הסינונים הפעילים חוץ מהסינון של אותו צ'יף עצמו (משוריינים: מכבד מגדר; גברים ונשים: מכבדים משוריינים) */
-    const pool = poolP(), epk = payKeys(effPay()), eg = effGender(), gk = payKeys(state.gender), common = (p) => sentOk(p) && matchPay(p, epk);
+    const pool = poolP(true), epk = payKeys(effPay()), eg = effGender(), gk = payKeys(state.gender), common = (p) => sentOk(p) && matchPay(p, epk);
     const genOk = (p) => !eg || payKeys(eg).includes(p.gender || 'none');
     const men = pool.filter((p) => common(p) && paidOk(p) && p.gender === 'male').length, wom = pool.filter((p) => common(p) && paidOk(p) && p.gender === 'female').length;
     const scope = pool;
@@ -1044,8 +1044,8 @@
   const clearFilters = () => { updFrozen = null; arrKeep = null; state.pay = null; state.gender = null; state.paidF = null; state.arrF = null; state.sent = null; state.bal = null; state.srcF = null; state.ageF = null; state.mcF = null; state.updF = null; state.regF = null; waSetFilter(''); };   // כל הסינונים, בלי המיון
 
   /* המשתתפים בתצוגה לפני סינוני הצ'יפים והעמודות: מפגש, סוג מפגש, מחוקים, "עוד" (שיווק ממומן, גיל) והחיפוש */
-  const poolP = () => {
-    const q = state.q.trim().toLowerCase(), qd = digits(q);
+  const poolP = (noText) => {   // noText: בלי חיפוש הטקסט (המונים שבשורת הצ'יפים לא משתנים בהקלדת שם)
+    const q = noText ? '' : state.q.trim().toLowerCase(), qd = digits(q);
     return state.participants.filter((p) => {
       if (state.filter && !linkOf(p.id, state.filter)) return false;
       if (!mtypeOk(p)) return false;
