@@ -263,6 +263,14 @@
   function name(e) { return e.title_he || e.title_en || ""; }
   function phaseName(k) { var p = state.phases.filter(function (x) { return x.key === k; })[0]; return p ? p.name_he : ""; }
   function catName(k) { var c = (state.cats || []).filter(function (x) { return x.key === k; })[0]; return c ? c.name_he : ""; }
+  /* under the name of a catalog exercise: the catalog it comes from (one; the older first), HEB when it is in Hebrew there, and the note with how many songs are linked */
+  function exSubHtml(e) {
+    var src = String(e.source || ""), y = (src.match(/(d{4})/) || [])[1], label = y || src.toUpperCase();
+    var heb = (e.exercise_texts || []).some(function (t) { return t.lang === "he" && t.source === "catalog"; });
+    var c = e && e.exercise_music && e.exercise_music[0] ? e.exercise_music[0].count : null;
+    var note = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>';
+    return '<span style="display:inline-flex;align-items:center;gap:var(--sp-1);font-variant-numeric:tabular-nums">' + (label ? '<span dir="ltr">' + esc(label) + (heb ? ' HEB' : '') + '</span>' : '') + (c == null ? '' : '<span style="display:inline-flex;align-items:center;gap:2px" aria-label="' + c + ' מוסיקות">' + note + '<span>' + c + '</span></span>') + '</span>';
+  }
   function musCount(e) {   /* how many songs are linked to a catalog exercise */
     var c = e && e.exercise_music && e.exercise_music[0] ? e.exercise_music[0].count : null;
     return c == null ? "" : c === 0 ? "בלי מוסיקה" : c === 1 ? "מוסיקה אחת" : c + " מוסיקות";
@@ -2681,7 +2689,7 @@
     var title = o.titleAttr
       ? '<button type="button" class="rrow__main" ' + o.titleAttr + ' style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:var(--fw-bold) ' + (o.big ? 'var(--fs-l)' : 'var(--fs-s)') + '/var(--lh-tight) var(--font);color:inherit;display:block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;' + dir + (o.corner ? 'padding-inline-end:var(--ctl);' : '') + pl + '">' + esc(o.title) + '</button>'
       : '<span style="display:block;' + dir + 'overflow-wrap:anywhere;' + (o.corner ? 'padding-right:var(--ctl);' : '') + pl + 'font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(o.title) + '</span>';
-    var sub = '<span style="display:block;' + (o.subRight ? 'direction:ltr;text-align:right;' : o.subLtr !== false ? 'direction:ltr;text-align:left;' : '') + 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;' + pl + 'color:var(--text-2);font:var(--fw-regular) ' + (o.big ? 'var(--fs-m)' : 'var(--fs-xs)') + '/var(--lh-tight) var(--font)">' + (o.sub ? esc(o.sub) : '&nbsp;') + '</span>';
+    var sub = '<span style="display:block;' + (o.subRight ? 'direction:ltr;text-align:right;' : o.subLtr !== false ? 'direction:ltr;text-align:left;' : '') + 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;' + pl + 'color:var(--text-2);font:var(--fw-regular) ' + (o.big ? 'var(--fs-m)' : 'var(--fs-xs)') + '/var(--lh-tight) var(--font)">' + (o.subHtml || (o.sub ? esc(o.sub) : '&nbsp;')) + '</span>';
     var foot = o.footEnd ? '<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-1);margin-top:auto;padding-top:var(--gap-tight);min-height:calc(var(--tag-s) + var(--gap-tight))"><div style="display:flex;align-items:center;gap:var(--sp-1)">' + (o.chip || '') + '</div><div style="display:flex;align-items:center;gap:var(--sp-1)">' + (o.time || '') + (o.pill || '') + '</div></div>'   /* the leader chip at the right end, under the song; the play tile at the left end, its time on its right */
       : '<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-1);margin-top:auto;padding-top:var(--gap-tight)"><div style="display:flex;align-items:center;gap:var(--sp-1)">' + (o.pill || '') + (o.chip || '') + '</div>' + (o.time || '') + '</div>';
     var lead = o.lead ? (o.bigLead
@@ -3106,7 +3114,7 @@
       var catBy = {};
       function catCards(k) {
         return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);padding:var(--gutter)">' + (catBy[k] || []).map(function (e) {
-          return cardUi({ attrs: 'data-ex="' + e.id + '" role="button" tabindex="0"', title: name(e), sub: musCount(e), subLtr: false });
+          return cardUi({ attrs: 'data-ex="' + e.id + '" role="button" tabindex="0"', title: name(e), subHtml: exSubHtml(e), subLtr: false });
         }).join("") + '</div>';
       }
       /* the one click handler of the list: a category opens or closes (slides), an exercise opens */
@@ -3411,7 +3419,7 @@
   function loadCatalog() {
     var all = [], PAGE = 1000;
     function page(off) {
-      return api("/rest/v1/exercises?select=id,title_he,title_en,category,phase_hint,phase_keys,level_key,exercise_lines(line_key),exercise_music(count)&order=title_en,id&limit=" + PAGE + "&offset=" + off).then(function (rows) {
+      return api("/rest/v1/exercises?select=id,title_he,title_en,category,phase_hint,phase_keys,level_key,source,exercise_texts(lang,source),exercise_lines(line_key),exercise_music(count)&order=title_en,id&limit=" + PAGE + "&offset=" + off).then(function (rows) {
         rows = rows || []; all = all.concat(rows);
         return rows.length === PAGE ? page(off + PAGE) : all;
       });
