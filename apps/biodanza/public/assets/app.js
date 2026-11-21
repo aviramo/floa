@@ -1729,6 +1729,21 @@
     paint();
     secs.forEach(function (q) { api("/rest/v1/vivencia_opening?vivencia_id=eq." + id + "&who=eq." + encodeURIComponent(q.who), { method: "PATCH", json: { position: q.position }, prefer: "return=minimal" }).then(null, fail); });
   }
+  function printOpening() {   /* only the opening of the evening: the free text and every leader's words, on paper */
+    var v = state.viv; if (!v) return;
+    var free = openFreeText(), secs = openRows().filter(function (x) { return x.who !== ""; });
+    var html = '<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>' + esc(v.title || "פתיחת הערב") + '</title><style>@page { margin: 18mm } body { font: 16px/1.7 Heebo, Arial, sans-serif; color: #111; margin: 0 } h1 { font-size: 22px; margin: 0 0 4px } h2 { font-size: 15px; margin: 22px 0 4px; color: #1B5AA0 } .sub { color: #555; margin: 0 0 18px } p { margin: 0; white-space: normal }</style></head><body>' +
+      '<h1>' + esc(v.title || "ויוונסיה") + '</h1><div class="sub">פתיחת הערב</div>' +
+      (free ? '<p>' + rtHtml(free) + '</p>' : '') +
+      secs.map(function (q) { return '<h2>' + esc(openName(q.who)) + '</h2><p>' + rtHtml(q.body || "") + '</p>'; }).join("") +
+      (!free && !secs.length ? '<p>עוד לא נכתבה פתיחה.</p>' : '') + '</body></html>';
+    var fr = document.createElement("iframe"); fr.setAttribute("aria-hidden", "true"); fr.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0";
+    document.body.appendChild(fr);
+    var d = fr.contentWindow.document; d.open(); d.write(html); d.close();
+    var go = function () { try { fr.contentWindow.focus(); fr.contentWindow.print(); } catch (e) { /* the browser refused: nothing to clean but the frame */ } setTimeout(function () { fr.remove(); }, 1500); };
+    setTimeout(go, 250);
+  }
+  document.addEventListener("click", function (ev) { if (ev.target.closest && ev.target.closest("[data-printopen]")) { ev.preventDefault(); ev.stopPropagation(); printOpening(); } }, true);
   function openName(who) { return String(who).split("#")[0]; }   /* a leader may have several paragraphs: the first is under the name, the others under name#2, name#3 */
   function openKey(n) { var have = {}; openRows().forEach(function (x) { have[x.who] = 1; }); if (!have[n]) return n; for (var k = 2; ; k++) if (!have[n + "#" + k]) return n + "#" + k; }
   function openSecHtml(q, i, ro) {
@@ -1743,7 +1758,7 @@
     var v = state.viv, ro = !canEdit(); if (!v) return "";
     var free = openFreeText(), secs = openRows().filter(function (x) { return x.who !== ""; });
     if (ro && !free && !secs.length) return "";
-    return '<div data-opening><div class="bio-sech" style="display:flex;align-items:center;justify-content:space-between;padding:var(--gutter) var(--gutter) 0">' + accHead("open", "פתיחת הערב") + '</div>' + accOpenTag("open") +
+    return '<div data-opening><div class="bio-sech" style="display:flex;align-items:center;justify-content:space-between;padding:var(--gutter) var(--gutter) 0">' + accHead("open", "פתיחת הערב") + '<button type="button" class="rbtn rbtn--icon bio-flat" data-printopen aria-label="הדפסת פתיחת הערב" title="הדפסת פתיחת הערב"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:var(--icon-m);height:var(--icon-m)"><path d="M6 9V3h12v6"/><path d="M6 18H4a1 1 0 0 1-1-1v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a1 1 0 0 1-1 1h-2"/><rect x="6" y="14" width="12" height="7"/></svg></button></div>' + accOpenTag("open") +
       '<div style="padding:0 var(--gutter)">' + (facOn() && !free ? '' : '<label class="rfield" style="flex:none;margin:calc(-1 * var(--sp-3)) 0 0"><span>טקסט חופשי</span><div id="opt0" data-owho="" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true">' + rtHtml(free) + '</div></label>') +
       secs.map(function (q, k) { return openSecHtml(q, k + 1, ro); }).join("") +
       (!ro && facOn() ? '<div style="display:flex;justify-content:flex-start"><button type="button" class="rbtn rbtn--icon" data-secadd style="margin-inline-start:calc(-1 * (var(--ctl) - var(--icon-m)) / 2)" aria-haspopup="menu" aria-label="הוספת פסקה" title="הוספת פסקה">' + I.plus + '</button></div>' : '') + '</div>' + ACC_CLOSE + '</div>';
