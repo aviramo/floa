@@ -2653,7 +2653,7 @@
     var rmM = act.match(/<button[^>]*data-orm[\s\S]*?<\/button>/);
     if (rmM) { act = act.replace(rmM[0], ""); rmX = '<span style="position:absolute;top:28px;right:28px;transform:translate(50%,-50%);display:flex">' + rmM[0] + '</span>'; }   /* the remove cross sits in the card's top right corner */
     return '<div class="rcard rcard--compact bio-card bio-mcard' + (o.cls ? ' ' + o.cls : '') + '" ' + (o.attrs || '') + (o.selected ? ' aria-current="true"' : '') + ' style="margin:0;min-width:0;display:flex;flex-direction:column;gap:2px;padding:var(--sp-2);cursor:pointer;position:relative;direction:ltr;text-align:left">' +
-      '<span style="display:block;min-height:var(--tag-s);line-height:var(--tag-s);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;' + (rmX ? 'padding-right:var(--ctl);' : '') + 'font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(o.title) + '</span>' +
+      '<span style="display:block;min-height:var(--tag-s);line-height:var(--tag-s);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;' + (rmX ? 'padding-right:var(--ctl);' : o.corner ? 'padding-right:5rem;' : '') + 'font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(o.title) + '</span>' +
       '<div style="display:flex;align-items:center;gap:var(--sp-1);min-height:var(--tag-s)"><span class="bio-dur" style="flex:none;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + (d ? clock(d) : '') + '</span>' +
       '<span style="flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;text-align:left;color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font)">' + esc(o.by || "") + '</span>' +
       '<span style="flex:none;display:flex;align-items:center;gap:var(--gap-tight)">' + act + (hide ? '' : pill) + heart + '</span></div>' +
@@ -2705,6 +2705,7 @@
   /* the card of a music option: the song, its performer, the play tile, the chip that chooses it, the time, the bin */
   function optCardHtml(m, sel, withRm, plain, listKey) {   /* plain: the catalog's exercise, only its songs: no chip to choose, no green frame */
     return songCardUi(m, { attrs: 'data-opt="' + esc(m.id) + '" role="button" tabindex="0"', selected: sel, title: songName(m), by: songBy(m), pill: cardPill(m, listKey), keepPlay: false, noHeart: !!plain,
+      corner: plain ? '<button type="button" class="rbtn rbtn--ghost" data-mfx="' + esc(m.id) + '" aria-label="התרגילים של המוזיקה" title="התרגילים של המוזיקה בקטלוג" style="position:absolute;top:var(--sp-1);right:var(--sp-2);background:none !important;box-shadow:none !important;border:0 !important;padding:0;min-width:0;min-height:var(--tag-s);color:var(--pick-ink, var(--primary)) !important;font:var(--fw-bold) var(--fs-s)/1 var(--font)">תרגילים</button>' : '',
       act: (plain ? '<button type="button" class="rbtn rbtn--ghost" data-pick="' + esc(m.id) + '" aria-label="' + (sel ? 'נבחר לתרגיל' : 'הוספה לתרגיל') + '" title="בחירת המוזיקה לתרגיל" style="display:inline-flex;align-items:center;gap:var(--gap-tight);background:none !important;box-shadow:none !important;border:0 !important;padding:0;min-width:0;min-height:0;color:var(--pick-ink, var(--primary)) !important;font:var(--fw-bold) var(--fs-s)/1 var(--font)">' + (sel ? I.check : I.plus) + '<span>' + (sel ? 'נבחר' : 'הוספה') + '</span></button>' : '') + (withRm ? '<button type="button" class="rbtn rbtn--icon bio-act" data-orm="' + esc(m.id) + '" aria-label="הסרה מהתרגיל" title="הסרה מהתרגיל">' + I.x + '</button>' : '') + (sel || plain ? '' : '<button type="button" class="rbtn rbtn--icon bio-act" data-choose="' + esc(m.id) + '" aria-label="בחירה" title="לבחור אותה לתרגיל בוויוונסיה">' + I.check + '</button>') });
   }
   /* deleting a song from an exercise: asked in the kit's popup; closing it is the cancel */
@@ -3101,6 +3102,7 @@
       /* the one click handler of the list: a category opens or closes (slides), an exercise opens */
       r.querySelector("#list").addEventListener("click", function (ev) {
         if (ev.target.closest("[data-likex]")) return;   /* the heart on a card marks, it does not open */
+        if (ev.target.closest("[data-xfx]")) { exFilter = null; paintCat(); return; }   /* the filter is let go */
         var l = r.querySelector("#list"), cb = ev.target.closest("[data-cat]");
         if (cb) {
           var k = cb.dataset.cat, nowOn = cb.getAttribute("aria-expanded") !== "true"; open[k] = nowOn; cb.setAttribute("aria-expanded", String(nowOn)); saveCat();
@@ -3134,11 +3136,12 @@
         }
         catBy = by;
         hint(r.querySelector("#q"), catFind("").length, "תרגיל", "תרגילים");
-        l.innerHTML = cats.length ? cats.map(function (k) {
+        var chip = exFilter ? '<div style="display:flex;align-items:center;gap:var(--sp-1);padding:var(--sp-1) var(--gutter)"><span style="font:var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font);color:var(--text-2)">התרגילים של</span><button type="button" data-xfx class="rchip" style="display:inline-flex;align-items:center;gap:var(--sp-1);cursor:pointer;max-width:100%" aria-label="שחרור הסינון" title="שחרור הסינון"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(exFilter.name) + '</span><span aria-hidden="true" style="display:grid;width:var(--icon-s);height:var(--icon-s);flex:none">' + I.x.replace("<svg ", '<svg style="width:100%;height:100%" ') + '</span></button></div>' : '';
+        l.innerHTML = chip + (cats.length ? cats.map(function (k) {
           var on = open[k] != null ? open[k] : false;   /* a category opens only when it is tapped: typing a search opens nothing */
           var head = '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-1);min-height:0;border-bottom-color:' + (on ? "transparent" : "var(--line)") + '"><button type="button" class="rrow__main" data-cat="' + esc(k) + '" aria-expanded="' + on + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit;display:flex;align-items:center;gap:var(--sp-2)"><span style="flex:1 1 auto;min-width:0"><span class="rrow__title" style="font-weight:var(--fw-black)">' + esc(catName(k) || "ללא קטגוריה") + '</span></span><span data-catn style="flex:none;color:var(--text-2);font:var(--fw-regular) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + by[k].length + '</span><span style="flex:none;width:20px;height:20px;transition:transform .25s var(--ease);' + (on ? 'transform:rotate(180deg)' : '') + '">' + I.down + '</span></button></div>';
           return head + '<div data-accb="' + esc(k) + '" style="border-bottom:1px solid ' + (on ? "var(--line)" : "transparent") + ';display:grid;grid-template-rows:' + (on ? '1fr' : '0fr') + ';transition:grid-template-rows .25s var(--ease)"><div style="overflow:hidden;min-height:0">' + (on ? catCards(k) : '') + '</div></div>';
-        }).join("") : ph("לא נמצא תרגיל", "");   /* the exercises tab holds exercises only: the songs have their own tab */
+        }).join("") : ph("לא נמצא תרגיל", ""));   /* the exercises tab holds exercises only: the songs have their own tab */
       }
       /* the pager: two pages side by side in one horizontal scroller with scroll snap. In RTL the first page (exercises) is on the right and scrollLeft runs negative, so the target is signed by the direction. A tap on a tab scrolls the pager; a swipe changes the tab; the tab marker is the kit's own (aria-selected). */
       var pgr = r.querySelector("#pgr"), tabEls = r.querySelectorAll("[data-pkt]"), TABS = ["ex", "mu"], goingTo = null, goT = 0, mq = r.querySelector("#mq");
@@ -3197,6 +3200,7 @@
         pgr.scrollTo({ left: dirSign() * i * pgr.clientWidth, behavior: instant || reduce ? "auto" : "smooth" });
         markTab(i);
       }
+      catApi = { paint: paintCat, goEx: function () { goTab(0); } };
       if (pgr && tabEls.length) {
         var raf = 0, lastW = 0, maxS = 0, ind = r.querySelector("[data-pkind]");
         function glide() { if (!ind || !maxS) return; var p = Math.min(1, Math.max(0, Math.abs(pgr.scrollLeft) / maxS)); ind.style.transform = "translateX(" + (dirSign() * p * 100) + "%)"; }   /* the marker follows the scroll itself: a swipe and a tap's animation alike, with transform only */
@@ -3294,6 +3298,8 @@
       if (ev.target.closest("[data-addm]")) { openAddMusic(fake, function () { imus.innerHTML = musCards(fake, true); }); return; }   /* more songs for what is shown: not for the catalog */
       var c = ev.target.closest("[data-opt]"); if (!c) return;
       var pk = ev.target.closest("[data-pick]");
+      var mfx = ev.target.closest("[data-mfx]");
+      if (mfx) { var mm = (fake.item_music_options || []).map(function (o) { return o.music; }).filter(function (x) { return x && x.id === mfx.dataset.mfx; })[0]; if (mm) setExFilter(mm); return; }   /* the catalog's exercises narrowed to this song's */
       if (!pk) { var au = c.querySelector("[data-audio]"); if (au) au.click(); return; }   /* a tap on the card plays; the add button marks the song for the exercise */
       var id = pk.dataset.pick, k = fake.sel.indexOf(id); if (k >= 0) fake.sel.splice(k, 1); else fake.sel.push(id);
       var first = (fake.item_music_options || []).map(function (o) { return o.music; }).filter(function (x) { return x && x.id === fake.sel[0]; })[0];
@@ -3342,7 +3348,21 @@
     }
     return (catTxP = pg(0).then(function () { Object.keys(by).forEach(function (k) { by[k].a = by[k].p + " " + by[k].g; }); catTx = by; }, function () { catTxP = null; }));
   }
+  var exFilter = null, catApi = null;   /* exFilter: the catalog's exercises narrowed to the ones that belong to one song: { id, name, ids } */
   function catFind(q) {
+    var r = catFind0(q);
+    return exFilter ? r.filter(function (e) { return exFilter.ids[e.id]; }) : r;
+  }
+  function setExFilter(m) {
+    api("/rest/v1/exercise_music?music_id=eq." + m.id + "&select=exercise_id&limit=1000").then(function (rows) {
+      var ids = {}; (rows || []).forEach(function (x) { ids[x.exercise_id] = 1; });
+      exFilter = { id: m.id, name: songName(m), ids: ids };
+      if (wide() && !catPanel) openCatPanel();
+      if (!wide()) { var xd = document.getElementById("exDlg"); if (xd) slideClose(xd); }
+      if (catApi) { catApi.goEx(); catApi.paint(); }
+    }, fail);
+  }
+  function catFind0(q) {
     var byName = nearest(state.cat || [], function (e) { return name(e) + " " + e.title_en + " " + catName(e.category); }, q);
     if (!fold(q).trim() || !catTx) return byName;
     var seen = {}; byName.forEach(function (e) { seen[e.id] = 1; });
