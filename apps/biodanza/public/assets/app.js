@@ -3614,7 +3614,7 @@
       order.sort(function (a, b) { return rank(a) - rank(b); });
       var groups = order.map(function (k) { return { name: catName(k) || "ללא קטגוריה", list: byLine[k] }; });
       var plusI = I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ');
-      var addBtn = '<button type="button" class="rbtn" data-mpadd style="flex:none;gap:var(--sp-1);margin-inline-end:var(--gutter)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + plusI + '</span><span>הוספה</span></button>';
+      var addBtn = ''; var addBtnOld = '<button type="button" class="rbtn" data-mpadd style="flex:none;gap:var(--sp-1);margin-inline-end:var(--gutter)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + plusI + '</span><span>הוספה</span></button>';
       var body = '<div style="padding:var(--gutter);display:flex;flex-direction:column;gap:var(--sp-2)">' +
         (exs.length ? groups.map(function (g) { return '<div style="display:flex;flex-direction:column;gap:var(--sp-1)"><div style="font:var(--fw-bold) var(--fs-s)/1 var(--font);color:var(--text-2)">' + esc(g.name) + ' (' + g.list.length + ')</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(16rem,100%),1fr));gap:var(--sp-1)">' + g.list.map(function (e) { return cardUi({ attrs: 'data-pvex="' + esc(e.id) + '" role="button" tabindex="0"', title: name(e), sub: "" }); }).join("") + '</div></div>'; }).join("") : '<div style="color:var(--text-2);font:var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font)">המוזיקה הזאת לא משויכת לתרגיל בקטלוג</div>') + '</div>';
       var wire = function (root) {
