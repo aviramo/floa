@@ -1099,7 +1099,7 @@
   function ensureCatPrev() { /* the left part is built with the layer */ }
   function closeCatPrev() {   /* the left part slides back in under the right one */
     if (!catPrev) return;
-    catPrev.classList.remove("is-open"); catPrevId = null; catPreview = false; catPrevCtx = null; refreshPrevLabel(); saveCat();
+    catPrev.classList.remove("is-open"); catPrevMus = null; catPrevId = null; catPreview = false; catPrevCtx = null; refreshPrevLabel(); saveCat();
     if (catLayer) catLayer.querySelectorAll(".bio-card[aria-current]").forEach(function (c) { c.removeAttribute("aria-current"); });
   }
   (function () { var st = document.createElement("style"); st.textContent = "#catLayer .catsh { position: absolute; z-index: 5; inset-block: 0; right: var(--plw); width: 10px; margin-right: -5px; pointer-events: auto; cursor: col-resize; touch-action: none } #catLayer .catsh::after { content: ''; position: absolute; inset-block: 0; right: 4px; width: 2px; background: transparent; transition: background var(--t-base) } #catLayer .catsh:hover::after, #catLayer .catsh:focus-visible::after, html.split-drag #catLayer .catsh::after { background: var(--line-strong) } #catLayer .catsh:focus-visible { outline: none } #catLayer { position: fixed; z-index: 20; pointer-events: none; transform: translateX(100%); transition: transform .25s var(--ease) } #catLayer[hidden] { display: none } #catLayer.is-open { transform: none } #catLayer > .catmain { position: absolute; z-index: 1; inset-block: 0; right: 0; width: var(--plw); display: flex; flex-direction: column; min-height: 0; pointer-events: auto; box-shadow: -1px 0 0 var(--line) } #catLayer .catbody > .rhead { padding-inline-end: var(--gutter) } #catLayer .catbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column } #catLayer .catbody > .rlist { flex: 1 1 auto; min-height: 0 } #catLayer > .catprev { position: absolute; z-index: 0; inset-block: 0; left: 0; width: var(--pdw); display: flex; flex-direction: column; min-height: 0; overflow: hidden; pointer-events: auto; visibility: hidden; transform: translateX(100%); transition: transform .25s var(--ease), visibility 0s linear .25s } #catLayer > .catprev.is-open { visibility: visible; transform: none; transition: transform .25s var(--ease), visibility 0s } #catLayer > .catprev > .rlist { flex: 1 1 auto; min-height: 0 } @media (prefers-reduced-motion: reduce) { #catLayer, #catLayer > .catprev { transition: none } }"; document.head.appendChild(st); })();
@@ -3146,7 +3146,7 @@
       var musicAll = null, musicLoading = false, mById = {}, mList = [], mShown = 0, MP = 100, mxOf = {}, xs = [], xsFor = null, xsT = 0;
       function musicCards(a, b) {
         return mList.slice(a, b).map(function (m) {
-          return songCardUi(m, { attrs: 'data-sgc="' + esc(m.id) + '"', title: songName(m), by: mxOf[m.id] ? mxOf[m.id] + " \u00b7 " + songBy(m) : songBy(m), pill: cardPill(m), act: '<button type="button" class="rbtn rbtn--icon bio-act" data-sg="' + esc(m.id) + '" aria-label="הוספה" title="הוספה">' + I.plus + '</button>' });
+          return songCardUi(m, { attrs: 'data-sgc="' + esc(m.id) + '"', title: songName(m), by: mxOf[m.id] ? mxOf[m.id] + " \u00b7 " + songBy(m) : songBy(m), pill: cardPill(m), act: '<button type="button" class="rbtn rbtn--ghost" data-sg="' + esc(m.id) + '" aria-label="התרגילים של המוזיקה" title="התרגילים של המוזיקה" style="background:none !important;box-shadow:none !important;border:0 !important;padding:0;min-width:0;min-height:0;color:var(--pick-ink, var(--primary)) !important;font:var(--fw-bold) var(--fs-s)/1 var(--font)">תרגילים</button>' });
         }).join("");
       }
       function fillSelects() {
@@ -3221,7 +3221,7 @@
           if (ev.target.closest("[data-audio], a")) return;
           var bt = ev.target.closest("[data-sg]");
           if (!bt) { var cd = ev.target.closest("[data-sgc]"), pb = cd && cd.querySelector("[data-audio]"); if (pb) pb.click(); return; }
-          var m = mById[bt.dataset.sg]; if (m) chooseDest(songName(m), { vivId: state.viv && state.viv.id, itemId: liveItem && liveItem.id }, function (d) { addMusicTo(m, d, sheet); });
+          var m = mById[bt.dataset.sg]; if (m) previewMusic(m);
         });
       }
       r.querySelectorAll(".pgp").forEach(function (P) {   /* the header (the boxes and the search) leaves with the scroll and comes back with it: the cards reach the tabs */
@@ -3456,6 +3456,48 @@
     }).then(function () {
       closeCatPrev(); closeCatPanel(true);
       pending = newId ? { item: newId } : null; openViv(v.id);
+    }, fail);
+  }
+  /* THE MUSIC PAGE of the catalog: the song as a card (a tap plays), and the exercises of the catalog that it belongs to. At the top left, the add button asks where to add the song. Beside the catalog it opens on the left, on a phone in a popup of its own. */
+  var catPrevMus = null;
+  function previewMusic(m) {
+    var useLayer = !!(catPanel && wide());
+    if (useLayer && catPrevMus === m.id && catPrev && catPrev.classList.contains("is-open")) { catPrevMus = null; closeCatPrev(); return; }
+    var tok = ++previewTok;
+    api("/rest/v1/exercise_music?music_id=eq." + m.id + "&select=exercises(id,title_he,title_en)&limit=500").then(function (rows) {
+      if (tok !== previewTok) return;
+      var seen = {}, exs = [];
+      (rows || []).forEach(function (x) { var e = x.exercises; if (e && !seen[e.id]) { seen[e.id] = 1; exs.push(e); } });
+      exs.sort(function (a, b) { return name(a).localeCompare(name(b), "he"); });
+      var plusI = I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ');
+      var addBtn = '<button type="button" class="rbtn" data-mpadd style="flex:none;gap:var(--sp-1);margin-inline-end:var(--gutter)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + plusI + '</span><span>הוספה</span></button>';
+      var body = '<div style="padding:var(--gutter);display:flex;flex-direction:column;gap:var(--sp-2)">' +
+        songCardUi(m, { attrs: 'data-pmc="' + esc(m.id) + '"', title: songName(m), by: songBy(m), pill: cardPill(m) }) +
+        '<div style="font:var(--fw-bold) var(--fs-s)/1 var(--font);color:var(--text-2)">תרגילים' + (exs.length ? ' (' + exs.length + ')' : '') + '</div>' +
+        (exs.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(16rem,100%),1fr));gap:var(--sp-1)">' + exs.map(function (e) { return cardUi({ attrs: 'data-pvex="' + esc(e.id) + '" role="button" tabindex="0"', title: name(e), sub: "" }); }).join("") + '</div>' : '<div style="color:var(--text-2);font:var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font)">המוזיקה הזאת לא משויכת לתרגיל בקטלוג</div>') + '</div>';
+      var wire = function (root) {
+        var ab = root.querySelector("[data-mpadd]");
+        if (ab) ab.addEventListener("click", function () { chooseDest(songName(m), { vivId: state.viv && state.viv.id, itemId: liveItem && liveItem.id }, function (d) { addMusicTo(m, d, false); }); });
+        root.addEventListener("click", function (ev) {
+          if (ev.target.closest("[data-audio], a, [data-mpadd], button:not([data-pvex])")) return;
+          var ex = ev.target.closest("[data-pvex]");
+          if (ex) { var e = exs.filter(function (x) { return x.id === ex.dataset.pvex; })[0]; if (e) previewEx(e); return; }
+          var c = ev.target.closest("[data-pmc]"); if (c) { var pb = c.querySelector("[data-audio]"); if (pb) pb.click(); }
+        });
+      };
+      if (useLayer) {
+        catPrev.innerHTML = '<header class="rhead bio-ihead"><div class="rhead__text" style="flex-direction:row;align-items:center;gap:var(--sp-2);padding-inline-start:0;justify-content:flex-start"><span class="rhead__title" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(songName(m)) + '</span></div>' + addBtn + '</header>' + body;
+        wire(catPrev);
+        var ph = catPrev.querySelector(".rhead"); if (ph) { var xb = document.createElement("button"); xb.type = "button"; xb.className = "rbtn rbtn--icon bio-flat"; xb.setAttribute("aria-label", "סגירה"); xb.title = "סגירה"; xb.innerHTML = I.x; xb.addEventListener("click", function () { previewTok++; catPrevMus = null; closeCatPrev(); }); ph.appendChild(xb); }
+        catPrevId = null; catPrevCtx = null; catPrevMus = m.id; refreshPrevLabel();
+        requestAnimationFrame(function () { catPrev.classList.add("is-open"); });
+      } else {
+        var dlg = document.getElementById("mpDlg");
+        if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "mpDlg"; document.body.appendChild(dlg); }
+        RosterSheet.render(dlg, { title: songName(m), from: "bottom", body: body });
+        var shd = dlg.querySelector(".sheet-head"); if (shd) { shd.insertAdjacentHTML("beforeend", addBtn); var b2 = shd.querySelector("[data-mpadd]"); if (b2) b2.style.order = "98"; }
+        wire(dlg);
+      }
     }, fail);
   }
   function previewEx(e, swapIt) {
