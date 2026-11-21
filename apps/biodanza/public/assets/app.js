@@ -1407,7 +1407,15 @@
     var has = function (m) { return !!(m && m.audio_object === name); };
     return (items || []).some(function (x) { return has(x.music) || (x.item_music_options || []).some(function (o) { return has(o.music); }); }) || (recv || []).some(function (o) { return has(o.music); });
   }
-  function paintVivPlay() {   /* a small mark at the left of the vivencia's row: the number of the exercise that plays over the curve */
+  function alignPlus() {   /* the + of the header is over the sign of the exercises of the rows, the same centre */
+    var plus = document.querySelector('#pl [data-act="new"]'), ic = document.querySelector("#hl .bio-vcnt__c");
+    if (!plus) return; plus.style.transform = "";
+    if (!ic) return;
+    var pr = plus.getBoundingClientRect(), ir = ic.getBoundingClientRect();
+    if (pr.width && ir.width) plus.style.transform = "translateX(" + Math.round(ir.left + ir.width / 2 - (pr.left + pr.width / 2)) + "px)";
+  }
+  function paintVivPlay() {
+    alignPlus();   /* a small mark at the left of the vivencia's row: the number of the exercise that plays over the curve */
     document.querySelectorAll("[data-vrow]").forEach(function (r) {
       var on = !!(nowViv.playing && nowViv.id && nowViv.id === r.dataset.vrow), sym = r.querySelector(".bio-vsym"), vc = r.querySelector(".bio-vcnt");
       if (!on) { if (sym) sym.remove(); return; }
