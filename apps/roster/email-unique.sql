@@ -4,7 +4,7 @@
 --     and the call succeeds as before. A visitor is never told that an email already belongs to someone (no way to probe emails), and no API answer changes.
 --   * from anywhere else (the admin page, direct writes): the write fails with 'email_taken' (SQLSTATE 23505), the page shows it next to the field.
 create or replace function roster.participants_email_guard()
-returns trigger language plpgsql set search_path = roster, public as $fn$
+returns trigger language plpgsql security definer set search_path = roster, public as $fn$
 declare src text := coalesce(current_setting('roster.source', true), '');
 begin
   if new.email is null or btrim(new.email) = '' then new.email := null; return new; end if;

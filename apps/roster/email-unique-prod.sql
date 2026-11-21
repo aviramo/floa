@@ -7,7 +7,7 @@
 -- The index (business_id, email) can be added later, per owner decision, once no business needs to write duplicates:
 --   create unique index if not exists roster_participants_email_uq on roster.participants (business_id, email) where email is not null and btrim(email) <> '';
 create or replace function roster.participants_email_guard()
-returns trigger language plpgsql set search_path = roster, public as $fn$
+returns trigger language plpgsql security definer set search_path = roster, public as $fn$
 declare src text := coalesce(current_setting('roster.source', true), '');
 begin
   if not coalesce((select s.email_link from roster.business_settings s where s.business_id = new.business_id), false) then return new; end if;
