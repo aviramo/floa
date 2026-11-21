@@ -1418,6 +1418,10 @@
     x.style.transform = "";
     var xr = x.getBoundingClientRect(), ir = ic.getBoundingClientRect(); if (!xr.width) return;
     var dx = Math.round(ir.left + ir.width / 2 - (xr.left + xr.width / 2)); x.style.transform = "translateX(" + dx + "px)"; try { localStorage.setItem("biodanza.catxdx", String(dx)); } catch (e) { /* kept only for this visit */ }
+    if (window.ResizeObserver) {   /* the scrollbar of a list arrives after the list is drawn and moves the search sign: the cross follows it at once */
+      if (!window.__catRO) window.__catRO = new ResizeObserver(function () { alignCatX(); });
+      [].forEach.call(document.querySelectorAll("#catLayer .pgl, #catLayer .pgp, #catLayer #pks"), function (e) { if (!e.__ro) { e.__ro = 1; window.__catRO.observe(e); } });
+    }
   }
   window.addEventListener("resize", function () { alignCatX(); });
   function alignPlus() {   /* the + of the header is over the sign of the exercises of the rows, the same centre */
