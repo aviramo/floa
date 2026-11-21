@@ -1833,14 +1833,16 @@
         });
         return out;
       })() + '</body></html>';
-    var fr = document.createElement("iframe"); fr.setAttribute("aria-hidden", "true"); fr.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0";
+    var fr = document.createElement("iframe"); fr.setAttribute("aria-hidden", "true"); fr.style.cssText = "position:fixed;left:-10000px;top:0;width:800px;height:1130px;border:0;visibility:hidden";   /* a real size: the parts are measured at the width of a page */
     document.body.appendChild(fr);
     var d = fr.contentWindow.document; d.open(); d.write(html); d.close();
     var go = function () {
       try {   /* a part taller than a page cannot be kept whole: it is let to break, and its heading stays with its first lines; the rest keeps whole */
         var fd = fr.contentWindow.document, pr = fd.createElement("div"); pr.style.cssText = "position:absolute;visibility:hidden;height:245mm;width:1px"; fd.body.appendChild(pr);
         var pageH = pr.offsetHeight; pr.remove();
+        fd.body.style.width = "170mm";   /* the width of the text on a page, so that the heights below are the printed ones */
         [].forEach.call(fd.querySelectorAll(".lead, .ex"), function (el) { if (el.offsetHeight > pageH * 0.92) { el.style.breakInside = "auto"; el.style.pageBreakInside = "auto"; } });
+        fd.body.style.width = "";
       } catch (e) { /* the sizes are unknown: the rules stay as they are */ }
       var oldTitle = document.title; document.title = v.title || "ויוונסיה";   /* the browser names the file after the title of the page */
       var back = function () { document.title = oldTitle; window.removeEventListener("afterprint", back); };
