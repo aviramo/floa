@@ -2699,7 +2699,7 @@
   }
   function pillCount(pill, n) {   /* an exercise with several songs: how many, on the corner of the play button; it takes no room, so nothing moves */
     if (!(n > 1)) return pill;
-    return '<span style="display:inline-flex;align-items:center;gap:var(--gap-tight);flex:none"><b class="bio-cnt2" aria-label="' + n + ' מוסיקות" style="min-width:1ch;color:var(--primary);font:var(--fw-bold) var(--fs-s)/1 var(--font);text-align:center;font-variant-numeric:tabular-nums;pointer-events:none">' + n + '</b>' + pill + '</span>';
+    return '<span style="display:inline-flex;align-items:center;gap:2px;flex:none"><b class="bio-cnt2" aria-label="' + n + ' מוסיקות" style="color:var(--primary);font:var(--fw-bold) var(--fs-s)/1 var(--font);text-align:center;font-variant-numeric:tabular-nums;pointer-events:none">' + n + '</b>' + pill + '</span>';
   }
   var CARD_BIN = 'style="position:absolute;top:calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2);right:calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2);color:var(--text-3);min-height:var(--tag-s);height:var(--tag-s);width:var(--tag-s);padding:0;background:transparent;border-color:transparent"';
   /* the card of a music option: the song, its performer, the play tile, the chip that chooses it, the time, the bin */
