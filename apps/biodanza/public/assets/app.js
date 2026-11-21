@@ -2820,7 +2820,7 @@
       '<div style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px">' +
         '<div style="display:flex;align-items:center;gap:var(--sp-1);min-height:var(--tag-s)' + (o.rm ? ';padding-left:var(--ctl)' : '') + '"><button type="button" class="rrow__main" ' + o.titleAttr + ' style="flex:0 1 auto;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font);color:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(o.title) + '</button>' + (o.chip || '') + '</div>' +
         '<div style="display:flex;align-items:center;gap:var(--sp-1);min-height:var(--tag-s)">' +
-          '<span class="bio-dur" style="flex:none;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums;direction:ltr">' + (d ? clock(d) : '') + '</span>' +
+          (d ? '<span class="bio-dur" style="flex:none;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums;direction:ltr">' + clock(d) + '</span>' : '') +
           '<span dir="auto" style="flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font)">' + (m ? esc(songName(m)) : 'בלי מוזיקה') + '</span><span style="flex:1 1 0;min-width:0"></span>' +
           '<span style="flex:none;display:flex;align-items:center;gap:var(--gap-tight)">' + (o.pill || '') + '</span>' +
         '</div>' +
