@@ -278,6 +278,15 @@
     ensureExCnt();
     return '<span style="display:inline-flex;align-items:center;gap:4px;direction:ltr"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.curve.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span><span data-exn="' + esc(mid) + '" style="font-variant-numeric:tabular-nums">' + (exCnt ? (exCnt[mid] || 0) : "") + '</span></span>';
   }
+  function exBtnG(m) {   /* the curve sign and the count, on any song card: it narrows the catalog's exercises to the song's */
+    if (!m || !m.id || /^h[0-9]/.test(m.id)) return "";
+    return '<button type="button" class="rbtn rbtn--ghost" data-mfxg="' + esc(m.id) + '" data-mfxn="' + esc(songName(m)) + '" aria-label="התרגילים של המוזיקה" title="התרגילים של המוזיקה בקטלוג" style="margin-inline-end:var(--sp-1);background:none !important;box-shadow:none !important;border:0 !important;padding:0;min-width:0;min-height:var(--tag-s);color:var(--pick-ink, var(--primary)) !important;font:var(--fw-bold) var(--fs-s)/1 var(--font)">' + exBtnInner(m.id) + '</button>';
+  }
+  document.addEventListener("click", function (ev) {
+    var b = ev.target.closest && ev.target.closest("[data-mfxg]"); if (!b) return;
+    ev.stopPropagation(); ev.preventDefault();
+    setExFilter({ id: b.dataset.mfxg, title: b.dataset.mfxn || "", name: b.dataset.mfxn || "" });
+  }, true);
   function exSubHtml(e) {
     var src = String(e.source || ""), y = (src.match(/(d{4})/) || [])[1], label = y || src.toUpperCase();
     var heb = (e.exercise_texts || []).some(function (t) { return t.lang === "he" && t.source === "catalog"; });
@@ -476,7 +485,7 @@
       var nw = window.__bioNow || {};
       var cards = rows.map(function (e, i) {
         var rid = histIds[e.n], m = { id: rid || "h" + i, audio_object: e.n, title: e.t, name: e.t, artist: e.a };
-        return songCardUi(m, { act: rid ? '<button type="button" class="rbtn rbtn--icon bio-act" data-addto="' + esc(rid) + '" aria-label="הוספה" title="הוספה לוויוונסיה או לתרגיל">' + I.plus + '</button>' : '', attrs: 'data-hi="' + i + '" role="button" tabindex="0"', selected: !!(nw.name && nw.name === e.n), title: e.t || "מוסיקה", by: [e.a || "", when(e.at)].filter(Boolean).join(" \u00b7 "), pill: cardPill(m) });
+        return songCardUi(m, { act: exBtnG(m) + (rid ? '<button type="button" class="rbtn rbtn--icon bio-act" data-addto="' + esc(rid) + '" aria-label="הוספה" title="הוספה לוויוונסיה או לתרגיל">' + I.plus + '</button>' : ''), attrs: 'data-hi="' + i + '" role="button" tabindex="0"', selected: !!(nw.name && nw.name === e.n), title: e.t || "מוסיקה", by: [e.a || "", when(e.at)].filter(Boolean).join(" \u00b7 "), pill: cardPill(m) });
       }).join("");
       histLayer.innerHTML = head("היסטוריית האזנה", "", false, "") + '<div class="rlist">' + (rows.length ? cardGrid(cards) : ph("אין עדיין היסטוריה", "מוסיקה שהתחלתם להשמיע תופיע כאן")) + '</div>';
       placeHist(); histOpen = true; pl.classList.add("bio-dim");
@@ -1254,7 +1263,7 @@
   }
   /* the songs I loved: my list, newest first, each as a song row (the heart takes a song off it) */
   function likedCard(m) {
-    return songCardUi(m, { attrs: 'data-liked="' + esc(m.id) + '" role="button" tabindex="0"', title: songName(m), by: songBy(m), pill: cardPill(m), act: '<button type="button" class="rbtn rbtn--icon bio-act" data-addto="' + esc(m.id) + '" aria-label="הוספה" title="הוספה לוויוונסיה או לתרגיל">' + I.plus + '</button>' });   /* footEnd: the play tile at the left end, so the heart has the bottom right to itself */
+    return songCardUi(m, { attrs: 'data-liked="' + esc(m.id) + '" role="button" tabindex="0"', title: songName(m), by: songBy(m), pill: cardPill(m), act: exBtnG(m) + '<button type="button" class="rbtn rbtn--icon bio-act" data-addto="' + esc(m.id) + '" aria-label="הוספה" title="הוספה לוויוונסיה או לתרגיל">' + I.plus + '</button>' });   /* footEnd: the play tile at the left end, so the heart has the bottom right to itself */
   }
   function likedScreen() {
     show(head("מוסיקה שאהבתי", "", true) + '<div class="rlist" id="likl"><div class="rskel rskel--title"></div></div>', function (r) {
@@ -2800,7 +2809,7 @@
   /* the card of a music option: the song, its performer, the play tile, the chip that chooses it, the time, the bin */
   function optCardHtml(m, sel, withRm, plain, listKey, askWhere) {   /* plain: the catalog's exercise, only its songs: no chip to choose, no green frame */
     return songCardUi(m, { attrs: 'data-opt="' + esc(m.id) + '" role="button" tabindex="0"', selected: sel, title: songName(m), by: songBy(m), pill: cardPill(m, listKey), keepPlay: false, noHeart: !!plain,
-            act: (plain ? '<button type="button" class="rbtn rbtn--ghost" data-mfx="' + esc(m.id) + '" aria-label="התרגילים של המוזיקה" title="התרגילים של המוזיקה בקטלוג" style="margin-inline-end:var(--sp-1);background:none !important;box-shadow:none !important;border:0 !important;padding:0;min-width:0;min-height:var(--tag-s);color:var(--pick-ink, var(--primary)) !important;font:var(--fw-bold) var(--fs-s)/1 var(--font)">' + exBtnInner(m.id) + '</button>' + (askWhere ? '<button type="button" class="rbtn rbtn--icon bio-act" data-addto="' + esc(m.id) + '" aria-label="הוספה" title="הוספה לוויוונסיה או לתרגיל">' + I.plus + '</button>' : '<button type="button" class="rbtn rbtn--ghost" data-pick="' + esc(m.id) + '" aria-label="' + (sel ? 'נבחר לתרגיל' : 'הוספה לתרגיל') + '" title="בחירת המוזיקה לתרגיל" style="display:inline-flex;align-items:center;gap:var(--gap-tight);background:none !important;box-shadow:none !important;border:0 !important;padding:0;min-width:0;min-height:0;color:var(--pick-ink, var(--primary)) !important;font:var(--fw-bold) var(--fs-s)/1 var(--font)">' + (sel ? I.check : I.plus) + '</button>') : '') + (withRm ? '<button type="button" class="rbtn rbtn--icon bio-act" data-orm="' + esc(m.id) + '" aria-label="הסרה מהתרגיל" title="הסרה מהתרגיל">' + I.x + '</button>' : '') + (sel || plain ? '' : '<button type="button" class="rbtn rbtn--icon bio-act" data-choose="' + esc(m.id) + '" aria-label="בחירה" title="לבחור אותה לתרגיל בוויוונסיה">' + I.check + '</button>') });
+            act: (plain ? '' : exBtnG(m)) + (plain ? '<button type="button" class="rbtn rbtn--ghost" data-mfx="' + esc(m.id) + '" aria-label="התרגילים של המוזיקה" title="התרגילים של המוזיקה בקטלוג" style="margin-inline-end:var(--sp-1);background:none !important;box-shadow:none !important;border:0 !important;padding:0;min-width:0;min-height:var(--tag-s);color:var(--pick-ink, var(--primary)) !important;font:var(--fw-bold) var(--fs-s)/1 var(--font)">' + exBtnInner(m.id) + '</button>' + (askWhere ? '<button type="button" class="rbtn rbtn--icon bio-act" data-addto="' + esc(m.id) + '" aria-label="הוספה" title="הוספה לוויוונסיה או לתרגיל">' + I.plus + '</button>' : '<button type="button" class="rbtn rbtn--ghost" data-pick="' + esc(m.id) + '" aria-label="' + (sel ? 'נבחר לתרגיל' : 'הוספה לתרגיל') + '" title="בחירת המוזיקה לתרגיל" style="display:inline-flex;align-items:center;gap:var(--gap-tight);background:none !important;box-shadow:none !important;border:0 !important;padding:0;min-width:0;min-height:0;color:var(--pick-ink, var(--primary)) !important;font:var(--fw-bold) var(--fs-s)/1 var(--font)">' + (sel ? I.check : I.plus) + '</button>') : '') + (withRm ? '<button type="button" class="rbtn rbtn--icon bio-act" data-orm="' + esc(m.id) + '" aria-label="הסרה מהתרגיל" title="הסרה מהתרגיל">' + I.x + '</button>' : '') + (sel || plain ? '' : '<button type="button" class="rbtn rbtn--icon bio-act" data-choose="' + esc(m.id) + '" aria-label="בחירה" title="לבחור אותה לתרגיל בוויוונסיה">' + I.check + '</button>') });
   }
   /* deleting a song from an exercise: asked in the kit's popup; closing it is the cancel */
   function confirmRemoveOpt(it, m, done) {
@@ -2905,7 +2914,7 @@
     function cardHtml(m, added) {
       var ex = xsOf[m.id];
       return songCardUi(m, { attrs: 'data-am="' + esc(m.id) + '" role="button" tabindex="0"', selected: added, title: songName(m), by: ex ? ex + " \u00b7 " + songBy(m) : songBy(m), pill: cardPill(m), keepPlay: false,
-        act: it.__listen ? '<button type="button" class="rbtn rbtn--icon bio-act" data-addto="' + esc(m.id) + '" aria-label="הוספה" title="הוספה לוויוונסיה או לתרגיל">' + I.plus + '</button>' : (added ? '<button type="button" class="rbtn rbtn--icon bio-act" data-amrm aria-label="הסרה מהתרגיל" title="הסרה מהתרגיל">' + I.x + '</button>' : '<button type="button" class="rbtn rbtn--icon bio-act" data-amadd aria-label="הוספה לתרגיל" title="הוספה לתרגיל">' + I.plus + '</button>') });
+        act: exBtnG(m) + (it.__listen ? '<button type="button" class="rbtn rbtn--icon bio-act" data-addto="' + esc(m.id) + '" aria-label="הוספה" title="הוספה לוויוונסיה או לתרגיל">' + I.plus + '</button>' : (added ? '<button type="button" class="rbtn rbtn--icon bio-act" data-amrm aria-label="הסרה מהתרגיל" title="הסרה מהתרגיל">' + I.x + '</button>' : '<button type="button" class="rbtn rbtn--icon bio-act" data-amadd aria-label="הוספה לתרגיל" title="הוספה לתרגיל">' + I.plus + '</button>')) });
     }
     function draw() {
       if (!linked || !rest) return;
@@ -3474,8 +3483,9 @@
       var ids = {}; (rows || []).forEach(function (x) { ids[x.exercise_id] = 1; });
       exFilter = { id: m.id, name: songName(m), ids: ids };
       if (wide() && !catPanel) openCatPanel();
-      if (!wide()) { var xd = document.getElementById("exDlg"); if (xd) slideClose(xd); }
-      if (catApi) { catApi.goEx(); catApi.paint(); }
+      if (!wide()) { var xd = document.getElementById("exDlg"); if (xd) slideClose(xd); var cd = document.getElementById("catDlg"); if (!cd || !cd.open) { resetPk(); pickerSheet(); } }
+      var apply = function () { if (catApi) { catApi.goEx(); catApi.paint(); } };
+      apply(); if (!wide()) setTimeout(apply, 500);
     }, fail);
   }
   function catFind0(q) {
