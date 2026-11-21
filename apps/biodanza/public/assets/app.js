@@ -1771,15 +1771,15 @@
   function printOpening() {   /* only the opening of the evening: the free text and every leader's words, on paper */
     var v = state.viv; if (!v) return;
     var free = openFreeText(), secs = openRows().filter(function (x) { return x.who !== ""; });
-    var html = '<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>' + esc(v.title || "פתיחת הערב") + '</title><style>@page { margin: 16mm } body { font: 26px/1.65 Heebo, Arial, sans-serif; color: #000; margin: 0 } h1 { font-size: 44px; font-weight: 900; margin: 0 0 6px; line-height: 1.2 } h2 { font-size: 40px; font-weight: 900; line-height: 1.2; margin: 38px 0 10px; padding-bottom: 6px; border-bottom: 4px solid #000; color: #000; break-after: avoid } .sub { font-size: 26px; font-weight: 700; color: #333; margin: 0 0 24px } p { margin: 0 0 10px; white-space: normal } h3 { font-size: 26px; font-weight: 800; margin: 16px 0 4px; color: #333 } .fac { font-size: 30px; font-weight: 800; color: #000; border: 3px solid #000; border-radius: 999px; padding: 0 14px; margin-inline-start: 10px; vertical-align: middle } .song { font-size: 26px; font-weight: 700; margin: 0 0 8px } .ex { break-inside: auto }</style></head><body>' +
+    var html = '<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>' + esc(v.title || "פתיחת הערב") + '</title><style>@page { margin: 16mm } body { font: 26px/1.65 Heebo, Arial, sans-serif; color: #000; margin: 0 } h1 { font-size: 44px; font-weight: 900; margin: 0 0 6px; line-height: 1.2 } h2 { font-size: 40px; font-weight: 900; line-height: 1.2; margin: 38px 0 10px; padding-bottom: 6px; border-bottom: 4px solid #000; color: #000; break-after: avoid } .sub { font-size: 26px; font-weight: 700; color: #333; margin: 0 0 24px } p { margin: 0 0 10px; white-space: normal } h3 { font-size: 26px; font-weight: 800; margin: 16px 0 4px; color: #333 } .fac { font-size: 30px; font-weight: 800; color: #000; border: 3px solid #000; border-radius: 999px; padding: 0 14px; margin-inline-start: 10px; vertical-align: middle } .song { font-size: 26px; font-weight: 700; margin: 0 0 8px } .lead { break-inside: avoid; page-break-inside: avoid } .ex { break-inside: avoid; page-break-inside: avoid; margin-bottom: 28px } .exstart { break-before: page; page-break-before: always; margin-top: 0; padding-top: 0 } h2, h3 { break-after: avoid; page-break-after: avoid }</style></head><body>' +
       '<h1>' + esc(v.title || "ויוונסיה") + '</h1><div class="sub">פתיחת הערב</div>' +
       (free ? '<p>' + rtHtml(free) + '</p>' : '') +
-      secs.map(function (q) { return '<h2>' + esc(openName(q.who)) + '</h2><p>' + rtHtml(q.body || "") + '</p>'; }).join("") +
+      secs.map(function (q) { return '<div class="lead"><h2>' + esc(openName(q.who)) + '</h2><p>' + rtHtml(q.body || "") + '</p></div>'; }).join("") +
       (!free && !secs.length ? '<p>עוד לא נכתבה פתיחה.</p>' : '') +
       (function () {   /* then the exercises, in their order, in the same big letters */
         var items = (state.items || []).slice(), n = 0, out = '';
         if (!items.length) return '';
-        out += '<div class="sub" style="margin-top:46px;border-top:4px solid #000;padding-top:18px">התרגילים</div>';
+        out += '<div class="sub exstart">התרגילים</div>';
         items.forEach(function (it) {
           var name = itemName(it) || "ללא שם", num = it.backlog ? "" : (++n) + ". ", fac = facOn() ? facLabel(it) : "", m = it.music;
           var po = txt(it, "poetics"), gu = txt(it, "guidance"), no = it.notes || "";
