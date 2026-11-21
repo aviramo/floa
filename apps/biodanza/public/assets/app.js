@@ -3483,8 +3483,6 @@
       var plusI = I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ');
       var addBtn = '<button type="button" class="rbtn" data-mpadd style="flex:none;gap:var(--sp-1);margin-inline-end:var(--gutter)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + plusI + '</span><span>הוספה</span></button>';
       var body = '<div style="padding:var(--gutter);display:flex;flex-direction:column;gap:var(--sp-2)">' +
-        songCardUi(m, { attrs: 'data-pmc="' + esc(m.id) + '"', title: songName(m), by: songBy(m), pill: cardPill(m) }) +
-        '<div style="font:var(--fw-bold) var(--fs-s)/1 var(--font);color:var(--text-2)">תרגילים' + (exs.length ? ' (' + exs.length + ')' : '') + '</div>' +
         (exs.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(16rem,100%),1fr));gap:var(--sp-1)">' + exs.map(function (e) { return cardUi({ attrs: 'data-pvex="' + esc(e.id) + '" role="button" tabindex="0"', title: name(e), sub: "" }); }).join("") + '</div>' : '<div style="color:var(--text-2);font:var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font)">המוזיקה הזאת לא משויכת לתרגיל בקטלוג</div>') + '</div>';
       var wire = function (root) {
         var ab = root.querySelector("[data-mpadd]");
