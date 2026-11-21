@@ -467,6 +467,26 @@
     function placeHist() { if (!histLayer) return; var a = pd.getBoundingClientRect(); histLayer.style.top = a.top + "px"; histLayer.style.height = a.height + "px"; histLayer.style.left = a.left + "px"; histLayer.style.width = a.width + "px"; }
     function closeHist() { if (!histLayer || !histOpen) return; histOpen = false; histLayer.classList.remove("is-open"); pl.classList.remove("bio-dim"); }
     window.__closeHist = closeHist;
+    window.__showLeft = function (html, wire) {   /* any list on the left side as a popup: the same layer as the history, the right side goes dark */
+      if (!histLayer) {
+        histLayer = document.createElement("div"); histLayer.id = "histLayer"; histLayer.style.background = getComputedStyle(document.body).backgroundColor;
+        document.body.appendChild(histLayer);
+        window.addEventListener("resize", placeHist); if (window.ResizeObserver) new ResizeObserver(placeHist).observe(pd);
+        histLayer.addEventListener("click", function (ev) {
+          var c = ev.target.closest && ev.target.closest("[data-hi]"); if (!c) return;
+          var e = histLayer._rows && histLayer._rows[+c.dataset.hi]; if (!e) return;
+          histLayer.querySelectorAll("[data-hi][aria-current]").forEach(function (x) { x.removeAttribute("aria-current"); });
+          c.setAttribute("aria-current", "true"); playName(e.n, e.t, e.a);
+        });
+        pl.addEventListener("click", function () { if (histOpen && pl.classList.contains("bio-dim")) closeHist(); });
+      }
+      if (catPanel) closeCatPanel(true);
+      histLayer._rows = [];
+      histLayer.innerHTML = html; placeHist(); histOpen = true; pl.classList.add("bio-dim");
+      requestAnimationFrame(function () { histLayer.classList.add("is-open"); });
+      if (wire) wire(histLayer);
+      return histLayer;
+    };
     function showHistLayer(rows, when) {
       if (!histLayer) {
         histLayer = document.createElement("div"); histLayer.id = "histLayer"; histLayer.style.background = getComputedStyle(document.body).backgroundColor;
@@ -1240,8 +1260,8 @@
   /* ---------- home: my vivencias ---------- */
   /* the vivencias I loved: my list, newest first; a row opens the vivencia */
   /* the lists of what I loved open on the left side on a wide screen (the right side keeps the list of vivencias), and as before on a narrow one */
-  function showL(html, wire) { return show(html, wire, wide() ? "d" : undefined); }
-  function closeLeft() { if (state.viv) show(phPick("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); else emptyDetail(); }
+  function showL(html, wire) { if (wide() && window.__showLeft) return window.__showLeft(html, wire); return show(html, wire, undefined); }
+  function closeLeft() { if (window.__closeHist) window.__closeHist(); }
   function likedVivScreen() {
     showL(head("ויוונסיות שאהבתי", "", true) + '<div class="rlist" id="likv"><div class="rskel rskel--title"></div></div>', function (r) {
       on(r, "back", wide() ? closeLeft : back);
