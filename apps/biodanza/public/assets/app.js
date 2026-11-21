@@ -3703,6 +3703,7 @@
     var vivs = (state.vivs || []).filter(function (v) { return v.role !== "view"; });
     var dest = { vivId: cur && cur.vivId || null, itemId: cur && cur.itemId || null };
     if (dest.vivId && !vivs.some(function (v) { return v.id === dest.vivId; })) dest = { vivId: null, itemId: null };
+    if (dest.vivId) vivs = vivs.filter(function (v) { return v.id === dest.vivId; }).concat(vivs.filter(function (v) { return v.id !== dest.vivId; }));   /* the vivencia you are in is marked and comes first */
     var open = {}, cache = {};
     if (dest.vivId && !vivOnly) { open[dest.vivId] = 1; if (state.viv && state.viv.id === dest.vivId && state.items) cache[dest.vivId] = state.items; }
     function body() {
