@@ -1320,6 +1320,8 @@
       (wide() ? '<img src="favicon.png" alt="" style="flex:none;width:var(--ctl);height:var(--ctl);border-radius:var(--r-ctl)">' : '<img src="bird.png" alt="" style="flex:none;width:var(--icon-m);height:var(--icon-m);margin-inline:calc((var(--ctl) - var(--icon-m)) / 2);object-fit:contain">')) +
       '<div class="rlist" data-fab-room id="hl"><div class="rskel rskel--title"></div></div>' +
       '', function (r) {
+      var plus0 = r.querySelector('[data-act="new"]'), dx0 = null; try { dx0 = localStorage.getItem("biodanza.plusdx"); } catch (e) { /* none */ }
+      if (plus0 && dx0 != null && dx0 !== "") plus0.style.transform = "translateX(" + dx0 + "px)";   /* in its place from the first moment, before the list is here */
       on(r, "homemore", function (b) {   /* one menu: the songs I loved, who may enter (the manager), leaving */
         var cnt = function (o) { return Object.keys(o).filter(function (k) { return o[k]; }).length; };
         var items = state.offline ? [] : [{ label: "קטלוג", meta: '<span data-catcnt></span>', icon: I.catalog, fn: function () { if (wide()) openCatPanel(); else { resetPk(); pickerSheet(); } } }, { label: "ויוונסיות שאהבתי", meta: String(cnt(likesViv)), icon: I.heart, fn: function () { if (wide()) likedVivScreen(); else goSub(likedVivScreen); } }, { label: "תרגילים שאהבתי", meta: String(cnt(likesEx)), icon: I.heart, fn: function () { if (wide()) likedExScreen(); else goSub(likedExScreen); } }, { label: "מוסיקה שאהבתי", meta: String(cnt(likes)), icon: I.heart, fn: function () { if (wide()) likedScreen(); else goSub(likedScreen); } }];   /* in the order of the app: vivencias, exercises, songs */
@@ -1412,7 +1414,7 @@
     if (!plus) return; plus.style.transform = "";
     if (!ic) return;
     var pr = plus.getBoundingClientRect(), ir = ic.getBoundingClientRect();
-    if (pr.width && ir.width) plus.style.transform = "translateX(" + Math.round(ir.left + ir.width / 2 - (pr.left + pr.width / 2)) + "px)";
+    if (pr.width && ir.width) { var dx = Math.round(ir.left + ir.width / 2 - (pr.left + pr.width / 2)); plus.style.transform = "translateX(" + dx + "px)"; try { localStorage.setItem("biodanza.plusdx", String(dx)); } catch (e) { /* kept only for this visit */ } }   /* both are measured from the left side of the pane, so the shift is the same on every width: it is kept, and the next load starts in place */
   }
   function paintVivPlay() {
     alignPlus();   /* a small mark at the left of the vivencia's row: the number of the exercise that plays over the curve */
