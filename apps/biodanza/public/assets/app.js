@@ -2647,7 +2647,7 @@
     var d = durOf(m), pill = o.pill || "", keep = !!o.keepPlay, hasAud = pill.indexOf("data-audio") >= 0, hide = hasAud && !keep;
     var heart = m && m.id && !/^h[0-9]/.test(m.id) ? cardHeart(m) : "";
     var act = o.act || "", rmX = "";
-    var rmM = act.match(/<button[^>]*data-orm[sS]*?</button>/);
+    var rmM = act.match(/<button[^>]*data-orm[\s\S]*?<\/button>/);
     if (rmM) { act = act.replace(rmM[0], ""); rmX = '<span style="position:absolute;top:var(--sp-1);right:var(--sp-1);display:flex">' + rmM[0] + '</span>'; }   /* the remove cross sits in the card's top right corner */
     return '<div class="rcard rcard--compact bio-card bio-mcard' + (o.cls ? ' ' + o.cls : '') + '" ' + (o.attrs || '') + (o.selected ? ' aria-current="true"' : '') + ' style="margin:0;min-width:0;display:flex;flex-direction:column;gap:2px;padding:var(--sp-2);cursor:pointer;position:relative;direction:ltr;text-align:left">' +
       '<span style="display:flex;align-items:center;min-height:var(--tag-s);overflow-wrap:anywhere;' + (rmX ? 'padding-right:var(--ctl);' : '') + 'font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(o.title) + '</span>' +
