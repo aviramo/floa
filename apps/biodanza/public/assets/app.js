@@ -1534,33 +1534,34 @@
     var shares = [], cands = [];
     RosterSheet.render(dlg, {
       title: "שיתוף", from: "bottom",
-      body: '<div class="pad"><label class="rfield"><span>חיפוש (אימייל או שם)</span><input id="sq" type="search" placeholder=" " autocomplete="off"></label></div><div id="slist"></div>'
+      body: '<div class="pad"><label class="rfield"><span>הוספת אדם (אימייל או שם)</span><input id="sq" type="search" placeholder=" " autocomplete="off"></label></div><div id="slist"></div>'
     });
     function who(e) { var c = cands.filter(function (x) { return x.email === e; })[0]; return c && c.note ? c.note : e; }
     function paintS() {
       var q = fold(dlg.querySelector("#sq").value.trim()), l = dlg.querySelector("#slist");
       var have = {}; shares.forEach(function (x) { have[x.email] = 1; });
       var mine = shares.filter(function (x) { return !q || fz(x.email + " " + who(x.email), q); });
-      var rest = cands.filter(function (c) { return !have[c.email] && (!q || fz(c.email + " " + (c.note || ""), q)); });
+      var rest = q ? cands.filter(function (c) { return !have[c.email] && fz(c.email + " " + (c.note || ""), q); }) : [];   /* the people who are not shared yet show only when you search for them */
       var title2 = function (t) { return '<div class="rrow rrow--compact"><span class="rrow__sub">' + t + '</span></div>'; };
       var html = "";
       if (mine.length) {
         html += title2("משותף עם") + mine.map(function (x) {
+          var isEdit = x.role === "edit";
           return '<div class="rrow"><div class="rrow__main"><span class="rrow__title">' + esc(who(x.email)) + '</span>' + (who(x.email) !== x.email ? '<span class="rrow__sub" dir="ltr">' + esc(x.email) + '</span>' : '') + '</div>' +
-            '<button type="button" class="rchip rchip--button" data-role="view" data-e="' + esc(x.email) + '" aria-pressed="' + (x.role === "view") + '">צפייה</button>' +
-            '<button type="button" class="rchip rchip--button" data-role="edit" data-e="' + esc(x.email) + '" aria-pressed="' + (x.role === "edit") + '">עריכה</button>' +
+            '<button type="button" data-role="' + (isEdit ? "view" : "edit") + '" data-e="' + esc(x.email) + '" aria-label="' + (isEdit ? "עריכה: לחיצה משנה לצפייה" : "צפייה: לחיצה משנה לעריכה") + '" title="' + (isEdit ? "יכול לערוך. לחיצה: צפייה בלבד" : "צפייה בלבד. לחיצה: יכול לערוך") + '" style="flex:none;background:none;border:0;padding:0 var(--sp-1);cursor:pointer;color:var(--primary);font:var(--fw-bold) var(--fs-s)/1 var(--font)">' + (isEdit ? "עריכה" : "צפייה") + '</button>' +
             '<button type="button" class="rbtn rbtn--icon" data-rm="' + esc(x.email) + '" aria-label="הסרה" title="הסרה">' + I.x + '</button></div>';
         }).join("");
       }
       if (rest.length) {
-        html += title2("אפשר לשתף עם") + rest.map(function (c) {
-          return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-add="' + esc(c.email) + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(c.note || c.email) + '</span>' + (c.note ? '<span class="rrow__sub" dir="ltr">' + esc(c.email) + '</span>' : '') + '</button></div>';
+        html += title2("הוספה") + rest.map(function (c) {
+          return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-add="' + esc(c.email) + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(c.note || c.email) + '</span>' + (c.note ? '<span class="rrow__sub" dir="ltr">' + esc(c.email) + '</span>' : '') + '</button><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m);color:var(--primary)">' + I.plus + '</span></div>';
         }).join("");
       }
-      l.innerHTML = html || ph("אין חשבונות", "אפשר לשתף רק עם חשבונות מרשימת המורשים. את הרשימה מנהל המנהל.");
+      if (!html) html = q ? ph("לא נמצא", "אפשר לשתף רק עם חשבונות מרשימת המורשים.") : ph("עוד לא שיתפתם", "חפשו אדם לפי שם או אימייל כדי להוסיף אותו.");
+      l.innerHTML = html;
       l.querySelectorAll("[data-role]").forEach(function (b) { b.addEventListener("click", function () { setRole(b.dataset.e, b.dataset.role); }); });
       l.querySelectorAll("[data-rm]").forEach(function (b) { b.addEventListener("click", function () { api("/rest/v1/vivencia_shares?vivencia_id=eq." + v.id + "&email=eq." + encodeURIComponent(b.dataset.rm), { method: "DELETE" }).then(load, fail); }); });
-      l.querySelectorAll("[data-add]").forEach(function (b) { b.addEventListener("click", function () { api("/rest/v1/vivencia_shares", { method: "POST", prefer: "return=minimal", json: { vivencia_id: v.id, email: b.dataset.add, role: "view" } }).then(load, fail); }); });
+      l.querySelectorAll("[data-add]").forEach(function (b) { b.addEventListener("click", function () { api("/rest/v1/vivencia_shares", { method: "POST", prefer: "return=minimal", json: { vivencia_id: v.id, email: b.dataset.add, role: "view" } }).then(function () { dlg.querySelector("#sq").value = ""; return load(); }, fail); }); });
     }
     function setRole(e, role) { api("/rest/v1/vivencia_shares?vivencia_id=eq." + v.id + "&email=eq." + encodeURIComponent(e), { method: "PATCH", json: { role: role } }).then(load, fail); }
     function load() {
