@@ -2700,6 +2700,17 @@
     if (!(n > 1)) return pill;
     return '<span style="display:inline-flex;align-items:center;gap:2px;flex:none"><b class="bio-cnt2" aria-label="' + n + ' מוסיקות" style="color:var(--primary);font:var(--fw-bold) var(--fs-s)/1 var(--font);text-align:center;font-variant-numeric:tabular-nums;pointer-events:none">' + n + '</b>' + pill + '</span>';
   }
+  /* a song with no file: the card has no YouTube sign, a tap on it opens YouTube; the only mark is the upload (a file from this device), with no background */
+  (function () {
+    var st = document.createElement("style");
+    st.textContent = ".bio-card [data-yt] { display: none !important } .bio-card [data-upl] { width: var(--tag-s) !important; height: var(--tag-s) !important; min-height: var(--tag-s) !important; padding: 0 !important; background: transparent !important; border: 0 !important; box-shadow: none !important; color: var(--text) !important } .bio-card [data-upl] svg { width: var(--icon-m) !important; height: var(--icon-m) !important; stroke-width: 2 !important } .bio-card.is-play [data-upl], .bio-card:has([data-audio][data-st=\"pause\"]) [data-upl] { color: #FFFFFF !important }";
+    document.head.appendChild(st);
+    document.addEventListener("click", function (ev) {
+      var c = ev.target.closest && ev.target.closest(".bio-card"); if (!c || c.querySelector("[data-audio]")) return;
+      if (ev.target.closest("button, a, input, select, textarea")) return;
+      var y = c.querySelector("[data-yt]"); if (y) y.click();
+    });
+  })();
   var CARD_BIN = 'style="position:absolute;top:calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2);right:calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2);color:var(--text-3);min-height:var(--tag-s);height:var(--tag-s);width:var(--tag-s);padding:0;background:transparent;border-color:transparent"';
   /* the card of a music option: the song, its performer, the play tile, the chip that chooses it, the time, the bin */
   function optCardHtml(m, sel, withRm, plain, listKey) {   /* plain: the catalog's exercise, only its songs: no chip to choose, no green frame */
