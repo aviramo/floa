@@ -2655,7 +2655,7 @@
       '<span style="display:block;min-height:var(--tag-s);line-height:var(--tag-s);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;' + (rmX ? 'padding-right:var(--ctl);' : o.corner ? 'padding-right:5rem;' : '') + 'font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(o.title) + '</span>' +
       '<div style="display:flex;align-items:center;gap:var(--sp-1);min-height:var(--tag-s)"><span class="bio-dur" style="flex:none;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + (d ? clock(d) : '') + '</span>' +
       '<span style="flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;text-align:left;color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font)">' + esc(o.by || "") + '</span>' +
-      '<span style="flex:none;display:flex;align-items:center;gap:var(--gap-tight)">' + act + (hide ? '' : pill) + heart + '</span></div>' +
+      '<span style="flex:none;display:flex;align-items:center;gap:var(--gap-tight)">' + (o.heartFirst ? heart + act + (hide ? '' : pill) : act + (hide ? '' : pill) + heart) + '</span></div>' +
       (hide ? '<span hidden>' + pill + '</span>' : '') + rmX + (o.corner || '') + '</div>';
   }
   /* THE EXERCISE CARD, laid out like the song card: the number at the right; at its left the name of the exercise (the leader's chip at the far left), and under it the length of the chosen song, its name, then at the left end the cross and the play tile. */
@@ -3163,7 +3163,7 @@
       var musicAll = null, musicLoading = false, mById = {}, mList = [], mShown = 0, MP = 100, mxOf = {}, xs = [], xsFor = null, xsT = 0;
       function musicCards(a, b) {
         return mList.slice(a, b).map(function (m) {
-          return songCardUi(m, { attrs: 'data-sgc="' + esc(m.id) + '"', title: songName(m), by: mxOf[m.id] ? mxOf[m.id] + " \u00b7 " + songBy(m) : songBy(m), pill: cardPill(m), act: '<button type="button" class="rbtn rbtn--ghost" data-sg="' + esc(m.id) + '" aria-label="התרגילים של המוזיקה" title="התרגילים של המוזיקה" style="background:none !important;box-shadow:none !important;border:0 !important;padding:0;min-width:0;min-height:0;color:var(--pick-ink, var(--primary)) !important;font:var(--fw-bold) var(--fs-s)/1 var(--font)">תרגילים</button>' });
+          return songCardUi(m, { heartFirst: true, attrs: 'data-sgc="' + esc(m.id) + '"', title: songName(m), by: mxOf[m.id] ? mxOf[m.id] + " \u00b7 " + songBy(m) : songBy(m), pill: cardPill(m), act: '<button type="button" class="rbtn rbtn--ghost" data-sg="' + esc(m.id) + '" aria-label="התרגילים של המוזיקה" title="התרגילים של המוזיקה" style="background:none !important;box-shadow:none !important;border:0 !important;padding:0;min-width:0;min-height:0;color:var(--pick-ink, var(--primary)) !important;font:var(--fw-bold) var(--fs-s)/1 var(--font)">תרגילים</button>' });
         }).join("");
       }
       function fillSelects() {
