@@ -1805,6 +1805,9 @@
         var pageH = pr.offsetHeight; pr.remove();
         [].forEach.call(fd.querySelectorAll(".lead, .ex"), function (el) { if (el.offsetHeight > pageH * 0.92) { el.style.breakInside = "auto"; el.style.pageBreakInside = "auto"; } });
       } catch (e) { /* the sizes are unknown: the rules stay as they are */ }
+      var oldTitle = document.title; document.title = v.title || "ויוונסיה";   /* the browser names the file after the title of the page */
+      var back = function () { document.title = oldTitle; window.removeEventListener("afterprint", back); };
+      window.addEventListener("afterprint", back); setTimeout(back, 60000);
       try { fr.contentWindow.focus(); fr.contentWindow.print(); } catch (e) { /* the browser refused: nothing to clean but the frame */ } setTimeout(function () { fr.remove(); }, 1500); };
     setTimeout(go, 250);
   }
