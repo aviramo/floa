@@ -263,6 +263,10 @@
   function name(e) { return e.title_he || e.title_en || ""; }
   function phaseName(k) { var p = state.phases.filter(function (x) { return x.key === k; })[0]; return p ? p.name_he : ""; }
   function catName(k) { var c = (state.cats || []).filter(function (x) { return x.key === k; })[0]; return c ? c.name_he : ""; }
+  function musCount(e) {   /* how many songs are linked to a catalog exercise */
+    var c = e && e.exercise_music && e.exercise_music[0] ? e.exercise_music[0].count : null;
+    return c == null ? "" : c === 0 ? "בלי מוסיקה" : c === 1 ? "מוסיקה אחת" : c + " מוסיקות";
+  }
   function lineName(k) { var l = state.lines.filter(function (x) { return x.key === k; })[0]; return l ? l.name_he : k; }
   /* a song is two things: its name and who plays it */
   function songName(m) { return m ? (m.title || m.name || "") : ""; }
@@ -3091,7 +3095,7 @@
       var catBy = {};
       function catCards(k) {
         return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);padding:var(--gutter)">' + (catBy[k] || []).map(function (e) {
-          return cardUi({ attrs: 'data-ex="' + e.id + '" role="button" tabindex="0"', title: name(e), sub: (e.exercise_lines || []).map(function (x) { return lineName(x.line_key); }).filter(Boolean).join(" · "), subLtr: false });
+          return cardUi({ attrs: 'data-ex="' + e.id + '" role="button" tabindex="0"', title: name(e), sub: musCount(e), subLtr: false });
         }).join("") + '</div>';
       }
       /* the one click handler of the list: a category opens or closes (slides), an exercise opens */
@@ -3378,7 +3382,7 @@
   function loadCatalog() {
     var all = [], PAGE = 1000;
     function page(off) {
-      return api("/rest/v1/exercises?select=id,title_he,title_en,category,phase_hint,phase_keys,level_key,exercise_lines(line_key)&order=title_en,id&limit=" + PAGE + "&offset=" + off).then(function (rows) {
+      return api("/rest/v1/exercises?select=id,title_he,title_en,category,phase_hint,phase_keys,level_key,exercise_lines(line_key),exercise_music(count)&order=title_en,id&limit=" + PAGE + "&offset=" + off).then(function (rows) {
         rows = rows || []; all = all.concat(rows);
         return rows.length === PAGE ? page(off + PAGE) : all;
       });
