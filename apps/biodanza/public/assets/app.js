@@ -2668,7 +2668,7 @@
           '<span dir="auto" style="flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font)">' + (m ? esc(songName(m)) : 'בלי מוזיקה') + '</span><span style="flex:1 1 0;min-width:0"></span>' +
           '<span style="flex:none;display:flex;align-items:center;gap:var(--gap-tight)">' + (o.pill || '') + '</span>' +
         '</div>' +
-      '</div>' + (o.rm ? '<span style="position:absolute;top:var(--sp-1);left:0;display:flex">' + o.rm + '</span>' : '') + (o.actions || '') + '</div>';
+      '</div>' + (o.rm ? '<span style="position:absolute;top:var(--sp-1);left:var(--sp-2);display:flex">' + o.rm + '</span>' : '') + (o.actions || '') + '</div>';
   }
   /* THE CARD: one element for a song and for an exercise. A name (bold), a line under it (small), at the foot the play tile with what goes with it and the time, a number or a mark at its side (lead), a small button in its corner, and the green frame when it is the marked one.
      o: attrs (what the card is for the code: data-..., role), cls, selected, ltr (a Latin name: left to right), lead, title, titleAttr (the name is a button with these attributes), sub, subLtr, pill, chip, time, corner */
