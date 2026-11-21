@@ -3091,7 +3091,7 @@
       var catBy = {};
       function catCards(k) {
         return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);padding:var(--gutter)">' + (catBy[k] || []).map(function (e) {
-          return cardUi({ attrs: 'data-ex="' + e.id + '" role="button" tabindex="0"', title: name(e), sub: (e.exercise_lines || []).map(function (x) { return lineName(x.line_key); }).filter(Boolean).join(" · "), subLtr: false, actions: heartBtnEx(e.id, "bio-ha bio-ha--tl") });
+          return cardUi({ attrs: 'data-ex="' + e.id + '" role="button" tabindex="0"', title: name(e), sub: (e.exercise_lines || []).map(function (x) { return lineName(x.line_key); }).filter(Boolean).join(" · "), subLtr: false });
         }).join("") + '</div>';
       }
       /* the one click handler of the list: a category opens or closes (slides), an exercise opens */
@@ -3477,7 +3477,7 @@
         });
       };
       if (useLayer && catPanel) { catPrev.innerHTML = phtml; pwire(catPrev);
-        var ph0 = catPrev.querySelector(".rhead"); if (ph0) { var xb = document.createElement("button"); xb.type = "button"; xb.className = "rbtn rbtn--icon bio-flat"; xb.setAttribute("aria-label", "סגירת התרגיל"); xb.title = "סגירת התרגיל"; xb.innerHTML = I.x; xb.addEventListener("click", function () { previewTok++; closeCatPrev(); }); ph0.appendChild(xb); } catPrevId = e.id; catPrevCtx = { e: e, fake: fake }; refreshPrevLabel(); saveCat(); requestAnimationFrame(function () { catPrev.classList.add("is-open"); }); }
+        var ph0 = catPrev.querySelector(".rhead"); if (ph0) { var xb = document.createElement("button"); xb.type = "button"; xb.className = "rbtn rbtn--icon bio-flat"; xb.setAttribute("aria-label", "סגירת התרגיל"); xb.title = "סגירת התרגיל"; xb.innerHTML = I.x; xb.addEventListener("click", function () { previewTok++; closeCatPrev(); }); ph0.insertAdjacentHTML("beforeend", heartBtnEx(e.id, "bio-flat")); ph0.appendChild(xb); } catPrevId = e.id; catPrevCtx = { e: e, fake: fake }; refreshPrevLabel(); saveCat(); requestAnimationFrame(function () { catPrev.classList.add("is-open"); }); }
       else show(phtml, pwire, "d");
     }, fail);
   }
