@@ -2648,7 +2648,7 @@
     var heart = m && m.id && !/^h[0-9]/.test(m.id) ? cardHeart(m) : "";
     var act = o.act || "", rmX = "";
     var rmM = act.match(/<button[^>]*data-orm[\s\S]*?<\/button>/);
-    if (rmM) { act = act.replace(rmM[0], ""); rmX = '<span style="position:absolute;top:var(--sp-1);right:var(--sp-1);display:flex">' + rmM[0] + '</span>'; }   /* the remove cross sits in the card's top right corner */
+    if (rmM) { act = act.replace(rmM[0], ""); rmX = '<span style="position:absolute;top:var(--sp-1);right:calc(2 * var(--sp-1) + 1px);display:flex">' + rmM[0] + '</span>'; }   /* the remove cross sits in the card's top right corner */
     return '<div class="rcard rcard--compact bio-card bio-mcard' + (o.cls ? ' ' + o.cls : '') + '" ' + (o.attrs || '') + (o.selected ? ' aria-current="true"' : '') + ' style="margin:0;min-width:0;display:flex;flex-direction:column;gap:2px;padding:var(--sp-2);cursor:pointer;position:relative;direction:ltr;text-align:left">' +
       '<span style="display:flex;align-items:center;min-height:var(--tag-s);overflow-wrap:anywhere;' + (rmX ? 'padding-right:var(--ctl);' : '') + 'font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(o.title) + '</span>' +
       '<div style="display:flex;align-items:center;gap:var(--sp-1);min-height:var(--tag-s)"><span class="bio-dur" style="flex:none;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + (d ? clock(d) : '') + '</span>' +
@@ -2668,7 +2668,7 @@
           '<span dir="auto" style="flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font)">' + (m ? esc(songName(m)) : 'בלי מוזיקה') + '</span><span style="flex:1 1 0;min-width:0"></span>' +
           '<span style="flex:none;display:flex;align-items:center;gap:var(--gap-tight)">' + (o.pill || '') + '</span>' +
         '</div>' +
-      '</div>' + (o.rm ? '<span style="position:absolute;top:var(--sp-1);left:var(--sp-1);display:flex">' + o.rm + '</span>' : '') + (o.actions || '') + '</div>';
+      '</div>' + (o.rm ? '<span style="position:absolute;top:var(--sp-1);left:0;display:flex">' + o.rm + '</span>' : '') + (o.actions || '') + '</div>';
   }
   /* THE CARD: one element for a song and for an exercise. A name (bold), a line under it (small), at the foot the play tile with what goes with it and the time, a number or a mark at its side (lead), a small button in its corner, and the green frame when it is the marked one.
      o: attrs (what the card is for the code: data-..., role), cls, selected, ltr (a Latin name: left to right), lead, title, titleAttr (the name is a button with these attributes), sub, subLtr, pill, chip, time, corner */
