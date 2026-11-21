@@ -1271,10 +1271,17 @@
   /* ---------- home: my vivencias ---------- */
   /* the vivencias I loved: my list, newest first; a row opens the vivencia */
   /* the lists of what I loved open on the left side on a wide screen (the right side keeps the list of vivencias), and as before on a narrow one */
-  function showL(html, wire) { if (wide() && window.__showLeft) return window.__showLeft(html, wire); return show(html, wire, undefined); }
+  function showL(title, body, wire) {
+    if (wide() && window.__showLeft) return window.__showLeft(head(title, "", true) + body, wire);
+    var dlg = document.getElementById("likedDlg");
+    if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "likedDlg"; document.body.appendChild(dlg); }
+    RosterSheet.render(dlg, { title: title, from: "bottom", size: "l", body: body });
+    wire(dlg);
+  }
+  function closeLiked() { var d = document.getElementById("likedDlg"); if (d && d.open) d.close(); }
   function closeLeft() { if (window.__closeHist) window.__closeHist(); }
   function likedVivScreen() {
-    showL(head("ויוונסיות שאהבתי", "", true) + '<div class="rlist" id="likv"><div class="rskel rskel--title"></div></div>', function (r) {
+    showL("ויוונסיות שאהבתי", '<div class="rlist" id="likv"><div class="rskel rskel--title"></div></div>', function (r) {
       on(r, "back", wide() ? closeLeft : back);
       api("/rest/v1/vivencia_likes?select=vivencia_id&order=created_at.desc").then(function (rows) {
         var l = r.querySelector("#likv"), list = (rows || []).map(function (x) { return state.vivs.filter(function (v) { return v.id === x.vivencia_id; })[0]; }).filter(Boolean);
@@ -1282,13 +1289,13 @@
           var n = v.vivencia_items && v.vivencia_items[0] ? v.vivencia_items[0].count : 0;
           return '<div class="rrow rrow--link" data-vrow="' + v.id + '">' + heartBtnViv(v.id, "rrow__trail") + '<button type="button" class="rrow__main" data-open="' + v.id + '" style="margin-inline-start:var(--sp-1);background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub">' + n + ' תרגילים</span></button></div>';
         }).join("") : ph("עוד אין ויוונסיות שאהבת", "לחצו על הלב ליד ויוונסיה כדי לשמור אותה כאן");
-        l.querySelectorAll("[data-open]").forEach(function (b) { b.addEventListener("click", function () { openViv(b.dataset.open); }); });
+        l.querySelectorAll("[data-open]").forEach(function (b) { b.addEventListener("click", function () { closeLiked(); openViv(b.dataset.open); }); });
       }, fail);
     });
   }
   /* the exercises I loved: my list, newest first; the heart takes one off it */
   function likedExScreen() {
-    showL(head("תרגילים שאהבתי", "", true) + '<div class="rlist" id="likx"><div class="rskel rskel--title"></div></div>', function (r) {
+    showL("תרגילים שאהבתי", '<div class="rlist" id="likx"><div class="rskel rskel--title"></div></div>', function (r) {
       on(r, "back", wide() ? closeLeft : back);
       api("/rest/v1/exercise_likes?select=exercises(id,title_he,title_en,category)&order=created_at.desc").then(function (rows) {
         var l = r.querySelector("#likx"), list = (rows || []).map(function (x) { return x.exercises; }).filter(Boolean);
@@ -1303,7 +1310,7 @@
     return songCardUi(m, { attrs: 'data-liked="' + esc(m.id) + '" role="button" tabindex="0"', title: songName(m), by: songBy(m), pill: cardPill(m), act: exBtnG(m) + '<button type="button" class="rbtn rbtn--icon bio-act" data-addto="' + esc(m.id) + '" aria-label="הוספה" title="הוספה לוויוונסיה או לתרגיל">' + I.plus + '</button>' });   /* footEnd: the play tile at the left end, so the heart has the bottom right to itself */
   }
   function likedScreen() {
-    showL(head("מוסיקה שאהבתי", "", true) + '<div class="rlist" id="likl"><div class="rskel rskel--title"></div></div>', function (r) {
+    showL("מוסיקה שאהבתי", '<div class="rlist" id="likl"><div class="rskel rskel--title"></div></div>', function (r) {
       on(r, "back", wide() ? closeLeft : back);
       api("/rest/v1/song_likes?select=music(id,name,title,artist,duration_sec,audio_object,in_catalog)&order=created_at.desc").then(function (rows) {
         var l = r.querySelector("#likl"), list = (rows || []).map(function (x) { return x.music; }).filter(Boolean);
@@ -1327,7 +1334,7 @@
       if (plus0 && dx0 != null && dx0 !== "") plus0.style.transform = "translateX(" + dx0 + "px)";   /* in its place from the first moment, before the list is here */
       on(r, "homemore", function (b) {   /* one menu: the songs I loved, who may enter (the manager), leaving */
         var cnt = function (o) { return Object.keys(o).filter(function (k) { return o[k]; }).length; };
-        var items = state.offline ? [] : [{ label: "יצירת ויוונסיה", icon: I.plus, fn: newViv }, { label: "קטלוג", meta: '<span data-catcnt></span>', icon: I.catalog, fn: function () { if (wide()) openCatPanel(); else { resetPk(); pickerSheet(); } } }, { label: "ויוונסיות שאהבתי", meta: String(cnt(likesViv)), icon: I.heart, fn: function () { if (wide()) likedVivScreen(); else goSub(likedVivScreen); } }, { label: "תרגילים שאהבתי", meta: String(cnt(likesEx)), icon: I.heart, fn: function () { if (wide()) likedExScreen(); else goSub(likedExScreen); } }, { label: "מוסיקה שאהבתי", meta: String(cnt(likes)), icon: I.heart, fn: function () { if (wide()) likedScreen(); else goSub(likedScreen); } }];   /* in the order of the app: vivencias, exercises, songs */
+        var items = state.offline ? [] : [{ label: "יצירת ויוונסיה", icon: I.plus, fn: newViv }, { label: "קטלוג", meta: '<span data-catcnt></span>', icon: I.catalog, fn: function () { if (wide()) openCatPanel(); else { resetPk(); pickerSheet(); } } }, { label: "ויוונסיות שאהבתי", meta: String(cnt(likesViv)), icon: I.heart, fn: function () { likedVivScreen(); } }, { label: "תרגילים שאהבתי", meta: String(cnt(likesEx)), icon: I.heart, fn: function () { likedExScreen(); } }, { label: "מוסיקה שאהבתי", meta: String(cnt(likes)), icon: I.heart, fn: function () { likedScreen(); } }];   /* in the order of the app: vivencias, exercises, songs */
         if (state.me.admin) items.push({ label: "ניהול משתמשים", icon: I.users, fn: allowPopup });
         items.push({ label: "יציאה", icon: I.out, tone: "danger", fn: function () { Promise.resolve(FLOA_AUTH.signOut()).then(function () { location.reload(); }); } });
         menu(b, items);
