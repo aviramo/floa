@@ -461,14 +461,24 @@
       histLayer._rows = rows;
       var nw = window.__bioNow || {};
       var cards = rows.map(function (e, i) {
-        var m = { id: "h" + i, audio_object: e.n, title: e.t, name: e.t, artist: e.a };
-        return songCardUi(m, { attrs: 'data-hi="' + i + '" role="button" tabindex="0"', selected: !!(nw.name && nw.name === e.n), title: e.t || "מוסיקה", by: [e.a || "", when(e.at)].filter(Boolean).join(" \u00b7 "), pill: cardPill(m) });
+        var rid = histIds[e.n], m = { id: rid || "h" + i, audio_object: e.n, title: e.t, name: e.t, artist: e.a };
+        return songCardUi(m, { act: rid ? '<button type="button" class="rbtn rbtn--icon bio-act" data-addto="' + esc(rid) + '" aria-label="הוספה" title="הוספה לוויוונסיה או לתרגיל">' + I.plus + '</button>' : '', attrs: 'data-hi="' + i + '" role="button" tabindex="0"', selected: !!(nw.name && nw.name === e.n), title: e.t || "מוסיקה", by: [e.a || "", when(e.at)].filter(Boolean).join(" \u00b7 "), pill: cardPill(m) });
       }).join("");
       histLayer.innerHTML = head("היסטוריית האזנה", "", false, "") + '<div class="rlist">' + (rows.length ? cardGrid(cards) : ph("אין עדיין היסטוריה", "מוסיקה שהתחלתם להשמיע תופיע כאן")) + '</div>';
       placeHist(); histOpen = true; pl.classList.add("bio-dim");
       requestAnimationFrame(function () { histLayer.classList.add("is-open"); });
     }
+    var histIds = {};   /* the music row of each song in the history, by its file: the heart and the plus need it */
     function renderHistory(h) {
+      var seen = {}, names = []; (h || []).forEach(function (e) { if (e && e.n && !seen[e.n]) { seen[e.n] = 1; if (!histIds[e.n]) names.push(e.n); } });
+      names = names.slice(0, 120);
+      if (!names.length || !window.FLOA_AUTH) { renderHistory2(h); return; }
+      var inList = names.map(function (n) { return '"' + String(n).split('\\').join('\\\\').split('"').join('\\"') + '"'; }).join(",");
+      var done = false, go = function () { if (done) return; done = true; renderHistory2(h); };
+      setTimeout(go, 1500);
+      api("/rest/v1/music?audio_object=in.(" + encodeURIComponent(inList) + ")&select=id,audio_object&limit=500").then(function (rs) { (rs || []).forEach(function (x) { histIds[x.audio_object] = x.id; }); go(); }, go);
+    }
+    function renderHistory2(h) {
       var seen = {}, rows = []; h.forEach(function (e) { if (e && e.n && !seen[e.n]) { seen[e.n] = 1; rows.push(e); } });
       rows = rows.slice(0, 120);
       var dlg = document.getElementById("histDlg");
@@ -2719,6 +2729,14 @@
       var y = c.querySelector("[data-yt]"); if (y) y.click();
     });
   })();
+  document.addEventListener("click", function (ev) {   /* a plus on a song card: where to add it, asked in a popup */
+    var b = ev.target.closest && ev.target.closest("[data-addto]"); if (!b) return;
+    ev.stopPropagation(); ev.preventDefault();
+    api("/rest/v1/music?id=eq." + encodeURIComponent(b.dataset.addto) + "&select=id,name,title,artist,duration_sec,audio_object,in_catalog&limit=1").then(function (rows) {
+      var m = rows && rows[0]; if (!m) { toast("המוסיקה לא נמצאה"); return; }
+      chooseDest(songName(m), { vivId: state.viv && state.viv.id, itemId: liveItem && liveItem.id }, function (d) { addMusicTo(m, d); });
+    }, fail);
+  }, true);
   var CARD_BIN = 'style="position:absolute;top:calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2);right:calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2);color:var(--text-3);min-height:var(--tag-s);height:var(--tag-s);width:var(--tag-s);padding:0;background:transparent;border-color:transparent"';
   /* the card of a music option: the song, its performer, the play tile, the chip that chooses it, the time, the bin */
   function optCardHtml(m, sel, withRm, plain, listKey) {   /* plain: the catalog's exercise, only its songs: no chip to choose, no green frame */
@@ -2824,7 +2842,7 @@
     function cardHtml(m, added) {
       var ex = xsOf[m.id];
       return songCardUi(m, { attrs: 'data-am="' + esc(m.id) + '" role="button" tabindex="0"', selected: added, title: songName(m), by: ex ? ex + " \u00b7 " + songBy(m) : songBy(m), pill: cardPill(m), keepPlay: false,
-        act: it.__listen ? '' : (added ? '<button type="button" class="rbtn rbtn--icon bio-act" data-amrm aria-label="הסרה מהתרגיל" title="הסרה מהתרגיל">' + I.x + '</button>' : '<button type="button" class="rbtn rbtn--icon bio-act" data-amadd aria-label="הוספה לתרגיל" title="הוספה לתרגיל">' + I.plus + '</button>') });
+        act: it.__listen ? '<button type="button" class="rbtn rbtn--icon bio-act" data-addto="' + esc(m.id) + '" aria-label="הוספה" title="הוספה לוויוונסיה או לתרגיל">' + I.plus + '</button>' : (added ? '<button type="button" class="rbtn rbtn--icon bio-act" data-amrm aria-label="הסרה מהתרגיל" title="הסרה מהתרגיל">' + I.x + '</button>' : '<button type="button" class="rbtn rbtn--icon bio-act" data-amadd aria-label="הוספה לתרגיל" title="הוספה לתרגיל">' + I.plus + '</button>') });
     }
     function draw() {
       if (!linked || !rest) return;
