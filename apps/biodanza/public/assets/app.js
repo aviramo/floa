@@ -1778,7 +1778,7 @@
   function printOpening() {   /* only the opening of the evening: the free text and every leader's words, on paper */
     var v = state.viv; if (!v) return;
     var free = openFreeText(), secs = openRows().filter(function (x) { return x.who !== ""; });
-    var html = '<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>' + esc(v.title || "פתיחת הערב") + '</title><style>@page { margin: 16mm } body { font: 26px/1.65 Heebo, Arial, sans-serif; color: #000; margin: 0 } h1 { font-size: 44px; font-weight: 900; margin: 0 0 6px; line-height: 1.2 } h2 { font-size: 40px; font-weight: 900; line-height: 1.2; margin: 38px 0 10px; padding-bottom: 6px; border-bottom: 4px solid #000; color: #000; break-after: avoid } .sub { font-size: 26px; font-weight: 700; color: #333; margin: 0 0 24px } p { margin: 0 0 10px; white-space: normal } h3 { font-size: 26px; font-weight: 800; margin: 16px 0 4px; color: #333 } .fac { font-size: 30px; font-weight: 800; color: #000; margin-inline-start: 14px; vertical-align: middle } .fac::before { content: "|"; font-weight: 400; margin-inline-end: 14px } .song { font-size: 26px; font-weight: 700; margin: 0 0 8px } .lead { break-inside: avoid; page-break-inside: avoid } .ex { break-inside: avoid; page-break-inside: avoid; margin-bottom: 28px } .exstart { break-before: page; page-break-before: always; margin-top: 0; padding-top: 0 } h2, h3 { break-after: avoid; page-break-after: avoid }</style></head><body>' +
+    var html = '<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>' + esc(v.title || "פתיחת הערב") + '</title><style>@page { margin: 16mm } body { font: 26px/1.65 Heebo, Arial, sans-serif; color: #000; margin: 0 } h1 { font-size: 44px; font-weight: 900; margin: 0 0 6px; line-height: 1.2 } h2 { font-size: 40px; font-weight: 900; line-height: 1.2; margin: 38px 0 10px; padding-bottom: 6px; border-bottom: 4px solid #000; color: #000; break-after: avoid } .sub { font-size: 26px; font-weight: 700; color: #333; margin: 0 0 24px } p { margin: 0 0 10px; white-space: normal; orphans: 3; widows: 3 } h3 { font-size: 26px; font-weight: 800; margin: 16px 0 4px; color: #333 } .fac { font-size: 30px; font-weight: 800; color: #000; margin-inline-start: 14px; vertical-align: middle } .fac::before { content: "|"; font-weight: 400; margin-inline-end: 14px } .song { font-size: 26px; font-weight: 700; margin: 0 0 8px } .lead { break-inside: avoid; page-break-inside: avoid } .ex { break-inside: avoid; page-break-inside: avoid; margin-bottom: 28px } .exstart { break-before: page; page-break-before: always; margin-top: 0; padding-top: 0 } h2, h3 { break-after: avoid; page-break-after: avoid }</style></head><body>' +
       '<h1>' + esc(v.title || "ויוונסיה") + '</h1><div class="sub">פתיחת הערב</div>' +
       (free ? '<p>' + rtHtml(free) + '</p>' : '') +
       secs.map(function (q) { return '<div class="lead"><h2>' + esc(openName(q.who)) + '</h2><p>' + rtHtml(q.body || "") + '</p></div>'; }).join("") +
@@ -1799,7 +1799,13 @@
     var fr = document.createElement("iframe"); fr.setAttribute("aria-hidden", "true"); fr.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0";
     document.body.appendChild(fr);
     var d = fr.contentWindow.document; d.open(); d.write(html); d.close();
-    var go = function () { try { fr.contentWindow.focus(); fr.contentWindow.print(); } catch (e) { /* the browser refused: nothing to clean but the frame */ } setTimeout(function () { fr.remove(); }, 1500); };
+    var go = function () {
+      try {   /* a part taller than a page cannot be kept whole: it is let to break, and its heading stays with its first lines; the rest keeps whole */
+        var fd = fr.contentWindow.document, pr = fd.createElement("div"); pr.style.cssText = "position:absolute;visibility:hidden;height:245mm;width:1px"; fd.body.appendChild(pr);
+        var pageH = pr.offsetHeight; pr.remove();
+        [].forEach.call(fd.querySelectorAll(".lead, .ex"), function (el) { if (el.offsetHeight > pageH * 0.92) { el.style.breakInside = "auto"; el.style.pageBreakInside = "auto"; } });
+      } catch (e) { /* the sizes are unknown: the rules stay as they are */ }
+      try { fr.contentWindow.focus(); fr.contentWindow.print(); } catch (e) { /* the browser refused: nothing to clean but the frame */ } setTimeout(function () { fr.remove(); }, 1500); };
     setTimeout(go, 250);
   }
   document.addEventListener("click", function (ev) { if (ev.target.closest && ev.target.closest("[data-printopen]")) { ev.preventDefault(); ev.stopPropagation(); printOpening(); } }, true);
