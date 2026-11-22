@@ -15,7 +15,7 @@ dialog.connect .sheet-head h2 .msub { font: var(--fw-regular) var(--fs-s)/var(--
 dialog.connect .sheet-body { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; overflow: hidden; margin: 0; padding: 0; }   /* (the kit gives the body a few px of negative margin for focus rings: here the tabs run edge to edge, by the sheet's own side padding) */
 .bizname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* The tabs are the participant card's (admin.css .ptabs, .ptabi, .ppager, .ppage; assets/pager.js), five of them instead of four: five equal columns, the underline a fifth wide, the same 2px line and soft shadow. */
-dialog.connect .ptabs { flex: 0 0 auto; grid-template-columns: repeat(5, 1fr); margin-inline: calc(var(--pp-px) * -1); background: var(--bg); border-bottom: 2px solid var(--line); box-shadow: 0 3px 8px -2px color-mix(in srgb, var(--text) 12%, transparent); z-index: var(--z-raised); }
+dialog.connect .ptabs { flex: 0 0 auto; grid-template-columns: repeat(5, 1fr); margin-inline: calc(var(--pp-px) * -1); background: var(--bg); border-bottom: 2px solid var(--line); box-shadow: var(--sh-bar); z-index: var(--z-raised); }
 dialog.connect .ptabs .ptabi { width: 20%; }
 dialog.connect .ppager { flex: 1 1 auto; min-height: 0; margin-inline: calc(var(--pp-px) * -1); }
 .ppage.panel { display: block; flex: 0 0 100%; padding: 0 0 var(--end-pad); overflow-y: auto; overscroll-behavior-y: contain; }

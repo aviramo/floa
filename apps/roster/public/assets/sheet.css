@@ -9,18 +9,18 @@
    ===================================================================== */
 
 dialog.rsheet {
-  --rs-bg: var(--bg, #fff);
-  --rs-text: var(--text, #16191D);
-  --rs-scrim: var(--pp-scrim, rgba(16, 20, 26, .55));
-  --rs-pill: var(--line-strong, #6B7280);  /* 4.8:1 on white, the grab bar must be seen */
-  --rs-line: var(--line, #E5E7EB);
+  --rs-bg: var(--bg);
+  --rs-text: var(--text);
+  --rs-scrim: var(--pp-scrim);
+  --rs-pill: var(--line-strong);  /* 4.8:1 on white, the grab bar must be seen */
+  --rs-line: var(--line);
   border: 0; padding: 0; margin-inline: auto;
   width: 100%; max-width: var(--pp-w-m, 560px);
   max-height: calc(var(--rs-vvh, 100dvh) - 12px);
   overflow: hidden; overscroll-behavior: contain;
   border-radius: 0 !important;             /* iron rule: no rounded corners, wide screens included */
   background: var(--rs-bg); color: var(--rs-text);
-  box-shadow: var(--pp-shadow);
+  box-shadow: var(--sh-pop);
   transform: translateY(var(--rs-dy, 0px));
   touch-action: pan-y;
 }
@@ -89,7 +89,7 @@ dialog.rsheet[open]::backdrop { animation: rs-fade .24s ease-out; }
   dialog.rsheet[data-from] .sheet, dialog.rsheet .sheet { padding-top: var(--pp-pt, 16px); padding-bottom: var(--sheet-b, var(--pp-pb, 24px)); }   /* the same bottom padding on a computer, whichever way it opens on touch */
   dialog.rsheet[open], dialog.rsheet[open][data-from], dialog.rsheet[open]:not([data-from]) { animation: rs-in-center .2s cubic-bezier(.2, .8, .2, 1); }
   /* the side drawer, only when asked for: the same side as the admin drawers (the left edge), the full height of the window */
-  dialog.rsheet[data-desktop="side"] { position: fixed; inset: var(--envtop, 0px) auto 0 0; margin: 0; width: min(var(--pp-side, 440px), 92vw); max-width: none; max-height: none; height: auto; box-shadow: var(--pp-side-shadow); }
+  dialog.rsheet[data-desktop="side"] { position: fixed; inset: var(--envtop, 0px) auto 0 0; margin: 0; width: min(var(--pp-side, 440px), 92vw); max-width: none; max-height: none; height: auto; box-shadow: var(--sh-side); }
   dialog.rsheet[open][data-desktop="side"] { animation: rs-in-side .26s cubic-bezier(.2, .8, .2, 1); }
 }
 @keyframes rs-in-center { from { opacity: 0; transform: translateY(12px); } }

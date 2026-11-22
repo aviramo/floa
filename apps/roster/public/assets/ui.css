@@ -11,17 +11,7 @@
    ========================================================================== */
 
 :root {
-  /* ---- colors by role (B): warm paper, ink, deep green primary; all text roles 4.5:1, field lines 3:1 ---- */
-  --bg: #FBF8F3;  --surface: #F3EEE6;  --surface-2: #EAE3D8;
-  --line: #E2DACC;  --line-strong: #8C8372;                   /* line-strong: field underline, outlines of controls */
-  --text: #1F1B16;  --text-2: #5A5146;  --text-3: #6F6558;
-  --primary: #0F5F4F;  --on-primary: #FFFFFF;                  /* buttons, selected tab/chip, FAB */
-  --accent: #0F5F4F;                                           /* focus ring, links, active tab, field focus line */
-  --success: #1B6B3A;  --success-bg: #E1F3E6;
-  --danger: #B3261E;   --danger-bg: #FBE3E0;
-  --warn: #7F5300;     --warn-bg: #FBEBC4;
-  --info: #1D4F91;     --info-bg: #E3ECF8;
-  --scrim: rgba(31, 27, 22, .55);
+  /* ---- colors: all of them live in palette.css (loaded before this file); nothing in this file writes a color ---- */
   /* inverse set: a rule that swaps the page palette (the dark mail preview) cannot read the variable it defines, so it reads these, resolved at :root */
   --inv-bg: var(--text);  --inv-text: var(--bg);  --inv-mid: var(--text-2);  --inv-soft: var(--line-strong);  --inv-low: var(--text-3);
 
@@ -51,8 +41,6 @@
   /* ---- shape ---- */
   --r-ctl: 14px;  --r-card: 20px;  --r-chip: 999px;  --r-switch: 999px;  --r-fab: 999px;
   --r-float: 0;                                                               /* popups, sheets, windows, drawers, anchored menus */
-  --sh-card: 0 4px 14px -4px rgba(63, 47, 20, .16);
-  --sh-pop: 0 18px 44px -12px rgba(63, 47, 20, .30), 0 3px 8px rgba(63, 47, 20, .08);
 
   /* ---- type ---- */
   --font: "Heebo", system-ui, -apple-system, "Segoe UI", sans-serif;   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -77,9 +65,9 @@
 .rbtn--block { display: flex; width: 100%; }
 .rbtn--ghost { background: var(--surface-2); border-color: var(--surface-2); color: var(--text); font-weight: var(--fw-medium); }
 .rbtn--outline { background: transparent; border-color: var(--line-strong); color: var(--text); font-weight: var(--fw-medium); }
-.rbtn--danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+.rbtn--danger { background: var(--danger); border-color: var(--danger); color: var(--on-color); }
 .rbtn--ghost.rbtn--danger { background: var(--surface-2); border-color: var(--surface-2); color: var(--danger); }
-.rbtn--success { background: var(--success); border-color: var(--success); color: #fff; }
+.rbtn--success { background: var(--success); border-color: var(--success); color: var(--on-color); }
 .rbtn--sm { min-height: var(--ib); padding: 0 var(--sp-1); font-size: var(--fs-s); }
 .rbtn--link { background: transparent; border-color: transparent; color: var(--accent); font-weight: var(--fw-medium); text-decoration: underline; padding: 0 var(--sp-1); }
 /* icon button: neutral | --primary | disabled | loading. 40 visual, 44 touch. aria-label AND title required. */
@@ -141,21 +129,21 @@
 .rswipe { position: absolute; z-index: 0; inset: 0; display: flex; justify-content: flex-start; border-radius: inherit; overflow: hidden; background: var(--surface-2); }   /* the tray is the card's WHOLE background (owner 2026-11-13): a white card slides over a plain coloured ground, the actions sit at the end edge of that ground, never a tile that can climb onto the card */
 .rswipe:has(> .rswipe__act:only-child[data-tone="danger"]) { background: var(--danger); }   /* one destructive action: the ground itself is red */
 .rswipe__act { flex: 0 0 88px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--gap-tight); border: 0; background: var(--surface-2); color: var(--text); font: var(--fw-bold) var(--fs-xs)/1.1 var(--font); cursor: pointer; }
-.rswipe__act[data-tone="danger"] { background: var(--danger); color: #fff; }
+.rswipe__act[data-tone="danger"] { background: var(--danger); color: var(--on-color); }
 .rswipe__act[data-tone="danger"]:only-child { background: transparent; }
 .rswipe__act > svg { width: var(--icon-m); height: var(--icon-m); stroke-width: var(--icon-w); }
 .rswipe__act:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
 /* a row with a SECOND tray: each tray is the half of the ground on its own side (the first at the start edge, this one at the end edge), so both can show under the card */
 /* both grounds run under the WHOLE card (so the rounded corners of the card slide over colour, with no gap), and only the one on the side being pulled is shown: the row says which side with data-swdir */
-.rswipe.rswipe--start { justify-content: flex-end; background: var(--green); color: #fff; }
+.rswipe.rswipe--start { justify-content: flex-end; background: var(--green); color: var(--on-color); }
 [data-swipe]:has(> .rswipe--start)[data-swdir="start"] > .rswipe:not(.rswipe--start), [data-swipe][data-swdir="end"] > .rswipe--start { visibility: hidden; }
 /* both trays of a row that has two: the label sits 28px from the OUTER edge (the box is the label plus 28px each side, 88px at least), so "הסרה" on one side and "וואטסאפ" on the other have the same room */
 .rswipe--start .rswipe__act, [data-swipe]:has(> .rswipe--start) > .rswipe:not(.rswipe--start) .rswipe__act { flex: 0 0 auto; min-width: 88px; padding-inline: 28px; white-space: nowrap; gap: var(--sp-hair); }
 .rswipe--start .rswipe__act { background: transparent; color: inherit; }   /* the send tray takes the ground's colours; the delete tray keeps its own (white on red) */
 .rswipe--start .rswipe__act > svg { width: 24px; height: 24px; }
-.rswipe--start:has(.rswipe__act[data-mode="msg"]), .rswipe--start:has(.rswipe__act[data-go="sent"]) { background: var(--yellow); color: #fff; }   /* the tray takes the colour of the mode: dark yellow for a message (sent or not), dark green for arrival and for WhatsApp */
-.rswipe--start:has(.rswipe__act[data-go="arr"]) { background: var(--green); color: #fff; }
-.rswipe--start:has(.rswipe__act[data-go="noarr"]) { background: var(--text-3); color: #fff; }   /* "לא הגיע": grey */
+.rswipe--start:has(.rswipe__act[data-mode="msg"]), .rswipe--start:has(.rswipe__act[data-go="sent"]) { background: var(--yellow); color: var(--on-color); }   /* the tray takes the colour of the mode: dark yellow for a message (sent or not), dark green for arrival and for WhatsApp */
+.rswipe--start:has(.rswipe__act[data-go="arr"]) { background: var(--green); color: var(--on-color); }
+.rswipe--start:has(.rswipe__act[data-go="noarr"]) { background: var(--text-3); color: var(--on-color); }   /* "לא הגיע": grey */
 .rswipe__act { pointer-events: none; cursor: default; }   /* the label under a swiped row ("הסרה") is not a button: pulling the row until it is fully showing IS the action, and a row never rests half open for a tap */
 [data-swipe]::after { display: none; content: ""; position: absolute; inset-block: 35%; inset-inline-end: 3px; width: 3px; background: var(--line-strong); opacity: .5; pointer-events: none; }   /* persistent edge cue */
 [data-swipe].is-open::after { display: none; }
@@ -271,7 +259,7 @@ html:has(.rfab:not(.rfab--in)) .rmsg--toast { box-sizing: border-box; min-height
 .rmsg--undo .rundo__n { position: absolute; top: -4px; inset-inline-start: -4px; min-width: 20px; height: 20px; padding: 0 5px; box-sizing: border-box; border-radius: 999px; background: var(--bg); color: var(--text); border: 1px solid var(--text); font: var(--fw-bold) var(--fs-xs)/18px var(--font); text-align: center; pointer-events: none; }
 .rmsg--undo::after { content: ""; position: absolute; inset: 4px; border-radius: 50%; pointer-events: none; opacity: .85;
   background: conic-gradient(var(--bg) calc(var(--left, 1) * 360deg), transparent 0);
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px)); mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px)); }   /* the time left, a ring that empties clockwise */
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), var(--mask-ink) calc(100% - 3px)); mask: radial-gradient(farthest-side, transparent calc(100% - 3px), var(--mask-ink) calc(100% - 3px)); }   /* the time left, a ring that empties clockwise */
 .rmsg--undo[data-paused="true"]::after { opacity: .35; }
 /* a restored row (after "undo") is tinted for a moment, so it is easy to find */
 .rk-restored { position: relative; }
@@ -323,3 +311,6 @@ button.rrow__main { appearance: none; border: 0; background: none; padding: 0; t
   .rswipe-more > svg { width: var(--icon-m); height: var(--icon-m); }
 }
 @media (prefers-reduced-motion: reduce) { .rswipe-more { transition: none; } }
+
+/* the Google logo */
+.gbtn svg .gy { fill: var(--g-yellow); }  .gbtn svg .gr { fill: var(--g-red); }  .gbtn svg .gg { fill: var(--g-green); }  .gbtn svg .gb { fill: var(--g-blue); }

@@ -8,7 +8,7 @@
    Extensions are chosen by the control itself (select, textarea, input[type]) or by a modifier on the same element:
             rfield--switch, rfield--check (row with a switch or a checkbox), rfield--ltr (value written left to right).
    Needs the page tokens --bg --line --line-2 --text --text-2 --red --font (fallbacks below). */
-:root { --rf-h: 46px; --rf-line: var(--line-strong, var(--line-2, #C7CCD3)); --rf-ink: var(--text, #16191D); --rf-ink-2: var(--text-2, #5A626C); --rf-red: var(--danger, var(--red, #C81E3A)); --rf-good: var(--success, #067647); --rf-bg: var(--bg, #FFFFFF); }
+:root { --rf-h: 46px; --rf-line: var(--line-strong, var(--line-2)); --rf-ink: var(--text); --rf-ink-2: var(--text-2); --rf-red: var(--danger, var(--red)); --rf-good: var(--success, var(--green)); --rf-bg: var(--bg); }
 
 .rfield[hidden], .rfield > [hidden] { display: none !important; }
 .rfield { position: relative; display: block; min-width: 0; margin: 0 0 var(--sp-1, 8px); font-family: var(--font, "Heebo", system-ui, sans-serif); }

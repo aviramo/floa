@@ -10,7 +10,7 @@
   --line-2: var(--line-strong); --orange: var(--accent);
   --red: var(--danger); --red-bg: var(--danger-bg); --green: var(--success); --green-bg: var(--success-bg);
   --blue: var(--info); --blue-bg: var(--info-bg); --yellow: var(--warn); --yellow-bg: var(--warn-bg); --yellow-fill: var(--warn-bg);
-  --gray: var(--text-2); --gray-bg: var(--surface-2); --pop: var(--sh-pop);
+  --gray: var(--text-2); --gray-bg: var(--surface-2);
   --gut: var(--gutter); --agecol: 44px; --r: var(--r-ctl); --tag-lg: var(--tag-l); --ind: var(--tag);
   --ink: var(--text); --muted: var(--text-2); --sky: var(--info); --sky-bg: var(--info-bg);
 }
@@ -216,7 +216,7 @@ dialog::-webkit-scrollbar, dialog *::-webkit-scrollbar { display: none; width: 0
 
 /* 3.9 שכבה צפה (תפריט): לבן, גבול דק, צל אחד. כל התפריטים בדף */
 .qmenu, .sortmenu, .hmenu, #fMenu, #viewMenu, #finPerMenu, .colmenu{
-  background: var(--bg); color: var(--text); border: 1px solid var(--line); box-shadow: var(--pop); padding: var(--sp-1); }
+  background: var(--bg); color: var(--text); border: 1px solid var(--line); box-shadow: var(--sh-pop); padding: var(--sp-1); }
 .qmenu { position: fixed; z-index: var(--z-sheet); display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; gap: var(--sp-1); width: min(330px, calc(100vw - 16px)); }
 .sortmenu { position: absolute; top: calc(100% + calc(var(--sp-hair) * 2)); left: 0; z-index: var(--z-sticky); min-width: 190px; }
 #sortMenu { position: fixed; top: 0; left: 0; z-index: var(--z-sheet); }
@@ -404,11 +404,11 @@ h1 { margin: 0; font-size: var(--fs-l); font-weight: var(--fw-black); letter-spa
 .empty { padding: calc(var(--sp-hair) * 12) var(--sp-2); text-align: center; color: var(--text-2); }
 .empty b { display: block; margin-bottom: var(--sp-1); color: var(--text); font-size: var(--fs-m); font-weight: var(--fw-bold); }
 .error-box { margin: var(--sp-1) var(--gut); padding: var(--sp-1); background: var(--red-bg); color: var(--text); }
-.toast { position: fixed; left: 50%; bottom: calc(var(--sp-hair) * 22.5); z-index: var(--z-menu); max-width: calc(100% - 32px); padding: var(--sp-1) var(--sp-2); background: var(--text); color: var(--on-primary); font-weight: var(--fw-bold); box-shadow: var(--pop); opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(16px); transition: opacity .2s, transform .2s; }
+.toast { position: fixed; left: 50%; bottom: calc(var(--sp-hair) * 22.5); z-index: var(--z-menu); max-width: calc(100% - 32px); padding: var(--sp-1) var(--sp-2); background: var(--text); color: var(--on-primary); font-weight: var(--fw-bold); box-shadow: var(--sh-pop); opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(16px); transition: opacity .2s, transform .2s; }
 .toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 /* ---------- 5. פופאפים: מגירה מלמטה (במובייל לכל הרוחב), חלון במרכז בדסקטופ ---------- */
-dialog { border: 0; padding: 0; width: 100%; max-width: 560px; max-height: 92dvh; margin: auto auto 0; overflow-y: auto; overscroll-behavior: contain; background: var(--bg); color: var(--text); box-shadow: var(--pop); }
+dialog { border: 0; padding: 0; width: 100%; max-width: 560px; max-height: 92dvh; margin: auto auto 0; overflow-y: auto; overscroll-behavior: contain; background: var(--bg); color: var(--text); box-shadow: var(--sh-pop); }
 @media (min-width: 560px) { dialog { margin: auto; } }
 dialog::backdrop { background: var(--scrim); }
 html.dlg-lock { overflow: hidden; overscroll-behavior: none; }
@@ -725,7 +725,7 @@ html.dlg-lock { overflow: hidden; overscroll-behavior: none; }
 .strow .sthandle { grid-column: 1; }
 .strow .stdel { grid-column: 5; }
 .strow .stshow { grid-column: 4; }
-.strow.dragging, .pmrow.dragging { position: relative; z-index: var(--z-raised); background: var(--bg); box-shadow: var(--pop); }
+.strow.dragging, .pmrow.dragging { position: relative; z-index: var(--z-raised); background: var(--bg); box-shadow: var(--sh-pop); }
 .strow.dragging .sthandle, .pmrow.dragging .sthandle { cursor: grabbing; }
 .strow .stname, .srccard .stname { flex: 1 1 0; min-width: 0; height: var(--namh); padding: 0 var(--sp-1); border: 0; font-size: var(--fs-s); font-weight: var(--fw-bold); text-align: right; }
 .strow .stname:focus, .srccard .stname:focus { outline: none; border-bottom-color: var(--text); }
@@ -860,7 +860,7 @@ p.stline { margin: var(--sp-1) 0 0; font-size: var(--fs-s); }
   #iDlg .sheet { height: auto; padding: var(--sp-2) var(--gut); }
   .iwrap img { height: auto; max-height: calc(min(90dvh, 920px) - 58px); border-radius: var(--r); }
 }
-.inav { position: absolute; top: 50%; margin-top: calc(var(--sp-2) * -1); background: color-mix(in srgb, var(--bg) 92%, transparent); border-color: transparent; }
+.inav { position: absolute; top: 50%; margin-top: calc(var(--sp-2) * -1); background: var(--veil); border-color: transparent; }
 .iprev { right: calc(var(--sp-hair) * 2); }
 .inext { left: calc(var(--sp-hair) * 2); }
 
@@ -961,7 +961,7 @@ html.is-loading .vbar { display: none; }
 /* ---------- דסקטופ (31.10.26): הגדרות, סטטיסטיקות וכספים כפאנל מצד שמאל שמחליק ימינה (בדסקטופ רחב: כל האזור שמשמאל לרשימה) ---------- */
 
 @media (min-width: 760px) {
-  :is(#setDlg, #stDlg, #finDlg, #prDlg, #viewDlg).drawer { inset: var(--envtop, 0px) auto 0 0; width: min(600px, 92vw); max-width: none !important; height: auto; max-height: none; margin: 0; box-shadow: var(--pop); }
+  :is(#setDlg, #stDlg, #finDlg, #prDlg, #viewDlg).drawer { inset: var(--envtop, 0px) auto 0 0; width: min(600px, 92vw); max-width: none !important; height: auto; max-height: none; margin: 0; box-shadow: var(--sh-pop); }
   :is(#setDlg, #stDlg, #finDlg, #prDlg, #viewDlg).drawer .sheet { min-height: 100%; }
   #viewDlg.drawer .sheet { padding: var(--pp-pt-sheet) var(--pp-px) var(--sheet-b); }   /* the preferences panel keeps the popup's own paddings (the generic rule skips a drawer) */
   #finDlg.drawer .sheet { height: 100%; max-height: none; }
@@ -1403,7 +1403,7 @@ html.is-loading .hsearch { visibility: hidden; }
 .wrap > .list > .row.last, .wrap > .list > .row.sel { background: var(--sky-bg); }   /* הכרטיס שנבחר: כחול בהיר */
 #pDlg .ppanel[data-panel="main"] { background: var(--surface); }   /* הרקע האפור עד תחתית הפופאפ, בלי פס לבן */
 #pDlg .ptabs { background: var(--bg); }
-.wafab { position: fixed; bottom: calc(var(--safe-b) + calc(var(--sp-hair) * 2)); left: 50%; transform: translateX(-50%); z-index: var(--z-menu); display: inline-flex; align-items: center; gap: var(--sp-1); max-width: calc(100vw - 32px); height: 44px; padding: 0 var(--sp-2); border-radius: var(--r-chip); background: var(--text); color: var(--on-primary); font-size: var(--fs-s); font-weight: var(--fw-bold); box-shadow: var(--pop); white-space: nowrap; }   /* כפתור צף: מה שנבחר בתפריט הסימון, ולחיצה פותחת אותו לבחירה */
+.wafab { position: fixed; bottom: calc(var(--safe-b) + calc(var(--sp-hair) * 2)); left: 50%; transform: translateX(-50%); z-index: var(--z-menu); display: inline-flex; align-items: center; gap: var(--sp-1); max-width: calc(100vw - 32px); height: 44px; padding: 0 var(--sp-2); border-radius: var(--r-chip); background: var(--text); color: var(--on-primary); font-size: var(--fs-s); font-weight: var(--fw-bold); box-shadow: var(--sh-pop); white-space: nowrap; }   /* כפתור צף: מה שנבחר בתפריט הסימון, ולחיצה פותחת אותו לבחירה */
 .wafab span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .wafab svg { width: 18px; height: 18px; flex: none; }
 
@@ -1423,7 +1423,7 @@ html.is-loading .hsearch { visibility: hidden; }
 
 .wafab { background: var(--bg); color: var(--text); border: 1px solid var(--line); }   /* וואטסאפ (בלי בחירה): כפתור לבן, לא מסומן בצבע */
 .wafab.on { background: var(--text); color: var(--on-primary); border-color: var(--text); }   /* תבנית או הגיע / לא הגיע: מסומן בשחור */
-.wafab { background: var(--surface-2); border: 1px solid var(--text-3, var(--line-2)); box-shadow: 0 6px 18px color-mix(in srgb, var(--text) 30%, transparent); }   /* אפור עם מסגרת וצל חזק: בולט גם על כרטיסים לבנים */
+.wafab { background: var(--surface-2); border: 1px solid var(--text-3, var(--line-2)); box-shadow: var(--sh-pop); }   /* אפור עם מסגרת וצל חזק: בולט גם על כרטיסים לבנים */
 .wafab.on { background: var(--text); border-color: var(--text); }
 .wafab.on.f1 { background: var(--green-bg); color: var(--green); border-color: var(--green); }   /* סינון חיובי: ירוק */
 .wafab.on.f0 { background: var(--red-bg); color: var(--red); border-color: var(--red); }   /* סינון שלילי: אדום */
@@ -1448,7 +1448,7 @@ html.is-loading .hsearch { visibility: hidden; }
 .wrap > .list .row .main .sidewrap .ptag { overflow: visible; text-overflow: clip; white-space: normal; max-width: 100%; height: auto; min-height: var(--tag); line-height: 1.25; padding-block: var(--sp-hair); text-align: center; }
 
 /* הכרטיס שנבחר: נשאר לבן, ומודגש בצל חזק יותר */
-.wrap > .list > .row.last, .wrap > .list > .row.sel, .wrap > .list > .row.sel:hover { background: var(--bg); border-color: var(--line-2); box-shadow: 0 6px 18px color-mix(in srgb, var(--text) 22%, transparent); position: relative; z-index: var(--z-raised); }
+.wrap > .list > .row.last, .wrap > .list > .row.sel, .wrap > .list > .row.sel:hover { background: var(--bg); border-color: var(--line-2); position: relative; z-index: var(--z-raised); }
 
 /* בלי קו תחתון לשדה החיפוש: הקו של שורת הסינון מחליף אותו */
 #listTags .hsearch input, #listTags .hsearch:focus-within input, #listTags .hsearch:has(input:not(:placeholder-shown)) input { box-shadow: none; }
@@ -1498,9 +1498,8 @@ html.is-loading .hsearch { visibility: hidden; }
 .mlist .mrow .pay.nolabel { gap: var(--sp-hair); }
 #pDlg .ppanel, #pDlg .ppager, #pDlg .ppage { border-radius: 0 !important; }   /* כרטיס המשתתף בלי פינות מעוגלות */
 .chiprow .gpair { display: inline-flex; flex: 0 0 auto; gap: var(--sp-1); }   /* גברים ונשים תמיד יחד באותה שורה */
-.wrap > .list > .row.last, .wrap > .list > .row.sel, .wrap > .list > .row.sel:hover { box-shadow: -3px 3px 6px color-mix(in srgb, var(--text) 12%, transparent); }   /* הכרטיס שנבחר: צל אפור עדין בצד שמאל למטה */
 /* המפגש שנבחר בכרטיס המשתתף: כמו משתתף מסומן ברשימה (צל עדין בצד שמאל למטה), בלי הבלטת טקסט */
-#pPager .mlist .mrow.hl { background: var(--bg); border-color: var(--line); box-shadow: -3px 3px 6px color-mix(in srgb, var(--text) 12%, transparent); }
+#pPager .mlist .mrow.hl { background: var(--bg); border-color: var(--line); }
 #pPager .mlist .mrow.hl .mdt, .mlist .mrow.hl .mdt { font-weight: var(--fw-medium); }
 #pPager .mlist .mrow.hl .mnm, .mlist .mrow.hl .mnm { font-weight: var(--fw-regular); color: var(--text-2); }
 /* כפתור היצירה בכותרת הפופאפ (משמאל), כבוי כשחסר שדה חובה */
@@ -1597,7 +1596,7 @@ a.hmi { text-decoration: none; }   /* "החלפת עסק" הוא קישור, ו�
 #viewMenu .fsh .sorttri.on { color: var(--text); background: var(--surface-2); }
 
 /* סימון כרטיס נבחר (משתתף או מפגש): פס צל דק בתחתית הכרטיס מבפנים, במקום צל חיצוני */
-.wrap > .list > .row.last, .wrap > .list > .row.sel, .wrap > .list > .row.sel:hover, #pPager .mlist .mrow.hl { box-shadow: inset 0 -7px 6px -5px color-mix(in srgb, var(--text) 22%, transparent), inset 0 7px 6px -5px color-mix(in srgb, var(--text) 22%, transparent); z-index: auto; }
+.wrap > .list > .row.last, .wrap > .list > .row.sel, .wrap > .list > .row.sel:hover, #pPager .mlist .mrow.hl { box-shadow: var(--sh-sel); z-index: auto; }
 
 /* תפריט הסינון כפופאפ: גלילה כשהתוכן ארוך מהמסך, כדי שאפשר יהיה להגיע לקטגוריה האחרונה */
 #viewDlg { max-height: calc(100dvh - 40px); }
@@ -1730,13 +1729,12 @@ svg.ic, .cico svg, .hicon svg, .hbtn svg { overflow: visible; }   /* סמלים 
 .wrap > .list .row:has(> .rowun) > .rowwa { inset-inline-end: calc(var(--sp-hair) * 10.5); }
 #pPager .mlist .mrow .munl { left: calc(var(--sp-hair) * 1.5); }
 /* צל אחד לכל הכרטיסים (משתתף ומפגש), נבחר או לא, וחזק יותר מקודם */
-:root { --card-shadow: 0 2px 8px color-mix(in srgb, var(--text) 11%, transparent); }
-.wrap > .list > .row, .wrap > .list > .row.last, .wrap > .list > .row.sel, .wrap > .list > .row.sel:hover, #pPager .mlist .mrow, #pPager .mlist .mrow.hl { box-shadow: var(--card-shadow); }
+.wrap > .list > .row, .wrap > .list > .row.last, .wrap > .list > .row.sel, .wrap > .list > .row.sel:hover, #pPager .mlist .mrow, #pPager .mlist .mrow.hl { box-shadow: var(--sh-card); }
 .wrap > .list > .row.last, .wrap > .list > .row.sel, .wrap > .list > .row.sel:hover, #pPager .mlist .mrow.hl { border-color: var(--line-2); }
 
 /* ===== כרטיס מאוחד (.ucard): הצורה, הריפוד, הצל, הגבול וסימון "נבחר" במקום אחד, לכרטיס משתתף ולכרטיס מפגש; רק התוכן שבתוכו שונה ===== */
 :root { --uc-pad: 12px; --uc-r: var(--r); }
-.ucard { position: relative; box-sizing: border-box; background: var(--bg); border: 1px solid var(--line); border-radius: var(--uc-r); box-shadow: var(--card-shadow); }
+.ucard { position: relative; box-sizing: border-box; background: var(--bg); border: 1px solid var(--line); border-radius: var(--uc-r); box-shadow: var(--sh-card); }
 .ucard.last, .ucard.sel, .ucard.hl { border-color: var(--line-2); }
 .ucard.last::after, .ucard.sel::after, .ucard.hl::after { content: "נבחר"; position: absolute; left: var(--uc-pad); bottom: calc(var(--uc-pad) - calc(var(--sp-hair) * 0.25)); height: var(--tag); line-height: var(--tag); font-size: var(--fs-xs); font-weight: var(--fw-black); color: var(--text); pointer-events: none; }
 .ucard > .rowun, .ucard > .munl { position: absolute; top: calc(var(--uc-pad) - calc(var(--sp-hair) * 0.25)); left: calc(var(--sp-hair) * 1.5); width: 28px; height: 28px; display: grid; place-items: center; }
@@ -1747,7 +1745,7 @@ svg.ic, .cico svg, .hicon svg, .hbtn svg { overflow: visible; }   /* סמלים 
 #listTags #filtBtn .fcnt { line-height: 18px; }
 /* "הוספת משתתף חדש" הוא פריט בסוף הרשימה (נגלל איתה), באותו מראה של כרטיס */
 .list .addli { list-style: none; }
-.list .addli .newbtn { display: flex; align-items: center; justify-content: flex-start; gap: var(--sp-1); width: 100%; min-height: 64px; padding: var(--sp-1); box-sizing: border-box; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg); box-shadow: var(--card-shadow); font-size: var(--fs-m); font-weight: var(--fw-bold); }
+.list .addli .newbtn { display: flex; align-items: center; justify-content: flex-start; gap: var(--sp-1); width: 100%; min-height: 64px; padding: var(--sp-1); box-sizing: border-box; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg); box-shadow: var(--sh-card); font-size: var(--fs-m); font-weight: var(--fw-bold); }
 .list .addli .newbtn > .tg { flex: 0 0 32px; width: 32px; height: 32px; padding: 0; display: grid; place-items: center; border-radius: 50%; background: var(--text); color: var(--on-primary); font-size: var(--fs-l); }
 #listTags #filtBtn.hfilt, #listTags #filtBtn { padding: var(--sp-1) var(--sp-1) var(--sp-1) var(--sp-1) !important; }   /* הסמל עצמו (המשפך) צר מהתיבה שלו: מפצים כדי שהמרווח הנראה משמאל ומימין יהיה זהה */
 /* חיפוש: הזכוכית המגדלת והאיקס בצד שמאל (הטקסט מימין) */
@@ -1804,7 +1802,7 @@ svg.ic, .cico svg, .hicon svg, .hbtn svg { overflow: visible; }   /* סמלים 
 .wrap > .list .row .sidewrap .mcnt3 { display: inline-flex; align-items: center; gap: var(--sp-hair); flex: 0 0 auto; height: var(--tag); padding: 0 var(--sp-1); border-radius: var(--r); background: var(--surface-2); color: var(--text-2); font-size: var(--fs-xs); font-weight: var(--fw-bold); font-variant-numeric: tabular-nums; white-space: nowrap; order: 9; }
 .wrap > .list .row:not(.hasun) .main .mcnt2 { display: inline-flex; }
 /* טאבי כרטיס המשתתף: אותה הפרדה מהתוכן כמו מתחת לשורת הסינון ברשימת המשתתפים (קו של 2px וצל עדין) */
-#pDlg .ptabs { border-bottom: 2px solid var(--line); box-shadow: 0 3px 8px -2px color-mix(in srgb, var(--text) 12%, transparent); z-index: var(--z-raised); }
+#pDlg .ptabs { border-bottom: 2px solid var(--line); box-shadow: var(--sh-bar); z-index: var(--z-raised); }
 /* המספר בתיבת החיפוש (במקום הכיתוב "חיפוש"): מספר מודגש ו"משתתפים"; נעלם בהקלדה */
 #listTags .hsearch .scount { order: 0; flex: 0 0 auto; font-size: var(--fs-s); color: var(--text-3, var(--text-3)); white-space: nowrap; margin-inline-end: var(--sp-hair); pointer-events: none; }
 #listTags .hsearch .scount b { font-weight: var(--fw-black); color: var(--text-2); }
@@ -2036,8 +2034,8 @@ dialog .sheet-head .dclose::before { inset: 0; }   /* (same specificity as the h
 dialog { border-radius: 0 !important; }   /* iron rule: no rounded corners, wide screens included */
 dialog:not(.drawer):not(.side) { max-width: var(--pp-w-m); }
 #cDlg, #lockDlg { max-width: var(--pp-w-s); }   /* a short confirmation: the small width token */
-dialog { box-shadow: var(--pp-shadow); }
-dialog.drawer, dialog.side { box-shadow: var(--pp-side-shadow); }
+dialog { box-shadow: var(--sh-pop); }
+dialog.drawer, dialog.side { box-shadow: var(--sh-side); }
 dialog::backdrop { background: var(--pp-scrim); }
 dialog .sheet-head { min-height: var(--pp-head); align-items: center; }
 dialog .dclose { width: var(--pp-x); min-width: var(--pp-x); height: var(--pp-x); margin-block: 0; }
@@ -2247,7 +2245,7 @@ body { font-family: var(--font); }
 #wmMenu .cmi.on { background: var(--surface-2); }
 
 /* ===== the selected card: a white card with a thick bar on its right (reading-start) edge; no dark frame ===== */
-.wrap > .list > .row.sel, .wrap > .list > .row.last, .wrap > .list > .row.sel:hover, .ucard.sel, .ucard.last { background: var(--bg); border-color: var(--line); box-shadow: var(--card-shadow); }
+.wrap > .list > .row.sel, .wrap > .list > .row.last, .wrap > .list > .row.sel:hover, .ucard.sel, .ucard.last { background: var(--bg); border-color: var(--line); box-shadow: var(--sh-card); }
 /* (the bar of the card touched last is gone: see --sel-glow) */
 .wrap > .list .row.sel .rowwa.rowwa.rowwa, .wrap > .list .row.last .rowwa.rowwa.rowwa, .wrap > .list .row.sel .rowwa.rowwa.rowwa.ratt, .wrap > .list .row.last .rowwa.rowwa.rowwa.ratt { border-color: var(--line); }
 /* the add button inside a popup: as far above the safe area as it is from the left edge (one gutter) */
@@ -2258,14 +2256,14 @@ body { font-family: var(--font); }
 /* ===== the selected card, ONE look for every card (participant, meeting): white card, a thin bar on the right edge, no dark frame, no "נבחר" word ===== */
 :root { --sel-bar: calc(var(--sp-hair) * 0.75); --sel-glow: radial-gradient(circle 26px at 24px 72%, color-mix(in srgb, var(--text) 15%, transparent), transparent); }   /* the card touched last: a soft smudge of grey inside its left part, 22px in from the edge in the LOWER half of the card, very faint, fading out on every side (a spot on the card, not a frame, not a bar). --sel-bar stays for the bars of the buttons */
 .wrap > .list > .row.sel > .rswipe-fg, .wrap > .list > .row.last > .rswipe-fg { background-image: var(--sel-glow); }
-.mlist .mrow.hl, #pPager .mlist .mrow.hl, .mlist .mrow.ucard.hl { background: var(--bg); border-color: var(--line); box-shadow: var(--card-shadow); background-image: var(--sel-glow); }
+.mlist .mrow.hl, #pPager .mlist .mrow.hl, .mlist .mrow.ucard.hl { background: var(--bg); border-color: var(--line); box-shadow: var(--sh-card); background-image: var(--sel-glow); }
 .mlist .mrow.hl::after, #pPager .mlist .mrow.hl::after { content: none; }
 
 /* the meeting card of the participant popup, when it slides: the layout moves into the sliding layer, the card itself is only the frame */
 .mlist .mrow[data-swipe] { display: block; padding: 0; }
 .mlist .mrow[data-swipe] > .rswipe-fg { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "when" "chips"; gap: var(--sp-1); align-items: start; padding: var(--sp-1); background: inherit; }
 .mlist .mrow[data-swipe]:not(.is-open):not(.is-dragging):not(.is-demo) > .rswipe { visibility: hidden; transition: visibility 0s linear var(--t-base); }
-.mlist .mrow.hl[data-swipe] { box-shadow: var(--card-shadow); }
+.mlist .mrow.hl[data-swipe] { box-shadow: var(--sh-card); }
 .mlist .mrow.hl[data-swipe] > .rswipe-fg { background-image: var(--sel-glow); }
 
 /* the category grid of the filter popup: the two categories of a row are as tall as the taller one, and the cells of the shorter one grow to fill it (each cell's height follows how many options its category has) */
@@ -2378,8 +2376,8 @@ body { font-family: var(--font); }
 #viewMenu [data-vct].inv { text-decoration: line-through; text-decoration-thickness: 2px; }
 #tagActMenu .fsep { height: 1px; background: var(--line); margin: var(--sp-hair) 0; flex: none; }
 /* the tag's menu (and the palette it opens) float over the popup: the popup's own rule turns every .qmenu into a plain block inside the sheet, so these two are placed explicitly */
-#tagActMenu { position: fixed; left: var(--mx, 8px); top: var(--my, 8px); z-index: var(--z-sheet); display: flex; background: var(--bg); border: 1px solid var(--line); box-shadow: var(--pop); }
-.mdlg #colMenu { position: fixed !important; inset: auto !important; left: var(--mx, 8px) !important; top: var(--my, 8px) !important; width: auto !important; padding: var(--sp-1) !important; border: 1px solid var(--line) !important; box-shadow: var(--pop) !important; background: var(--bg) !important; z-index: var(--z-sheet); }
+#tagActMenu { position: fixed; left: var(--mx, 8px); top: var(--my, 8px); z-index: var(--z-sheet); display: flex; background: var(--bg); border: 1px solid var(--line); box-shadow: var(--sh-pop); }
+.mdlg #colMenu { position: fixed !important; inset: auto !important; left: var(--mx, 8px) !important; top: var(--my, 8px) !important; width: auto !important; padding: var(--sp-1) !important; border: 1px solid var(--line) !important; box-shadow: var(--sh-pop) !important; background: var(--bg) !important; z-index: var(--z-sheet); }
 /* a tap on a tag only opens its menu: no press, hover or focus effect on the cell itself */
 #viewMenu [data-vct] { -webkit-tap-highlight-color: transparent; }   /* (the transitions of the fill stay: they are the animation of a choice, not a press effect) */
 #viewMenu [data-vct]:hover, #viewMenu [data-vct]:active, #viewMenu [data-vct]:focus { transform: none !important; filter: none !important; box-shadow: none !important; outline: none; }
@@ -2491,8 +2489,8 @@ html.is-loading .msub { display: block; visibility: hidden; }
 #pDlg .sheet-head h2 .tchip { padding-inline: 0 !important; }
 #pDlg .sheet-head .cico.cb-wa { translate: -4px 0; }   /* the glyph, not its box, sits on the left edge of the content */
 /* the right and bottom edge of the corner tile (never the top or the left, which are the card's own edge) takes a soft tint of what it says: yellow for a message, green for an arrival */
-.wrap > .list .row .rowwa.rowwa.rowwa.ratt, .wrap > .list .row.sel .rowwa.rowwa.rowwa.ratt, .wrap > .list .row.last .rowwa.rowwa.rowwa.ratt { border-width: 0 1px 1px 0; border-color: color-mix(in srgb, var(--green) 40%, var(--line)); }
-.wrap > .list .row .rowwa.rowwa.rowwa.ratt.msgc, .wrap > .list .row.sel .rowwa.rowwa.rowwa.ratt.msgc, .wrap > .list .row.last .rowwa.rowwa.rowwa.ratt.msgc { border-color: color-mix(in srgb, var(--yellow) 45%, var(--line)); }
+.wrap > .list .row .rowwa.rowwa.rowwa.ratt, .wrap > .list .row.sel .rowwa.rowwa.rowwa.ratt, .wrap > .list .row.last .rowwa.rowwa.rowwa.ratt { border-width: 0 1px 1px 0; border-color: var(--success-edge); }
+.wrap > .list .row .rowwa.rowwa.rowwa.ratt.msgc, .wrap > .list .row.sel .rowwa.rowwa.rowwa.ratt.msgc, .wrap > .list .row.last .rowwa.rowwa.rowwa.ratt.msgc { border-color: var(--warn-edge); }
 .wrap > .list .row .rowwa.rowwa.rowwa.ratt { border-top-width: 0 !important; border-left-width: 0 !important; border-right-width: 1px !important; border-bottom-width: 1px !important; }   /* only the right and bottom edge: top and left are the card's own */
 /* the chosen option of all / sent / not sent is marked like the chosen message template above it: a grey background, no dot */
 /* the bar under the message button follows the chosen filter: green for sent, red for not sent (neutral stays for any other state) */
@@ -2562,7 +2560,7 @@ html.is-loading .msub { display: block; visibility: hidden; }
 #mMenu .mtr.mrow2 > .mrname { grid-column: 1; }
 /* the shadow and the frame belong to the WHITE card that slides, not to the row it slides inside: the ground under it (red, green) has no shadow of its own, and wherever the card has moved from, the ground is flat. */
 .wrap > .list > .row[data-swipe], .wrap > .list > .row.last[data-swipe], .wrap > .list > .row.sel[data-swipe], .wrap > .list > .row.sel[data-swipe]:hover, #pPager .mlist .mrow[data-swipe], #pPager .mlist .mrow.hl[data-swipe], .mlist .mrow[data-swipe] { box-shadow: none; background-color: transparent; border-color: transparent; }
-.wrap > .list > .row[data-swipe] > .rswipe-fg, .mlist .mrow[data-swipe] > .rswipe-fg { background-color: var(--bg); border: 1px solid var(--line); box-shadow: var(--card-shadow); }
+.wrap > .list > .row[data-swipe] > .rswipe-fg, .mlist .mrow[data-swipe] > .rswipe-fg { background-color: var(--bg); border: 1px solid var(--line); box-shadow: var(--sh-card); }
 /* the pinned "all participants" row of the meetings menu: flat, with the menu's own background, flush with the top edge (no strip above it for the list to show through, no rounded corners) */
 #mMenu { padding-top: 0; }
 #mMenu .mtop { border-radius: 0; margin-top: 0; background: var(--bg); }
@@ -2583,8 +2581,8 @@ html.is-loading .msub { display: block; visibility: hidden; }
 /* the filter / view button of the chip row is a SQUARE, as wide as the WhatsApp tile under it (one control size); the other chips share the rest (the gender chip grows) */
 .chiprow .cq > .fspair, .chiprow .cq > .stlast > .fspair { flex: 0 0 var(--ctl) !important; width: var(--ctl) !important; min-width: var(--ctl) !important; }
 /* the card touched last (a participant, or the meeting we came from): a BAR along its RIGHT edge instead of the smudge, the same bar the pressed chips carry */
-.wrap > .list > .row.sel > .rswipe-fg, .wrap > .list > .row.last > .rswipe-fg, .mlist .mrow.hl[data-swipe] > .rswipe-fg { background-image: none; box-shadow: var(--card-shadow), inset calc(var(--sel-bar) * -1) 0 0 var(--text-3); }
-.mlist .mrow.hl:not([data-swipe]), #pPager .mlist .mrow.hl:not([data-swipe]), .mlist .mrow.ucard.hl:not([data-swipe]) { background-image: none; box-shadow: var(--card-shadow), inset calc(var(--sel-bar) * -1) 0 0 var(--text-3); }
+.wrap > .list > .row.sel > .rswipe-fg, .wrap > .list > .row.last > .rswipe-fg, .mlist .mrow.hl[data-swipe] > .rswipe-fg { background-image: none; box-shadow: var(--sh-card), inset calc(var(--sel-bar) * -1) 0 0 var(--text-3); }
+.mlist .mrow.hl:not([data-swipe]), #pPager .mlist .mrow.hl:not([data-swipe]), .mlist .mrow.ucard.hl:not([data-swipe]) { background-image: none; box-shadow: var(--sh-card), inset calc(var(--sel-bar) * -1) 0 0 var(--text-3); }
 .mlist .mrow.hl[data-swipe], #pPager .mlist .mrow.hl[data-swipe], .mlist .mrow.ucard.hl[data-swipe] { background-image: none; }
 /* the place on the date line of a meeting card sits a gutter in from the card's left edge, level with the age/gender mark on the right (18px from its edge) */
 .mlist .mrow .mdt .mwh { margin-inline-end: var(--sp-1); }
@@ -2690,8 +2688,8 @@ html.is-loading .msub { display: block; visibility: hidden; }
 #listTags #waFab.joined, #listTags #waFab.joined .wm3b { border-radius: var(--r) 0 0 var(--r) !important; }
 #listTags #waFab.joined .wm3b.filtered { box-shadow: none; }
 /* הפס בתחתית: רק מתחת לצ'יף (מהחציצה עד הקצה), בצבע לפי הסינון: ירוק לנשלחו, אדום ללא נשלחו */
-#waSF .stc[data-sfv="1"] { box-shadow: inset 0 calc(var(--sel-bar) * -1) 0 color-mix(in srgb, var(--green) 55%, white) !important; }
-#waSF .stc[data-sfv="0"] { box-shadow: inset 0 calc(var(--sel-bar) * -1) 0 color-mix(in srgb, var(--red) 55%, white) !important; }
+#waSF .stc[data-sfv="1"] { box-shadow: inset 0 calc(var(--sel-bar) * -1) 0 var(--success-soft) !important; }
+#waSF .stc[data-sfv="0"] { box-shadow: inset 0 calc(var(--sel-bar) * -1) 0 var(--danger-soft) !important; }
 /* חציצה בין כפתור הסימון לצ'יף: קו של 16 פיקסלים בדיוק בנקודת החיבור, באמצע הגובה */
 #waSF .stc { background-image: linear-gradient(color-mix(in srgb, var(--on-primary) 45%, transparent), color-mix(in srgb, var(--on-primary) 45%, transparent)) !important; background-size: 1px 16px !important; background-repeat: no-repeat !important; background-position: left center !important; }
 #listTags #waFab.joined .wm3b { width: 100%; }
@@ -2753,8 +2751,18 @@ body:has(#mMenu:not([hidden])) #kitFab { display: none; }   /* one plus at a tim
 /* the preferences panel is wide: the groups lay out across, as many columns as fit */
 @media (min-width: 760px) { #viewDlg.drawer #viewMenu { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); } }
 
-/* reserved and arrived are ONE joined control, like women and men: no gap, the inner corners square, a thin divider between them */
+/* reserved and arrived are ONE joined control, like women and men: no gap, the inner corners square, the same background pressed or not (the bar under it shows what is on), one thin divider */
 .chiprow .cq > .stc[data-cr="res"]:has(+ .stc[data-cr="arr"]) { border-start-end-radius: 0 !important; border-end-end-radius: 0 !important; }
-.chiprow .cq > .stc[data-cr="res"] + .stc[data-cr="arr"] { margin-inline-start: calc(var(--sp-1) * -1); border-start-start-radius: 0 !important; border-end-start-radius: 0 !important; background-image: linear-gradient(var(--line-2), var(--line-2)); background-size: 1px 16px; background-repeat: no-repeat; background-position: right center; }
+.chiprow .cq > .stc[data-cr="res"] + .stc[data-cr="arr"] { position: relative; margin-inline-start: calc(var(--sp-1) * -1) !important; border-start-start-radius: 0 !important; border-end-start-radius: 0 !important; }
+.chiprow .cq > .stc[data-cr="res"] + .stc[data-cr="arr"]::before { content: ""; position: absolute; inset-inline-start: 0; top: 50%; width: 1px; height: 16px; transform: translateY(-50%); background: var(--line-strong); opacity: .5; }
+.chiprow .cq > .stc[data-cr="res"]:has(+ .stc[data-cr="arr"]):not(.neg), .chiprow .cq > .stc[data-cr="res"] + .stc[data-cr="arr"]:not(.neg) { background-color: var(--hdr-ctl) !important; background-image: none; color: var(--text) !important; border-color: transparent !important; }
+.chiprow .cq > .stc[data-cr="res"]:has(+ .stc[data-cr="arr"])[aria-pressed="true"], .chiprow .cq > .stc[data-cr="res"] + .stc[data-cr="arr"][aria-pressed="true"] { font-weight: var(--fw-black); }
 /* while the page loads there is no menu button and no arrow yet: they come with the data (hidden, not removed, so nothing moves) */
 html.is-loading #menuBtn, html.is-loading #mSel svg { visibility: hidden; }
+
+/* the chip menus (gender, reserved, arrived, sent) are as wide as their words, the count sits right next to the word (owner 2026-11-22) */
+#chipMenu { width: max-content; min-width: 0; }
+#chipMenu .cmi { width: auto; }
+#chipMenu .cmi small { margin-inline-start: 0; }
+/* the participant card on a wide screen starts on the same line as the page header beside it: its title sits level with the meeting title */
+#pDlg.side { --pp-pt-sheet: 0; }

@@ -301,3 +301,11 @@
 
   window.RosterUI = { menuOpen: function () { return floatingMenus().length > 0 || Date.now() < swallowUntil; }, fabs: fabs, kbWatch: kbWatch, ptr: { attach: ptrAttach }, swipe: { init: swipeInit } };
 })();
+
+/* the browser's bar takes the page colour from the palette (--bg), never from a literal in the markup */
+(function () {
+  try {
+    var m = document.querySelector('meta[name="theme-color"]'); if (!m) return;
+    var c = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim(); if (c) m.setAttribute('content', c);
+  } catch (e) {}
+})();

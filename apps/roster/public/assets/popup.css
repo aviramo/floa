@@ -10,9 +10,7 @@
   --pp-head: 44px;              /* the header row: title and X */
   --pp-x: 44px;                 /* the X button: a 44px touch target */
   --pp-radius: 0;               /* iron rule: square corners */
-  --pp-scrim: var(--scrim, rgba(16, 20, 26, .55));            /* the kit's scrim when the page has the kit (owner), the old one otherwise */
-  --pp-shadow: var(--sh-pop, 0 14px 34px -10px rgba(16, 24, 40, .28), 0 2px 6px rgba(16, 24, 40, .08));
-  --pp-side-shadow: 0 0 34px -6px rgba(16, 24, 40, .32);
+  --pp-scrim: var(--scrim);            /* the kit's scrim when the page has the kit (owner), the old one otherwise */
   --pp-px: 16px;                /* side padding of the content */
   --pp-pt: 16px;                /* above the header */
   --pp-pb: 24px;                /* below the content */

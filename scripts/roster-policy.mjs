@@ -1,7 +1,8 @@
 /* ROSTER POLICY LINT (BLOCKING since phase 6: exits 1 on any violation beyond the allow-list, so `npm test` and CI fail).
    Reports where the roster pages break the design rules (catalog: sync13/component-catalog.md, tokens: apps/roster/public/assets/ui.css):
      spacing   raw px/rem/em numbers in margin, padding, gap, inset and offsets (only tokens and 0 are allowed), in CSS files and inline style="" text
-     color     hex / rgb() / hsl() literals outside the token file (CSS files and inline style="")
+     color     hex / rgb() / hsl() literals ANYWHERE but assets/palette.css, the one file where a color lives (CSS files, custom properties and var() fallbacks included, inline style="", and the JS and HTML text: an svg fill, a canvas fill, a meta tag)
+     shadow    an elevation shadow (a box-shadow with a blur, a text-shadow, a drop-shadow) written anywhere but assets/palette.css, and any custom property named like a shadow defined outside it: components read var(--sh-card|pop|side|bar|sel) only
      field     <input>, <select>, <textarea> not inside <label class="rfield"> (hidden, file, checkbox, radio and data-rf-bare are exempt)
      dialog    <dialog> markup without the popup shell's direction (data-from) or title (data-title)
      native    alert( confirm( prompt( calls
@@ -25,7 +26,7 @@ const args = new Set(process.argv.slice(2));
 const rel = (p) => relative(ROOT, p).split(sep).join("/");
 const EXCLUDE_DIRS = new Set(["me", "api"]);
 const EXCLUDE_FILES = new Set(["apps/roster/public/connect/mail-defaults.js"]);   // the default HTML of the participant mails: email markup needs inline styles, it is not a page
-const TOKEN_FILE = "apps/roster/public/assets/ui.css";
+const TOKEN_FILE = "apps/roster/public/assets/palette.css";   // the ONE file where a color is written (owner 2026-11-22)
 const BUILT_ADMIN = new Set();   // since phase 4b public/admin is roster's own source (the harpatka sync was stopped), so nothing there is "built output" any more
 
 function walk(dir, out = []) {
@@ -52,6 +53,11 @@ function rawSpacing(value) {
   while ((m = RAW_LEN.exec(v))) { if (parseFloat(m[2]) !== 0) hits.push(m[2] + m[3]); }
   return hits;
 }
+/* a shadow with a blur: after removing var() and color-mix() groups, a comma part with three or more lengths whose third is not 0 */
+function blurShadow(value) {
+  let v = value; for (let i = 0; i < 4; i++) v = v.replace(/(?:var|color-mix|calc)\([^()]*\)/g, " 0 ");
+  return v.split(",").some((part) => { const n = (part.match(/-?\d*\.?\d+(?:px|rem|em)?/g) || []); return n.length >= 3 && parseFloat(n[2]) !== 0; });
+}
 const COLOR = /#[0-9a-fA-F]{3,8}\b|\b(?:rgb|rgba|hsl|hsla)\(/g;
 
 function declsOf(text, baseLine) {
@@ -71,12 +77,15 @@ const violations = [];   // {rule, file, line, text, built}
 function add(rule, file, line, text, built) { violations.push({ rule, file, line, text: String(text).trim().slice(0, 160), built }); }
 
 function scanCss(file, raw, built) {
-  const t = stripCss(raw), isToken = file === TOKEN_FILE;
+  const t = stripCss(raw), isToken = file === TOKEN_FILE, isKit = file === "apps/roster/public/assets/ui.css";   // the kit defines the spacing scale, so it may write the raw numbers; only palette.css may write a color
   const lines = t.split("\n");
   /* custom property definitions (--x: value) are token definitions, not uses */
   for (const d of declsOf(t, 1)) {
-    if (d.prop.startsWith("--")) continue;
-    if (SPACING_PROPS.test(d.prop) && !isToken) { const h = rawSpacing(d.value); if (h.length) add("spacing", file, d.line, d.prop + ": " + d.value + "  [" + h.join(" ") + "]", built); }
+    if (d.prop.startsWith("--") && !isToken && /shadow|^--(sh-|pop$)/.test(d.prop)) { add("shadow", file, d.line, d.prop + ": " + d.value, built); }
+    if (!d.prop.startsWith("--") && !isToken && /^(box-shadow|text-shadow)$/.test(d.prop) && blurShadow(d.value)) add("shadow", file, d.line, d.prop + ": " + d.value, built);
+    if (!isToken && /drop-shadow\(/.test(d.value)) add("shadow", file, d.line, d.prop + ": " + d.value, built);
+    if (d.prop.startsWith("--")) { if (!isToken && COLOR.test(d.value)) add("color", file, d.line, d.prop + ": " + d.value, built); COLOR.lastIndex = 0; continue; }
+    if (SPACING_PROPS.test(d.prop) && !isKit) { const h = rawSpacing(d.value); if (h.length) add("spacing", file, d.line, d.prop + ": " + d.value + "  [" + h.join(" ") + "]", built); }
     if (!isToken && COLOR.test(d.value)) add("color", file, d.line, d.prop + ": " + d.value, built);
     COLOR.lastIndex = 0;
   }
@@ -90,9 +99,6 @@ function scanInlineStyles(file, raw, built) {
     add("inline", file, line, m[0], built);
     for (const d of declsOf(text, line)) {
       if (SPACING_PROPS.test(d.prop)) { const h = rawSpacing(d.value); if (h.length) add("spacing", file, line, d.prop + ": " + d.value + "  [inline " + h.join(" ") + "]", built); }
-      COLOR.lastIndex = 0;
-      if (COLOR.test(d.value)) add("color", file, line, d.prop + ": " + d.value + "  [inline]", built);
-      COLOR.lastIndex = 0;
     }
   }
 }
@@ -118,6 +124,12 @@ function scanMarkup(file, raw, built) {
   while ((m = ON.exec(raw))) add("inline", file, lineOf(raw, m.index), m[0].trim(), built);
 }
 
+function scanColorText(file, raw, built) {
+  /* JS and HTML: any color literal in the text (svg fill="#...", canvas fillStyle, meta content, an inline style, a template string) */
+  const re = new RegExp(COLOR.source, "g"); let m;
+  while ((m = re.exec(raw))) add("color", file, lineOf(raw, m.index), raw.slice(Math.max(0, m.index - 20), m.index + 24).replace(/\s+/g, " "), built);
+}
+
 function scanSafe(file, raw, built) {
   /* the device insets are read in ONE place (--inset-* in ui.css); everything else uses --safe-t / --safe-b / --end-pad / --sheet-b, so the crawl can simulate a gesture bar and no page forgets it */
   if (file.endsWith("assets/ui.css")) return;   // the one place that reads them
@@ -138,12 +150,12 @@ for (const p of walk(PUB)) {
   const raw = readFileSync(p, "utf8").replace(/\r\n/g, "\n");
   scanSafe(file, raw, built);
   if (name.endsWith(".css")) { scanCss(file, raw, built); }
-  else if (name.endsWith(".js")) { const t = stripJs(raw); scanInlineStyles(file, t, built); scanMarkup(file, t, built); scanNative(file, t, built); }
-  else { const t = stripHtml(raw); scanInlineStyles(file, t, built); scanMarkup(file, t, built); scanNative(file, t, built); }
+  else if (name.endsWith(".js")) { const t = stripJs(raw); scanInlineStyles(file, t, built); scanColorText(file, t, built); scanMarkup(file, t, built); scanNative(file, t, built); }
+  else { const t = stripHtml(raw); scanInlineStyles(file, t, built); scanColorText(file, t, built); scanMarkup(file, t, built); scanNative(file, t, built); }
 }
 
 /* ---------- allow-list ---------- */
-const RULES = ["spacing", "color", "field", "dialog", "native", "inline", "safe"];
+const RULES = ["spacing", "color", "shadow", "field", "dialog", "native", "inline", "safe"];
 const count = (list) => { const o = {}; for (const v of list) { o[v.rule] ??= {}; o[v.rule][v.file] = (o[v.rule][v.file] || 0) + 1; } return o; };
 const owned = violations.filter((v) => !v.built), built = violations.filter((v) => v.built);
 

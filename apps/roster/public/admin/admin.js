@@ -802,7 +802,7 @@
     const m = $('#chipMenu'), d = CHIP_DEF[kind], n = (window.__chipCnt || {})[kind] || { all: 0, y: 0, n: 0 }, cur = d.cur();
     m.dataset.kind = kind;
     m.innerHTML = d.lab.map((t, i) => '<button type="button" role="menuitemradio" aria-checked="' + (i === cur) + '" class="cmi' + (i === cur ? ' on' : '') + '" data-ci="' + i + '">' + t + ' <small>' + (i === 0 ? n.all : i === 1 ? n.y : n.n) + '</small></button>').join('');
-    m.style.width = ''; m.style.minWidth = kind === 'gen' || kind === 'wsf' ? '160px' : '';   // the menu is as wide as its words (22.11.26, owner: it was as wide as the whole chip)
+    m.style.width = ''; m.style.minWidth = '';   // the menu is as wide as its words (22.11.26, owner: it was as wide as the whole chip)
     m.hidden = false; m.style.left = menuX(m, anchor) + 'px'; placeMenuV(m, anchor.getBoundingClientRect().top, anchor.getBoundingClientRect().bottom, true);
   }
   $('#wmMenu').addEventListener('click', (e) => {
@@ -2511,7 +2511,7 @@
       im.onload = () => {
         const k = Math.min(1, 1600 / Math.max(im.width, im.height)), c = document.createElement('canvas');
         c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
-        const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(im, 0, 0, c.width, c.height);
+        const g = c.getContext('2d'); g.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--on-color').trim(); g.fillRect(0, 0, c.width, c.height); g.drawImage(im, 0, 0, c.width, c.height);
         URL.revokeObjectURL(url); ok(c.toDataURL('image/jpeg', 0.74));
       };
       im.onerror = () => { URL.revokeObjectURL(url); no(new Error('bad image')); };
