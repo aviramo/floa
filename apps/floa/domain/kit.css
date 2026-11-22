@@ -339,7 +339,7 @@ button.rrow__main { appearance: none; border: 0; background: none; padding: 0; t
    Extensions are chosen by the control itself (select, textarea, input[type]) or by a modifier on the same element:
             rfield--switch, rfield--check (row with a switch or a checkbox), rfield--ltr (value written left to right).
    Needs the page tokens --bg --line --line-2 --text --text-2 --red --font (fallbacks below). */
-:root { --rf-h: 46px; --rf-line: var(--line-strong, var(--line-2, #C7CCD3)); --rf-ink: var(--text, #16191D); --rf-ink-2: var(--text-2, #5A626C); --rf-red: var(--danger, var(--red, #C81E3A)); --rf-good: var(--success, #067647); --rf-bg: var(--bg, #FFFFFF); }
+:root { --rf-h: 46px; --rf-label-top: var(--sp-hair); --rf-pad-top: calc(var(--rf-label-top) + 16px); /* the control text starts under the floated label: its top offset plus the label height (22px line scaled .75 = 16.5) */  --rf-line: var(--line-strong, var(--line-2, #C7CCD3)); --rf-ink: var(--text, #16191D); --rf-ink-2: var(--text-2, #5A626C); --rf-red: var(--danger, var(--red, #C81E3A)); --rf-good: var(--success, #067647); --rf-bg: var(--bg, #FFFFFF); }
 
 .rfield[hidden], .rfield > [hidden] { display: none !important; }
 .rfield { overflow-x: clip; }   /* the floating label's box is 133% wide (it is scaled to fit); its overflow must never make a scrollbar appear when the field is focused */
@@ -347,7 +347,7 @@ button.rrow__main { appearance: none; border: 0; background: none; padding: 0; t
 
 /* the label: a span, first child. On the line when the field is empty and not focused, floated small otherwise */
 .rfield:has(> :is(input:where(:not([type="checkbox"], [type="radio"])), select, textarea, .rf-box, .rf-rich)) > span:first-child {
-  position: absolute; z-index: 1; top: 3px; inset-inline: 0 -33%; margin: 0; font-size: 16px; line-height: 22px; font-weight: 400; color: var(--rf-ink-2);
+  position: absolute; z-index: 1; top: var(--rf-label-top); inset-inline: 0 -33%; margin: 0; font-size: 16px; line-height: 22px; font-weight: 400; color: var(--rf-ink-2);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;
   transform: scale(.75); transform-origin: 100% 0; transition: transform .16s ease-out, color .16s ease-out; }
 html[dir="ltr"] .rfield:has(> :is(input:where(:not([type="checkbox"], [type="radio"])), select, textarea, .rf-box, .rf-rich)) > span:first-child { transform-origin: 0 0; }
@@ -359,7 +359,7 @@ html[dir="ltr"] .rfield:has(> :is(input:where(:not([type="checkbox"], [type="rad
 
 /* the control: borderless, only the line under it */
 .rfield > :is(input:where(:not([type="checkbox"], [type="radio"])), select, textarea) {
-  display: block; box-sizing: border-box; width: 100%; height: var(--rf-h); margin: 0; padding: 19px 0 0; border: 0; border-bottom: 1px solid var(--rf-line); border-radius: 0; background-color: transparent; color: var(--rf-ink);
+  display: block; box-sizing: border-box; width: 100%; height: var(--rf-h); margin: 0; padding: var(--rf-pad-top) 0 0; border: 0; border-bottom: 1px solid var(--rf-line); border-radius: 0; background-color: transparent; color: var(--rf-ink);
   font: 400 16px/22px var(--font, "Heebo", system-ui, sans-serif); text-align: start; transition: border-color .16s ease-out, box-shadow .16s ease-out; }
 .rfield > :is(input:where(:not([type="checkbox"], [type="radio"])), select, textarea):focus { outline: none; border-bottom-color: var(--rf-ink); box-shadow: 0 1px 0 var(--rf-ink); }
 .rfield > :is(input:where(:not([type="checkbox"], [type="radio"])), textarea)::placeholder { color: var(--rf-ink-2); opacity: 1; }
@@ -373,7 +373,7 @@ html[dir="ltr"] .rfield:has(> :is(input:where(:not([type="checkbox"], [type="rad
 
 /* extension: textarea grows with its text up to a limit, then scrolls inside */
 /* extension: a text field that can hold bold words (a contenteditable box, `.rf-rich`); the same look as the textarea. The page keeps data-rf="e"/"v" on the label. */
-.rfield > .rf-rich { display: block; box-sizing: border-box; width: 100%; min-height: var(--rf-h); margin: 0; padding: 19px 0 0; border: 0; border-bottom: 1px solid var(--rf-line); border-radius: 0; background-color: transparent; color: var(--rf-ink);
+.rfield > .rf-rich { display: block; box-sizing: border-box; width: 100%; min-height: var(--rf-h); margin: 0; padding: var(--rf-pad-top) 0 0; border: 0; border-bottom: 1px solid var(--rf-line); border-radius: 0; background-color: transparent; color: var(--rf-ink);
   font: 400 16px/22px var(--font, "Heebo", system-ui, sans-serif); text-align: start; white-space: pre-wrap; overflow-wrap: anywhere; overflow-y: auto; transition: border-color .16s ease-out, box-shadow .16s ease-out; }
 .rfield > .rf-rich:focus { outline: none; border-bottom-color: var(--rf-ink); box-shadow: 0 1px 0 var(--rf-ink); }
 .rfield > .rf-rich b { font-weight: var(--fw-bold); }
@@ -388,7 +388,7 @@ html[dir="ltr"] .rfield > select { padding-inline: 0 20px; background-position: 
 .rfield > input[type="number"]::-webkit-outer-spin-button, .rfield > input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
 /* extension: date and time (the browser always shows a format, so the label stays floated; the whole field opens the picker) */
-.rfield > :is(input[type="date"], input[type="time"]) { position: relative; -webkit-appearance: none; appearance: none; cursor: pointer; direction: ltr; text-align: right; padding: 19px 0 0 20px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.4l5 5.2 5-5.2z' fill='%235A626C'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-size: 11px 7px; background-position: left 2px bottom 12px; }
+.rfield > :is(input[type="date"], input[type="time"]) { position: relative; -webkit-appearance: none; appearance: none; cursor: pointer; direction: ltr; text-align: right; padding: var(--rf-pad-top) 0 0 20px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.4l5 5.2 5-5.2z' fill='%235A626C'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-size: 11px 7px; background-position: left 2px bottom 12px; }
 .rfield > :is(input[type="date"], input[type="time"])::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; opacity: 0; cursor: pointer; }
 .rfield > :is(input[type="date"], input[type="time"])::-webkit-date-and-time-value { text-align: right; margin: 0; }
 
