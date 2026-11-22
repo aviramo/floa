@@ -2764,5 +2764,13 @@ html.is-loading #menuBtn, html.is-loading #mSel svg { visibility: hidden; }
 #chipMenu { width: max-content; min-width: 0; }
 #chipMenu .cmi { width: auto; }
 #chipMenu .cmi small { margin-inline-start: 0; }
-/* the participant card on a wide screen starts on the same line as the page header beside it: its title sits level with the meeting title */
-#pDlg.side { --pp-pt-sheet: 0; }
+/* ONE vertical position for the title of every panel and of the page header (owner 2026-11-22, the statistics title is the reference): the title is centred on a 44px row that starts 16px (--pp-pt-sheet) from the top.
+   The side participant card used a 24px top padding of its own; the page header's title row was not 44px high, so its title sat higher than the tile beside it. */
+#pDlg.side .sheet { padding-top: var(--pp-pt-sheet); }
+.wrap > header.top .msel > h1 { display: flex; align-items: center; min-height: var(--ctl); }
+.wrap > header.top #mSel { height: auto; }
+.wrap > header.top { padding-top: calc(var(--sp-2) + var(--safe-t)); }
+.wrap > header.top .title-row { align-items: start; }
+.wrap > header.top .hgrp, .wrap > header.top .hgrp > .hicons, .wrap > header.top .msel { margin-top: 0; }
+.wrap > header.top .msel { top: 0; }   /* it was lifted 10px, which put the meeting title above the tile beside it */
+.wrap > header.top .title-row > .hgrp { height: var(--ctl); }
