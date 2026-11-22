@@ -327,7 +327,8 @@ document.getElementById("roster-paid").addEventListener("click", async () =&gt; 
       "spots_left": 4,
       "full": false,
       "price": 80,
-      "price_tiers": { "base": 100, "steps": [ { "days": 3, "price": 80 } ] }
+      "price_tiers": { "base": 100, "steps": [ { "days": 3, "price": 80 } ] },
+      "image": "https://example.com/meeting.jpg"
     }
   ]
 }</code></pre></figure>
@@ -338,6 +339,7 @@ document.getElementById("roster-paid").addEventListener("click", async () =&gt; 
     <tr><td><code>name</code></td><td>שם המפגש. אם אין, שם סוג המפגש.</td></tr>
     <tr><td><code>price</code></td><td>המחיר הנוכחי בשקלים. נקבע לפי המדרגות: כשנשארו <code>L</code> ימים למפגש, בוחרים את המדרגה עם ה־<code>days</code> הקטן ביותר ש־<code>L</code> קטן או שווה לו, ואם אין כזאת, המחיר הבסיסי <code>base</code>. בלי מדרגות מחיר, המחיר 0.</td></tr>
     <tr><td><code>price_tiers</code></td><td>מדרגות המחיר עצמן: <code>{ "base": 100, "steps": [ { "days": 3, "price": 80 } ] }</code>. בדוגמה, בשלושת הימים האחרונים המחיר 80 ולפני כן 100.</td></tr>
+    <tr><td><code>image</code></td><td>כתובת התמונה של המפגש (יחס 16:9). אם למפגש אין תמונה משלו, זו התמונה של סוג המפגש. השדה מופיע רק כשיש תמונה.</td></tr>
   </tbody>
 </table></div>
 <p>עם מפתח סודי מתווספים לכל מפגש גם <code>directions</code> (הוראות הגעה), <code>registered</code> (כמות הרשומים) ו־<code>type</code> (סוג המפגש). הוראות הגעה לעולם לא מוחזרות למפתח ציבורי.</p>

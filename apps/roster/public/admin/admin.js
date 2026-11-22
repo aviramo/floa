@@ -3678,11 +3678,32 @@
      התמונה היא אריח אחד: לחיצה עליו בוחרת או מחליפה תמונה, ו-× על התמונה עצמה מסיר אותה (במפגש עם סוג: חוזר לתמונה של הסוג).
      במפגש עם סוג: שדה ריק = "כמו בסוג", והערך של הסוג מוצג כפלייסהולדר (בשעה: טקסט אפור בתוך השדה, במחירים שורת סיכום, בתמונה התמונה של הסוג עמומה).
      typOf: הסוג שממנו יורשים (במפגש), או null (בסוג עצמו, ובמפגש כשאין סוגים) */
+  function compressMeetingImage(file) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file), im = new Image();
+      im.onload = () => { const sw = Math.min(im.width, im.height * 16 / 9), sh = sw * 9 / 16, sx = (im.width - sw) / 2, sy = (im.height - sh) / 2, k = Math.min(1, 1400 / sw), c = document.createElement('canvas'); c.width = Math.round(sw * k); c.height = Math.round(sh * k); c.getContext('2d').drawImage(im, sx, sy, sw, sh, 0, 0, c.width, c.height);   /* 16:9, cropped from the centre */ URL.revokeObjectURL(url); c.toBlob((b) => (b ? resolve(b) : reject(new Error('compress'))), 'image/jpeg', 0.82); };
+      im.onerror = () => { URL.revokeObjectURL(url); reject(new Error('לא ניתן לקרוא את התמונה')); };
+      im.src = url;
+    });
+  }
+  /* הקובץ עולה לדלי של הסביבה (roster-media, ובבדיקות roster-test-media), בתיקייה של העסק: רק מי שרשאי לעסק כותב שם */
+  async function uploadMeetingImage(blob) {
+    const bucket = DB.schema + '-media', path = BIZ.id + '/meeting-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.jpg';
+    const r = await fetch(DB.url + '/storage/v1/object/' + bucket + '/' + path, { method: 'POST', headers: { apikey: DB.key, Authorization: 'Bearer ' + await AUTH.token(), 'Content-Type': 'image/jpeg', 'Cache-Control': '31536000' }, body: blob });
+    if (!r.ok) throw new Error('העלאת התמונה נכשלה (' + r.status + ')');
+    return DB.url + '/storage/v1/object/public/' + bucket + '/' + path;
+  }
   const INH_FIELDS = ['name', 'meeting_time', 'place', 'city', 'max_participants', 'directions', 'price_tiers'];
   const tiersText = (t) => { const q = tiersOf(t); return '₪' + q.base + q.steps.slice().sort((a, b) => b.days - a.days).map((x) => ', ₪' + x.price + ' החל מ-' + x.days + ' ימים לפני').join(''); };
   function meetingFields(p, isType, typOf) {
     const q = (s) => $('#' + p + s), I = (s) => p + s;
     q('MF').innerHTML =
+      '<div class="mfimg" id="' + I('ImgBox') + '">' +
+        '<label class="mfimg-pick" for="' + I('ImgFile') + '" tabindex="0" role="button" id="' + I('ImgPick') + '"><img id="' + I('ImgPrev') + '" alt="" hidden />' +
+          '<span class="mfimg-empty">' + icon('img', 'i22') + '<b>' + (isType ? 'תמונת הסוג' : 'תמונת המפגש') + '</b><small>' + (isType ? 'המפגשים יורשים אותה' : 'כמו בסוג המפגש') + '</small></span>' +
+          '</label>' +
+        '<button type="button" class="mfimg-del" id="' + I('ImgDel') + '" hidden>' + icon('close', 'i14') + '</button>' +
+        '<input type="file" id="' + I('ImgFile') + '" accept="image/jpeg,image/png,image/webp" hidden /></div>' +
       (isType ? '' : '<div class="mfrow mfname">') +
       '<label class="rfield field"><span>' + (isType ? 'שם סוג המפגש' : 'שם המפגש') + '</span><input placeholder=" " id="' + I('Name') + '" type="text" maxlength="80" autocomplete="off" /></label>' +
       (isType ? '' : '<span id="' + I('TypeSlot') + '"></span></div>') +
@@ -3704,7 +3725,7 @@
         '<div class="mfted" id="' + I('TierEd') + '"><div class="mt2" id="' + I('TierList') + '"></div><div class="mt2add"><button type="button" id="' + I('TierAdd') + '" data-fab="הוספת מדרגה"></button></div></div></div>' +
       (isType ? '<div class="rfield field" id="' + I('PassF') + '"><span class="mtl">כרטיסיות</span><div class="mt2" id="' + I('PassList') + '"></div><div class="mt2add"><button type="button" id="' + I('PassAdd') + '" data-fab="הוספת כרטיסייה"></button></div></div>' : '') + '</div>';
     { const tf = !isType && $('#' + p + 'TypeF'), slot = q('TypeSlot'); if (slot) { if (tf) slot.replaceWith(tf); else slot.remove(); } }   // סוג המפגש באותה שורה עם שם המפגש
-    const F = { te: tierEditor('#' + I('TierList'), '#' + I('TierAdd'), () => F.changed()), tiersInh: false, passes: [] };
+    const F = { img: { url: null, blob: null, objUrl: null }, te: tierEditor('#' + I('TierList'), '#' + I('TierAdd'), () => F.changed()), tiersInh: false, passes: [] };
     const ty = () => (typOf ? typOf() : null);
     /* כרטיסיות (רק בסוג מפגש): שורות {n מפגשים, price}; נשמרות בעמודה passes */
     F.paintPasses = () => {
@@ -3754,6 +3775,16 @@
     if (q('TplInh')) q('TplInh').addEventListener('click', (e) => { const b = e.target.closest('[data-tplpop]'); if (b) openTplPop(b.dataset.tplpop); });
     q('TplAdd').hidden = true;
     q('TplAdd').addEventListener('click', () => { const sc = F.tpl.scope(); if (sc) { openTplPop(null, { scope: sc }); return; } const row = { id: null, name: '', body: '' }; F.tpl.rows.push(row); F.tpl.render(); openTplPop(null, { draft: F, row }); });
+    /* התמונה: למפגש עם סוג, בלי תמונה משלו (image_url ריק) מוצגת התמונה של הסוג, עמומה, וכך היא גם נשלחת החוצה (meeting_json) */
+    F.paintImg = () => {
+      const t = ty(), own = F.img.objUrl || F.img.url || '', shown = own || (t && t.image_url) || '';
+      const prev = q('ImgPrev'), box = q('ImgBox');
+      prev.hidden = !shown; if (shown) prev.src = shown;
+      box.classList.toggle('has', !!shown); box.classList.toggle('inh', !!shown && !own);
+      const del = q('ImgDel'); del.hidden = !own;
+      const dl = t ? 'חזרה לתמונה של סוג המפגש' : 'הסרת התמונה'; del.setAttribute('aria-label', dl); del.title = dl;
+      q('ImgPick').setAttribute('aria-label', shown ? 'החלפת התמונה' : 'בחירת תמונה');
+    };
     F.paintTiers = () => {
       if (isType) return;
       const t = ty(), inh = !!(t && F.tiersInh);
@@ -3788,7 +3819,7 @@
       setPh(q('Max'), t && t.max_participants != null ? String(t.max_participants) : '', 'ללא הגבלה');
       setPh(q('Dirs'), t && t.directions, 'כתובת, קומה, חנייה, ואיך מגיעים בתחבורה ציבורית');
       q('Time').dataset.ph = t && t.meeting_time ? String(t.meeting_time).slice(0, 5) : ''; q('Time').dtPaint();
-      F.paintTiers(); F.paintTplInh(); F.paintShort();
+      F.paintTiers(); F.paintTplInh(); F.paintShort(); F.paintImg();
     };
     /* מילוי: src = מפגש או סוג; inh = השדות שנלקחים מהסוג (מוצגים ריקים) */
     F.fill = (src, inh) => {
@@ -3798,6 +3829,8 @@
       q('Max').value = v('max_participants', s.max_participants == null ? '' : s.max_participants);
       F.tiersInh = !!t && h.has('price_tiers'); F.te.t = tiersOf(F.tiersInh ? t : s); F.te.render();
       F.passes = isType ? (Array.isArray(s.passes) ? s.passes.map((x) => ({ n: Number(x.n), price: Number(x.price) })) : []) : []; F.paintPasses();
+      if (F.img.objUrl) URL.revokeObjectURL(F.img.objUrl);
+      F.img = { url: s.image_url || null, blob: null, objUrl: null };
       F.tpl.rows = []; F.tpl.ownerId = s.id || null; F.tpl.render();
       F.paint();
     };
@@ -3819,6 +3852,18 @@
       if (isType) { const ps = F.passes.filter((x) => x.n !== '' || x.price !== ''); if (ps.some((x) => !(Number(x.n) >= 2) || !(Number(x.price) > 0))) return { err: 'בכרטיסייה צריך מספר מפגשים (2 ומעלה) ומחיר' }; body.passes = ps.map((x) => ({ n: Number(x.n), price: Number(x.price) })).sort((a, b) => a.n - b.n); }
       return { body, inherit };
     };
+    /* התמונה לשמירה (מעלה תמונה חדשה אם נבחרה). במפגש בלי תמונה משלו: null, כלומר כמו בסוג */
+    F.imageUrl = async () => {
+      if (F.img.blob) { const b = F.img.blob, url = await uploadMeetingImage(b); F.img.url = url; if (F.img.blob === b) F.img.blob = null; }   // עולה פעם אחת גם כשהשמירה חוזרת
+      return F.img.url || null;
+    };
+    q('ImgPick').addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); q('ImgFile').click(); } });
+    q('ImgFile').addEventListener('change', async (e) => {
+      const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
+      try { const b = await compressMeetingImage(f); if (F.img.objUrl) URL.revokeObjectURL(F.img.objUrl); F.img = { url: null, blob: b, objUrl: URL.createObjectURL(b) }; F.paintImg(); F.changed(); }
+      catch (err) { toast(err.message || 'לא ניתן לקרוא את התמונה'); }
+    });
+    q('ImgDel').addEventListener('click', () => { if (F.img.objUrl) URL.revokeObjectURL(F.img.objUrl); F.img = { url: null, blob: null, objUrl: null }; F.paintImg(); F.changed(); });
     if (!isType) {
       q('TierOwn').addEventListener('click', () => { F.tiersInh = false; F.te.t = tiersOf(ty()); F.te.render(); F.paintTiers(); F.changed(); });   // מתחילים מהמחירים של הסוג
       q('TierReset').addEventListener('click', () => { F.tiersInh = true; F.paintTiers(); F.changed(); });
@@ -3890,6 +3935,7 @@
     if (!date) { $('#mDate').focus(); toast('חסר תאריך'); return null; }
     const r = mf.read(); if (r.err) { toast(r.err); if (r.el) r.el.focus(); return null; }
     const body = Object.assign({ meeting_date: date }, r.body), inherit = r.inherit;
+    try { body.image_url = await mf.imageUrl(); } catch (err) { toast(err.message || 'העלאת התמונה נכשלה'); return null; }
     if ($('#mType').value === NEW_TYPE) { toast('צריך לבחור סוג מפגש'); return null; }
     if (state.mtypes.length) { body.type_id = $('#mType').value || firstTypeId(); body.inherit = inherit; }   // סוג המפגש, והשדות שנלקחים ממנו
     return body;
@@ -4470,6 +4516,7 @@
     const id = tyId; if (!id) return;
     const r = tyF.read(); if (r.err) { toast(r.err); if (r.el) r.el.focus(); return; }
     const body = r.body;
+    try { body.image_url = await tyF.imageUrl(); } catch (err) { toast(err.message || 'העלאת התמונה נכשלה'); return; }
     await saveType(id, body, '', true);
   };
   const fillTypeForm = (t) => tyF.fill(t, null);
@@ -4518,6 +4565,7 @@
     const t = tyCur(); if (!t || tyId) return;
     const r = tyF.read(); if (r.err) { toast(r.err); if (r.el) r.el.focus(); return; }
     const body = r.body;
+    try { body.image_url = await tyF.imageUrl(); } catch (err) { toast(err.message || 'העלאת התמונה נכשלה'); return; }
     const btn = $('#tySave'); btn.disabled = true;
     /* יצירה: הסוג נשמר והפופאפ נסגר; תגיות לסוג החדש נערכים מאייקון העריכה בפס התגיות */
     ['event_open', 'event_msg'].forEach((k) => { if (tyNew[k] != null) body[k] = tyNew[k]; });
