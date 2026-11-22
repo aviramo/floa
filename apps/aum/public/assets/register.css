@@ -107,3 +107,8 @@ select.pf-input option{ color:var(--ink, #4A2514); }
   .modal.open .modal-box { transform: none; opacity: 1; }
   .modal-grab { display: none; }
 }
+
+/* a free-text question whose whole wording is shown: the label stays above the line, wraps, and does not float */
+.pf-long { display: flex; flex-direction: column; gap: 2px; }
+.pf-long > span, .pf-field.pf-long:has(> input:placeholder-shown:not(:focus)) > span { position: static; transform: none; white-space: normal; overflow: visible; text-overflow: clip; font-size: 14px; line-height: 20px; text-align: start; inset: auto; }
+.pf-long > .pf-input { height: 34px; padding-top: 4px; }
