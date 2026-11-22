@@ -769,7 +769,7 @@
     const men = pool.filter((p) => common(p) && paidOk(p) && p.gender === 'male').length, wom = pool.filter((p) => common(p) && paidOk(p) && p.gender === 'female').length;
     const scope = pool;
     const btn = (key, cls, on, inner) => '<button type="button" class="stc tagc ' + cls + '" data-cr="' + key + '" aria-pressed="' + on + '">' + inner + '</button>';
-    const chipHide = state.chipHide.map((k) => k === 'male' || k === 'female' ? 'gen' : k), showChip = (k, active) => !chipHide.includes(k) || !!active;   // מפתחות ישנים (גברים / נשים) נחשבים "מגדר"   // צ'יף שהוסתר מוצג בכל זאת כשהסינון שלו פעיל
+    const chipHide = state.chipHide.map((k) => k === 'male' || k === 'female' ? 'gen' : k), showChip = (k) => !chipHide.includes(k);   // מפתחות ישנים (גברים / נשים) נחשבים "מגדר"   // התצוגה נקבעת רק לפי בחירת המשתמש: צ'יף שהוסתר נשאר מוסתר גם כשהסינון שלו פעיל (22.11.26, בהוראת הבעלים)
     let chipCnt = null; let h = ''; const w = String(state.participants.length);   // רוחב קבוע: מקום שמור למספר הרחב ביותר
     if (state.filter) {
       const f = state.paidF, st = f === 'r' ? 1 : f === 'u' ? 2 : 0, ok = pool.filter((p) => common(p) && genOk(p) && arrOk(p)), res = ok.filter((p) => reservedOf(p.id, state.filter)).length, unres = ok.length - res;
@@ -968,7 +968,7 @@
   [['showSent', 'sent']].forEach(([prop, key]) => Object.defineProperty(state, prop, { get() { const c = state.viewScopes[viewKey()]; return c && c[key] !== undefined && c[key] !== null ? c[key] : viewDef()[key]; }, set(v) { viewCtx()[key] = v; }, enumerable: true }));
   /* המיון (1.11.26): הגדרה אחת לכל התצוגות, ברמת החשבון (לכל מנהל בנפרד, בכל מכשיר); נשמר ב-view_scopes._g.sort, ולכן לא בכתובת */
   Object.defineProperty(state, 'genPin', { get() { const c = state.viewScopes._g; return !!(c && c.genPin); }, set(v) { (state.viewScopes._g || (state.viewScopes._g = {})).genPin = !!v; }, enumerable: true });   // מגדר קבוע בסטריפ: ברמת המנהל, לא בכתובת
-  /* הצגה בשורת הצ'יפים (7.11.26): לכל מנהל, בכל התצוגות; נשמר ב-view_scopes._g. chipHide: מפתחות של צ'יפי ברירת המחדל שמוסתרים (res, arr, male, female); tagHide: מפתחות של תגיות שמוסתרות. צ'יף שהסינון שלו פעיל נשאר מוצג גם אם הוסתר */
+  /* הצגה בשורת הצ'יפים (7.11.26): לכל מנהל, בכל התצוגות; נשמר ב-view_scopes._g. chipHide: מפתחות של צ'יפי ברירת המחדל שמוסתרים (res, arr, male, female); tagHide: מפתחות של תגיות שמוסתרות. צ'יף שהוסתר נשאר מוסתר גם כשהסינון שלו פעיל */
   ['chipHide', 'tagHide'].forEach((prop) => Object.defineProperty(state, prop, { get() { const c = state.viewScopes._g; return Array.isArray(c && c[prop]) ? c[prop] : []; }, set(v) { (state.viewScopes._g || (state.viewScopes._g = {}))[prop] = v; }, enumerable: true }));
   Object.defineProperty(state, 'sortDir', { get() { const c = state.viewScopes._g; return c && c.sortDir === 'asc' ? 'asc' : 'desc'; }, set(v) { (state.viewScopes._g || (state.viewScopes._g = {})).sortDir = v === 'asc' ? 'asc' : 'desc'; }, enumerable: true });   // כיוון המיון: desc = ברירת המחדל של כל מיון (חדש, עדכני,  גבוהה קודם), asc = הפוך; לחיצה נוספת על המיון שנבחר הופכת
   Object.defineProperty(state, 'sort', { get() { const c = state.viewScopes._g; return c && c.sort && c.sort !== 'pers' && c.sort !== 'pay' ? c.sort : 'last'; }, set(v) { (state.viewScopes._g || (state.viewScopes._g = {})).sort = v; }, enumerable: true });
