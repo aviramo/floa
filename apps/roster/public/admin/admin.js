@@ -3066,7 +3066,7 @@
     const side = (d) => d.id === 'pDlg' && !!(sideMQ && sideMQ.matches) && !!(sheet && sheet.id);   // משתתף חדש: פופאפ רגיל, לא כרטיס בצד
     const rawShowNM = proto.show;
     /* דסקטופ (31.10.26): הגדרות, סטטיסטיקות וכספים (וההתחשבנות שנפתחת מההגדרות) נפתחים כפאנל מצד שמאל שמחליק ימינה, ולא כחלון במרכז; נסגרים בכפתור X, בלחיצה בחוץ או ב-Escape */
-    const DRAWERS = ['setDlg', 'stDlg', 'finDlg', 'prDlg'];
+    const DRAWERS = ['setDlg', 'stDlg', 'finDlg', 'prDlg', 'viewDlg'];   // גם ההעדפות (22.11.26, בהוראת הבעלים): בדסקטופ פאנל מצד שמאל כמו הסטטיסטיקות
     const drawer = (d) => DRAWERS.includes(d.id) && desk();
     proto.showModal = function () {
       if (this.open) return;

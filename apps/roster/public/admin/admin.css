@@ -961,8 +961,9 @@ html.is-loading .vbar { display: none; }
 /* ---------- דסקטופ (31.10.26): הגדרות, סטטיסטיקות וכספים כפאנל מצד שמאל שמחליק ימינה (בדסקטופ רחב: כל האזור שמשמאל לרשימה) ---------- */
 
 @media (min-width: 760px) {
-  :is(#setDlg, #stDlg, #finDlg, #prDlg).drawer { inset: var(--envtop, 0px) auto 0 0; width: min(600px, 92vw); max-width: none !important; height: auto; max-height: none; margin: 0; box-shadow: var(--pop); }
-  :is(#setDlg, #stDlg, #finDlg, #prDlg).drawer .sheet { min-height: 100%; }
+  :is(#setDlg, #stDlg, #finDlg, #prDlg, #viewDlg).drawer { inset: var(--envtop, 0px) auto 0 0; width: min(600px, 92vw); max-width: none !important; height: auto; max-height: none; margin: 0; box-shadow: var(--pop); }
+  :is(#setDlg, #stDlg, #finDlg, #prDlg, #viewDlg).drawer .sheet { min-height: 100%; }
+  #viewDlg.drawer .sheet { padding: var(--pp-pt-sheet) var(--pp-px) var(--sheet-b); }   /* the preferences panel keeps the popup's own paddings (the generic rule skips a drawer) */
   #finDlg.drawer .sheet { height: 100%; max-height: none; }
   dialog.drawer .sheet-head .dclose { display: inline-grid; flex: 0 0 auto; }
 }
