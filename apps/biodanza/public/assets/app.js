@@ -1335,17 +1335,10 @@
       if (plus0 && dx0 != null && dx0 !== "") plus0.style.transform = "translateX(" + dx0 + "px)";   /* in its place from the first moment, before the list is here */
       on(r, "homemore", function (b) {   /* one menu: the songs I loved, who may enter (the manager), leaving */
         var cnt = function (o) { return Object.keys(o).filter(function (k) { return o[k]; }).length; };
-        var items = state.offline ? [] : [{ label: "יצירת ויוונסיה", icon: I.plus, fn: newViv }, { label: "קטלוג", meta: '<span data-catcnt></span>', icon: I.catalog, fn: function () { if (wide()) openCatPanel(); else { resetPk(); pickerSheet(); } } }, { label: "ויוונסיות שאהבתי", meta: String(cnt(likesViv)), icon: I.heart, fn: function () { likedVivScreen(); } }, { label: "תרגילים שאהבתי", meta: String(cnt(likesEx)), icon: I.heart, fn: function () { likedExScreen(); } }, { label: "מוסיקה שאהבתי", meta: String(cnt(likes)), icon: I.heart, fn: function () { likedScreen(); } }];   /* in the order of the app: vivencias, exercises, songs */
+        var items = state.offline ? [] : [{ label: "יצירת ויוונסיה", icon: I.plus, fn: newViv }, { label: "קטלוג", icon: I.catalog, fn: function () { if (wide()) openCatPanel(); else { resetPk(); pickerSheet(); } } }, { label: "ויוונסיות שאהבתי", meta: String(cnt(likesViv)), icon: I.heart, fn: function () { likedVivScreen(); } }, { label: "תרגילים שאהבתי", meta: String(cnt(likesEx)), icon: I.heart, fn: function () { likedExScreen(); } }, { label: "מוסיקה שאהבתי", meta: String(cnt(likes)), icon: I.heart, fn: function () { likedScreen(); } }];   /* in the order of the app: vivencias, exercises, songs */
         if (state.me.admin) items.push({ label: "ניהול משתמשים", icon: I.users, fn: allowPopup });
         items.push({ label: "יציאה", icon: I.out, tone: "danger", fn: function () { Promise.resolve(FLOA_AUTH.signOut()).then(function () { location.reload(); }); } });
         menu(b, items);
-        catTotals().then(function (t) {   /* the catalog's size, in its two signs: the songs and the exercises */
-          var el = document.querySelector("#moreMenu [data-catcnt]"); if (!el || !t) return;
-          var note = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>';
-          var curve = '<span aria-hidden="true" style="display:grid;width:14px;height:14px;flex:none">' + I.curve.replace("<svg ", '<svg style="width:100%;height:100%" ') + '</span>';
-          el.parentElement.style.cssText += ";display:inline-flex;align-items:center;gap:var(--sp-1)";
-          el.outerHTML = '<span style="display:inline-flex;align-items:center;gap:var(--sp-1)">' + note + '<span>' + t.music + '</span>' + curve + '<span>' + t.ex + '</span></span>';
-        });
       });
       on(r, "new", newViv);
     });
