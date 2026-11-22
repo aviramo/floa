@@ -2779,3 +2779,4 @@ html.is-loading #menuBtn, html.is-loading #mSel svg { visibility: hidden; }
 #listTags .hsearch.attn::after { content: ""; position: absolute; inset: 0; border-radius: inherit; border: 2px solid var(--accent); pointer-events: none; animation: rk-ring 1s ease-in-out 2; }
 @keyframes rk-ring { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { #listTags .hsearch.attn::after { animation: none; opacity: 1; } }
+.wrap > header.top .msel .msub { margin-top: calc(var(--sp-hair) * -5); }   /* the title row is 44px high now: the line under the title comes up to sit right below the words */
