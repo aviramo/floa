@@ -2733,6 +2733,10 @@ body:has(#mMenu:not([hidden])) #kitFab { display: none; }   /* one plus at a tim
 /* the details tab: a row with one field gives it the whole width (the address) */
 .prow > .field:only-of-type { grid-column: 1 / -1; }
 
+/* an extra signup field (a question and its answer): the whole question wraps above the answer instead of floating on one line */
+.prow > .rfield.xfield:has(> .rf-box) > span:first-child { position: static; transform: none; white-space: normal; overflow: visible; text-overflow: clip; display: block; font-size: var(--fs-xs); line-height: var(--lh-tight, 1.3); }
+.prow > .rfield.xfield > .rf-box { padding-top: 0; }
+
 /* the meeting row in the participant card: the place sits at the bottom, at the left end of the chips line */
 .mlist .mrow .mwp { margin: 0; margin-inline-start: auto; flex: 0 1 auto; min-width: 0; max-width: 50%; }
 .chiprow .stc[data-cr="gen"] .gc.on { background-color: var(--hdr-ctl); }   /* the gender chosen keeps the background of the chip (the underline shows it is on) */

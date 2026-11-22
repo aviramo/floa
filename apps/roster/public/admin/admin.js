@@ -3275,19 +3275,19 @@
   window.addEventListener('click', (e) => { if (e.target.closest && (e.target.closest('dialog') || e.target.closest('[role="menu"]') || e.target.closest('.chiprow') || e.target.closest('header.top'))) return; if (window.RosterUI && RosterUI.menuOpen && RosterUI.menuOpen()) return;   // a press inside a menu, or the press that only closes a menu, never takes the mark of the last card away
     const r = e.target.closest && e.target.closest('#list li.row')   // לחיצה בתוך פופאפ (אישור, סגירה) לא מבטלת את סימון "אחרון"
     , ed = r && r.querySelector('[data-edit]'), id = ed ? ed.dataset.edit : null; if (id !== lastPid) { lastPid = id; markSel(); } }, true);   // לחיצה על כל אלמנט בכרטיס מסמנת אותו; לחיצה במקום אחר מבטלת   // לחיצה, לא נגיעה: גלילה ברשימה לא מבטלת את הסימון
-  /* the extra fields a signup carried (extra_fields: [{key, label, value}], text only): one shown field per entry after "קוד הגעה", the same field element, nothing when the person has none */
+  /* the extra fields a signup carried (extra_fields: [{key, label, value}], text only): one row of its own per entry after "קוד הגעה", the same field element with the whole question above its answer, nothing when the person has none */
   function showExtraFields(p) {
-    const anchor = $('#pSrcCode').closest('label');
-    anchor.parentNode.querySelectorAll('[data-extra-field]').forEach((n) => n.remove());
+    const row = $('#pSrcCode').closest('.prow');
+    row.parentNode.querySelectorAll('[data-extra-row]').forEach((n) => n.remove());
     const list = p && Array.isArray(p.extra_fields) ? p.extra_fields : [];
-    let prev = anchor;
+    let prev = row;
     list.forEach((e) => {
       if (!e || typeof e.label !== 'string' || typeof e.value !== 'string') return;
-      const lab = document.createElement('label'), cap = document.createElement('span'), box = document.createElement('div');
-      lab.className = 'rfield field'; lab.dataset.extraField = '1'; box.className = 'rf-box';
+      const wrap = document.createElement('div'), lab = document.createElement('label'), cap = document.createElement('span'), box = document.createElement('div');
+      wrap.className = 'prow'; wrap.dataset.extraRow = '1'; lab.className = 'rfield field xfield'; box.className = 'rf-box';
       cap.textContent = e.label; box.textContent = e.value;
-      lab.append(cap, box);
-      prev.after(lab); prev = lab;
+      lab.append(cap, box); wrap.append(lab);
+      prev.after(wrap); prev = wrap;
     });
   }
   function openParticipant(id, tab, fromEl) {
