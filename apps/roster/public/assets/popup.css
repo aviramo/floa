@@ -42,7 +42,7 @@
 }
 dialog .sheet-head { direction: ltr; flex-direction: row-reverse; }    /* physical: the first child stays at the right like in an RTL row, the last child (the X, order 99) is the leftmost */
 dialog .sheet-head > * { direction: rtl; }
-dialog .sheet-head > .rs-x, dialog .sheet-head > .dclose { order: 99; margin-left: calc(-1 * var(--pp-x-bleed)); margin-right: 0; }
+dialog .sheet-head > .rs-x, dialog .sheet-head > .dclose { order: 99; margin-left: 0; margin-right: 0; }   /* the X is a 44px tile like every icon button: its box sits on the content edge, inside (owner 2026-11-22) */
 dialog .sheet-head > .rs-x svg, dialog .sheet-head > .dclose svg { width: var(--pp-x-svg); height: var(--pp-x-svg); }
 
 /* touch: a bottom sheet has the grab strip above its header; the strip is the top space, so the sheet's own padding above the header is 0 (a sheet that opens from the top has the strip at its bottom and keeps the padding) */

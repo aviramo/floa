@@ -778,7 +778,7 @@
       const af = state.arrF, ast = af === '1' ? 1 : af === '0' ? 2 : 0, aok = pool.filter((p) => common(p) && genOk(p) && paidOk0(p)), arrN = aok.filter((p) => (linkOf(p.id, state.filter) || {}).attended).length, noArrN = aok.length - arrN;
       chipCnt.arr = { all: aok.length, y: arrN, n: noArrN };
       window.__chipCnt = chipCnt;
-      const arrH = btn('arr', ast === 2 ? 'neg' : '', ast > 0, '<span class="fx cm">' + icon('check', 'i16') + ' <small>' + (ast === 2 ? noArrN : arrN) + '</small></span>').replace('<button ', '<button data-cm="arr" aria-haspopup="menu" aria-label="הגיעו" title="הגיעו" ');
+      const arrH = btn('arr', ast === 2 ? 'neg' : '', ast > 0, '<span class="fx cm">' + icon(ast === 2 ? 'close' : 'check', 'i16') + ' <small>' + (ast === 2 ? noArrN : arrN) + '</small></span>').replace('<button ', '<button data-cm="arr" aria-haspopup="menu" aria-label="הגיעו" title="הגיעו" ');
       h += (showChip('res', st > 0) ? resH : '') + (arrOpen() && showChip('arr', ast > 0) ? arrH : '');   // משוריינים, ואחריו הגיעו, בכל מפגש נבחר (הכל ← הגיעו ← לא הגיעו ← הכל)
     }
     const fxw = (txt, n) => '<span class="fx"><span>' + txt + ' <small>' + n + '</small></span><span class="ph" aria-hidden="true">' + txt + ' <small>' + w + '</small></span></span>';

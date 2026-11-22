@@ -176,8 +176,8 @@ const xExact = (tag, view, m) => {
   check(`${tag}: no cancel button in a popup (closing it is the cancel)`, m.cancelBtns === 0, m);   // owner 2026-11-13
   if (!m.x) return;
   const key = view.name + (m.grabTop ? " with a grab bar above" : " without");
-  /* the glyph (12px) sits on the content edge: its 44px target reaches 16px past it, so left = side padding - 16, the same on every page; the top is the shell top padding (16) under the grab bar, if any */
-  check(`${tag}: the X is 44px, its left edge is exactly the content edge minus 16 (${m.px - 16})`, m.x.w === 44 && m.x.h === 44 && m.x.l === m.px - 16, m.x);
+  /* the X is a 44px tile like every icon button (owner 2026-11-22): its box sits ON the content edge, inside, so left = side padding, the same on every page; the top is the shell top padding (16) under the grab bar, if any */
+  check(`${tag}: the X is 44px, its left edge is exactly the content edge (${m.px})`, m.x.w === 44 && m.x.h === 44 && m.x.l === m.px, m.x);
   const first = SEEN.get(key);
   if (!first) SEEN.set(key, { tag, t: m.x.t });
   else check(`${tag}: the X top offset (${m.x.t}) equals the one of ${first.tag} (${first.t}), ${key}`, m.x.t === first.t, m.x);

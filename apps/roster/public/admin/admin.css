@@ -2780,3 +2780,18 @@ html.is-loading #menuBtn, html.is-loading #mSel svg { visibility: hidden; }
 @keyframes rk-ring { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { #listTags .hsearch.attn::after { animation: none; opacity: 1; } }
 .wrap > header.top .msel .msub { margin-top: calc(var(--sp-hair) * -5); }   /* the title row is 44px high now: the line under the title comes up to sit right below the words */
+
+/* the date and time wrapper is only a box around the input (the input carries the field's own top padding): without this it added a second 19px and the field sat 19px lower than its neighbour */
+.rfield > .dtbox { padding: 0; height: var(--rf-h, var(--fld)); }
+/* the save button of the income / expense popup and the payment button are at the bottom of the form, full width (owner 2026-11-22) */
+#finFormDlg .finsave, #ppDlg .ppgo { width: 100%; height: var(--fld); margin: var(--sp-2) 0 0; padding: 0 var(--sp-2); }
+
+/* the fields of a paid-marketing card: ONE column, each field the full width, in the order of the card; only the colour dot sits beside the name (owner 2026-11-22: they were a ragged two-column grid) */
+:root:root:root .srccard .srcgrid { grid-template-columns: minmax(0, 1fr) auto; row-gap: var(--sp-1); align-items: end; }
+:root:root:root .srccard .srcgrid > * { grid-column: 1 / -1; order: 0; }
+:root:root:root .srccard .srcgrid > .rfield:first-child { grid-column: 1; }
+:root:root:root .srccard .srcgrid > .srccolf { grid-column: 2; align-self: end; }
+
+/* "not reserved" and "not arrived": no red fill (owner 2026-11-22). The chip keeps the colour of every chip and the bar under it; what says "not" is a diagonal slash across its symbol (not reserved), or an X in place of the check (not arrived) */
+:root:root:root .chiprow .stc.neg[aria-pressed="true"] { background-color: var(--hdr-ctl) !important; color: var(--text) !important; border-color: transparent !important; }
+:root:root:root .chiprow .stc.neg[aria-pressed="true"]:not([data-cr="arr"]) .fx.cm > svg { background: linear-gradient(to top right, transparent calc(50% - 1px), currentColor calc(50% - 1px), currentColor calc(50% + 1px), transparent calc(50% + 1px)); }
