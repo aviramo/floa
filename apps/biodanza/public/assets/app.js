@@ -1178,7 +1178,7 @@
     catPrev.classList.remove("is-open"); catPrevMus = null; catPrevId = null; catPreview = false; catPrevCtx = null; refreshPrevLabel(); saveCat();
     if (catLayer) catLayer.querySelectorAll(".bio-card[aria-current]").forEach(function (c) { c.removeAttribute("aria-current"); });
   }
-  (function () { var st = document.createElement("style"); st.textContent = "#catLayer .catsh { position: absolute; z-index: 5; inset-block: 0; right: var(--plw); width: 10px; margin-right: -5px; pointer-events: auto; cursor: col-resize; touch-action: none } #catLayer .catsh::after { content: ''; position: absolute; inset-block: 0; right: 4px; width: 2px; background: transparent; transition: background var(--t-base) } #catLayer .catsh:hover::after, #catLayer .catsh:focus-visible::after, html.split-drag #catLayer .catsh::after { background: var(--line-strong) } #catLayer .catsh:focus-visible { outline: none } #catLayer { position: fixed; z-index: 20; pointer-events: none; transform: translateX(100%); transition: transform .25s var(--ease) } #catLayer[hidden] { display: none } #catLayer.is-open { transform: none } #catLayer > .catmain { position: absolute; z-index: 1; inset-block: 0; right: 0; width: var(--plw); display: flex; flex-direction: column; min-height: 0; pointer-events: auto; box-shadow: -1px 0 0 var(--line) } #catLayer .catbody > .rhead { padding-inline-end: var(--gutter) } #catLayer .catbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column } #catLayer .catbody > .rlist { flex: 1 1 auto; min-height: 0 } #catLayer > .catprev { position: absolute; z-index: 0; inset-block: 0; left: 0; width: var(--pdw); display: flex; flex-direction: column; min-height: 0; overflow: hidden; pointer-events: auto; visibility: hidden; transform: translateX(100%); transition: transform .25s var(--ease), visibility 0s linear .25s } #catLayer > .catprev.is-open { visibility: visible; transform: none; transition: transform .25s var(--ease), visibility 0s } #catLayer > .catprev > .rlist { flex: 1 1 auto; min-height: 0 } @media (prefers-reduced-motion: reduce) { #catLayer, #catLayer > .catprev { transition: none } }"; document.head.appendChild(st); })();
+  (function () { var st = document.createElement("style"); st.textContent = "#catLayer .catsh { position: absolute; z-index: 5; inset-block: 0; right: var(--plw); width: 10px; margin-right: -5px; pointer-events: auto; cursor: col-resize; touch-action: none } #catLayer .catsh::after { content: ''; position: absolute; inset-block: 0; right: 4px; width: 2px; background: transparent; transition: background var(--t-base) } #catLayer .catsh:hover::after, #catLayer .catsh:focus-visible::after, html.split-drag #catLayer .catsh::after { background: var(--line-strong) } #catLayer .catsh:focus-visible { outline: none } #catLayer { position: fixed; z-index: 20; pointer-events: none; transform: translateX(100%); transition: transform .25s var(--ease) } #catLayer[hidden] { display: none } #catLayer.is-open { transform: none } #catLayer > .catmain { position: absolute; z-index: 1; inset-block: 0; right: 0; width: var(--plw); display: flex; flex-direction: column; min-height: 0; pointer-events: auto; box-shadow: -1px 0 0 var(--line) } #catLayer .catbody > .rhead { padding-inline-end: var(--gutter) } #catX { margin-inline-end: calc((var(--icon-m) - var(--ctl)) / 2) } #catLayer .catbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column } #catLayer .catbody > .rlist { flex: 1 1 auto; min-height: 0 } #catLayer > .catprev { position: absolute; z-index: 0; inset-block: 0; left: 0; width: var(--pdw); display: flex; flex-direction: column; min-height: 0; overflow: hidden; pointer-events: auto; visibility: hidden; transform: translateX(100%); transition: transform .25s var(--ease), visibility 0s linear .25s } #catLayer > .catprev.is-open { visibility: visible; transform: none; transition: transform .25s var(--ease), visibility 0s } #catLayer > .catprev > .rlist { flex: 1 1 auto; min-height: 0 } @media (prefers-reduced-motion: reduce) { #catLayer, #catLayer > .catprev { transition: none } }"; document.head.appendChild(st); })();
   function placeCatLayer() {   /* the one body spans both sides, from the left side's edge to the right side's edge */
     if (!catLayer) return; var a = pd.getBoundingClientRect(), b = pl.getBoundingClientRect();
     catLayer.style.top = b.top + "px"; catLayer.style.height = b.height + "px"; catLayer.style.left = a.left + "px"; catLayer.style.width = (b.right - a.left) + "px";
@@ -1221,7 +1221,6 @@
     document.querySelectorAll("[data-catopen]").forEach(function (b) { b.setAttribute("aria-pressed", "true"); });
     catPanel = catLayer; state.pickerShow = true; catPreview = !!catPrevId;
     pd.classList.add("bio-dim"); refreshPrevLabel(); saveCat();
-    alignCatX(); setTimeout(alignCatX, 80); setTimeout(alignCatX, 600);   /* the cross over the search sign: first the kept shift, then the measured one */
     if (typeof syncLeftToTab === "function") setTimeout(syncLeftToTab, 0);   /* the left side already says what to do: choose an exercise or a song */
   }
   document.addEventListener("click", function (ev) { var ab = ev.target.closest && ev.target.closest("[data-addex]"); if (ab) {   /* the plus beside the exercises' title: an empty exercise at the end of the numbered ones, opened to be filled in */
@@ -1411,20 +1410,6 @@
     var has = function (m) { return !!(m && m.audio_object === name); };
     return (items || []).some(function (x) { return has(x.music) || (x.item_music_options || []).some(function (o) { return has(o.music); }); }) || (recv || []).some(function (o) { return has(o.music); });
   }
-  function alignCatX() {   /* the cross that closes the catalog is over the sign of the search: the same centre */
-    var x = document.getElementById("catX"), ic = document.querySelector("#catLayer [data-sicon]");
-    if (!x) return;
-    var saved = null; try { saved = localStorage.getItem("biodanza.catxdx"); } catch (e) { /* none */ }
-    if (!ic || !ic.getBoundingClientRect().width) { if (saved != null && saved !== "") x.style.transform = "translateX(" + saved + "px)"; return; }
-    x.style.transform = "";
-    var xr = x.getBoundingClientRect(), ir = ic.getBoundingClientRect(); if (!xr.width) return;
-    var dx = Math.round(ir.left + ir.width / 2 - (xr.left + xr.width / 2)); x.style.transform = "translateX(" + dx + "px)"; try { localStorage.setItem("biodanza.catxdx", String(dx)); } catch (e) { /* kept only for this visit */ }
-    if (window.ResizeObserver) {   /* the scrollbar of a list arrives after the list is drawn and moves the search sign: the cross follows it at once */
-      if (!window.__catRO) window.__catRO = new ResizeObserver(function () { alignCatX(); });
-      [].forEach.call(document.querySelectorAll("#catLayer .pgl, #catLayer .pgp, #catLayer #pks"), function (e) { if (!e.__ro) { e.__ro = 1; window.__catRO.observe(e); } });
-    }
-  }
-  window.addEventListener("resize", function () { alignCatX(); });
   function alignPlus() {   /* the + of the header is over the sign of the exercises of the rows, the same centre */
     var plus = document.querySelector('#pl [data-act="new"]'), ic = document.querySelector("#hl .bio-vcnt__c");
     if (!plus) return; plus.style.transform = "";
