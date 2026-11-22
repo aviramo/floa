@@ -79,26 +79,33 @@
   /* ---- one player for the whole app ---- */
   var el = new Audio(), now = "", url = "", busy = "";
   el.preload = "none";
+  /* the player is an element that can be replaced: a new place or a new song is made ready in a SECOND element, silent, while the first goes on playing untouched; when the second is really playing, the first goes down and the second comes up. Whatever the page listens to goes through the hub, from whichever element is the player now. */
+  var hub = new EventTarget(), FWD = ["pause", "play", "ended", "timeupdate", "loadedmetadata", "seeked", "error"], pend = null;
+  function adopt(a) { FWD.forEach(function (n) { a.addEventListener(n, function () { if (a === el) hub.dispatchEvent(new Event(n)); }); }); }
+  adopt(el);
+  function fresh(src) { var n = new Audio(); n.preload = "auto"; n.volume = 0; adopt(n); n.src = src; return n; }
+  function dropPending() { if (!pend) return; var n = pend; pend = null; try { n.pause(); n.removeAttribute("src"); } catch (e) { /* gone */ } }
   function wideNow() { return !window.matchMedia || window.matchMedia("(min-width: 1024px)").matches; }
   var seekWant = 0, loadingSeek = "";
   var vol = 1;
   try { var sv = parseFloat(localStorage.getItem("biodanza.volume")); if (sv >= 0 && sv <= 1) vol = sv; } catch (e) { /* the default */ }
   el.volume = wideNow() ? vol : 1;
-  var fadeT = 0, fadingOut = false, FADE = FADE_MS;   /* every change of sound, play, pause, a new place, a new song, takes two seconds: the old goes down while the new comes up */
+  var fadeT = 0, fadingOut = false, holdVol = false, FADE = FADE_MS;   /* holdVol: the sound is at zero and waiting to start (or to be at its new place): nobody may set the volume until its ramp begins */   /* every change of sound, play, pause, a new place, a new song, takes two seconds: the old goes down while the new comes up */
   function target() { return wideNow() ? vol : 1; }
   function ramp(to, done, ms) {   /* the volume goes from where it is to `to` in a second (or ms) */
     clearInterval(fadeT); var from = el.volume, t0 = Date.now(), len = ms || FADE;
     fadeT = setInterval(function () {
-      var k = Math.min(1, (Date.now() - t0) / len), c = to >= from ? k * k * k : 1 - Math.pow(1 - k, 3);   /* the ear hears loudness in steps, not in amounts: the way up is slow at first, the way down falls fast and trails off, never a straight line */
+      var k = Math.min(1, (Date.now() - t0) / len), c = to >= from ? k * k : 1 - Math.pow(1 - k, 3);   /* the ear hears loudness in steps, not in amounts: the way up is slow at first, the way down falls fast and trails off, never a straight line */
       el.volume = Math.max(0, Math.min(1, from + (to - from) * c));
       if (k >= 1) { clearInterval(fadeT); fadeT = 0; if (done) done(); }
     }, 40);
   }
   function fadeIn() {   /* plays from silence up to the volume of the page */
     fadingOut = false; if (el.paused) el.volume = 0;
+    holdVol = true;
     var pr = el.play();
-    var up = function () { ramp(target(), function () { el.volume = target(); }); };
-    if (pr && pr.then) pr.then(up, function () { /* it did not start: the caller says so */ }); else up();   /* the way up starts when the sound really starts, not when it was asked for */
+    var up = function () { holdVol = false; ramp(target(), function () { el.volume = target(); }); };
+    if (pr && pr.then) pr.then(up, function () { holdVol = false; el.volume = target(); /* it did not start: the caller says so */ }); else up();   /* the way up starts when the sound really starts, not when it was asked for */
     return pr;
   }
   function fadeOut() {   /* goes down to silence, and only then is paused: the buttons already say it is paused */
@@ -108,13 +115,6 @@
   }
   var SEEK_FADE = FADE_MS, ghosts = [], pendT = null, pendTimer = 0;
   function killGhosts() { ghosts.forEach(function (g) { clearInterval(g.t); try { g.a.pause(); g.a.removeAttribute("src"); } catch (e) { /* gone */ } }); ghosts = []; }
-  function spawnGhost() {   /* a copy of the player stays on the old place or song and goes on playing at the volume it had, until fadeGhost is told */
-    if (ghosts.length > 2) killGhosts();
-    var a = new Audio(), g = { a: a, t: 0 };
-    a.src = el.src; a.volume = el.volume; a.currentTime = el.currentTime;
-    var pr = a.play(); if (pr && pr.catch) pr.catch(function () { /* the new place is heard anyway */ });
-    ghosts.push(g); return g;
-  }
   function fadeGhost(g) {   /* the old sound goes down over two seconds, and is gone */
     var a = g.a, from = a.volume, t0 = Date.now();
     clearInterval(g.t);
@@ -123,14 +123,29 @@
       if (k >= 1) { clearInterval(g.t); try { a.pause(); a.removeAttribute("src"); } catch (e) { /* gone */ } var i = ghosts.indexOf(g); if (i >= 0) ghosts.splice(i, 1); if (g.url) try { URL.revokeObjectURL(g.url); } catch (e2) { /* gone */ } }
     }, 30);
   }
-  function crossTo(t) {   /* the old place keeps playing until the new one is ready (seeked); then the old goes down and the new comes up, together */
+  function takeOver(n, newUrl, oldUrl, name) {   /* the second element is playing, silent: from here it is the player; the first goes down while it comes up */
+    var old = el; el = n; if (newUrl != null) { url = newUrl; now = name; } pend = null;
+    clearInterval(fadeT); fadeT = 0; fadingOut = false; holdVol = false;
+    if (ghosts.length > 2) killGhosts();
+    var g = { a: old, t: 0, url: oldUrl || "" }; ghosts.push(g); fadeGhost(g);
+    ramp(target(), function () { el.volume = target(); });
+    if (ms) { ms.playbackState = "playing"; showMeta(); showPos(); }
+    paint(); tell(now, el.currentTime, el.duration || 0);
+  }
+  function crossTo(t) {   /* the old place keeps playing, untouched, until the new place is really playing in the second element */
     if (!el.duration) return;
     t = Math.max(0, Math.min(el.duration, t));
     if (el.paused || fadingOut || !el.src) { el.currentTime = t; tell(now, t, el.duration || 0); return; }
-    var g = spawnGhost(), started = false, tm = 0;
-    var start = function () { if (started) return; started = true; clearTimeout(tm); el.removeEventListener("seeked", start); fadeGhost(g); ramp(target(), function () { el.volume = target(); }, SEEK_FADE); };
-    el.volume = 0; el.addEventListener("seeked", start); tm = setTimeout(start, 1500); el.currentTime = t;
-    tell(now, t, el.duration || 0);   /* the bar shows the new place at once: only the sound has the crossfade */
+    dropPending();
+    var n = fresh(el.src); pend = n;
+    n.addEventListener("loadedmetadata", function () { try { n.currentTime = t; } catch (e) { /* the place stays */ } }, { once: true });
+    n.addEventListener("seeked", function () {
+      if (pend !== n) return;   /* a newer place took over */
+      if (el.paused || fadingOut) { dropPending(); el.currentTime = t; return; }   /* paused meanwhile: no sound is added */
+      var pr = n.play(); var go = function () { if (pend === n) takeOver(n, null, "", now); };
+      if (pr && pr.then) pr.then(go, function () { dropPending(); }); else go();
+    }, { once: true });
+    tell(now, t, el.duration || 0);   /* the bar shows the new place at once */
   }
   function wantSeek(t) { pendT = t; tell(now, t, el.duration || 0); clearTimeout(pendTimer); pendTimer = setTimeout(commitSeek, 250); }   /* a drag or a few key presses: the place is set when it stops */
   function commitSeek() { clearTimeout(pendTimer); if (pendT == null) return; var t = pendT; pendT = null; crossTo(t); }
@@ -145,13 +160,13 @@
       b.style.color = st === "sound" ? "var(--text-3)" : "var(--danger)";
     });
   }
-  el.addEventListener("pause", paint); el.addEventListener("play", paint); el.addEventListener("ended", paint);
+  hub.addEventListener("pause", paint); hub.addEventListener("play", paint); hub.addEventListener("ended", paint);
   /* the time left of the song that plays, told to the page (app.js counts it down under the song's button) */
   function tell(name, t, d) { document.dispatchEvent(new CustomEvent("bioaudio", { detail: { name: name, t: t, d: d, playing: !el.paused && !el.ended && !fadingOut, title: (infos[name] || {}).title || "", artist: (infos[name] || {}).artist || "" } })); }
-  el.addEventListener("timeupdate", function () { tell(now, el.currentTime, el.duration || 0); });
-  el.addEventListener("play", function () { tell(now, el.currentTime, el.duration || 0); });
-  el.addEventListener("pause", function () { tell(now, el.currentTime, el.duration || 0); });
-  el.addEventListener("ended", function () { if (advance()) return; tell("", 0, 0); });
+  hub.addEventListener("timeupdate", function () { tell(now, el.currentTime, el.duration || 0); });
+  hub.addEventListener("play", function () { tell(now, el.currentTime, el.duration || 0); });
+  hub.addEventListener("pause", function () { tell(now, el.currentTime, el.duration || 0); });
+  hub.addEventListener("ended", function () { if (advance()) return; tell("", 0, 0); });
   new MutationObserver(paint).observe(document.documentElement, { childList: true, subtree: true });
 
   /* what the phone shows on its lock screen and notification shade (Android, iPhone, desktop media keys): the song's name and who plays it,
@@ -176,11 +191,11 @@
     act("seekto", function (d) { if (el.duration && d && d.seekTime != null) crossTo(d.seekTime); });
     act("seekbackward", function (d) { if (el.duration) crossTo(el.currentTime - ((d && d.seekOffset) || 10)); });
     act("seekforward", function (d) { if (el.duration) crossTo(el.currentTime + ((d && d.seekOffset) || 10)); });
-    el.addEventListener("play", function () { ms.playbackState = "playing"; showMeta(); showPos(); });
-    el.addEventListener("pause", function () { ms.playbackState = el.ended ? "none" : "paused"; showPos(); });
-    el.addEventListener("loadedmetadata", showPos);
-    el.addEventListener("seeked", showPos);
-    el.addEventListener("ended", function () { ms.playbackState = "none"; });
+    hub.addEventListener("play", function () { ms.playbackState = "playing"; showMeta(); showPos(); });
+    hub.addEventListener("pause", function () { ms.playbackState = el.ended ? "none" : "paused"; showPos(); });
+    hub.addEventListener("loadedmetadata", showPos);
+    hub.addEventListener("seeked", showPos);
+    hub.addEventListener("ended", function () { ms.playbackState = "none"; });
   }
 
   var queue = [], nextFor = "", nextUrl = "", lists = {};   /* lists: the page tells which lists are loops (a key and the songs), a button with data-list takes its song's list */
@@ -208,14 +223,22 @@
     var tok = ++loadTok; busy = name; paint();
     bytes(name).then(function (b) {
       if (tok !== loadTok) return;   /* another song was asked for meanwhile: that one is the one that comes */
-      pendT = null;
-      var playingNow = !!url && !el.paused && !fadingOut && !!el.src, g = playingNow ? spawnGhost() : null, old = url;
-      url = URL.createObjectURL(b); now = name; el.src = url;
-      if (g) { g.url = old; el.volume = 0; } else { killGhosts(); if (old) URL.revokeObjectURL(old); }   /* the old song went on playing all the while the new one loaded; now it goes down as the new comes up */
-      return fadeIn().then(function () { if (g) fadeGhost(g); preloadNext(); });
+      pendT = null; dropPending();
+      var playingNow = !!url && !el.paused && !fadingOut && !!el.src, old = url, nu = URL.createObjectURL(b);
+      if (!playingNow) {   /* nothing is heard: the song starts from silence, coming up over two seconds */
+        killGhosts(); if (old) URL.revokeObjectURL(old);
+        url = nu; now = name; el.src = nu;
+        return fadeIn().then(function () { preloadNext(); });
+      }
+      /* something plays: it goes on, untouched, while the new song loads in a second element; then the old goes down as the new comes up */
+      var n = fresh(nu); pend = n;
+      return new Promise(function (res, rej) {
+        var pr = n.play();
+        if (pr && pr.then) pr.then(res, rej); else res();
+        n.addEventListener("error", rej, { once: true });
+      }).then(function () { if (tok !== loadTok || pend !== n) { if (pend === n) dropPending(); URL.revokeObjectURL(nu); return; } holdVol = true; takeOver(n, nu, old, name); preloadNext(); }, function (e) { if (pend === n) dropPending(); URL.revokeObjectURL(nu); throw e; });
     }).catch(function (e) {
       if (tok !== loadTok) return;
-      killGhosts();
       if (window.toast) window.toast(e && e.status === 403 ? "אין הרשאה להשמיע" : "אי אפשר להשמיע עכשיו");
     }).then(function () { if (tok === loadTok) { busy = ""; paint(); } });
   }
@@ -234,8 +257,8 @@
     },
     /* move the playing song to a place in it: a fraction from 0 to 1 */
     /* the volume, kept in this browser: a step up or down (in fractions of 1), the new level back */
-    volume: function (d) { if (!wideNow()) { if (!fadeT) el.volume = 1; return 1; }   /* a phone has its own volume keys: the page always plays at full */
-      vol = Math.max(0, Math.min(1, Math.round((vol + d) * 100) / 100)); if (!fadeT) el.volume = vol; try { localStorage.setItem("biodanza.volume", String(vol)); } catch (e) { /* not kept */ } return vol; },
+    volume: function (d) { if (!wideNow()) { if (!fadeT && !holdVol) el.volume = 1; return 1; }   /* a phone has its own volume keys: the page always plays at full */
+      vol = Math.max(0, Math.min(1, Math.round((vol + d) * 100) / 100)); if (!fadeT && !holdVol) el.volume = vol; try { localStorage.setItem("biodanza.volume", String(vol)); } catch (e) { /* not kept */ } return vol; },
     /* move the playing song by seconds (negative: back) */
     skip: function (sec) { if (el.duration) { pendT = null; clearTimeout(pendTimer); crossTo(el.currentTime + sec); } },   /* a key press moves at once: the bar shows it, and each press is its own crossfade */
     commitSeek: function () { commitSeek(); },
@@ -249,8 +272,8 @@
     },
     setLists: function (o) { lists = o || {}; },
     queueNames: function () { return queue.slice(); },   /* the songs of the list that is playing, if one is */
-    stopList: function () { killGhosts(); queue = []; dropNext(); clearInterval(fadeT); fadeT = 0; fadingOut = false; el.pause(); el.volume = target(); },   /* the list is switched off: what plays is paused and nothing follows it */
-    stop: function () { killGhosts(); queue = []; dropNext(); clearInterval(fadeT); fadeT = 0; fadingOut = false; el.pause(); el.volume = target(); now = ""; try { el.removeAttribute("src"); el.load(); } catch (e) { /* nothing to let go */ } if (url) { URL.revokeObjectURL(url); url = ""; } tell("", 0, 0); paint(); },
+    stopList: function () { dropPending(); killGhosts(); queue = []; dropNext(); clearInterval(fadeT); fadeT = 0; fadingOut = false; el.pause(); el.volume = target(); },   /* the list is switched off: what plays is paused and nothing follows it */
+    stop: function () { dropPending(); killGhosts(); queue = []; dropNext(); clearInterval(fadeT); fadeT = 0; fadingOut = false; el.pause(); el.volume = target(); now = ""; try { el.removeAttribute("src"); el.load(); } catch (e) { /* nothing to let go */ } if (url) { URL.revokeObjectURL(url); url = ""; } tell("", 0, 0); paint(); },
     playPause: function () { if (now && url) playToggle(); },
     seek: function (f) { if (el.duration) wantSeek(Math.max(0, Math.min(1, f)) * el.duration); },
     /* move a song to a place in it, also one that is not playing: its file is loaded (not played) and put there; play then goes on from that place */
@@ -306,10 +329,10 @@
     try { localStorage.setItem(LAST, JSON.stringify({ name: now, t: el.currentTime || 0 })); } catch (e) { /* not kept */ }
   }
   function forget() { try { localStorage.removeItem(LAST); } catch (e) { /* none */ } }
-  el.addEventListener("timeupdate", function () { remember(false); });
-  el.addEventListener("pause", function () { if (!el.ended) remember(true); });
+  hub.addEventListener("timeupdate", function () { remember(false); });
+  hub.addEventListener("pause", function () { if (!el.ended) remember(true); });
   window.addEventListener("pagehide", function () { remember(true); });
-  el.addEventListener("ended", forget);
+  hub.addEventListener("ended", forget);
   var origStop = window.BioAudio.stop; window.BioAudio.stop = function () { forget(); return origStop(); };
   (function restore() {
     var last = null; try { last = JSON.parse(localStorage.getItem(LAST) || "null"); } catch (e) { last = null; }
