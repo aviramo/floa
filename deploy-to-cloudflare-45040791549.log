@@ -1,0 +1,406 @@
+workflow:   Deploy to Cloudflare
+conclusion: failure
+commit:     5c33026b243940021ab7923c162e973ffbef5fab
+run:        https://github.com/aviramo/floa/actions/runs/45040791549
+at:         2026-11-22T15:58:22Z
+
+  ok   desktop /roster/admin/ #pDlg: the title text is at most 32px below the popup top
+  ok   desktop /roster/admin/ #pDlg: its 7 field(s) are all the one shared field (46px row, 19px above the value, 16px type, weight 400)
+  ok   desktop /roster/admin/ #pDlg: the shell's own paddings are on the 4px grid
+  ok   desktop /roster/admin/ #pDlg: --end-pad resolves to a real number (at least the 34px inset)
+  ok   desktop /roster/admin/ #pDlg section#pgM.ppage: scrolled to its end, the last row rests >= 34px above the screen bottom
+  ok   desktop /roster/admin/ #pDlg div#walHist.: scrolled to its end, the last row rests >= 34px above the screen bottom
+  ok   desktop /roster/admin/ #pDlg div#nList.: scrolled to its end, the last row rests >= 34px above the screen bottom
+  ok   desktop /roster/admin/ #pDlg section#pgI.ppage: scrolled to its end, the last row rests >= 34px above the screen bottom
+  ok   desktop /roster/admin/ #pDlg: the page itself did not scroll
+  ok   desktop /roster/admin/ #tplDlg: square corners
+  ok   desktop /roster/admin/ #tplDlg: stays inside the window and has no horizontal scroll
+  ok   desktop /roster/admin/ #tplDlg: no cancel button in a popup (closing it is the cancel)
+  ok   desktop /roster/admin/ #tplDlg: the X is 44px, its left edge is exactly the content edge (20)
+  ok   desktop /roster/admin/ #tplDlg: the X top offset (16) equals the one of desktop /roster/connect/ #conn (16), desktop without
+  ok   desktop /roster/admin/ #tplDlg: with no grab bar above, the X top is exactly the shell top padding (16)
+  ok   desktop /roster/admin/ #tplDlg: the header row starts at the top rhythm (16px from the popup top), not lower
+  ok   desktop /roster/admin/ #tplDlg: the title text is at most 32px below the popup top
+  ok   desktop /roster/admin/ #tplDlg: the header box is the same height as desktop /roster/connect/ #conn (60)
+  ok   desktop /roster/admin/ #tplDlg: the title is centred at the same place as desktop /roster/connect/ #conn (38)
+  ok   desktop /roster/admin/ #tplDlg: its 1 field(s) are all the one shared field (46px row, 19px above the value, 16px type, weight 400)
+  ok   desktop /roster/admin/ #tplDlg: the shell's own paddings are on the 4px grid
+  ok   desktop /roster/admin/ #tplDlg: it scrolls when the content is taller than the window (the last row comes into view)
+  ok   desktop /roster/admin/ #tplDlg: the page behind did not scroll, the popup stayed open and inside the window
+  ok   desktop /roster/admin/ #tplDlg: the header stays in place while the body scrolls
+  ok   desktop /roster/admin/ #tplDlg: --end-pad resolves to a real number (at least the 34px inset)
+  ok   desktop /roster/admin/ #tplDlg dialog#tplDlg.: scrolled to its end, the last row rests >= 34px above the screen bottom
+  ok   desktop /roster/admin/ #tplDlg: the page itself did not scroll
+  ok   desktop /roster/admin/ #tplPrevDlg: square corners
+  ok   desktop /roster/admin/ #tplPrevDlg: stays inside the window and has no horizontal scroll
+  ok   desktop /roster/admin/ #tplPrevDlg: no cancel button in a popup (closing it is the cancel)
+  ok   desktop /roster/admin/ #tplPrevDlg: the X is 44px, its left edge is exactly the content edge (20)
+  ok   desktop /roster/admin/ #tplPrevDlg: the X top offset (16) equals the one of desktop /roster/connect/ #conn (16), desktop without
+  ok   desktop /roster/admin/ #tplPrevDlg: with no grab bar above, the X top is exactly the shell top padding (16)
+  ok   desktop /roster/admin/ #tplPrevDlg: the header row starts at the top rhythm (16px from the popup top), not lower
+  ok   desktop /roster/admin/ #tplPrevDlg: the title text is at most 32px below the popup top
+  ok   desktop /roster/admin/ #tplPrevDlg: the header box is the same height as desktop /roster/connect/ #conn (60)
+  ok   desktop /roster/admin/ #tplPrevDlg: the title is centred at the same place as desktop /roster/connect/ #conn (38)
+  ok   desktop /roster/admin/ #tplPrevDlg: the shell's own paddings are on the 4px grid
+  ok   desktop /roster/admin/ #tplPrevDlg: it scrolls when the content is taller than the window (the last row comes into view)
+  ok   desktop /roster/admin/ #tplPrevDlg: the page behind did not scroll, the popup stayed open and inside the window
+  ok   desktop /roster/admin/ #tplPrevDlg: the header stays in place while the body scrolls
+  ok   desktop /roster/admin/ #tplPrevDlg: --end-pad resolves to a real number (at least the 34px inset)
+  ok   desktop /roster/admin/ #tplPrevDlg dialog#tplPrevDlg.: scrolled to its end, the last row rests >= 34px above the screen bottom
+  ok   desktop /roster/admin/ #tplPrevDlg: the page itself did not scroll
+  ok   desktop /roster/admin/ #mailDlg: square corners
+  ok   desktop /roster/admin/ #mailDlg: stays inside the window and has no horizontal scroll
+  ok   desktop /roster/admin/ #mailDlg: no cancel button in a popup (closing it is the cancel)
+  ok   desktop /roster/admin/ #mailDlg: the X is 44px, its left edge is exactly the content edge (20)
+  ok   desktop /roster/admin/ #mailDlg: the X top offset (16) equals the one of desktop /roster/connect/ #conn (16), desktop without
+  ok   desktop /roster/admin/ #mailDlg: with no grab bar above, the X top is exactly the shell top padding (16)
+  ok   desktop /roster/admin/ #mailDlg: the header row starts at the top rhythm (16px from the popup top), not lower
+  ok   desktop /roster/admin/ #mailDlg: the title text is at most 32px below the popup top
+  ok   desktop /roster/admin/ #mailDlg: the header box is the same height as desktop /roster/connect/ #conn (60)
+  ok   desktop /roster/admin/ #mailDlg: the title is centred at the same place as desktop /roster/connect/ #conn (38)
+  ok   desktop /roster/admin/ #mailDlg: the shell's own paddings are on the 4px grid
+  ok   desktop /roster/admin/ #mailDlg: --end-pad resolves to a real number (at least the 34px inset)
+  ok   desktop /roster/admin/ #mailDlg: the page itself did not scroll
+  ok   desktop /roster/admin/ #ppDlg: square corners
+  ok   desktop /roster/admin/ #ppDlg: stays inside the window and has no horizontal scroll
+  ok   desktop /roster/admin/ #ppDlg: no cancel button in a popup (closing it is the cancel)
+  ok   desktop /roster/admin/ #ppDlg: the X is 44px, its left edge is exactly the content edge (20)
+  ok   desktop /roster/admin/ #ppDlg: the X top offset (16) equals the one of desktop /roster/connect/ #conn (16), desktop without
+  ok   desktop /roster/admin/ #ppDlg: with no grab bar above, the X top is exactly the shell top padding (16)
+  ok   desktop /roster/admin/ #ppDlg: the header row starts at the top rhythm (16px from the popup top), not lower
+  ok   desktop /roster/admin/ #ppDlg: the title text is at most 32px below the popup top
+  ok   desktop /roster/admin/ #ppDlg: its 4 field(s) are all the one shared field (46px row, 19px above the value, 16px type, weight 400)
+  ok   desktop /roster/admin/ #ppDlg: the shell's own paddings are on the 4px grid
+  ok   desktop /roster/admin/ #ppDlg: it scrolls when the content is taller than the window (the last row comes into view)
+  ok   desktop /roster/admin/ #ppDlg: the page behind did not scroll, the popup stayed open and inside the window
+  ok   desktop /roster/admin/ #ppDlg: the header stays in place while the body scrolls
+  ok   desktop /roster/admin/ #ppDlg: --end-pad resolves to a real number (at least the 34px inset)
+  ok   desktop /roster/admin/ #ppDlg form#ppForm.: scrolled to its end, the last row rests >= 34px above the screen bottom
+  ok   desktop /roster/admin/ #ppDlg: the page itself did not scroll
+  ok   desktop /roster/admin/ #allocDlg: square corners
+  ok   desktop /roster/admin/ #allocDlg: stays inside the window and has no horizontal scroll
+  ok   desktop /roster/admin/ #allocDlg: no cancel button in a popup (closing it is the cancel)
+  ok   desktop /roster/admin/ #allocDlg: the X is 44px, its left edge is exactly the content edge (20)
+  ok   desktop /roster/admin/ #allocDlg: the X top offset (16) equals the one of desktop /roster/connect/ #conn (16), desktop without
+  ok   desktop /roster/admin/ #allocDlg: with no grab bar above, the X top is exactly the shell top padding (16)
+  ok   desktop /roster/admin/ #allocDlg: the header row starts at the top rhythm (16px from the popup top), not lower
+  ok   desktop /roster/admin/ #allocDlg: the title text is at most 32px below the popup top
+  ok   desktop /roster/admin/ #allocDlg: the header box is the same height as desktop /roster/connect/ #conn (60)
+  ok   desktop /roster/admin/ #allocDlg: the title is centred at the same place as desktop /roster/connect/ #conn (38)
+  ok   desktop /roster/admin/ #allocDlg: the shell's own paddings are on the 4px grid
+  ok   desktop /roster/admin/ #allocDlg: it scrolls when the content is taller than the window (the last row comes into view)
+  ok   desktop /roster/admin/ #allocDlg: the page behind did not scroll, the popup stayed open and inside the window
+  ok   desktop /roster/admin/ #allocDlg: the header stays in place while the body scrolls
+  ok   desktop /roster/admin/ #allocDlg: --end-pad resolves to a real number (at least the 34px inset)
+  ok   desktop /roster/admin/ #allocDlg div.ppanel: scrolled to its end, the last row rests >= 34px above the screen bottom
+  ok   desktop /roster/admin/ #allocDlg: the page itself did not scroll
+  ok   desktop /roster/admin/ #mDlg: square corners
+  ok   desktop /roster/admin/ #mDlg: stays inside the window and has no horizontal scroll
+  ok   desktop /roster/admin/ #mDlg: no cancel button in a popup (closing it is the cancel)
+  ok   desktop /roster/admin/ #mDlg: the X is 44px, its left edge is exactly the content edge (20)
+  ok   desktop /roster/admin/ #mDlg: the X top offset (16) equals the one of desktop /roster/connect/ #conn (16), desktop without
+  ok   desktop /roster/admin/ #mDlg: with no grab bar above, the X top is exactly the shell top padding (16)
+  ok   desktop /roster/admin/ #mDlg: the header row starts at the top rhythm (16px from the popup top), not lower
+  ok   desktop /roster/admin/ #mDlg: the title text is at most 32px below the popup top
+  ok   desktop /roster/admin/ #mDlg: the header box is the same height as desktop /roster/connect/ #conn (60)
+  ok   desktop /roster/admin/ #mDlg: the title is centred at the same place as desktop /roster/connect/ #conn (38)
+  ok   desktop /roster/admin/ #mDlg: its 4 field(s) are all the one shared field (46px row, 19px above the value, 16px type, weight 400)
+  ok   desktop /roster/admin/ #mDlg: the shell's own paddings are on the 4px grid
+  ok   desktop /roster/admin/ #mDlg: it scrolls when the content is taller than the window (the last row comes into view)
+  ok   desktop /roster/admin/ #mDlg: the page behind did not scroll, the popup stayed open and inside the window
+  ok   desktop /roster/admin/ #mDlg: the header stays in place while the body scrolls
+  ok   desktop /roster/admin/ #mDlg: --end-pad resolves to a real number (at least the 34px inset)
+  ok   desktop /roster/admin/ #mDlg dialog#mDlg.: scrolled to its end, the last row rests >= 34px above the screen bottom
+  ok   desktop /roster/admin/ #mDlg: the page itself did not scroll
+  ok   desktop /roster/admin/ #stDlg: square corners
+  ok   desktop /roster/admin/ #stDlg: stays inside the window and has no horizontal scroll
+  ok   desktop /roster/admin/ #stDlg: no cancel button in a popup (closing it is the cancel)
+  ok   desktop /roster/admin/ #stDlg: the X is 44px, its left edge is exactly the content edge (20)
+  ok   desktop /roster/admin/ #stDlg: the X top offset (16) equals the one of desktop /roster/connect/ #conn (16), desktop without
+  ok   desktop /roster/admin/ #stDlg: with no grab bar above, the X top is exactly the shell top padding (16)
+  ok   desktop /roster/admin/ #stDlg: the header row starts at the top rhythm (16px from the popup top), not lower
+  ok   desktop /roster/admin/ #stDlg: the title text is at most 32px below the popup top
+  ok   desktop /roster/admin/ #stDlg: the header box is the same height as desktop /roster/connect/ #conn (60)
+  ok   desktop /roster/admin/ #stDlg: the title is centred at the same place as desktop /roster/connect/ #conn (38)
+  ok   desktop /roster/admin/ #stDlg: the shell's own paddings are on the 4px grid
+  ok   desktop /roster/admin/ #stDlg: --end-pad resolves to a real number (at least the 34px inset)
+  ok   desktop /roster/admin/ #stDlg section#stPgM.ppage: scrolled to its end, the last row rests >= 34px above the screen bottom
+  ok   desktop /roster/admin/ #stDlg section#stPgF.ppage: scrolled to its end, the last row rests >= 34px above the screen bottom
+  ok   desktop /roster/admin/ #stDlg section#stPgP.ppage: scrolled to its end, the last row rests >= 34px above the screen bottom
+  ok   desktop /roster/admin/ #stDlg section#stPgA.ppage: scrolled to its end, the last row rests >= 34px above the screen bottom
+  ok   desktop /roster/admin/ #stDlg: the page itself did not scroll
+  ok   desktop /roster/admin/ #iDlg: square corners
+  ok   desktop /roster/admin/ #iDlg: stays inside the window and has no horizontal scroll
+  ok   desktop /roster/admin/ #iDlg: no cancel button in a popup (closing it is the cancel)
+  ok   desktop /roster/admin/ #iDlg: the X is 44px, its left edge is exactly the content edge (20)
+  ok   desktop /roster/admin/ #iDlg: the X top offset (16) equals the one of desktop /roster/connect/ #conn (16), desktop without
+  ok   desktop /roster/admin/ #iDlg: with no grab bar above, the X top is exactly the shell top padding (16)
+  ok   desktop /roster/admin/ #iDlg: the header row starts at the top rhythm (16px from the popup top), not lower
+  ok   desktop /roster/admin/ #iDlg: the title text is at most 32px below the popup top
+  ok   desktop /roster/admin/ #iDlg: the header box is the same height as desktop /roster/connect/ #conn (60)
+  ok   desktop /roster/admin/ #iDlg: the title is centred at the same place as desktop /roster/connect/ #conn (38)
+  ok   desktop /roster/admin/ #iDlg: the shell's own paddings are on the 4px grid
+  ok   desktop /roster/admin/ #iDlg: --end-pad resolves to a real number (at least the 34px inset)
+  ok   desktop /roster/admin/ #iDlg: the page itself did not scroll
+  ok   desktop /roster/admin/ #setDlg: square corners
+  ok   desktop /roster/admin/ #setDlg: stays inside the window and has no horizontal scroll
+  ok   desktop /roster/admin/ #setDlg: no cancel button in a popup (closing it is the cancel)
+  ok   desktop /roster/admin/ #setDlg: the X is 44px, its left edge is exactly the content edge (20)
+  ok   desktop /roster/admin/ #setDlg: the X top offset (16) equals the one of desktop /roster/connect/ #conn (16), desktop without
+  ok   desktop /roster/admin/ #setDlg: with no grab bar above, the X top is exactly the shell top padding (16)
+  ok   desktop /roster/admin/ #setDlg: the header row starts at the top rhythm (16px from the popup top), not lower
+  ok   desktop /roster/admin/ #setDlg: the title text is at most 32px below the popup top
+  ok   desktop /roster/admin/ #setDlg: the header box is the same height as desktop /roster/connect/ #conn (60)
+  ok   desktop /roster/admin/ #setDlg: the title is centred at the same place as desktop /roster/connect/ #conn (38)
+  ok   desktop /roster/admin/ #setDlg: its 1 field(s) are all the one shared field (46px row, 19px above the value, 16px type, weight 400)
+  ok   desktop /roster/admin/ #setDlg: the shell's own paddings are on the 4px grid
+  ok   desktop /roster/admin/ #setDlg: it scrolls when the content is taller than the window (the last row comes into view)
+  ok   desktop /roster/admin/ #setDlg: the page behind did not scroll, the popup stayed open and inside the window
+  ok   desktop /roster/admin/ #setDlg: the header stays in place while the body scrolls
+  ok   desktop /roster/admin/ #setDlg: --end-pad resolves to a real number (at least the 34px inset)
+  ok   desktop /roster/admin/ #setDlg dialog#setDlg.drawer: scrolled to its end, the last row rests >= 34px above the screen bottom
+  ok   desktop /roster/admin/ #setDlg: the page itself did not scroll
+  ok   desktop /roster/admin/ #prDlg: square corners
+  ok   desktop /roster/admin/ #prDlg: stays inside the window and has no horizontal scroll
+  ok   desktop /roster/admin/ #prDlg: no cancel button in a popup (closing it is the cancel)
+  ok   desktop /roster/admin/ #prDlg: the X is 44px, its left edge is exactly the content edge (20)
+  ok   desktop /roster/admin/ #prDlg: the X top offset (16) equals the one of desktop /roster/connect/ #conn (16), desktop without
+  ok   desktop /roster/admin/ #prDlg: with no grab bar above, the X top is exactly the shell top padding (16)
+  ok   desktop /roster/admin/ #prDlg: the header row starts at the top rhythm (16px from the popup top), not lower
+  ok   desktop /roster/admin/ #prDlg: the title text is at most 32px below the popup top
+  ok   desktop /roster/admin/ #prDlg: the header box is the same height as desktop /roster/connect/ #conn (60)
+  ok   desktop /roster/admin/ #prDlg: the title is centred at the same place as desktop /roster/connect/ #conn (38)
+  ok   desktop /roster/admin/ #prDlg: the shell's own paddings are on the 4px grid
+  ok   desktop /roster/admin/ #prDlg: it scrolls when the content is taller than the window (the last row comes into view)
+  ok   desktop /roster/admin/ #prDlg: the page behind did not scroll, the popup stayed open and inside the window
+  ok   desktop /roster/admin/ #prDlg: the header stays in place while the body scrolls
+  ok   desktop /roster/admin/ #prDlg: --end-pad resolves to a real number (at least the 34px inset)
+  ok   desktop /roster/admin/ #prDlg dialog#prDlg.drawer: scrolled to its end, the last row rests >= 34px above the screen bottom
+  ok   desktop /roster/admin/ #prDlg: the page itself did not scroll
+  ok   desktop /roster/admin/ #finDlg: square corners
+  ok   desktop /roster/admin/ #finDlg: stays inside the window and has no horizontal scroll
+  ok   desktop /roster/admin/ #finDlg: no cancel button in a popup (closing it is the cancel)
+  ok   desktop /roster/admin/ #finDlg: the X is 44px, its left edge is exactly the content edge (20)
+  ok   desktop /roster/admin/ #finDlg: the X top offset (16) equals the one of desktop /roster/connect/ #conn (16), desktop without
+  ok   desktop /roster/admin/ #finDlg: with no grab bar above, the X top is exactly the shell top padding (16)
+  ok   desktop /roster/admin/ #finDlg: the header row starts at the top rhythm (16px from the popup top), not lower
+  ok   desktop /roster/admin/ #finDlg: the title text is at most 32px below the popup top
+  ok   desktop /roster/admin/ #finDlg: the header box is the same height as desktop /roster/connect/ #conn (60)
+  ok   desktop /roster/admin/ #finDlg: the title is centred at the same place as desktop /roster/connect/ #conn (38)
+  ok   desktop /roster/admin/ #finDlg: the shell's own paddings are on the 4px grid
+  ok   desktop /roster/admin/ #finDlg: it scrolls when the content is taller than the window (the last row comes into view)
+  ok   desktop /roster/admin/ #finDlg: the page behind did not scroll, the popup stayed open and inside the window
+  ok   desktop /roster/admin/ #finDlg: the header stays in place while the body scrolls
+  ok   desktop /roster/admin/ #finDlg: --end-pad resolves to a real number (at least the 34px inset)
+  ok   desktop /roster/admin/ #finDlg div#finMain.: scrolled to its end, the last row rests >= 34px above the screen bottom
+  ok   desktop /roster/admin/ #finDlg: the page itself did not scroll
+  ok   desktop /roster/admin/ #cDlg: square corners
+  ok   desktop /roster/admin/ #cDlg: stays inside the window and has no horizontal scroll
+  ok   desktop /roster/admin/ #cDlg: no cancel button in a popup (closing it is the cancel)
+  ok   desktop /roster/admin/ #cDlg: the X is 44px, its left edge is exactly the content edge (20)
+  ok   desktop /roster/admin/ #cDlg: the X top offset (16) equals the one of desktop /roster/connect/ #conn (16), desktop without
+  ok   desktop /roster/admin/ #cDlg: with no grab bar above, the X top is exactly the shell top padding (16)
+  ok   desktop /roster/admin/ #cDlg: the header row starts at the top rhythm (16px from the popup top), not lower
+  ok   desktop /roster/admin/ #cDlg: the header box is the same height as desktop /roster/connect/ #conn (60)
+  ok   desktop /roster/admin/ #cDlg: the shell's own paddings are on the 4px grid
+  ok   desktop /roster/admin/ #cDlg: it scrolls when the content is taller than the window (the last row comes into view)
+  ok   desktop /roster/admin/ #cDlg: the page behind did not scroll, the popup stayed open and inside the window
+  ok   desktop /roster/admin/ #cDlg: the header stays in place while the body scrolls
+  ok   desktop /roster/admin/ #cDlg: --end-pad resolves to a real number (at least the 34px inset)
+  ok   desktop /roster/admin/ #cDlg dialog#cDlg.: scrolled to its end, the last row rests >= 34px above the screen bottom
+  ok   desktop /roster/admin/ #cDlg: the page itself did not scroll
+  ok   desktop /roster/admin/ #finFormDlg: square corners
+  ok   desktop /roster/admin/ #finFormDlg: stays inside the window and has no horizontal scroll
+  ok   desktop /roster/admin/ #finFormDlg: no cancel button in a popup (closing it is the cancel)
+  ok   desktop /roster/admin/ #finFormDlg: the X is 44px, its left edge is exactly the content edge (20)
+  ok   desktop /roster/admin/ #finFormDlg: the X top offset (16) equals the one of desktop /roster/connect/ #conn (16), desktop without
+  ok   desktop /roster/admin/ #finFormDlg: with no grab bar above, the X top is exactly the shell top padding (16)
+  ok   desktop /roster/admin/ #finFormDlg: the header row starts at the top rhythm (16px from the popup top), not lower
+  ok   desktop /roster/admin/ #finFormDlg: the title text is at most 32px below the popup top
+  ok   desktop /roster/admin/ #finFormDlg: the header box is the same height as desktop /roster/connect/ #conn (60)
+  ok   desktop /roster/admin/ #finFormDlg: the title is centred at the same place as desktop /roster/connect/ #conn (38)
+  ok   desktop /roster/admin/ #finFormDlg: the shell's own paddings are on the 4px grid
+  ok   desktop /roster/admin/ #finFormDlg: it scrolls when the content is taller than the window (the last row comes into view)
+  ok   desktop /roster/admin/ #finFormDlg: the page behind did not scroll, the popup stayed open and inside the window
+  ok   desktop /roster/admin/ #finFormDlg: the header stays in place while the body scrolls
+  ok   desktop /roster/admin/ #finFormDlg: --end-pad resolves to a real number (at least the 34px inset)
+  ok   desktop /roster/admin/ #finFormDlg dialog#finFormDlg.: scrolled to its end, the last row rests >= 34px above the screen bottom
+  ok   desktop /roster/admin/ #finFormDlg: the page itself did not scroll
+  ok   desktop /roster/admin/ #mfPopDlg: square corners
+  ok   desktop /roster/admin/ #mfPopDlg: stays inside the window and has no horizontal scroll
+  ok   desktop /roster/admin/ #mfPopDlg: no cancel button in a popup (closing it is the cancel)
+  ok   desktop /roster/admin/ #mfPopDlg: the X is 44px, its left edge is exactly the content edge (20)
+  ok   desktop /roster/admin/ #mfPopDlg: the X top offset (16) equals the one of desktop /roster/connect/ #conn (16), desktop without
+  ok   desktop /roster/admin/ #mfPopDlg: with no grab bar above, the X top is exactly the shell top padding (16)
+  ok   desktop /roster/admin/ #mfPopDlg: the header row starts at the top rhythm (16px from the popup top), not lower
+  ok   desktop /roster/admin/ #mfPopDlg: the shell's own paddings are on the 4px grid
+  ok   desktop /roster/admin/ #mfPopDlg: it scrolls when the content is taller than the window (the last row comes into view)
+  ok   desktop /roster/admin/ #mfPopDlg: the page behind did not scroll, the popup stayed open and inside the window
+  ok   desktop /roster/admin/ #mfPopDlg: the header stays in place while the body scrolls
+  ok   desktop /roster/admin/ #mfPopDlg: --end-pad resolves to a real number (at least the 34px inset)
+  ok   desktop /roster/admin/ #mfPopDlg dialog#mfPopDlg.: scrolled to its end, the last row rests >= 34px above the screen bottom
+  ok   desktop /roster/admin/ #mfPopDlg: the page itself did not scroll
+  ok   desktop /roster/admin/ #lockDlg: square corners
+  ok   desktop /roster/admin/ #lockDlg: stays inside the window and has no horizontal scroll
+  ok   desktop /roster/admin/ #lockDlg: no cancel button in a popup (closing it is the cancel)
+  ok   desktop /roster/admin/ #lockDlg: the X is 44px, its left edge is exactly the content edge (20)
+  ok   desktop /roster/admin/ #lockDlg: the X top offset (16) equals the one of desktop /roster/connect/ #conn (16), desktop without
+  ok   desktop /roster/admin/ #lockDlg: with no grab bar above, the X top is exactly the shell top padding (16)
+  ok   desktop /roster/admin/ #lockDlg: the header row starts at the top rhythm (16px from the popup top), not lower
+  ok   desktop /roster/admin/ #lockDlg: the title text is at most 32px below the popup top
+  ok   desktop /roster/admin/ #lockDlg: the header box is the same height as desktop /roster/connect/ #conn (60)
+  ok   desktop /roster/admin/ #lockDlg: the title is centred at the same place as desktop /roster/connect/ #conn (38)
+  ok   desktop /roster/admin/ #lockDlg: its 1 field(s) are all the one shared field (46px row, 19px above the value, 16px type, weight 400)
+  ok   desktop /roster/admin/ #lockDlg: the shell's own paddings are on the 4px grid
+  ok   desktop /roster/admin/ #lockDlg: it scrolls when the content is taller than the window (the last row comes into view)
+  ok   desktop /roster/admin/ #lockDlg: the page behind did not scroll, the popup stayed open and inside the window
+  ok   desktop /roster/admin/ #lockDlg: the header stays in place while the body scrolls
+  ok   desktop /roster/admin/ #lockDlg: --end-pad resolves to a real number (at least the 34px inset)
+  ok   desktop /roster/admin/ #lockDlg dialog#lockDlg.: scrolled to its end, the last row rests >= 34px above the screen bottom
+  ok   desktop /roster/admin/ #lockDlg: the page itself did not scroll
+  ok   desktop /roster/admin/ #viewDlg: square corners
+  ok   desktop /roster/admin/ #viewDlg: stays inside the window and has no horizontal scroll
+  ok   desktop /roster/admin/ #viewDlg: no cancel button in a popup (closing it is the cancel)
+  ok   desktop /roster/admin/ #viewDlg: the X is 44px, its left edge is exactly the content edge (20)
+  ok   desktop /roster/admin/ #viewDlg: the X top offset (16) equals the one of desktop /roster/connect/ #conn (16), desktop without
+  ok   desktop /roster/admin/ #viewDlg: with no grab bar above, the X top is exactly the shell top padding (16)
+  ok   desktop /roster/admin/ #viewDlg: the header row starts at the top rhythm (16px from the popup top), not lower
+  ok   desktop /roster/admin/ #viewDlg: the title text is at most 32px below the popup top
+  ok   desktop /roster/admin/ #viewDlg: the header box is the same height as desktop /roster/connect/ #conn (60)
+  ok   desktop /roster/admin/ #viewDlg: the title is centred at the same place as desktop /roster/connect/ #conn (38)
+  ok   desktop /roster/admin/ #viewDlg: the shell's own paddings are on the 4px grid
+  ok   desktop /roster/admin/ #viewDlg: it scrolls when the content is taller than the window (the last row comes into view)
+  ok   desktop /roster/admin/ #viewDlg: the page behind did not scroll, the popup stayed open and inside the window
+  ok   desktop /roster/admin/ #viewDlg: the header stays in place while the body scrolls
+  ok   desktop /roster/admin/ #viewDlg: --end-pad resolves to a real number (at least the 34px inset)
+  ok   desktop /roster/admin/ #viewDlg dialog#viewDlg.mdlg.drawer: scrolled to its end, the last row rests >= 34px above the screen bottom
+  ok   desktop /roster/admin/ #viewDlg: the page itself did not scroll
+  ok   desktop /roster/admin/ #cfgDlg: square corners
+  ok   desktop /roster/admin/ #cfgDlg: stays inside the window and has no horizontal scroll
+  ok   desktop /roster/admin/ #cfgDlg: no cancel button in a popup (closing it is the cancel)
+  ok   desktop /roster/admin/ #cfgDlg: the X is 44px, its left edge is exactly the content edge (20)
+  ok   desktop /roster/admin/ #cfgDlg: the X top offset (16) equals the one of desktop /roster/connect/ #conn (16), desktop without
+  ok   desktop /roster/admin/ #cfgDlg: with no grab bar above, the X top is exactly the shell top padding (16)
+  ok   desktop /roster/admin/ #cfgDlg: the header row starts at the top rhythm (16px from the popup top), not lower
+  ok   desktop /roster/admin/ #cfgDlg: the title text is at most 32px below the popup top
+  ok   desktop /roster/admin/ #cfgDlg: the header box is the same height as desktop /roster/connect/ #conn (60)
+  ok   desktop /roster/admin/ #cfgDlg: the title is centred at the same place as desktop /roster/connect/ #conn (38)
+  ok   desktop /roster/admin/ #cfgDlg: the shell's own paddings are on the 4px grid
+  ok   desktop /roster/admin/ #cfgDlg: it scrolls when the content is taller than the window (the last row comes into view)
+  ok   desktop /roster/admin/ #cfgDlg: the page behind did not scroll, the popup stayed open and inside the window
+  ok   desktop /roster/admin/ #cfgDlg: the header stays in place while the body scrolls
+  ok   desktop /roster/admin/ #cfgDlg: --end-pad resolves to a real number (at least the 34px inset)
+  ok   desktop /roster/admin/ #cfgDlg dialog#cfgDlg.mdlg: scrolled to its end, the last row rests >= 34px above the screen bottom
+  ok   desktop /roster/admin/ #cfgDlg: the page itself did not scroll
+  ok   desktop /roster/admin/ #sortDlg: square corners
+  ok   desktop /roster/admin/ #sortDlg: stays inside the window and has no horizontal scroll
+  ok   desktop /roster/admin/ #sortDlg: no cancel button in a popup (closing it is the cancel)
+  ok   desktop /roster/admin/ #sortDlg: the X is 44px, its left edge is exactly the content edge (20)
+  ok   desktop /roster/admin/ #sortDlg: the X top offset (16) equals the one of desktop /roster/connect/ #conn (16), desktop without
+  ok   desktop /roster/admin/ #sortDlg: with no grab bar above, the X top is exactly the shell top padding (16)
+  ok   desktop /roster/admin/ #sortDlg: the header row starts at the top rhythm (16px from the popup top), not lower
+  ok   desktop /roster/admin/ #sortDlg: the title text is at most 32px below the popup top
+  ok   desktop /roster/admin/ #sortDlg: the header box is the same height as desktop /roster/connect/ #conn (60)
+  ok   desktop /roster/admin/ #sortDlg: the title is centred at the same place as desktop /roster/connect/ #conn (38)
+  ok   desktop /roster/admin/ #sortDlg: the shell's own paddings are on the 4px grid
+  ok   desktop /roster/admin/ #sortDlg: it scrolls when the content is taller than the window (the last row comes into view)
+  ok   desktop /roster/admin/ #sortDlg: the page behind did not scroll, the popup stayed open and inside the window
+  ok   desktop /roster/admin/ #sortDlg: the header stays in place while the body scrolls
+  ok   desktop /roster/admin/ #sortDlg: --end-pad resolves to a real number (at least the 34px inset)
+  ok   desktop /roster/admin/ #sortDlg dialog#sortDlg.mdlg: scrolled to its end, the last row rests >= 34px above the screen bottom
+  ok   desktop /roster/admin/ #sortDlg: the page itself did not scroll
+  ok   desktop /roster/admin/ #amDlg: square corners
+  ok   desktop /roster/admin/ #amDlg: stays inside the window and has no horizontal scroll
+  ok   desktop /roster/admin/ #amDlg: no cancel button in a popup (closing it is the cancel)
+  ok   desktop /roster/admin/ #amDlg: the X is 44px, its left edge is exactly the content edge (20)
+  ok   desktop /roster/admin/ #amDlg: the X top offset (16) equals the one of desktop /roster/connect/ #conn (16), desktop without
+  ok   desktop /roster/admin/ #amDlg: with no grab bar above, the X top is exactly the shell top padding (16)
+  ok   desktop /roster/admin/ #amDlg: the header row starts at the top rhythm (16px from the popup top), not lower
+  ok   desktop /roster/admin/ #amDlg: the title text is at most 32px below the popup top
+  ok   desktop /roster/admin/ #amDlg: the header box is the same height as desktop /roster/connect/ #conn (60)
+  ok   desktop /roster/admin/ #amDlg: the title is centred at the same place as desktop /roster/connect/ #conn (38)
+  ok   desktop /roster/admin/ #amDlg: the shell's own paddings are on the 4px grid
+  ok   desktop /roster/admin/ #amDlg: it scrolls when the content is taller than the window (the last row comes into view)
+  ok   desktop /roster/admin/ #amDlg: the page behind did not scroll, the popup stayed open and inside the window
+  ok   desktop /roster/admin/ #amDlg: the header stays in place while the body scrolls
+  ok   desktop /roster/admin/ #amDlg: --end-pad resolves to a real number (at least the 34px inset)
+  ok   desktop /roster/admin/ #amDlg dialog#amDlg.mdlg: scrolled to its end, the last row rests >= 34px above the screen bottom
+  ok   desktop /roster/admin/ #amDlg: the page itself did not scroll
+  ok   desktop /roster/: no uncaught exception while loading
+  ok   desktop /roster/: the page has no horizontal scroll
+  ok   desktop /roster/ page: --end-pad resolves to a real number (at least the 34px inset)
+  ok   desktop /roster/ page ul#list.list: scrolled to its end, the last row rests >= 34px above the screen bottom
+  ok   desktop /roster/ page: the page itself did not scroll
+  ok   desktop /roster/: the viewport draws to the screen edges (viewport-fit=cover, so env() resolves) and the keyboard resizes the page, like every roster page
+  ok   desktop /roster/: no sticky row has a margin below it (content would peek through the gap)
+  ok   desktop /roster/: 6 chips measured, one height per size (s 24, m 28, l 40)
+  ok   desktop /roster/: the text and the icons of every chip sit on its vertical centre (1px), icons are a 16px box
+  ok   desktop /roster/: every add control is the kit FAB (no text-style "add" button)
+  ok   desktop /roster/ #dlg: square corners
+  ok   desktop /roster/ #dlg: stays inside the window and has no horizontal scroll
+  ok   desktop /roster/ #dlg: no cancel button in a popup (closing it is the cancel)
+  ok   desktop /roster/ #dlg: the X is 44px, its left edge is exactly the content edge (20)
+  ok   desktop /roster/ #dlg: the X top offset (16) equals the one of desktop /roster/connect/ #conn (16), desktop without
+  ok   desktop /roster/ #dlg: with no grab bar above, the X top is exactly the shell top padding (16)
+  ok   desktop /roster/ #dlg: the header row starts at the top rhythm (16px from the popup top), not lower
+  ok   desktop /roster/ #dlg: the title text is at most 32px below the popup top
+  ok   desktop /roster/ #dlg: the header box is the same height as desktop /roster/connect/ #conn (60)
+  ok   desktop /roster/ #dlg: the title is centred at the same place as desktop /roster/connect/ #conn (38)
+  ok   desktop /roster/ #dlg: the shell's own paddings are on the 4px grid
+  ok   desktop /roster/ #dlg: it scrolls when the content is taller than the window (the last row comes into view)
+  ok   desktop /roster/ #dlg: the page behind did not scroll, the popup stayed open and inside the window
+  ok   desktop /roster/ #dlg: the header stays in place while the body scrolls
+  ok   desktop /roster/ #dlg: --end-pad resolves to a real number (at least the 34px inset)
+  ok   desktop /roster/ #dlg div.sheet-body: scrolled to its end, the last row rests >= 34px above the screen bottom
+  ok   desktop /roster/ #dlg: the page itself did not scroll
+  ok   desktop /roster/ #dlgC: square corners
+  ok   desktop /roster/ #dlgC: stays inside the window and has no horizontal scroll
+  ok   desktop /roster/ #dlgC: no cancel button in a popup (closing it is the cancel)
+  ok   desktop /roster/ #dlgC: the X is 44px, its left edge is exactly the content edge (20)
+  ok   desktop /roster/ #dlgC: the X top offset (16) equals the one of desktop /roster/connect/ #conn (16), desktop without
+  ok   desktop /roster/ #dlgC: with no grab bar above, the X top is exactly the shell top padding (16)
+  ok   desktop /roster/ #dlgC: the header row starts at the top rhythm (16px from the popup top), not lower
+  ok   desktop /roster/ #dlgC: the title text is at most 32px below the popup top
+  ok   desktop /roster/ #dlgC: the header box is the same height as desktop /roster/connect/ #conn (60)
+  ok   desktop /roster/ #dlgC: the title is centred at the same place as desktop /roster/connect/ #conn (38)
+  ok   desktop /roster/ #dlgC: the shell's own paddings are on the 4px grid
+  ok   desktop /roster/ #dlgC: it scrolls when the content is taller than the window (the last row comes into view)
+  ok   desktop /roster/ #dlgC: the page behind did not scroll, the popup stayed open and inside the window
+  ok   desktop /roster/ #dlgC: the header stays in place while the body scrolls
+  ok   desktop /roster/ #dlgC: --end-pad resolves to a real number (at least the 34px inset)
+  ok   desktop /roster/ #dlgC div.sheet-body: scrolled to its end, the last row rests >= 34px above the screen bottom
+  ok   desktop /roster/ #dlgC: the page itself did not scroll
+  ok   desktop owner signed in: no uncaught exception
+  ok   desktop owner signed in page: --end-pad resolves to a real number (at least the 34px inset)
+  ok   desktop owner signed in page ul#list.list: scrolled to its end, the last row rests >= 34px above the screen bottom
+  ok   desktop owner signed in page: the page itself did not scroll
+  ok   desktop owner signed in: the add button floats at the bottom left of the list
+  ok   desktop owner signed in: its popup opens
+  ok   desktop owner signed in: the popup has square corners
+  ok   desktop owner signed in: the popup stays inside the window
+  ok   desktop owner signed in: it has an X (a computer popup, or one with no grab bar)
+  ok   desktop owner signed in: no cancel button in a popup (closing it is the cancel)
+  ok   desktop owner signed in: the X is 44px, its left edge is exactly the content edge (20)
+  ok   desktop owner signed in: the X top offset (16) equals the one of desktop /roster/connect/ #conn (16), desktop without
+  ok   desktop owner signed in: with no grab bar above, the X top is exactly the shell top padding (16)
+  ok   desktop owner signed in: the header row starts at the top rhythm (16px from the popup top), not lower
+  ok   desktop owner signed in: the title text is at most 32px below the popup top
+  ok   desktop owner signed in: the header box is the same height as desktop /roster/connect/ #conn (60)
+  ok   desktop owner signed in: the title is centred at the same place as desktop /roster/connect/ #conn (38)
+  FAIL desktop owner signed in: its 3 field(s) are all the one shared field (46px row, 19px above the value, 16px type, weight 400)  =>  [{"id":"bName","h":46,"pt":"20px","fs":"16px","fw":"400"},{"id":"bSlug","h":46,"pt":"20px","fs":"16px","fw":"400"},{"id":"bDisp","h":46,"pt":"20px","fs":"16px","fw":"400"}]
+  ok   desktop owner signed in: the shell paddings are on the 4px grid
+  ok   desktop owner signed in: no horizontal scroll with the popup open
+  ok   desktop owner signed in popup: --end-pad resolves to a real number (at least the 34px inset)
+  ok   desktop owner signed in popup: the page itself did not scroll
+  ok   desktop /roster/ header: the standard gutter above the title (box padding 11px or more, plus the title's own leading = 16px to the glyph)
+  ok   desktop /roster/ header: its surface or its bottom edge differs from a list row's
+  ok   desktop /roster/ header: its icon buttons are tiles with a background of their own, 44px
+  ok   desktop /roster/ header: the outermost tile on each side is flush with the content edge (within 1px)
+  ok   desktop /roster/ header: the title block (title and subtitle together) is centred on the icon tile (within 2px)
+
+853 passed, 2 failed
+
+FAILURES:
+  phone owner signed in: its 3 field(s) are all the one shared field (46px row, 19px above the value, 16px type, weight 400)  =>  [{"id":"bName","h":46,"pt":"20px","fs":"16px","fw":"400"},{"id":"bSlug","h":46,"pt":"20px","fs":"16px","fw":"400"},{"id":"bDisp","h":46,"pt":"20px","fs":"16px","fw":"400"}]
+  desktop owner signed in: its 3 field(s) are all the one shared field (46px row, 19px above the value, 16px type, weight 400)  =>  [{"id":"bName","h":46,"pt":"20px","fs":"16px","fw":"400"},{"id":"bSlug","h":46,"pt":"20px","fs":"16px","fw":"400"},{"id":"bDisp","h":46,"pt":"20px","fs":"16px","fw":"400"}]
+##[error]Process completed with exit code 1.
