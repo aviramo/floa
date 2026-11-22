@@ -2752,3 +2752,9 @@ body:has(#mMenu:not([hidden])) #kitFab { display: none; }   /* one plus at a tim
 
 /* the preferences panel is wide: the groups lay out across, as many columns as fit */
 @media (min-width: 760px) { #viewDlg.drawer #viewMenu { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); } }
+
+/* reserved and arrived are ONE joined control, like women and men: no gap, the inner corners square, a thin divider between them */
+.chiprow .cq > .stc[data-cr="res"]:has(+ .stc[data-cr="arr"]) { border-start-end-radius: 0 !important; border-end-end-radius: 0 !important; }
+.chiprow .cq > .stc[data-cr="res"] + .stc[data-cr="arr"] { margin-inline-start: calc(var(--sp-1) * -1); border-start-start-radius: 0 !important; border-end-start-radius: 0 !important; background-image: linear-gradient(var(--line-2), var(--line-2)); background-size: 1px 16px; background-repeat: no-repeat; background-position: right center; }
+/* while the page loads there is no menu button and no arrow yet: they come with the data (hidden, not removed, so nothing moves) */
+html.is-loading #menuBtn, html.is-loading #mSel svg { visibility: hidden; }

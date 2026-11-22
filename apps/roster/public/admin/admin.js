@@ -802,7 +802,7 @@
     const m = $('#chipMenu'), d = CHIP_DEF[kind], n = (window.__chipCnt || {})[kind] || { all: 0, y: 0, n: 0 }, cur = d.cur();
     m.dataset.kind = kind;
     m.innerHTML = d.lab.map((t, i) => '<button type="button" role="menuitemradio" aria-checked="' + (i === cur) + '" class="cmi' + (i === cur ? ' on' : '') + '" data-ci="' + i + '">' + t + ' <small>' + (i === 0 ? n.all : i === 1 ? n.y : n.n) + '</small></button>').join('');
-    m.style.width = kind === 'gen' ? Math.round(anchor.getBoundingClientRect().width) + 'px' : kind === 'wsf' ? Math.round(((document.querySelector('#chipRow .stc[data-cr="gen"]') || anchor).getBoundingClientRect().width)) + 'px' : ''; m.style.minWidth = kind === 'gen' || kind === 'wsf' ? '0' : '';   // המגדר: ברוחב הצ'יף. סינון ההודעות: לפחות ברוחב הצ'יף, ואם צר מדי האפשרות עדיין בשורה אחת   // סינון הסימון: התפריט ברוחב הצ'יף, כמו של המגדר
+    m.style.width = ''; m.style.minWidth = kind === 'gen' || kind === 'wsf' ? '160px' : '';   // the menu is as wide as its words (22.11.26, owner: it was as wide as the whole chip)
     m.hidden = false; m.style.left = menuX(m, anchor) + 'px'; placeMenuV(m, anchor.getBoundingClientRect().top, anchor.getBoundingClientRect().bottom, true);
   }
   $('#wmMenu').addEventListener('click', (e) => {
