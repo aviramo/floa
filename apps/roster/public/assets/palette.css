@@ -1,0 +1,39 @@
+/* ==========================================================================
+   palette.css: THE ONE PLACE WHERE A COLOR LIVES (owner 2026-11-22: "no other color in the code at all").
+   FLOA "Morning Current": pale water paper, deep blue ink, sea blue primary. Every other file (css, js, html) reads these tokens and
+   never writes a hex, rgb(), hsl() or color name; the policy lint (scripts/roster-policy.mjs, rule "color") fails on any literal outside this file.
+   To re-colour the whole app, change this file only. Text roles are 4.5:1 on their surfaces, field lines 3:1.
+   (Out of scope by the owner's earlier decision: public/me/, the personal area, and connect/mail-defaults.js, the mail HTML that mail clients render without CSS variables.)
+   ========================================================================== */
+:root {
+  /* surfaces, lines, text */
+  --bg: #F4F9FC;  --surface: #E8F1F7;  --surface-2: #D8E7F1;
+  --line: #D4E3EE;  --line-strong: #53697F;                   /* line-strong: field underline, outlines of controls */
+  --text: #0C2A45;  --text-2: #27496A;  --text-3: #4F657A;
+  --primary: #0F4F7F;  --on-primary: #FFFFFF;                  /* buttons, selected tab/chip, FAB */
+  --accent: #17689F;                                           /* focus ring, links, active tab, field focus line */
+  --on-color: #FFFFFF;                                         /* text and icons on any solid status or tone fill */
+  /* status */
+  --success: #1A6B46;  --success-bg: #D9F0E4;
+  --danger: #B3261E;   --danger-bg: #FADBD8;
+  --warn: #7F5300;     --warn-bg: #FBEBC4;
+  --info: #0F6C8C;     --info-bg: #D2EEF7;
+  /* overlays */
+  --scrim: color-mix(in srgb, var(--text) 55%, transparent);
+  /* SHADOWS: the only five, all of them here (owner 2026-11-22: one place, every component reads from it). The shadow colour is the ink of the palette.
+     --sh-card  a card or row at rest        --sh-pop   anything that floats: popup, menu, drawer, add button
+     --sh-side  the side panel's edge        --sh-bar   the strip under a header or a tab bar        --sh-sel   the selected row (top and bottom shade) */
+  --sh-card: 0 2px 8px color-mix(in srgb, var(--text) 11%, transparent);
+  --sh-pop: 0 18px 44px -12px color-mix(in srgb, var(--text) 30%, transparent), 0 3px 8px color-mix(in srgb, var(--text) 8%, transparent);
+  --sh-side: 0 0 34px -6px color-mix(in srgb, var(--text) 32%, transparent);
+  --sh-bar: 0 3px 8px -2px color-mix(in srgb, var(--text) 12%, transparent);
+  --sh-sel: inset 0 -7px 6px -5px color-mix(in srgb, var(--text) 22%, transparent), inset 0 7px 6px -5px color-mix(in srgb, var(--text) 22%, transparent);
+  /* the soft tints of a status colour (an edge, a light stroke, a veil) */
+  --veil: color-mix(in srgb, var(--bg) 92%, transparent);
+  --success-edge: color-mix(in srgb, var(--success) 40%, var(--line));  --warn-edge: color-mix(in srgb, var(--warn) 45%, var(--line));
+  --success-soft: color-mix(in srgb, var(--success) 55%, var(--on-color));  --danger-soft: color-mix(in srgb, var(--danger) 55%, var(--on-color));
+  /* a mask only reads the alpha of its colour */
+  --mask-ink: #000000;
+  /* the Google sign-in logo keeps Google's own four colours */
+  --g-yellow: #FFC107;  --g-red: #FF3D00;  --g-green: #4CAF50;  --g-blue: #1976D2;
+}
