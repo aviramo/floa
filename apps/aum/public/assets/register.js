@@ -30,6 +30,8 @@
                   '<div class="su-cell"><label class="pf-field"><span>גיל</span><input id="suAge" data-su="age" name="age" type="number" inputmode="numeric" min="18" max="99" class="pf-input" autocomplete="off" placeholder=" " aria-label="גיל" required></label><div data-su="ageErr" class="su-err" role="alert"></div></div>' +
                   '<div class="su-cell"><label class="pf-field"><span>מגדר</span><select data-su="gender" name="gender" class="pf-input" aria-label="מגדר" required><option value="" selected disabled hidden></option><option value="male">גבר</option><option value="female">אישה</option></select></label><div data-su="genderErr" class="su-err" role="alert"></div></div>' +
                 '</div></div>' +
+                '<div class="su-cell" style="grid-column:1/-1"><label class="pf-field"><span>ניסיון קודם באום או בתהליכים דומים</span><input data-su="past" name="past_experience" type="text" class="pf-input" autocomplete="off" maxlength="500" placeholder=" " aria-label="האם השתתפת במדיטציית אום בעבר או בתהליכים דומים (מדיטציות אקטיביות, עבודה עם הגוף, ביטוי רגשי בקבוצה)"></label></div>' +
+                '<div class="su-cell" style="grid-column:1/-1"><label class="pf-field"><span>מצב בריאותי ונפשי</span><input data-su="health" name="health_state" type="text" class="pf-input" autocomplete="off" maxlength="500" placeholder=" " aria-label="מצב בריאותי ונפשי"></label></div>' +
               '</div>' +
             '</div></div>' +
             '<button data-su="btn" type="submit" class="btn su-send">הרשמה</button>' +
@@ -67,13 +69,16 @@
     lastFocus = document.activeElement;
     modal.hidden = false;
     requestAnimationFrame(function () { modal.classList.add("open"); });
+    /* the page's own scrollbar goes away while the dialog is open: its width is kept as padding so nothing moves */
+    var sbw = window.innerWidth - document.documentElement.clientWidth;
+    if (sbw > 0) document.documentElement.style.paddingRight = sbw + "px";
     document.documentElement.classList.add("modal-lock");
     var f = (!noFocus && modal.querySelector("[data-autofocus]")) || modal.querySelector(".modal-box");
     if (f) { if (f.matches(".modal-box")) f.setAttribute("tabindex", "-1"); f.focus({ preventScroll: true }); }
   }
   function closeModal() {
     modal.classList.remove("open");
-    setTimeout(function () { modal.hidden = true; document.documentElement.classList.remove("modal-lock"); }, 360);
+    setTimeout(function () { modal.hidden = true; document.documentElement.classList.remove("modal-lock"); document.documentElement.style.paddingRight = ""; }, 360);
     if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
   window.AumRegister = { open: function () { openModal(); } };
@@ -224,6 +229,11 @@
     btn.disabled = true; btn.textContent = "שולחים...";
     var body = { p_first: first, p_last: last, p_phone: norm, p_age: age, p_gender: gender };
     if (city) body.p_address = city;   /* העיר נשלחת בשדה הכתובת של ה-API (אופציונלי) */
+    /* שני שדות חופשיים לא חובה: נשלחים ב-extra_fields של ה-API, עם התווית המלאה של השאלה */
+    var past = q("past").value.trim().replace(/\s+/g, " "), health = q("health").value.trim().replace(/\s+/g, " ");
+    body.p_extra = [];
+    if (past) body.p_extra.push({ key: "past_experience", label: "האם השתתפת במדיטציית אום בעבר או בתהליכים דומים (מדיטציות אקטיביות, עבודה עם הגוף, ביטוי רגשי בקבוצה)", value: past });
+    if (health) body.p_extra.push({ key: "health_state", label: "מצב בריאותי ונפשי", value: health });
     send(body).then(function (out) {
       /* כפילות: אותה הודעה, בלי לחשוף שהמספר כבר רשום */
       if (out === "created" || out === "exists") return showDone();
@@ -232,6 +242,7 @@
       else if (out === "invalid_age") setErr(ageI, q("ageErr"), "גיל לא תקין");
       else if (out === "invalid_gender") setErr(genderI, q("genderErr"), "נא לבחור");
       else if (out === "invalid_address") setErr(cityI, q("cityErr"), "עיר לא תקינה");
+      else if (out === "invalid_extra") q("fail").textContent = "נא לבדוק את השדות החופשיים: טקסט רגיל, עד 500 תווים";
       else throw new Error("signup failed");
       btn.disabled = false; btn.textContent = "הרשמה";
     }).catch(function () {

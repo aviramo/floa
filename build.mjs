@@ -400,9 +400,16 @@ const TEST_ENV_JS = readFileSync(join(ROOT, "scripts", "test-env.client.js"), "u
 
 function serve(port = 5173, test = false) {
   const DEV_SPA = (() => { try { return JSON.parse(readFileSync(join(ROOT, "domains.json"), "utf8")).hosts.filter((h) => h.devSpa && h.folder).map((h) => h.folder.replace(/\/$/, "")); } catch { return []; } })();
+  const DEV_NAMES = (() => { try { return JSON.parse(readFileSync(join(ROOT, "domains.json"), "utf8")).hosts.filter((h) => h.folder && h.enabled !== false && !h.test).map((h) => [h.host.split(".")[0], h.folder.replace(/\/?$/, "/")]).filter(([l, f]) => f !== l + "/" && !existsSync(join(DIST, l))); } catch { return []; } })();
   createServer(async (req, res) => {
     if (test && req.url.split("?")[0] === "/__test-env.js") return res.writeHead(200, { "content-type": "text/javascript", "cache-control": "no-store" }).end(TEST_ENV_JS);
     let path = decodeURIComponent(new URL(req.url, "http://x").pathname);
+    /* every app is reachable here as /<its sub-domain name>/ (localhost:5173/aum/), so one can move between apps without
+       typing the folder it really lives in (domains.json: aum -> tal/aum/); a name that is already a real folder is left alone */
+    for (const [label, folder] of DEV_NAMES) {
+      if (path === "/" + label) return res.writeHead(301, { location: "/" + label + "/" + new URL(req.url, "http://x").search }).end();
+      if (path.startsWith("/" + label + "/")) { path = "/" + folder + path.slice(label.length + 2); break; }   /* served from the real folder; the address in the browser stays /<name>/ */
+    }
     if (path.endsWith("/")) path += "index.html";
     const file = resolve(DIST, "." + path);
     if (!file.startsWith(DIST)) return res.writeHead(403).end();

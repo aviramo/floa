@@ -358,10 +358,18 @@ document.getElementById("roster-paid").addEventListener("click", async () =&gt; 
     <tr><td><code>age</code></td><td>לא, כברירת מחדל</td><td>מספר שלם מ־18 עד 99 (מספר או מחרוזת של ספרות).</td></tr>
     <tr><td><code>gender</code></td><td>לא, כברירת מחדל</td><td><code>"male"</code> או <code>"female"</code>.</td></tr>
     <tr><td><code>meeting_id</code></td><td>לא</td><td>מזהה מפגש קיים, עתידי ולא מלא.</td></tr>
+    <tr><td><code>extra_fields</code></td><td>לא</td><td>רשימה של שדות נוספים שהעסק רוצה לאסוף, לכל אחד <code>key</code>, <code>label</code> ו־<code>value</code> (ראו מתחת לטבלה). אפשר לא לשלוח אותה.</td></tr>
     <tr><td><code>website</code></td><td>לא</td><td>שדה פתיון נגד בוטים. אם הוא לא ריק, התשובה היא הצלחה מזויפת בלי שום פעולה. בטופס אמיתי משאירים אותו סמוי וריק.</td></tr>
   </tbody>
 </table></div>
 <p>אילו שדות חובה נקבע לכל עסק בדף החיבורים (<code>signup_required</code>). ההרשמה חייבת להיות פתוחה, אחרת התשובה <code>409 closed</code>. כדי שלא יציפו עסק במשתתפים, מפתח ציבורי יכול ליצור <b>עד 120 משתתפים חדשים בשעה</b> לכל עסק. אחרי זה התשובה <code>429 rate_limited</code> עם <code>Retry-After</code>. הרשמה של טלפון שכבר רשום לא נספרת כמשתתף חדש.</p>
+<h4><code>extra_fields</code>: שדות נוספים</h4>
+<p>רשימה של אובייקטים, לכל שדה: <code>key</code> (מפתח קבוע שלכם: אותיות לועזיות קטנות, ספרות וקו תחתון, עד 40 תווים, ייחודי ברשימה), <code>label</code> (השם שיוצג לאדם, שורה אחת עד 100 תווים) ו־<code>value</code> (הערך, טקסט עד 500 תווים). עד 20 שדות. שדה עם ערך ריק פשוט לא נשמר. כל דבר אחר ברשימה (סוג לא נכון, מפתח כפול, חריגה מהאורך) מחזיר <code>422 validation</code> עם <code>"field": "extra_fields"</code>, ושום דבר לא נוצר.</p>
+<ul>
+  <li><b>נשמר רק ביצירת משתתף.</b> כמו שאר הפרטים, הרשמה ציבורית לא משנה משתתף שכבר קיים, גם אם נשלחו לו שדות נוספים.</li>
+  <li><b>התשובה לא משתנה.</b> גם מפתח ציבורי וגם סודי מקבלים בדיוק את מה שקיבלו עד היום.</li>
+  <li><b>איפה השדות מופיעים:</b> באובייקט <code>participant</code> בתשובות של מפתח סודי ובאירועי ה־webhook, בשדה <code>extra_fields</code> (רק למשתתף שיש לו), וכהערת מערכת בכרטיס המשתתף של העסק. הם לא מופיעים בשום תשובה של מפתח ציבורי.</li>
+</ul>
 <figure class="code"><figcaption>curl</figcaption><pre><code>curl -s -X POST "<span data-api-base>https://api.floa.co.il</span>/roster/v1/signup" \
   -H "Authorization: Bearer $ROSTER_KEY" \
   -H "Content-Type: application/json" \
@@ -373,7 +381,11 @@ document.getElementById("roster-paid").addEventListener("click", async () =&gt; 
     "address": "הרצל 5, תל אביב",
     "age": 34,
     "gender": "female",
-    "meeting_id": "6b0b3c2e-1f0a-4a3c-9d3e-2a5b7c8d9e01"
+    "meeting_id": "6b0b3c2e-1f0a-4a3c-9d3e-2a5b7c8d9e01",
+    "extra_fields": [
+      { "key": "past_experience", "label": "ניסיון קודם", "value": "כן, שנתיים בקבוצה" },
+      { "key": "diet", "label": "העדפת אוכל", "value": "צמחוני" }
+    ]
   }'</code></pre></figure>
 <figure class="code"><figcaption>200, JSON, מפתח ציבורי</figcaption><pre><code>{
   "status": "ok",
@@ -567,7 +579,7 @@ document.getElementById("roster-paid").addEventListener("click", async () =&gt; 
   "created_at": "2026-11-04T17:40:02.511Z",
   "business": { "slug": "dana-yoga" },
   "data": {
-    "participant": { "id": "0f6d5c1e-8a47-4a6e-bd0b-5b7a9a3c2d10", "first_name": "דנה", "last_name": "כהן", "phone": "+972501234567", "email": "dana@example.com", "address": "הרצל 5, תל אביב", "age": 34, "gender": "female" },
+    "participant": { "id": "0f6d5c1e-8a47-4a6e-bd0b-5b7a9a3c2d10", "first_name": "דנה", "last_name": "כהן", "phone": "+972501234567", "email": "dana@example.com", "address": "הרצל 5, תל אביב", "age": 34, "gender": "female", "extra_fields": [ { "key": "diet", "label": "העדפת אוכל", "value": "צמחוני" } ] },
     "meeting": { "id": "6b0b3c2e-1f0a-4a3c-9d3e-2a5b7c8d9e01", "date": "2026-11-12", "time": "20:00", "name": "ערב יוגה", "city": "תל אביב", "place": "הסטודיו" },
     "payment": { "id": "b4a1f3a0-2d7e-4c53-8f47-0a9f8e6d1c22", "kind": "payment", "amount": 80, "method": "card", "meeting_id": "6b0b3c2e-1f0a-4a3c-9d3e-2a5b7c8d9e01" }
   }

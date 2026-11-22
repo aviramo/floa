@@ -274,6 +274,7 @@ export const RPC = Object.freeze({
   meetings: "api_meetings",
   meetingsPast: "api_meetings_past",   // the same answer plus the latest N past meetings; a separate name so the old two-argument api_meetings is never replaced
   signup: "api_signup",
+  signupExtra: "api_signup_extra",   // the same signup plus the optional extra_fields list; a call without the field never reaches it, api_signup itself is untouched
   signupPhone: "api_signup_phone",
   signupComplete: "api_signup_complete",
   click: "api_payment_click",

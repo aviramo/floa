@@ -3275,6 +3275,21 @@
   window.addEventListener('click', (e) => { if (e.target.closest && (e.target.closest('dialog') || e.target.closest('[role="menu"]') || e.target.closest('.chiprow') || e.target.closest('header.top'))) return; if (window.RosterUI && RosterUI.menuOpen && RosterUI.menuOpen()) return;   // a press inside a menu, or the press that only closes a menu, never takes the mark of the last card away
     const r = e.target.closest && e.target.closest('#list li.row')   // לחיצה בתוך פופאפ (אישור, סגירה) לא מבטלת את סימון "אחרון"
     , ed = r && r.querySelector('[data-edit]'), id = ed ? ed.dataset.edit : null; if (id !== lastPid) { lastPid = id; markSel(); } }, true);   // לחיצה על כל אלמנט בכרטיס מסמנת אותו; לחיצה במקום אחר מבטלת   // לחיצה, לא נגיעה: גלילה ברשימה לא מבטלת את הסימון
+  /* the extra fields a signup carried (extra_fields: [{key, label, value}], text only): one shown field per entry after "קוד הגעה", the same field element, nothing when the person has none */
+  function showExtraFields(p) {
+    const anchor = $('#pSrcCode').closest('label');
+    anchor.parentNode.querySelectorAll('[data-extra-field]').forEach((n) => n.remove());
+    const list = p && Array.isArray(p.extra_fields) ? p.extra_fields : [];
+    let prev = anchor;
+    list.forEach((e) => {
+      if (!e || typeof e.label !== 'string' || typeof e.value !== 'string') return;
+      const lab = document.createElement('label'), cap = document.createElement('span'), box = document.createElement('div');
+      lab.className = 'rfield field'; lab.dataset.extraField = '1'; box.className = 'rf-box';
+      cap.textContent = e.label; box.textContent = e.value;
+      lab.append(cap, box);
+      prev.after(lab); prev = lab;
+    });
+  }
   function openParticipant(id, tab, fromEl) {
     const p = id ? partOf(id) : null;
     if (!p && pDlg.open && pDlg._side) pDlg.close();   // כרטיס פתוח בצד הרשימה: נסגר, והמשתתף החדש נפתח כפופאפ
@@ -3286,6 +3301,7 @@
     pForm.email.value = p ? (p.email || '') : '';
     pForm.address.value = p ? (p.address || '') : '';
     $('#pSrcCode').textContent = p ? (p.source_code || '') : '';
+    showExtraFields(p);
     pForm.gender.value = p && p.gender ? p.gender : '';
     fillPromoSel(p);
     setTitle(p);

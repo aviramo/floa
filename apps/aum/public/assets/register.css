@@ -1,5 +1,5 @@
 /* טופס ההרשמה של AUM: מגירה שיורדת מלמעלה. אותו מבנה כמו הפופאפ של יוצאים להרפתקה, בשפה של AUM. */
-.modal { position: fixed; inset: 0; z-index: 60; display: flex; align-items: flex-start; justify-content: center; padding: 0; background: rgba(74, 31, 16, .8); opacity: 0; transition: opacity .3s ease; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.modal { position: fixed; inset: 0; z-index: 60; display: flex; align-items: flex-start; justify-content: center; padding: 0; background: rgba(74, 31, 16, .8); opacity: 0; transition: opacity .3s ease; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 .modal[hidden] { display: none; }
 .modal.open { opacity: 1; }
 .modal-box { position: relative; width: 100%; max-width: 30rem; margin: 0 auto auto; background: var(--paper); border-radius: 0; padding: calc(1.4rem + env(safe-area-inset-top)) 1.1rem calc(2.4rem + env(safe-area-inset-bottom)); text-align: center; transform: translateY(-110%); transition: transform .34s cubic-bezier(.22, .8, .2, 1); will-change: transform; }
@@ -52,7 +52,7 @@ html.modal-lock .modal { touch-action: pan-y; }
 
 /* שדות הפרטים האישיים: אותו מראה כמו השדות בדף הניהול (קו תחתון ותווית צפה), מועתק מ-person-form.css של הרפתקה */
 .pf-field{ position:relative; display:block; margin:0; }
-.pf-field > span{ position:absolute; z-index:1; top:3px; inset-inline:0 -33%; margin:0; font-size:16px; line-height:22px; font-weight:400; color:var(--muted, #8A6A55); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; pointer-events:none; transform:scale(.75); transform-origin:100% 0; transition:transform .16s ease-out, color .16s ease-out; }
+.pf-field > span{ position:absolute; text-align:start; z-index:1; top:3px; inset-inline:0 -33%; margin:0; font-size:16px; line-height:22px; font-weight:400; color:var(--muted, #8A6A55); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; pointer-events:none; transform:scale(.75); transform-origin:100% 0; transition:transform .16s ease-out, color .16s ease-out; }
 .pf-field:has(> input:placeholder-shown:not(:focus):not(:-webkit-autofill)) > span{ transform:translateY(16px); inset-inline-end:0; }
 .pf-field:has(> select:not(:focus) option[value=""]:checked) > span{ transform:translateY(16px); inset-inline-end:0; }
 .pf-field:focus-within > span{ color:var(--ink, #4A2514); }
@@ -99,3 +99,11 @@ select.pf-input option{ color:var(--ink, #4A2514); }
 .pm-other span { display: inline; }
 .pm-item:hover, .pm-item:focus-visible { border-color: var(--red); }
 @media (prefers-reduced-motion: reduce) { .paychoose .pm-chev { transition: none; } }
+
+/* desktop: the form is a standard centred dialog (no top sheet, no grab bar); phones keep the sheet that swipes away */
+@media (min-width: 900px) and (hover: hover) {
+  .modal { align-items: center; padding: 2rem; }
+  .modal-box { margin: auto; border-radius: 1.2rem; padding: 2rem 1.8rem; box-shadow: 0 24px 60px rgba(40, 14, 6, .45); transform: translateY(14px) scale(.97); opacity: 0; transition: transform .26s cubic-bezier(.22, .8, .2, 1), opacity .26s ease; }
+  .modal.open .modal-box { transform: none; opacity: 1; }
+  .modal-grab { display: none; }
+}

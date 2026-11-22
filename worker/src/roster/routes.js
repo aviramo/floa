@@ -82,7 +82,7 @@ const MESSAGES = Object.freeze({
 /* the only field names a reply may name, whoever asks for them */
 const FIELDS = new Set([
   "first_name", "last_name", "phone", "email", "address", "age", "gender", "meeting_id", "participant_id",
-  "participant_token", "amount", "kind", "method", "note", "external_ref", "limit",
+  "participant_token", "amount", "kind", "method", "note", "external_ref", "limit", "extra_fields",
 ]);
 
 /* --- field checks ------------------------------------------------------------ */
@@ -137,6 +137,25 @@ function prepMeetings({ query }) {
   return good(args);
 }
 
+/* the optional extra_fields list of /signup: [{key, label, value}], at most 20, a plain key, one line of label, a value up to 500
+   characters (it may have line breaks). The database checks the same limits again and drops entries with an empty value. */
+const EXTRA_MAX = 20;
+function extraFields(list) {
+  if (!Array.isArray(list) || list.length < 1 || list.length > EXTRA_MAX) return null;
+  const out = [];
+  const seen = new Set();
+  for (const e of list) {
+    if (!e || typeof e !== "object" || Array.isArray(e)) return null;
+    if (typeof e.key !== "string" || !/^[a-z0-9_]{1,40}$/.test(e.key) || seen.has(e.key)) return null;
+    const label = line(e.label, 100);
+    const value = text(e.value, 500);
+    if (!label || value === null) return null;
+    seen.add(e.key);
+    out.push({ key: e.key, label, value });
+  }
+  return out;
+}
+
 const SIGNUP_TEXT = [["first_name", 100], ["last_name", 100], ["phone", 40], ["email", 320], ["address", 200], ["gender", 20]];
 
 function prepSignup({ body }) {
@@ -157,6 +176,12 @@ function prepSignup({ body }) {
     const m = uuid(body.meeting_id);
     if (!m) return bad("meeting_id");
     payload.meeting_id = m;
+  }
+  if (!absent(body.extra_fields) && !(Array.isArray(body.extra_fields) && body.extra_fields.length === 0)) {   // an empty list is no list
+    const extra = extraFields(body.extra_fields);
+    if (!extra) return bad("extra_fields");
+    payload.extra_fields = extra;
+    return { ok: true, args: { p_payload: payload }, rpc: RPC.signupExtra };   // only a call that carries the list uses the function that takes it
   }
   return good({ p_payload: payload });
 }

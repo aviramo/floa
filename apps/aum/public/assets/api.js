@@ -14,6 +14,11 @@
 
   var BASE = "https://api.floa.co.il/roster/v1";
   var KEY = "rk_pub_6ZK4VOFOC1kY6OrVMj8Yn7z8FloOWf0P";
+  /* גרסת פיתוח (localhost:5173/aum/) עובדת מול roster בדיקות, אותו עסק "aum" שנראה ב-localhost:5173/roster/aum: הרשמות כאן לא נוגעות באמיתי ולא שולחות מייל. המפתח הזה ציבורי, מותר לו רק מ-localhost, והוא מכיר רק את סכמת הבדיקות */
+  if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
+    BASE = "https://api-test.floa.co.il/roster/v1";
+    KEY = "rk_pub_XM9ZVQk6gU6tLNZcmmM31UWzswG0C08V";
+  }
   /* ל-roster אין שעת סיום למפגש (הוא מחשב כשעתיים מההתחלה), ובריטריט היום של AUM זה תמיד עד 16:00 */
   var END = "16:00";
   var TIMEOUT = 15000;
@@ -66,13 +71,14 @@
     return call("POST", "/payments/click", { participant_token: paid.token, meeting_id: paid.meeting }).catch(function () { paid.sent = false; });
   }
 
-  var FIELD_ERR = { first_name: "invalid_name", last_name: "invalid_name", phone: "invalid_phone", age: "invalid_age", gender: "invalid_gender", address: "invalid_address" };
+  var FIELD_ERR = { first_name: "invalid_name", last_name: "invalid_name", phone: "invalid_phone", age: "invalid_age", gender: "invalid_gender", address: "invalid_address", extra_fields: "invalid_extra" };
 
   /* body: { p_first, p_last, p_phone, p_age, p_gender, p_address (עיר, לא חובה) }, כמו שהטופס כבר בונה אותו */
   function signup(body) {
     return next().catch(function () { return null; }).then(function (ev) {
       var payload = { first_name: body.p_first, last_name: body.p_last, phone: body.p_phone, age: body.p_age, gender: body.p_gender };
       if (body.p_address) payload.address = body.p_address;   /* עיר, בשדה הכתובת של ה-API */
+      if (body.p_extra && body.p_extra.length) payload.extra_fields = body.p_extra;   /* שדות חופשיים לא חובה (ניסיון קודם, מצב בריאותי ונפשי) */
       if (ev && ev.id) payload.meeting_id = ev.id;
       lastMeeting = ev && ev.id ? ev.id : null;
       return call("POST", "/signup", payload);

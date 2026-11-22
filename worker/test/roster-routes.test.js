@@ -890,3 +890,41 @@ test("`invalid_key` is the same answer whether the key is missing, malformed, un
   }
   assert.equal(new Set(answers).size, 1, answers.join("\n"));
 });
+
+/* --- POST /signup with extra_fields (owner approved 2026-11-22) -------------------------------------- */
+
+test("signup with extra_fields: the list is cleaned and goes to api_signup_extra; without it api_signup is called as always", async () => {
+  const { net, roster } = world({ api_signup: () => SIGNUP_OK, api_signup_extra: () => SIGNUP_OK });
+  const list = [{ key: "past", label: " ניסיון קודם ", value: " כן, שנתיים\nבקבוצה ", junk: 1 }, { key: "health", label: "מצב בריאותי ונפשי", value: "תקין" }];
+  const r = await signup(roster, { first_name: "דנה", phone: "0501234567", extra_fields: list });
+  assert.equal(r.status, 200);
+  assert.deepEqual(r.body, { status: "ok", registered: true, participant_token: TOKEN }, "the reply has nothing new");
+  assert.equal(net.rpc("api_signup").length, 0);
+  const [c] = net.rpc("api_signup_extra");
+  assert.deepEqual(c.json.p_payload.extra_fields, [{ key: "past", label: "ניסיון קודם", value: "כן, שנתיים\nבקבוצה" }, { key: "health", label: "מצב בריאותי ונפשי", value: "תקין" }]);
+  assert.deepEqual(Object.keys(c.json).sort(), ["p_ip_hash", "p_key_hash", "p_payload"]);
+
+  for (const json of [{ first_name: "דנה", phone: "0501234567" }, { first_name: "דנה", phone: "0501234567", extra_fields: [] }, { first_name: "דנה", phone: "0501234567", extra_fields: null }]) {
+    await signup(roster, json);
+  }
+  assert.equal(net.rpc("api_signup").length, 3, "no list (or an empty one) is the old call");
+  assert.equal(net.rpc("api_signup_extra").length, 1);
+});
+
+test("signup with extra_fields: what is not a valid list is a validation error naming extra_fields, nothing reaches the database", async () => {
+  const { net, roster } = world({ api_signup: () => SIGNUP_OK, api_signup_extra: () => SIGNUP_OK });
+  const ok = { key: "a", label: "x", value: "1" };
+  const bad = [
+    "nope", { a: 1 }, 5, [5], [null], [[]], [{ label: "x", value: "1" }], [{ key: "A", label: "x", value: "1" }], [{ key: "a b", label: "x", value: "1" }],
+    [{ key: "a".repeat(41), label: "x", value: "1" }], [{ key: "a", label: "", value: "1" }], [{ key: "a", label: "x".repeat(101), value: "1" }],
+    [{ key: "a", label: "x\ny", value: "1" }], [{ key: "a", label: 5, value: "1" }], [{ key: "a", label: "x", value: 5 }], [{ key: "a", label: "x", value: "1".repeat(501) }],
+    [{ key: "a", label: "x", value: "a\u0000b" }], [ok, ok], Array.from({ length: 21 }, (_, i) => ({ key: `k${i}`, label: "x", value: "1" })),
+  ];
+  for (const extra_fields of bad) {
+    const r = await signup(roster, { first_name: "דנה", phone: "0501234567", extra_fields });
+    assert.deepEqual([r.status, r.body.error.code, r.body.error.field], [422, "validation", "extra_fields"], JSON.stringify(extra_fields));
+  }
+  assert.equal(net.rpc("api_signup").length + net.rpc("api_signup_extra").length, 0);
+  const twenty = Array.from({ length: 20 }, (_, i) => ({ key: `k${i}`, label: "x", value: "1" }));
+  assert.equal((await signup(roster, { first_name: "דנה", phone: "0501234567", extra_fields: twenty })).status, 200, "twenty is allowed");
+});
