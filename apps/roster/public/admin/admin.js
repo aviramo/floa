@@ -4606,8 +4606,8 @@
     const pct = x.rate_type === 'percent';
     const inner =
       '<div class="srcgrid">' +
-        fld('', 'שם', '<input data-rf-bare data-f="name" value="' + esc(x.name) + '" maxlength="24" placeholder=" " aria-label="שם דרך ההגעה" style="' + nameStyle(x.color || 'red') + '" />') +
-        '<div class="srcfld srccolf"><span class="srccol">' + colDot(x.color || 'red', w) + '</span></div>' +
+        '<div class="srcnm">' + fld('', 'שם', '<input data-rf-bare data-f="name" value="' + esc(x.name) + '" maxlength="24" placeholder=" " aria-label="שם דרך ההגעה" style="' + nameStyle(x.color || 'red') + '" />') +
+        '<div class="srcfld srccolf"><span class="srccol">' + colDot(x.color || 'red', w) + '</span></div></div>' +
         fld(ct ? ' wide2' : '', 'סוג עלות', sel('cost_type', '', 'סוג העלות', opt('lead', 'עלות לליד', !fp && !ct) + opt('pay', 'עלות לתשלום ראשון בלבד', fp) + opt('total', 'עלות כללית', ct))) +
         (ct ? '' : fp ? fld('', 'יחידה', sel('rate_type', '', 'סוג', opt('fixed', '₪ שקלים', !pct) + opt('percent', '% אחוז', pct))) : '') +
         (ct ? '' : fld('', fp ? (pct ? 'אחוז מהתשלום הראשון' : 'סכום מהתשלום הראשון, בשקלים') : 'כמה עולה ליד, בשקלים', '<input data-rf-bare data-f="rate" type="number" inputmode="decimal" min="0" value="' + (isNew && !Number(x.rate) ? '' : Number(x.rate || 0)) + '" placeholder=" " aria-label="עלות" />')) +

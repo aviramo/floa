@@ -2786,12 +2786,16 @@ html.is-loading #menuBtn, html.is-loading #mSel svg { visibility: hidden; }
 /* the save button of the income / expense popup and the payment button are at the bottom of the form, full width (owner 2026-11-22) */
 #finFormDlg .finsave, #ppDlg .ppgo { width: 100%; height: var(--fld); margin: var(--sp-2) 0 0; padding: 0 var(--sp-2); }
 
-/* the fields of a paid-marketing card: ONE column, each field the full width, in the order of the card; only the colour dot sits beside the name (owner 2026-11-22: they were a ragged two-column grid) */
-:root:root:root .srccard .srcgrid { grid-template-columns: minmax(0, 1fr) auto; row-gap: var(--sp-1); align-items: end; }
-:root:root:root .srccard .srcgrid > * { grid-column: 1 / -1; order: 0; }
-:root:root:root .srccard .srcgrid > .rfield:first-child { grid-column: 1; }
-:root:root:root .srccard .srcgrid > .srccolf { grid-column: 2; align-self: end; }
+/* the fields of a paid-marketing card (owner 2026-11-22): a grid that follows the width of the panel, one column in a narrow popup, two in the side panel, three in the wide one; each field fills its cell. The colour dot sits beside the name inside one cell. */
+:root:root:root .srccard .srcgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); column-gap: var(--sp-2); row-gap: var(--sp-1); align-items: end; grid-auto-flow: row; }
+:root:root:root .srccard .srcgrid > * { grid-column: auto; order: 0; min-width: 0; }
+:root:root:root .srccard .srcgrid > .srccodes { grid-column: 1 / -1; }
+.srccard .srcnm { display: flex; align-items: flex-end; gap: var(--sp-1); min-width: 0; }
+.srccard .srcnm > .rfield { flex: 1 1 auto; min-width: 0; margin: 0; }
+.srccard .srcnm > .srccolf { flex: 0 0 auto; }
 
-/* "not reserved" and "not arrived": no red fill (owner 2026-11-22). The chip keeps the colour of every chip and the bar under it; what says "not" is a diagonal slash across its symbol (not reserved), or an X in place of the check (not arrived) */
-:root:root:root .chiprow .stc.neg[aria-pressed="true"] { background-color: var(--hdr-ctl) !important; color: var(--text) !important; border-color: transparent !important; }
-:root:root:root .chiprow .stc.neg[aria-pressed="true"]:not([data-cr="arr"]) .fx.cm > svg { background: linear-gradient(to top right, transparent calc(50% - 1px), currentColor calc(50% - 1px), currentColor calc(50% + 1px), transparent calc(50% + 1px)); }
+/* the chosen state of every chip of the row is ONE thing: a bar of --sel-bar along the bottom edge, one colour, clipped by the chip's own rounding (women and men, reserved, arrived). It is drawn the same way on all of them (a strip at the bottom), not as an inset shadow, so no chip can show it thinner than another */
+:root:root:root .chiprow :is(.stc[data-cr], .stc[data-cr="gen"] .gc) { border-width: 0 !important; }
+:root:root:root .chiprow :is(.stc[data-cr][aria-pressed="true"]:not([data-cr="gen"]), .stc[data-cr="gen"] .gc.on) { box-shadow: none !important; position: relative; overflow: hidden; }
+:root:root:root .chiprow :is(.stc[data-cr][aria-pressed="true"]:not([data-cr="gen"]), .stc[data-cr="gen"] .gc.on)::after { content: ""; position: absolute; inset-inline: 0; bottom: 0; height: var(--sel-bar); background: var(--text-3); pointer-events: none; }
+:root:root:root .chiprow .cq > .stc[data-cr="gen"] .gc { height: var(--ctl) !important; min-height: 0; margin: 0; align-self: center !important; }   /* the halves are exactly as high as the other chips (they were 2px taller) */
