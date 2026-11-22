@@ -976,7 +976,7 @@
   async function saveViewPrefs() {
     const em = emailOf(), body = { email: em, view_scopes: state.viewScopes };
     state.prefs[em] = Object.assign({}, state.prefs[em], body);
-    try { await api(T.pf, { method: 'POST', body, prefer: 'resolution=merge-duplicates,return=minimal' }); } catch (err) { fail(err); }
+    try { await api(T.pf + '?on_conflict=business_id,email', { method: 'POST', body, prefer: 'resolution=merge-duplicates,return=minimal' }); } catch (err) { fail(err); }
   }
   /* סימון ההגעה הוא שדה נפרד (attended), ונקבע בעמודת הסימון ברשימה (תפריט העמודה: הגיע / לא הגיע). הוא לא קשור לתגיות */
   const effPaidF = () => (state.q.trim() || !state.filter || !state.showPay) ? null : state.paidF;   // שולם / לתשלום (לפי רשומות התשלום), רק בתוך מפגש
@@ -4440,7 +4440,7 @@
   $('#setSender').addEventListener('change', async () => {
     const em = emailOf(), v = $('#setSender').value.trim().slice(0, 20), prev = state.prefs[em];
     state.prefs[em] = Object.assign({}, prev, { email: em, sender_name: v || null });
-    try { await api(T.pf, { method: 'POST', body: { email: em, sender_name: v || null }, prefer: 'resolution=merge-duplicates,return=minimal' }); toast(v ? 'שם השולח עודכן: ' + v : 'שם השולח חזר לברירת המחדל'); }
+    try { await api(T.pf + '?on_conflict=business_id,email', { method: 'POST', body: { email: em, sender_name: v || null }, prefer: 'resolution=merge-duplicates,return=minimal' }); toast(v ? 'שם השולח עודכן: ' + v : 'שם השולח חזר לברירת המחדל'); }
     catch (err) { if (prev) state.prefs[em] = prev; else delete state.prefs[em]; fail(err); }
     renderSettings();
   });

@@ -968,7 +968,7 @@ html.is-loading .vbar { display: none; }
   dialog.drawer .sheet-head .dclose { display: inline-grid; flex: 0 0 auto; }
 }
 @media (min-width: 1024px) {
-  :is(#setDlg, #stDlg, #finDlg, #prDlg).drawer { width: calc(100vw - var(--listw)); }
+  :is(#setDlg, #stDlg, #finDlg, #prDlg, #viewDlg).drawer { width: calc(100vw - var(--listw)); }   /* up to the divider of the list */
 }
 
 /* ---------- סטטיסטיקות וכספים בפאנל רחב (31.10.26): מנצלים את הרוחב, לפי הרוחב של הפאנל עצמו (container query) ---------- */
@@ -2746,3 +2746,9 @@ body:has(#mMenu:not([hidden])) #kitFab { display: none; }   /* one plus at a tim
 #waSF .stc { background-color: var(--yellow-bg) !important; color: var(--yellow) !important; }
 #waSF .stc small { color: var(--yellow) !important; }
 #waSF .stc { background-image: linear-gradient(color-mix(in srgb, var(--yellow) 45%, transparent), color-mix(in srgb, var(--yellow) 45%, transparent)) !important; }
+
+/* a header menu (main menu, meetings menu) opens ABOVE the side participant card: the header is the same layer as the card, and the card is later in the page, so the menu was cut where the card begins */
+.wrap > header.top:has(.hmenu:not([hidden]), .mmenu:not([hidden])) { z-index: var(--z-menu); }
+
+/* the preferences panel is wide: the groups lay out across, as many columns as fit */
+@media (min-width: 760px) { #viewDlg.drawer #viewMenu { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); } }
