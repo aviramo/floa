@@ -33,7 +33,15 @@
       fab = doc.createElement("button"); fab.type = "button"; fab.className = "rfab"; fab.id = "kitFab";
       fab.setAttribute("aria-label", "הוספת משתתף"); fab.setAttribute("title", "הוספת משתתף"); fab.innerHTML = PLUS;
       /* one add button for the list: with a name typed in the search it adds that person (the list's own "add" row is hidden), without one it asks for the name */
-      fab.addEventListener("click", function () { var an = doc.getElementById("addNew"); if (q.value.trim() && an) { an.click(); return; } q.placeholder = "שם משתתף חדש"; q.addEventListener("blur", function () { q.placeholder = " "; }, { once: true }); q.focus(); });   /* the hint lives in the field itself, short enough to fit */
+      fab.addEventListener("click", function () { var an = doc.getElementById("addNew"); if (q.value.trim() && an) { an.click(); return; } q.placeholder = "שם משתתף חדש"; q.addEventListener("blur", function () { q.placeholder = " "; }, { once: true }); q.focus(); attention(); });   /* the hint lives in the field itself, short enough to fit */
+      /* the plus has no form of its own: adding is typing the name in the search box, so the box announces it (a ring on its edge that breathes twice, cleared by the first key or when it ends) */
+      var attention = function () {
+        var box = q.closest(".hsearch"); if (!box) return;
+        box.classList.remove("attn"); void box.offsetWidth; box.classList.add("attn");
+        var off = function () { box.classList.remove("attn"); };
+        q.addEventListener("input", off, { once: true }); box.addEventListener("animationend", function (e) { if (e.target === box) off(); }, { once: true });
+        setTimeout(off, 2400);
+      };
       var fabLabel = function () { var t = q.value.trim(), l = t ? "הוספת משתתף חדש: " + t : "הוספת משתתף"; fab.setAttribute("aria-label", l); fab.setAttribute("title", l); };
       q.addEventListener("input", fabLabel); fabLabel();
       doc.body.appendChild(fab);

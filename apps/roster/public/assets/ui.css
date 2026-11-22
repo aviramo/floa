@@ -321,20 +321,20 @@ button.rrow__main { appearance: none; border: 0; background: none; padding: 0; t
    An icon WITHOUT a background still owns its imaginary tile: pressing it shows that tile (--surface-2). An icon WITH a background (the tile sets --ib-bg) has no press effect.
    The margins stay with each place (the X reaches out to the edge, a header pulls its tiles to the gutter); this block owns size, shape, colour and press only.
    ========================================================================== */
-:root:root:root :is(.hicon:not(.nextm):not(.rs-x), .hbtn:not(.dclose), .rbtn--icon:not(.rs-x), dialog:not(:has(> .grab)):not(:has(> .rs-grab)) :is(.rs-x, .dclose)) {
+:root:root:root :is(.hicon:not(.nextm):not(.rs-x), .hbtn:not(.dclose), dialog .sheet-head .cico, .rbtn--icon:not(.rs-x), dialog:not(:has(> .grab)):not(:has(> .rs-grab)) :is(.rs-x, .dclose)) {
   --ib-bg: transparent;
   box-sizing: border-box; display: inline-grid; place-items: center; flex: 0 0 auto;
   width: var(--ctl); min-width: var(--ctl); height: var(--ctl); min-height: var(--ctl); padding: 0;
   border: 0; border-radius: var(--r-ctl); background: var(--ib-bg); color: var(--text); box-shadow: none;
 }
-:root:root:root :is(.hicon:not(.nextm):not(.rs-x), .hbtn:not(.dclose), .rbtn--icon:not(.rs-x), dialog:not(:has(> .grab)):not(:has(> .rs-grab)) :is(.rs-x, .dclose)) > svg { width: var(--icon-m); height: var(--icon-m); }
-:root:root:root :is(.hicon:not(.nextm):not(.rs-x), .hbtn:not(.dclose), .rbtn--icon:not(.rs-x), dialog:not(:has(> .grab)):not(:has(> .rs-grab)) :is(.rs-x, .dclose)):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+:root:root:root :is(.hicon:not(.nextm):not(.rs-x), .hbtn:not(.dclose), dialog .sheet-head .cico, .rbtn--icon:not(.rs-x), dialog:not(:has(> .grab)):not(:has(> .rs-grab)) :is(.rs-x, .dclose)) > svg { width: var(--icon-m); height: var(--icon-m); }
+:root:root:root :is(.hicon:not(.nextm):not(.rs-x), .hbtn:not(.dclose), dialog .sheet-head .cico, .rbtn--icon:not(.rs-x), dialog:not(:has(> .grab)):not(:has(> .rs-grab)) :is(.rs-x, .dclose)):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 /* with a background: a tile, no press effect */
 :root:root:root :is(.wrap > header.top .hicon:not(.nextm), .rbtn--icon.rbtn--tile) { --ib-bg: var(--hdr-ctl, var(--info-bg)); }
 :root:root:root .rbtn--icon.rbtn--primary { --ib-bg: var(--primary); color: var(--on-primary); }
 /* without a background: the tile shows while it is pressed (and under a mouse) */
-:root:root:root :is(.hicon:not(.nextm):not(.rs-x), .hbtn:not(.dclose), .rbtn--icon:not(.rs-x), dialog:not(:has(> .grab)):not(:has(> .rs-grab)) :is(.rs-x, .dclose)):active { background: var(--surface-2); }
-@media (hover: hover) { :root:root:root :is(.hicon:not(.nextm):not(.rs-x), .hbtn:not(.dclose), .rbtn--icon:not(.rs-x), dialog:not(:has(> .grab)):not(:has(> .rs-grab)) :is(.rs-x, .dclose)):hover { background: var(--surface-2); } }
+:root:root:root :is(.hicon:not(.nextm):not(.rs-x), .hbtn:not(.dclose), dialog .sheet-head .cico, .rbtn--icon:not(.rs-x), dialog:not(:has(> .grab)):not(:has(> .rs-grab)) :is(.rs-x, .dclose)):active { background: var(--surface-2); }
+@media (hover: hover) { :root:root:root :is(.hicon:not(.nextm):not(.rs-x), .hbtn:not(.dclose), dialog .sheet-head .cico, .rbtn--icon:not(.rs-x), dialog:not(:has(> .grab)):not(:has(> .rs-grab)) :is(.rs-x, .dclose)):hover { background: var(--surface-2); } }
 :root:root:root :is(.wrap > header.top .hicon:not(.nextm), .rbtn--icon.rbtn--tile, .rbtn--icon.rbtn--primary):is(:hover, :active, [aria-expanded="true"]) { background: var(--ib-bg); }
 /* the icons of one header sit one standard gap apart */
 dialog .sheet-head { column-gap: var(--sp-1); }
