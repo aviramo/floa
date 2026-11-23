@@ -7,7 +7,7 @@
      node scripts/chatbot.mjs research load <file.json>              load it as a DRAFT version (nothing is live yet)
      node scripts/chatbot.mjs research list                          versions and their coverage
      node scripts/chatbot.mjs research activate <versionId> --yes    make a version the live one (the previous is archived)
-     node scripts/chatbot.mjs campaign create --business harpatka --topic <topic_id> [--gender female] [--relationship partnered]
+     node scripts/chatbot.mjs campaign create --business harpatka --topic <topic_id> [--gender female] [--gender female]
                                               [--ad "the ad sentence"] [--id <opaque id>] [--note ...]
      node scripts/chatbot.mjs campaign activate <id> | pause <id> | list
      node scripts/chatbot.mjs links [--business harpatka]            the link of every active campaign
@@ -102,14 +102,13 @@ async function main() {
       const business = flags.business ?? fail("--business חסר");
       const seg = {};
       if (flags.gender) seg.gender = flags.gender;
-      if (flags.relationship) seg.relationship_status = flags.relationship;
       for (const e of checkSegment(seg, dims())) fail("פילוח לא תקין: " + e);
       const id = flags.id ?? campaignId();
       if (!validCampaignId(id)) fail("מזהה קמפיין לא תקין (a-z, 0-9, _ ו-, עד 39 תווים)");
       const topic = flags.topic ?? null;
       if (topic) {
         const hit = sql(`select p.title, p.evidence from chatbot.research_profiles p join chatbot.content_versions v on v.id = p.content_version_id
-                         where v.status = 'active' and p.topic_id = ${dollar(topic)} and p.segment_filters = ${lit(seg)}::jsonb`)[0];
+                         where v.status = 'active' and p.topic_id = ${dollar(topic)} and p.segment_filters <@ ${lit(seg)}::jsonb`)[0];
         if (!hit && !flags["allow-missing"]) fail(`אין פרופיל מחקר פעיל לנושא ${topic} ולפילוח ${segmentKey(seg)}. קודם קולטים ומפעילים גרסת מחקר, או מוסיפים --allow-missing כדי ליצור קמפיין בלי מחקר (שיחה כללית).`);
         if (hit) console.log(`נמצא פרופיל: ${hit.title} (ראיות ${hit.evidence ?? "?"})`);
       }

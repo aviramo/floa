@@ -7,6 +7,8 @@ export const BASE = "https://chatbot.floa.co.il";
 /* The fields of one research profile (spec 22.2). Only title and at least one content field are required: a field the source
    does not have stays absent and is never filled in by guessing ("not in source"). */
 export const FIELDS = {
+  inner_sentence: "המשפט הפנימי",
+  asks_for: "מה האדם באמת מבקש",
   description: "תיאור הכאב",
   frequency: "שכיחות ואיכות הנתונים",
   visible: "ביטויים גלויים",
@@ -22,6 +24,12 @@ export const FIELDS = {
   exercises: "תרגילים רלוונטיים",
   experiences: "חוויות אפשריות",
   concerns: "חששות",
+  promise: "הבטחה סבירה לערב אחד",
+  not_promise: "מה לא להבטיח",
+  not_solved: "מה לא ייפתר במפגש אחד",
+  cycle: "המעגל שמחזק את הכאב",
+  barriers: "חסמים ותשובות",
+  opening_questions: "שאלות פתיחה לא חודרניות",
   grounding: "ביסוס (מחקר, ניסיון, השערה)",
 };
 
@@ -71,8 +79,8 @@ export function validateResearch(file, dims) {
 const flat = (v) => (Array.isArray(v) ? v.map(flat).join("; ") : v && typeof v === "object" ? Object.values(v).map(flat).join("; ") : String(v ?? ""));
 
 /* The short brief a session receives (spec 22.3: about 400-700 tokens, so roughly 1200-2400 Hebrew characters). */
-export function buildSummary(p, max = 3200) {
-  const order = ["description", "frequency", "hidden", "visible", "why_hidden", "triggers_pain", "triggers_change", "triggers_trial", "experiences", "biodanza", "exercises", "concerns", "coping", "effectiveness", "desires", "grounding"];
+export function buildSummary(p, max = 3400) {
+  const order = ["inner_sentence", "asks_for", "description", "frequency", "hidden", "visible", "why_hidden", "triggers_pain", "triggers_change", "triggers_trial", "cycle", "biodanza", "experiences", "exercises", "promise", "not_promise", "not_solved", "barriers", "opening_questions", "concerns", "coping", "effectiveness", "desires", "grounding"];
   const parts = [];
   for (const k of order) {
     const v = flat(p.profile?.[k]).replace(/\s+/g, " ").trim();

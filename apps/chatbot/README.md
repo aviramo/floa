@@ -31,14 +31,18 @@ node scripts/chatbot.mjs dims add age range                להוסיף ממד (
 node scripts/chatbot.mjs research validate <קובץ.json>     בדיקת קובץ מחקר, חינם, לא נוגע בכלום
 node scripts/chatbot.mjs research load <קובץ.json>         קליטה כטיוטה (עדיין לא חי)
 node scripts/chatbot.mjs research activate <id> --yes      הפעלת גרסה
-node scripts/chatbot.mjs campaign create --business harpatka --topic <נושא> --gender female --relationship partnered --ad "משפט המודעה"
+node scripts/chatbot.mjs campaign create --business harpatka --topic <נושא> --gender female --ad "משפט המודעה"
 node scripts/chatbot.mjs campaign activate <id>
 node scripts/chatbot.mjs links                             הקישורים של כל הקמפיינים הפעילים
 ```
 
-קובץ המחקר הוא JSON: `version.label` ורשימת `profiles`, ולכל פרופיל `topic_id` (אנגלית קטנה), `segment` (למשל `{"gender":"female","relationship_status":"partnered"}`), `title`, `evidence` (A עד D) ו-`profile` עם השדות שיש במקור (`description`, `visible`, `hidden`, `why_hidden`, `triggers_pain`, `triggers_change`, `triggers_trial`, `coping`, `effectiveness`, `desires`, `biodanza`, `exercises`, `experiences`, `concerns`, `grounding`). שדה שאין במקור נשאר חסר ולא מושלם בניחוש.
+קובץ המחקר הוא JSON: `version.label` ורשימת `profiles`, ולכל פרופיל `topic_id` (אנגלית קטנה), `title`, `evidence` (A עד D) ו-`profile` עם השדות שיש במקור (`inner_sentence`, `asks_for`, `description`, `hidden`, `triggers_pain`, `triggers_change`, `cycle`, `biodanza`, `experiences`, `promise`, `not_promise`, `barriers`, `opening_questions`, `concerns`, `grounding` ועוד, הרשימה המלאה ב-`apps/chatbot/engine-lib.mjs`). שדה שאין במקור נשאר חסר ולא מושלם בניחוש. `segment` אופציונלי.
 
-פרופיל נבחר רק לפי התאמה מדויקת לנושא ולפילוח של הקמפיין. אם אין, השיחה כללית ובלי ידע מומצא. קמפיין מושהה לא נטען.
+**הפילוח היחיד הוא מגדר** (`gender`: `female` או `male`), והכאב הוא אותו כאב לנשים ולגברים. לכן פרופיל בלי `segment` הוא מקור המידע של הכאב לכולם, ושני קמפיינים על אותו כאב, אחד של נשים ואחד של גברים, משתמשים באותו פרופיל. פרופיל עם `segment` גובר רק עבור הקהל שלו. אם אין פרופיל תואם, השיחה כללית ובלי ידע מומצא. קמפיין מושהה לא נטען. מגדר הקמפיין קובע גם את לשון הפנייה.
+
+## המחקר הנוכחי
+
+`apps/chatbot/research/five-pains-2026-11.json`, מתוך `apps/chatbot/docs/pain-research-five-pains.pdf`: חמישה כאבים (`stress_overload`, `loneliness`, `lost_joy`, `low_confidence`, `opening_up`), עשרה קמפיינים (כאב אחד כפול מגדר). המסמך המשולב הקודם (ארבע קבוצות לפי זוגיות) נמחק ב-2026-11-24.
 
 ## בדיקות
 
