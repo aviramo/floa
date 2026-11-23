@@ -62,6 +62,9 @@ export interface JourneyBusiness<Ctx = unknown> {
   origins: string[];
   testOrigin?: string;
   ageRange: string;
+  flowPrompt?: string;                               // when set, the whole conversation flow of the business (free stages) replaces the milestone engine
+  stageHints?: (turns: number) => string;
+  flowReminder?: (a: 'female' | 'male' | 'plural') => string;
   persona: (age: string) => string;                  // tone, hard limits, facts about the offer: never the conversation flow
   adTexts: Record<string, string>;                   // legacy ad keys that stay valid without a campaign row
   adPain: Record<string, string>;

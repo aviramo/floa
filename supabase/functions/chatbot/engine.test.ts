@@ -208,7 +208,7 @@ Deno.test('the evening is offered after a bridge the visitor reacted to, never s
   eq(mentionsEvening('יש ערב שבו לא צריך לדעת לרקוד'), true, 'evening mentioned');
   eq(mentionsEvening('הדר ואופיר מוכנים לענות'), true, 'names before the offer');
   eq(mentionsEvening('לפעמים יש רצון לקשר. איך זה נראה אצלך?'), false, 'topic only');
-  eq(pitchAllowed({ ...base, turns: 6 }), true, 'a long conversation');
+  eq(pitchAllowed({ ...base, turns: 5 }), true, 'a long conversation');
   eq(putsEveningOnTable('יש מפגש ביום רביעי, 2.12, בשעה 20:30. המחיר 80 ש"ח'), true, 'date and price');
   eq(putsEveningOnTable('שקט זה בדיוק מה שמחפשים, ואיך זה נשמע לך?'), false, 'a bridge');
   if (!earlyPitchFix.includes('בלי להזכיר את הערב')) throw new Error('fix text');
@@ -235,4 +235,9 @@ Deno.test('no dead-end quick reply', () => {
   for (const s of ['יש לי שאלה', 'שאלה קטנה']) if (!deadEndChip(s)) throw new Error('missed ' + s);
   for (const s of ['קצת', 'בעיקר בערבים']) if (deadEndChip(s)) throw new Error('false alarm ' + s);
   if (CHAT_POOL.some(deadEndChip)) throw new Error('pool has a dead end');
+});
+
+Deno.test('a bare "glad that" is not a gender of the bot', () => {
+  eq(neutralize('שמחה שכתבת. מה הביא אותך?'), 'טוב שכתבת. מה הביא אותך?', 'glad');
+  eq(neutralize('שמח שזה מתחבר'), 'טוב שזה מתחבר', 'glad m');
 });

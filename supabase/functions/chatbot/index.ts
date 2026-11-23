@@ -152,7 +152,7 @@ Deno.serve(async (req) => {
   const adText = tx(ctx.campaign.creative?.ad) || quoteSafe(tx(body.adText).slice(0, 300));
   const meta = { campaign: campaignId, journeyType: journey.type, topicId: ctx.campaign.topic_id, segment: ctx.campaign.segment_filters, contentVersionId: ctx.content_version_id, journeyVersion: journey.version };
   const fromLink = linkGender(ctx.campaign.segment_filters);
-  const stable = { type: 'text', text: stableSystem(b, journey), cache_control: { type: 'ephemeral' } };
+  const stable = { type: 'text', text: b.flowPrompt ?? stableSystem(b, journey), cache_control: { type: 'ephemeral' } };
   const src = tx(body.src).slice(0, 20), session = tx(body.session);
   // Model comparison: only from the business test site, and only a model from the list. Everyone else gets the usual model.
   const model = b.testOrigin && origin === b.testOrigin && ['claude-haiku-5-5', 'claude-sonnet-5-5'].includes(tx(body.model)) ? tx(body.model) : MODEL;
@@ -187,7 +187,7 @@ Deno.serve(async (req) => {
   const address = addressOf(prev.gender);   // the saved gender parameter, not the link again
   const botMessages = clean.filter((m) => m.role === 'assistant').length;
   const facts = await b.loadFacts();
-  const system = [stable, { type: 'text', text: [stateBlock(prev, journey, botMessages), sessionFacts(b, ctx, facts, adText, address), quoteSafe(tx(body.opening).slice(0, 600)) ? `## הודעת הפתיחה שהאדם כבר קיבל\n"${quoteSafe(tx(body.opening).slice(0, 600))}"` : '', turnReminder(address)].filter(Boolean).join('\n\n') }];
+  const system = [stable, { type: 'text', text: [b.stageHints ? b.stageHints(turns) : stateBlock(prev, journey, botMessages), sessionFacts(b, ctx, facts, adText, address), quoteSafe(tx(body.opening).slice(0, 600)) ? `## הודעת הפתיחה שהאדם כבר קיבל\n"${quoteSafe(tx(body.opening).slice(0, 600))}"` : '', b.flowReminder ? b.flowReminder(address) : turnReminder(address)].filter(Boolean).join('\n\n') }];
 
   // Priority one, second net: the visitor's last message shows severe distress. The model is told too, and its reply stands.
   const lastUser = [...clean].reverse().find((m) => m.role === 'user')?.content ?? '';
@@ -215,7 +215,9 @@ Deno.serve(async (req) => {
   const next = { ...mergeState(prev, incoming, journey), meta };
   if (!incoming) next.action = 'continue';      // a reply without a state block advances nothing
   if (distress) { next.action = 'safety'; next.readiness = 'concerned'; }
-  let cta = ctaFor(next.action, !!facts);
+  let cta: 'register' | 'whatsapp' | 'updates' | null = b.flowPrompt ? ((['register', 'whatsapp', 'updates'] as const).find((c) => c === parsed.cta) ?? null) : ctaFor(next.action, !!facts);
+  if (b.flowPrompt && cta === 'register' && !facts) cta = 'updates';
+  if (b.flowPrompt && cta) next.action = cta === 'whatsapp' ? 'guide' : cta;
   if (next.action === 'safety' || next.action === 'end') { cta = null; chips = []; }
   // Someone is never left with only a text box: when the model sent no quick replies, neutral ones are offered
   if (next.action === 'safety') cta = 'whatsapp';

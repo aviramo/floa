@@ -21,6 +21,7 @@ const SELF: [RegExp, string][] = [
   [/(^|[\s.,!?:;"]|ו)אני (שמח|שמחה)(?=[\s.,!?:;]|$)/g, '$1שמחים'],
   [/(^|[\s.,!?:;"]|ו)אני (יכול|יכולה)(?=[\s.,!?:;]|$)/g, '$1אפשר'],
   [/(^|[\s.,!?:;"]|ו)אני (חושב|חושבת) ש/g, '$1נראה לי ש'],
+  [/(^|[.!?]s*)(שמח|שמחה) ש/g, '$1טוב ש'],
   [/(^|[\s.,!?:;"]|ו)אני (סקרנית|סקרן)(?=[\s.,!?:;]|$)/g, '$1מעניין'],
   [/(^|[\s.,!?:;"]|ו)אני (בטוחה|בטוח)(?=[\s.,!?:;]|$)/g, '$1ברור'],
   [/(^|[\s.,!?:;"]|ו)(מכבד|מכבדת) את (זה|ההחלטה)/g, '$1מכבדים את $3'],
@@ -99,7 +100,7 @@ export function pitchAllowed(a: { turns: number; lastUser: string; prevDone: str
   // A "yes", a chip or a message count alone does not: the visitor learned from the ad about a pain, not about a meeting.
   const asked = /(מתי (זה|המפגש|הערב|הבא)|כמה (זה )?עולה|מחיר|הרשמ|נרשמ|קישור|תאריך|איפה (זה|המפגש|הערב|מתקיים)|מה זה (מפגש|הערב|הפעילות)|על מה (המפגש|הערב))/.test(a.lastUser);
   const gotThere = ['connect', 'desire', 'motivation'].every((d) => a.prevDone.includes(d)) || a.prevDone.includes('bridge');
-  return a.turns >= 6 || asked || gotThere;
+  return a.turns >= 5 || asked || gotThere;
 }
 export const earlyPitchFix = '## הצעה מוקדמת מדי\nהטיוטה הזכירה את הערב או המפגש לפני שהושלם החיבור. כתבו שוב בלי להזכיר את הערב, המפגש, תאריך, מחיר או קישור: התייחסות קצרה למה שהאדם אמר ושאלה אחת קלה על הנושא עצמו.';
 

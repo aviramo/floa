@@ -1,3 +1,4 @@
+import { FLOW_PROMPT, stageHints, flowReminder } from './flow.ts';
 // Harpatka (יוצאים להרפתקה) as a business of the chatbot engine: everything that is true of this one business and not of the engine.
 import { AD_PAIN, AD_TEXTS } from './ads.ts';
 import { IDENTITY } from './persona.ts';
@@ -86,6 +87,9 @@ export const harpatka: JourneyBusiness<MeetingInfo> = {
   testOrigin: 'https://test.harpatka.co.il',
   ageRange: '35–55',   // same range as shared/age.js on the Harpatka site
   persona: (age) => IDENTITY.replaceAll('{AGE}', age),
+  flowPrompt: FLOW_PROMPT.replaceAll('{AGE}', '35–55'),
+  stageHints,
+  flowReminder,
   adTexts: AD_TEXTS,
   adPain: AD_PAIN,
   loadFacts: loadMeeting,
