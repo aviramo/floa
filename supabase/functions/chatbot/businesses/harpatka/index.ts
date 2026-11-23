@@ -1,6 +1,20 @@
-// Harpatka (יוצאים להרפתקה) as a chatbot business: everything that is true of this one business and not of the engine.
-import { dynamicPrompt, STATIC_PROMPT, AD_TEXTS, AD_PAIN, openingPrompt, MeetingInfo } from './prompt.ts';
-import type { Business } from '../../types.ts';
+// Harpatka (יוצאים להרפתקה) as a business of the chatbot engine: everything that is true of this one business and not of the engine.
+import { AD_PAIN, AD_TEXTS } from './ads.ts';
+import { IDENTITY } from './persona.ts';
+import type { JourneyBusiness } from '../../types.ts';
+
+export interface MeetingInfo {
+  date: string;        // YYYY-MM-DD
+  time: string;
+  name: string;
+  city: string;
+  place: string;
+  max: number;
+  priceNow: number | null;
+  priceNote: string;   // description of the price steps
+}
+
+const DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
 const ORIGINS = ['https://harpatka.co.il', 'https://www.harpatka.co.il', 'https://test.harpatka.co.il', 'https://floa.co.il', 'https://chatbot.floa.co.il'];   // the last two: the chatbot app's own test page
 const israelToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jerusalem' }).format(new Date());
@@ -50,18 +64,32 @@ async function loadMeeting(): Promise<MeetingInfo | null> {
   } catch (_) { return null; }
 }
 
-export const harpatka: Business<MeetingInfo> = {
+// The live facts block. These are the only date, place and price the bot may state; everything else is "not sure, ask the facilitators".
+function factsBlock(meeting: MeetingInfo | null): string {
+  if (!meeting) return '## המפגש הקרוב\nכרגע לא נקבע מפגש עתידי. אל תנסו לקבוע תאריך. אם מתעניינים, אפשר להציע קבוצת עדכונים או שיחה עם המנחים.';
+  const [y, m, d] = meeting.date.split('-').map(Number);
+  const wd = DAYS[new Date(Date.UTC(y, m - 1, d, 12)).getUTCDay()];
+  const where = [meeting.city, meeting.place].filter(Boolean).join(', ');
+  return '## המפגש הקרוב (מבסיס הנתונים, זה המידע היחיד שמותר לציין על תאריך, מקום ומחיר)\n' +
+    `- מועד: יום ${wd}, ${d}.${m}, בשעה ${meeting.time}\n` +
+    '- אסור לציין שם או נושא של מפגש. הנושא משתנה מפעם לפעם ואינו אומר דבר למי שלא מכיר.\n' +
+    (where ? `- מקום: ${where}\n` : '') +
+    (meeting.max ? `- מספר משתתפים מרבי: ${meeting.max}\n` : '') +
+    (meeting.priceNow != null ? `- מחיר היום: ${meeting.priceNow} ש"ח\n` : '') +
+    (meeting.priceNote ? `- מדרגות מחיר: ${meeting.priceNote}\n` : '');
+}
+
+export const harpatka: JourneyBusiness<MeetingInfo> = {
   key: 'harpatka',
+  botName: 'הבוט של יוצאים להרפתקה',
   origins: ORIGINS,
   testOrigin: 'https://test.harpatka.co.il',
   ageRange: '35–55',   // same range as shared/age.js on the Harpatka site
-  staticPrompt: (age) => STATIC_PROMPT.replaceAll('{AGE}', age),
+  persona: (age) => IDENTITY.replaceAll('{AGE}', age),
   adTexts: AD_TEXTS,
   adPain: AD_PAIN,
-  openingPrompt,
-  dynamicPrompt,
-  loadContext: loadMeeting,
-  // names of the database functions this business's learning and abuse guard use (a later step moves them to the chatbot schema)
-  rpc: { usage: 'harpatka_chat_usage_hit', chip: 'harpatka_chat_chip_event', offer: 'harpatka_chat_offer_event', openingStats: 'harpatka_chat_opening_stats', chipStats: 'harpatka_chat_chip_stats', offerStats: 'harpatka_chat_offer_stats', questionStats: 'harpatka_chat_question_stats' },
+  loadFacts: loadMeeting,
+  factsBlock,
+  rpc: { usage: 'harpatka_chat_usage_hit' },
   saltDefault: 'harpatka',
 };

@@ -1,0 +1,98 @@
+import { extractState, mergeState, diffEvents, ctaFor, initialState, stateFromClient } from './state.ts';
+import { journeyOf, PAIN_JOURNEY } from './journey.ts';
+import { stableSystem, sessionFacts, stateBlock, openingTask } from './prompt.ts';
+import { harpatka } from './businesses/harpatka/index.ts';
+import type { CampaignContext } from './types.ts';
+
+const eq = (a: unknown, b: unknown, m: string) => { if (JSON.stringify(a) !== JSON.stringify(b)) throw new Error(`${m}: ${JSON.stringify(a)} != ${JSON.stringify(b)}`); };
+const ctx = (over: Partial<CampaignContext> = {}): CampaignContext => ({ campaign: { id: 'x', journey_type: 'pain', topic_id: null, segment_filters: {}, creative: {} }, journey: null, content_version_id: null, profile: null, insights: [], ...over });
+
+Deno.test('the pain journey keeps the six milestones of the spec, in order', () => {
+  eq(PAIN_JOURNEY.milestones.map((m) => m.id), ['connect', 'desire', 'motivation', 'bridge', 'curiosity', 'action'], 'ids');
+});
+
+Deno.test('extractState: reads the block, drops it from the text, survives a cut-off tag and bad JSON', () => {
+  const r = extractState('שלום\n<state>{"milestone":"desire","action":"continue"}</state>');
+  eq(r.state, { milestone: 'desire', action: 'continue' }, 'state');
+  eq(r.text.trim(), 'שלום', 'text');
+  eq(extractState('שלום <state>{"mile').text.trim(), 'שלום', 'cut off');
+  eq(extractState('שלום <state>not json</state>').state, null, 'bad json');
+});
+
+Deno.test('mergeState: ignores unknown milestones and values, caps text, appends concerns without duplicates', () => {
+  const s0 = initialState(PAIN_JOURNEY);
+  const s1 = mergeState(s0, { milestone: 'nope', done: ['connect', 'nope'], readiness: 'hacked', action: 'rm -rf', learned: { pain: 'x'.repeat(900), concerns: ['מבוכה', 'מבוכה', 'לא יודע לרקוד'] } }, PAIN_JOURNEY);
+  eq(s1.milestone, 'connect', 'milestone kept');
+  eq(s1.done, ['connect'], 'done');
+  eq(s1.readiness, 'checking', 'readiness kept');
+  eq(s1.action, 'continue', 'action falls back');
+  eq(s1.learned.pain!.length, 240, 'capped');
+  eq(s1.learned.concerns, ['מבוכה', 'לא יודע לרקוד'], 'concerns');
+});
+
+Deno.test('stateFromClient: hostile input becomes a plain initial state', () => {
+  eq(stateFromClient('x', PAIN_JOURNEY), initialState(PAIN_JOURNEY), 'string');
+  eq(stateFromClient({ done: 'all', learned: 5 }, PAIN_JOURNEY), initialState(PAIN_JOURNEY), 'garbage');
+});
+
+Deno.test('diffEvents and ctaFor', () => {
+  const a = initialState(PAIN_JOURNEY), b = mergeState(a, { done: ['connect'], readiness: 'concerned', action: 'guide', learned: { concerns: ['מגע'] } }, PAIN_JOURNEY);
+  eq(diffEvents(a, b).map((e) => e.type), ['milestone_done', 'concern', 'readiness', 'action_guide'], 'events');
+  eq(ctaFor('register', true), 'register', 'register');
+  eq(ctaFor('register', false), 'updates', 'no meeting: updates');
+  eq(ctaFor('guide', true), 'whatsapp', 'guide');
+  eq(ctaFor('end', true), null, 'end');
+  eq(ctaFor('safety', true), null, 'safety is no conversion step');
+});
+
+Deno.test('journeyOf: a broken row falls back to the default journey', () => {
+  eq(journeyOf(null).milestones.length, 6, 'null');
+  eq(journeyOf({ journey_type: 'pain', version: 9, definition: { milestones: [{ id: 'BAD ID' }] } }).version, 1, 'invalid milestones');
+  const ok = journeyOf({ journey_type: 'inspiration', version: 2, definition: { milestones: [{ id: 'spark', title: 'ניצוץ', goal: 'g', doneWhen: 'd' }] } });
+  eq([ok.type, ok.version, ok.milestones[0].id], ['inspiration', 2, 'spark'], 'valid row used');
+});
+
+Deno.test('the stable prompt: engine rules, journey, no staged flow of the old bot, no dash in text shown to people', () => {
+  const t = stableSystem(harpatka, PAIN_JOURNEY);
+  for (const needle of ['סדר קדימויות', 'connect', 'action', '<state>', 'ער"ן 1201']) if (!t.includes(needle)) throw new Error('missing ' + needle);
+  if (/שלב [א-ו]\b/.test(t)) throw new Error('old stage reference left in prompt');
+  if (/\{AGE\}/.test(t)) throw new Error('age placeholder not filled');
+  if (/[—–]/.test(harpatka.persona('35–55').replace('35–55', ''))) throw new Error('long dash in persona');
+});
+
+Deno.test('session facts: research is labelled as hypothesis, absent research is never invented, facts block is present', () => {
+  const none = sessionFacts(harpatka, ctx(), null, '');
+  if (!none.includes('אין פרופיל מחקר')) throw new Error('should say there is no profile');
+  const withProfile = sessionFacts(harpatka, ctx({ profile: { title: 'שינה ועייפות', summary: 'סיכום', evidence: 'B', profile: {} } }), null, 'משפט מודעה');
+  for (const needle of ['השערות לבדיקה', 'רמת ראיות B', 'משפט מודעה', 'כרגע לא נקבע מפגש']) if (!withProfile.includes(needle)) throw new Error('missing ' + needle);
+});
+
+Deno.test('state block nudges a long conversation toward a clear step', () => {
+  const s = initialState(PAIN_JOURNEY);
+  if (stateBlock(s, PAIN_JOURNEY, 3).includes('אורך השיחה')) throw new Error('too early');
+  if (!stateBlock(s, PAIN_JOURNEY, 7).includes('אורך השיחה')) throw new Error('should nudge');
+});
+
+Deno.test('opening task names the business bot and keeps the meeting out of the opening', () => {
+  const t = openingTask(harpatka, 'כמה זמן עבר?');
+  if (!t.includes(harpatka.botName) || !t.includes('אין להזכיר בפתיחה מפגש')) throw new Error(t);
+});
+
+import { distressIn, neutralize } from './guard.ts';
+Deno.test('distress net catches plain phrasings and not ordinary talk', () => {
+  for (const t of ['אני חושבת על למות', 'לפעמים אני חושבת שעדיף שלא אהיה פה', 'רוצה למות', 'אין טעם לחיות']) if (!distressIn(t)) throw new Error('missed: ' + t);
+  for (const t of ['הייתי רוצה להרגיש חלק ממשהו', 'מתי המפגש הקרוב?', 'מת מצחוק', 'עייפה ולא ישנה']) if (distressIn(t)) throw new Error('false alarm: ' + t);
+});
+Deno.test('neutralize rewrites the bot speaking about itself with a gender, and leaves the rest', () => {
+  eq(neutralize('אני מבינה שזה קשה. אני שומע אותך'), 'הבנתי שזה קשה. שמעתי אותך', 'understand and hear');
+  eq(neutralize('זה כבד, ואני לוקח את זה ברצינות'), 'זה כבד, ולוקחים את זה ברצינות', 'take seriously');
+  eq(neutralize('בסדר גמור, אני מכבדת את זה'), 'בסדר גמור, מכבדים את זה', 'respect');
+  eq(neutralize('את אמרת שאת מבינה'), 'את אמרת שאת מבינה', 'visitor words untouched');
+});
+
+import { TURN_REMINDER } from './prompt.ts';
+Deno.test('opening asks for plural address and no first-person feeling; every turn ends with the reminder', () => {
+  const t = openingTask(harpatka, 'x');
+  for (const needle of ['לשון רבים', 'נגע בי', 'אין להזכיר בפתיחה מפגש']) if (!t.includes(needle)) throw new Error('missing ' + needle);
+  if (!TURN_REMINDER.includes('<state>') || !TURN_REMINDER.includes('לשון רבים')) throw new Error('reminder');
+});

@@ -28,12 +28,6 @@ Deno.test('buildMessages', () => {
   eq(buildMessages([{ role: 'user', content: 'x'.repeat(900) }])!.merged[0].content.length, 600, 'trunc');
 });
 Deno.test('quoteSafe', () => { eq(quoteSafe('a"b\nc'), 'a b c', 'quote'); });
-import { dynamicPrompt, STATIC_PROMPT } from './businesses/harpatka/prompt.ts';
-Deno.test('prompt', () => {
-  const d = dynamicPrompt({ date: '2026-12-06', time: '20:00', name: '', city: 'הרצליה', place: '', max: 40, priceNow: 80, priceNote: 'המחיר הרגיל 80 ש"ח' }, 'שאלה', '35–55', 'פתיחה');
-  if (!d.includes('יום ראשון, 6.12')) throw new Error(d);
-  if (/[—–-]/.test(STATIC_PROMPT.replace(/\{AGE\}|\d+–\d+/g, '').replace(/<[^>]+>/g, '').replace(/[a-z-]+/g, ''))) throw new Error('dash in prompt');
-});
 
 Deno.test('gendered quick replies are dropped', () => {
   const r = parse('היי\n<chips>לא יודע איך|לא זוכרת|קשה להסביר|סתם סקרנות|אני צריך זמן</chips>');

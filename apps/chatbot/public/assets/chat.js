@@ -4,8 +4,8 @@
    Works for a signed-in and a signed-out visitor alike: there is no identification here. */
 (function () {
   const SB = window.SUPABASE;
-  const ENDPOINT = SB.url + '/functions/v1/chatbot';
   const q = new URLSearchParams(location.search);
+  const ENDPOINT = SB.url + '/functions/v1/' + (q.get('engine') === 'next' ? 'chatbot-next' : 'chatbot');
   const cid = (q.get('pain') || '').slice(0, 40);
   const src = (q.get('s') || '').slice(0, 20);
   // מזהה אקראי של המכשיר (לא טביעת אצבע), נשלח לשרת רק להגנה מניצול לרעה של הצ'אט
@@ -30,10 +30,10 @@
       const r = await fetch(ENDPOINT, {
         method: 'POST', signal: ctl.signal,
         headers: { 'Content-Type': 'application/json', apikey: SB.anonKey, Authorization: 'Bearer ' + SB.anonKey },
-        body: JSON.stringify({ business, mode: 'opening', session, ad: cid, src, device }),
+        body: JSON.stringify({ business, mode: 'opening', session, ad: cid, campaign: cid, src, device }),
       });
       const d = await r.json().catch(() => ({}));
-      return r.ok && Array.isArray(d.messages) ? { messages: d.messages.map(String).filter(Boolean).slice(0, 3), chips: Array.isArray(d.chips) ? d.chips.map(String) : [] } : null;
+      return r.ok && Array.isArray(d.messages) ? { messages: d.messages.map(String).filter(Boolean).slice(0, 3), chips: Array.isArray(d.chips) ? d.chips.map(String) : [], state: d.state || null } : null;
     } catch (e) { return null; } finally { clearTimeout(timer); }
   }
 
@@ -105,13 +105,14 @@
         const r = await fetch(ENDPOINT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', apikey: SB.anonKey, Authorization: 'Bearer ' + SB.anonKey },
-          body: JSON.stringify({ business, prevOffer: lastChips().offer, prevChips: lastChips().shown, chipClicked: lastChips().clicked, session: st.session, messages: st.msgs.map((m) => ({ role: m.role, content: m.content })), ad: cid, adText: openerInfo.ad, opening: openerInfo.opening.join('\n'), src, device }),
+          body: JSON.stringify({ business, campaign: cid, state: st.state || null, prevOffer: lastChips().offer, prevChips: lastChips().shown, chipClicked: lastChips().clicked, session: st.session, messages: st.msgs.map((m) => ({ role: m.role, content: m.content })), ad: cid, adText: openerInfo.ad, opening: openerInfo.opening.join('\n'), src, device }),
         });
         const d = await r.json().catch(() => ({}));
         if (!r.ok && !d.reply) throw new Error(String(r.status));
         await wait(Math.max(0, 600 - (Date.now() - t0)));
         t.remove();
         if (typeof d.hasMeeting === 'boolean') st.hasMeeting = d.hasMeeting;
+        if (d.state) st.state = d.state;
         const ps = parts(d.reply);
         who(); bubble('bot', ps[0]);
         for (const x of ps.slice(1)) { const t2 = typing(); await wait(2000); t2.remove(); bubble('bot', x); scroll(); }
@@ -151,6 +152,7 @@
         const op = await fetchOpening(business, st.session);
         await wait(Math.max(0, 800 - (Date.now() - t0)));
         log.innerHTML = '';
+        if (op && op.state) st.state = op.state;
         const msgs = op && op.messages.length ? op.messages : openerInfo.opening;
         const chips = op && op.messages.length ? op.chips : openerInfo.chips;
         msgs.forEach((m, i) => { st.msgs.push({ role: 'assistant', content: m, opener: true, chips: i === msgs.length - 1 ? chips : [] }); });

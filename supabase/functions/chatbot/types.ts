@@ -1,18 +1,67 @@
-// What a business supplies to the chatbot engine. The engine knows how to talk to Claude, parse the reply, guard
-// against abuse, learn from past conversations and save them. It does not know whose bot it is: this is the seam.
-import type { OpeningStat } from './learning.ts';
+// The generic journey engine. Everything that varies is data: the journey (milestones), the research profile for the
+// campaign's topic and segment, the business (persona, allowed sites, live facts) and approved insights.
+// The engine itself knows none of them by name.
 
-export interface Business<Ctx = unknown> {
-  key: string;                                   // the value saved as `business` on every conversation
-  origins: string[];                             // sites allowed to call the engine (localhost always is)
-  testOrigin?: string;                           // the one origin allowed to compare models
+export interface Milestone {
+  id: string;                 // stable key, stored in session state
+  title: string;
+  goal: string;               // what this milestone is for
+  learn: string[];            // what is worth learning from the visitor here
+  doneWhen: string;           // completion condition, in words the model can judge
+  skipWhen?: string;          // when the milestone may be skipped
+}
+
+export interface JourneyDef {
+  type: string;               // 'pain', later 'inspiration'
+  version: number;
+  milestones: Milestone[];
+  targetBotMessages: number;  // a design target to measure, not a hard rule
+}
+
+export const READINESS = ['checking', 'connecting', 'open', 'interested', 'concerned', 'not_now', 'not_fit'] as const;
+export const ACTIONS = ['continue', 'deepen', 'skip', 'reroute', 'answer', 'register', 'updates', 'guide', 'end', 'safety'] as const;
+export type Readiness = typeof READINESS[number];
+export type Action = typeof ACTIONS[number];
+
+// What the engine learned about this visitor. Only what the visitor said or confirmed goes in `learned`;
+// research hypotheses never do (spec chapter 7).
+export interface Learned {
+  pain?: string;
+  desire?: string;
+  changeTrigger?: string;
+  coping?: string;
+  concerns?: string[];
+}
+
+export interface SessionState {
+  milestone: string;
+  done: string[];
+  readiness: Readiness;
+  action: Action;
+  learned: Learned;
+  meta?: { campaign: string; journeyType: string; topicId: string | null; segment: Record<string, unknown>; contentVersionId: string | null; journeyVersion: number };
+}
+
+export interface CampaignContext {
+  campaign: { id: string; journey_type: string; topic_id: string | null; segment_filters: Record<string, unknown>; creative: Record<string, unknown> };
+  journey: { journey_type: string; version: number; definition: unknown } | null;
+  content_version_id: string | null;
+  profile: { title: string; summary: string | null; evidence: string | null; profile: Record<string, unknown> } | null;
+  insights: { id: string; body: string; confidence: string | null }[];
+  hypothesis?: string;        // for a campaign that exists only as a legacy ad key
+}
+
+export interface JourneyBusiness<Ctx = unknown> {
+  key: string;
+  botName: string;
+  origins: string[];
+  testOrigin?: string;
   ageRange: string;
-  staticPrompt: (age: string) => string;
-  adTexts: Record<string, string>;               // the ad sentence by ?c= key, kept on the server
+  persona: (age: string) => string;                  // tone, hard limits, facts about the offer: never the conversation flow
+  adTexts: Record<string, string>;                   // legacy ad keys that stay valid without a campaign row
   adPain: Record<string, string>;
-  openingPrompt: (adText: string, stats: OpeningStat[], pain?: string) => string;
-  dynamicPrompt: (ctx: Ctx | null, adText: string, ageRange: string, opening?: string, learning?: string, turns?: number, pain?: string) => string;
-  loadContext: () => Promise<Ctx | null>;        // live facts for the prompt (for Harpatka, the next meeting from the roster API)
-  rpc: { usage: string; chip: string; offer: string; openingStats: string; chipStats: string; offerStats: string; questionStats: string };
+  loadFacts: () => Promise<Ctx | null>;              // live facts (Harpatka: the next meeting)
+  factsBlock: (facts: Ctx | null) => string;
+  rpc: { usage?: string };
   saltDefault: string;
 }
