@@ -223,3 +223,7 @@ Deno.test('a reply that offers the updates group always carries the button', () 
   eq(offersUpdates('אם תרצי, הנה קבוצת העדכונים, ואפשר להצטרף בלי להתחייב'), true, 'offered');
   eq(offersUpdates('מה עוזר לך להירגע?'), false, 'not offered');
 });
+
+Deno.test('quick replies answer the last question of the message', () => {
+  if (!stableSystem(harpatka, PAIN_JOURNEY).includes('תשובות אפשריות של האדם לשאלה האחרונה')) throw new Error('chips rule');
+});
