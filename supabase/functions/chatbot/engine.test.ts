@@ -185,7 +185,7 @@ Deno.test('findings of the five conversations: the bot is never a he or a she in
   eq(ctasOf('updates', false), ['updates'], 'no meeting: only updates');
   eq(ctasOf('register', true), ['register'], 'register');
   eq(ctasOf(null, true), [], 'none');
-  if (!stableSystem(harpatka, PAIN_JOURNEY).includes('משפט אחד שמתאר את הערב')) throw new Error('curiosity rule');
+  if (!stableSystem(harpatka, PAIN_JOURNEY).includes('אסור ״במה שראית״')) throw new Error('curiosity rule');
 });
 
 Deno.test('a quick reply with a doubled word is dropped, and an opening that states the visitor condition is caught', () => {
