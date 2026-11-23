@@ -40,13 +40,13 @@ node scripts/chatbot.mjs links                             הקישורים של
 
 פרופיל נבחר רק לפי התאמה מדויקת לנושא ולפילוח של הקמפיין. אם אין, השיחה כללית ובלי ידע מומצא. קמפיין מושהה לא נטען.
 
-## בדיקה לפני שמשהו עולה
+## בדיקות
 
-קישור בדיקה עם המנוע החדש: אותו קישור עם `&engine=next` (הפונקציה `chatbot-next`). בדיקות שקוראות ל-Claude עולות כסף, ולכן קריאה אחת או שתיים ממוקדות בלבד. הבדיקות החינמיות: `cd supabase/functions/chatbot && deno test --allow-env` ו-`node apps/chatbot/test/engine-lib.test.mjs`.
+בדיקות שקוראות ל-Claude עולות כסף, ולכן קריאה אחת או שתיים ממוקדות בלבד. הבדיקות החינמיות: `cd supabase/functions/chatbot && deno test --allow-env` ו-`node apps/chatbot/test/engine-lib.test.mjs` (הוא גם חלק מ-`npm test`). פריסה: `supabase functions deploy chatbot --no-verify-jwt --project-ref aexmnaxvahblveejsbup`.
 
-## מעבר מהמנגנון הישן
+## המנגנון הישן
 
-מודעות הפייסבוק הישנות מצביעות על `harpatka.co.il/chat/?c=...` והפונקציה `harpatka-chat` שנפרסה מריפו הרפתקה. הן ממשיכות לעבוד עד שמחליפים את הכתובות או הופכים את הדף הישן לניתוב. הפונקציה `chatbot` הפרוסה היום היא עדיין הגרסה הישנה, והמנוע החדש נפרס ל-`chatbot-next`. המעבר לחי הוא פריסה של התיקייה הנוכחית כ-`chatbot`, באישור מפורש.
+המנוע הגנרי חי מ-2026-11-23 בפונקציה `chatbot`. נמחקו המנגנון הישן של הרפתקה: הפונקציה `harpatka-chat`, הטבלה `harpatka.chat_logs`, פונקציות הלמידה הישנות וטבלאות `chat_chips` ו-`chat_offers`. נשארו `harpatka_chat_usage_hit` והטבלה `chat_usage` (הגנה מניצול). הגרסה הישנה של המנוע נמצאת בהיסטוריית git (הקומיט `fd07e96d`).
 
 ## עדיין לא בנוי
 
