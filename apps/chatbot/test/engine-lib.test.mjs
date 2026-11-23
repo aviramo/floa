@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { buildSummary, campaignId, campaignLink, checkSegment, dollar, segmentKey, validateResearch, validCampaignId } from "../engine-lib.mjs";
+import { buildSummary, campaignId, campaignLink, checkSegment, dollar, readableId, segmentKey, validateResearch, validCampaignId } from "../engine-lib.mjs";
 
 const dims = [
   { key: "gender", kind: "enum", allowed: ["female", "male"] },
@@ -47,11 +47,17 @@ assert.equal(checkSegment({ age: 45 }, dims).length, 1);
 {
   const a = campaignId(), b = campaignId();
   assert.ok(validCampaignId(a) && a !== b && a.length === 7);
-  assert.equal(campaignLink("harpatka", "touch"), "https://chatbot.floa.co.il/harpatka?pain=touch");
+  assert.equal(campaignLink("harpatka", "stress_overload", "female"), "https://chatbot.floa.co.il/harpatka?pain=stress_overload&gender=female");
   assert.ok(!validCampaignId("a b") && !validCampaignId("") && !validCampaignId("x".repeat(60)));
 }
 
 // dollar quoting cannot be escaped by the content
 assert.equal(dollar("a $q$ b").startsWith("$q1$"), true);
+
+// readable ids: the pain and the audience, always a valid campaign id
+assert.equal(readableId("stress_overload", "female"), "stress-overload-women");
+assert.equal(readableId("lost_joy", "male"), "lost-joy-men");
+assert.equal(readableId("loneliness", undefined), "loneliness-all");
+for (const [t, g] of [["stress_overload", "female"], ["opening_up", "male"], ["low_confidence", "male"]]) assert.ok(validCampaignId(readableId(t, g)));
 
 console.log("chatbot engine-lib: ok");

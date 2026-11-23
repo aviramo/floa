@@ -53,3 +53,9 @@ export function toSingular(text: string, gender: 'female' | 'male'): string {
   for (const [re, to] of pairs) t = t.replace(re, to);
   return t;
 }
+
+// The link carries two readable parameters, pain and gender. Together they name the campaign: the same name the operations tool gives it.
+export const campaignKey = (pain: unknown, gender: unknown) => {
+  const p = String(pain ?? '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  return p ? p + '-' + (gender === 'female' ? 'women' : gender === 'male' ? 'men' : 'all') : '';
+};

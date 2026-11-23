@@ -100,8 +100,14 @@ export function campaignId() {
   return s;
 }
 
+/* The default id of a campaign: the pain and the audience, readable in the link (stress-overload-women). The server still resolves it
+   to the campaign; the browser decides nothing from it. */
+export const readableId = (topic, gender) =>
+  String(topic ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") + "-" + (gender === "female" ? "women" : gender === "male" ? "men" : "all");
+
 export const validCampaignId = (id) => /^[a-z0-9][a-z0-9_-]{1,38}$/.test(id ?? "");
-export const campaignLink = (business, id) => `${BASE}/${business}?pain=${encodeURIComponent(id)}`;
+/* Every link carries exactly two readable parameters, always both: the pain code and the gender. */
+export const campaignLink = (business, pain, gender) => `${BASE}/${business}?pain=${encodeURIComponent(pain)}&gender=${encodeURIComponent(gender)}`;
 
 /* A SQL string literal that cannot be broken out of by the content (dollar quoting with a tag the content does not contain) */
 export function dollar(text) {

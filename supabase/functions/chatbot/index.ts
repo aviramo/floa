@@ -8,7 +8,7 @@ import { buildMessages, MAX_USER_TURNS, parse, parseOpening, quoteSafe } from '.
 import { BUSINESSES } from './businesses/index.ts';
 import { journeyOf } from './journey.ts';
 import { openingTask, sessionFacts, stableSystem, stateBlock, addressOf, turnReminder } from './prompt.ts';
-import { distressIn, neutralize, stripGreeting, toSingular } from './guard.ts';
+import { campaignKey, distressIn, neutralize, stripGreeting, toSingular } from './guard.ts';
 import { ctaFor, diffEvents, extractState, initialState, linkGender, mergeState, stateFromClient } from './state.ts';
 import type { CampaignContext, JourneyBusiness, SessionState } from './types.ts';
 
@@ -125,8 +125,10 @@ Deno.serve(async (req) => {
     return json(b, origin, { error: 'limit', reply: 'השיחה עמוסה כרגע. הכי נוח לכתוב להדר ולאופיר בוואטסאפ', chips: [], cta: 'whatsapp' });
   }
 
-  const campaignId = tx(body.campaign ?? body.ad).slice(0, 40);
-  const ctx = await loadContext(b, campaignId);
+  const legacyKey = tx(body.campaign ?? body.ad).slice(0, 40);   // an old link with the single parameter ?pain=touch
+  const campaignId = campaignKey(body.pain ?? legacyKey, body.gender).slice(0, 60);
+  let ctx = await loadContext(b, campaignId);
+  if (!ctx.campaign.topic_id && legacyKey && legacyKey !== campaignId) ctx = await loadContext(b, legacyKey);   // not a campaign row: maybe an old ad key
   const journey = journeyOf(ctx.journey);
   const adText = tx(ctx.campaign.creative?.ad) || quoteSafe(tx(body.adText).slice(0, 300));
   const meta = { campaign: campaignId, journeyType: journey.type, topicId: ctx.campaign.topic_id, segment: ctx.campaign.segment_filters, contentVersionId: ctx.content_version_id, journeyVersion: journey.version };

@@ -19,7 +19,7 @@ import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { buildSummary, campaignId, campaignLink, checkSegment, dollar, segmentKey, validCampaignId, validateResearch } from "../apps/chatbot/engine-lib.mjs";
+import { buildSummary, campaignId, campaignLink, checkSegment, dollar, readableId, segmentKey, validCampaignId, validateResearch } from "../apps/chatbot/engine-lib.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const [cmd, sub, ...rest] = process.argv.slice(2);
@@ -103,7 +103,7 @@ async function main() {
       const seg = {};
       if (flags.gender) seg.gender = flags.gender;
       for (const e of checkSegment(seg, dims())) fail("פילוח לא תקין: " + e);
-      const id = flags.id ?? campaignId();
+      const id = flags.id ?? (flags.topic ? readableId(flags.topic, seg.gender) : campaignId());
       if (!validCampaignId(id)) fail("מזהה קמפיין לא תקין (a-z, 0-9, _ ו-, עד 39 תווים)");
       const topic = flags.topic ?? null;
       if (topic) {
@@ -115,22 +115,22 @@ async function main() {
       const creative = flags.ad ? { ad: String(flags.ad) } : {};
       sql(`insert into chatbot.campaigns (id, business, journey_type, topic_id, segment_filters, status, creative, note)
            values (${dollar(id)}, ${dollar(business)}, 'pain', ${topic ? dollar(topic) : "null"}, ${lit(seg)}::jsonb, 'draft', ${lit(creative)}::jsonb, ${flags.note ? dollar(String(flags.note)) : "null"})`);
-      console.log(`נוצרה טיוטת קמפיין ${id}. להפעלה: node scripts/chatbot.mjs campaign activate ${id}\nקישור בדיקה (עם המנוע החדש): ${campaignLink(business, id)}&engine=next`);
+      console.log(`נוצרה טיוטת קמפיין ${id}. להפעלה: node scripts/chatbot.mjs campaign activate ${id}\nהקישור: ${campaignLink(business, topic ?? "", seg.gender ?? "")}`);
       return;
     }
     if (sub === "activate" || sub === "pause") {
       const id = pos[0] ?? fail("usage: campaign " + sub + " <id>");
-      const out = sql(`update chatbot.campaigns set status = ${dollar(sub === "activate" ? "active" : "paused")} where id = ${dollar(id)} returning id, business`);
+      const out = sql(`update chatbot.campaigns set status = ${dollar(sub === "activate" ? "active" : "paused")} where id = ${dollar(id)} returning id, business, topic_id, segment_filters->>'gender' as gender`);
       if (!out.length) fail("קמפיין לא נמצא");
-      return console.log(sub === "activate" ? `פעיל. הקישור: ${campaignLink(out[0].business, id)}` : "הושהה. הנתונים נשמרו.");
+      return console.log(sub === "activate" ? `פעיל. הקישור: ${campaignLink(out[0].business, out[0].topic_id, out[0].gender)}` : "הושהה. הנתונים נשמרו.");
     }
     if (sub === "list") return table(sql("select id, business, topic_id, segment_filters::text as segment, status, creative->>'ad' as ad from chatbot.campaigns order by created_at desc"));
   }
 
   if (cmd === "links") {
     const where = flags.business ? `and business = ${dollar(String(flags.business))}` : "";
-    const rows = sql(`select id, business, topic_id, segment_filters::text as segment, creative->>'ad' as ad from chatbot.campaigns where status = 'active' ${where} order by business, topic_id, id`);
-    return console.log(rows.length ? rows.map((r) => `${campaignLink(r.business, r.id)}\n   נושא: ${r.topic_id ?? "-"}  פילוח: ${r.segment}${r.ad ? `  מודעה: ${r.ad}` : ""}`).join("\n") : "אין קמפיינים פעילים.");
+    const rows = sql(`select id, business, topic_id, segment_filters->>'gender' as gender, segment_filters::text as segment, creative->>'ad' as ad from chatbot.campaigns where status = 'active' ${where} order by business, topic_id, gender`);
+    return console.log(rows.length ? rows.map((r) => `${campaignLink(r.business, r.topic_id, r.gender)}\n   נושא: ${r.topic_id ?? "-"}  פילוח: ${r.segment}${r.ad ? `  מודעה: ${r.ad}` : ""}`).join("\n") : "אין קמפיינים פעילים.");
   }
 
   fail("פקודה לא מוכרת. ראו את ההערה בראש הקובץ.");

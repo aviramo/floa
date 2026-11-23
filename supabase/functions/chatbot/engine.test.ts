@@ -78,7 +78,7 @@ Deno.test('opening task names the business bot and keeps the meeting out of the 
   if (!t.includes(harpatka.botName) || !t.includes('אין להזכיר בפתיחה מפגש')) throw new Error(t);
 });
 
-import { distressIn, neutralize, stripGreeting, toSingular } from './guard.ts';
+import { campaignKey, distressIn, neutralize, stripGreeting, toSingular } from './guard.ts';
 Deno.test('distress net catches plain phrasings and not ordinary talk', () => {
   for (const t of ['אני חושבת על למות', 'לפעמים אני חושבת שעדיף שלא אהיה פה', 'רוצה למות', 'אין טעם לחיות']) if (!distressIn(t)) throw new Error('missed: ' + t);
   for (const t of ['הייתי רוצה להרגיש חלק ממשהו', 'מתי המפגש הקרוב?', 'מת מצחוק', 'עייפה ולא ישנה']) if (distressIn(t)) throw new Error('false alarm: ' + t);
@@ -138,4 +138,12 @@ Deno.test('a reply never opens with a second greeting', () => {
   eq(stripGreeting('היי, נשמע שאת פשוט מסתכלת'), 'נשמע שאת פשוט מסתכלת', 'plain');
   eq(stripGreeting('היי 🙂 זה לגיטימי'), 'זה לגיטימי', 'with emoji');
   eq(stripGreeting('הייתי רוצה לשמוע'), 'הייתי רוצה לשמוע', 'a word that only starts with the same letters');
+});
+
+Deno.test('a link names its campaign by two readable parameters', () => {
+  eq(campaignKey('stress_overload', 'female'), 'stress-overload-women', 'women');
+  eq(campaignKey('lost_joy', 'male'), 'lost-joy-men', 'men');
+  eq(campaignKey('loneliness', ''), 'loneliness-all', 'no gender');
+  eq(campaignKey('', 'female'), '', 'no pain means no campaign');
+  eq(campaignKey('../../x y', 'male'), 'x-y-men', 'junk is flattened to a safe key');
 });
