@@ -208,11 +208,16 @@ Deno.serve(async (req) => {
   if (distress) { next.action = 'safety'; next.readiness = 'concerned'; }
   let cta = ctaFor(next.action, !!facts);
   if (next.action === 'safety' || next.action === 'end') { cta = null; chips = []; }
+  // Someone is never left with only a text box: when the model sent no quick replies, neutral ones are offered
+  else if (chips.length < 2) chips = ['כן, עוד פרטים', 'לא כרגע', 'יש לי שאלה'];
   if (next.action === 'safety') cta = 'whatsapp';
   // Registrations are the point of the paid ad: the page offers the evening from the third message of the visitor, or at once when the reply itself
   // gives the date and the price, unless the visitor ended it or said no
   const putsTheEveningOnTheTable = /\d{1,2}\.\d{1,2}/.test(reply) && /(בשעה|ש"ח)/.test(reply);
-  if (!cta && facts && (turns >= 4 || putsTheEveningOnTheTable) && !['end', 'safety'].includes(next.action) && next.readiness !== 'not_fit') cta = 'register';
+  // The link to the site appears only once the evening was actually put on the table (this reply or an earlier one), never before
+  const eveningSeen = putsTheEveningOnTheTable || clean.some((m: any) => m.role === 'assistant' && /\d{1,2}\.\d{1,2}/.test(String(m.content)) && /(בשעה|ש"ח)/.test(String(m.content)));
+  if (cta === 'register' && !eveningSeen) cta = null;
+  if (!cta && facts && putsTheEveningOnTheTable && !['end', 'safety'].includes(next.action) && next.readiness !== 'not_fit') cta = 'register';
 
   persist(b, session, src, campaignId, [...clean, { role: 'assistant', content: reply }], cta, next, diffEvents(prev, next));
   return json(b, origin, { reply, chips, cta, ctas: ctasOf(cta as any, !!facts), state: next, hasFacts: !!facts, hasMeeting: !!facts });
