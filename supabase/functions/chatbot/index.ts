@@ -8,7 +8,7 @@ import { buildMessages, MAX_USER_TURNS, parse, parseOpening, quoteSafe } from '.
 import { BUSINESSES } from './businesses/index.ts';
 import { journeyOf } from './journey.ts';
 import { openingTask, sessionFacts, stableSystem, stateBlock, addressOf, turnReminder } from './prompt.ts';
-import { distressIn, neutralize } from './guard.ts';
+import { distressIn, neutralize, stripGreeting, toSingular } from './guard.ts';
 import { ctaFor, diffEvents, extractState, initialState, linkGender, mergeState, stateFromClient } from './state.ts';
 import type { CampaignContext, JourneyBusiness, SessionState } from './types.ts';
 
@@ -37,6 +37,7 @@ const limited = (ip: string) => {
 };
 
 const tx = (v: unknown) => String(v ?? '').trim();
+const fixAddress = (t: string, a: 'female' | 'male' | 'plural') => (a === 'plural' ? t : toSingular(t, a));
 
 // A short chat needs no thinking: it eats max_tokens, slows and costs. Haiku 5.5 is switched off with disabled,
 // Sonnet 5.5 with between_tools (disabled is rejected there). Another model: unchanged.
@@ -139,6 +140,7 @@ Deno.serve(async (req) => {
   if (body.mode === 'opening') {
     const raw = await claude(apiKey, model, [stable, { type: 'text', text: [sessionFacts(b, ctx, null, adText, addressOf(fromLink)), openingTask(b, adText, addressOf(fromLink), ctx.profile?.title ?? '')].join('\n\n') }], [{ role: 'user', content: 'התחילו.' }], 500);
     const op = raw ? parseOpening(raw) : null;
+    if (op) op.messages = op.messages.map((m) => fixAddress(neutralize(m), addressOf(fromLink)));
     if (op) op.chips = op.chips.filter((c) => !c.includes('/'));   // "לא יודע/ת" is gendered; the plain filter misses the slash form
     if (!op || !op.messages.length) return json(b, origin, { error: 'upstream' }, 502);
     const st: SessionState = { ...initialState(journey, fromLink), meta };
@@ -167,7 +169,7 @@ Deno.serve(async (req) => {
   const { text, state: incoming } = extractState(raw);
   const parsed = parse(text);
   let chips = parsed.chips.filter((c) => !c.includes('/'));
-  const reply = neutralize(parsed.reply);
+  const reply = fixAddress(stripGreeting(neutralize(parsed.reply)), address);
   if (!reply) return json(b, origin, { error: 'empty' }, 502);
 
   const next = { ...mergeState(prev, incoming, journey), meta };

@@ -18,6 +18,7 @@ const SELF: [RegExp, string][] = [
   [/(^|[\s.,!?:;"]|ו)אני (מצטערת|מצטער)(?=[\s.,!?:;]|$)/g, '$1חבל לשמוע'],
   [/(^|[\s.,!?:;"]|ו)אני (רואה|רואה ש)(?=[\s.,!?:;]|$)/g, '$1נשמע'],
   [/(^|[\s.,!?:;"]|ו)אני (מכבדת|מכבד)(?=[\s.,!?:;]|$)/g, '$1מכבדים'],
+  [/(^|[\s.,!?:;"]|ו)אני (שמח|שמחה)(?=[\s.,!?:;]|$)/g, '$1שמחים'],
   [/(^|[\s.,!?:;"]|ו)אני (סקרנית|סקרן)(?=[\s.,!?:;]|$)/g, '$1מעניין'],
   [/(^|[\s.,!?:;"]|ו)אני (בטוחה|בטוח)(?=[\s.,!?:;]|$)/g, '$1ברור'],
   [/(^|[\s.,!?:;"]|ו)(מכבד|מכבדת) את (זה|ההחלטה)/g, '$1מכבדים את $3'],
@@ -25,5 +26,30 @@ const SELF: [RegExp, string][] = [
 export function neutralize(text: string): string {
   let t = String(text ?? '');
   for (const [re, to] of SELF) t = t.replace(re, to);
+  return t;
+}
+
+// Greeting only once: the opening already said hello, so a reply never starts with another "היי"
+export const stripGreeting = (text: string) => String(text ?? '').replace(/^\s*היי(?![א-ת])[,!.]?\s*(\p{Extended_Pictographic}️?\s*)?/u, '').trim();
+
+// The link says whom the bot is talking to (a woman or a man), and the model sometimes still writes the plural, above all in the opening.
+// Pronouns and the plain past tense are rewritten into the singular of that gender. Present-tense verbs are left to the prompt.
+const L = '(?<![א-ת])', R = '(?![א-ת])';
+export function toSingular(text: string, gender: 'female' | 'male'): string {
+  const you = gender === 'female' ? 'את' : 'אתה';
+  const pairs: [RegExp, string][] = [
+    [new RegExp(`${L}([ושכלבמה]{0,2})אתם${R}`, 'g'), `$1${you}`],
+    [new RegExp(`${L}([ושכלבמה]{0,2})אתכם${R}`, 'g'), '$1אותך'],
+    [new RegExp(`${L}([ושכ]{0,2})לכם${R}`, 'g'), '$1לך'],
+    [new RegExp(`${L}([ושכ]{0,2})שלכם${R}`, 'g'), '$1שלך'],
+    [new RegExp(`${L}([ושכ]{0,2})אצלכם${R}`, 'g'), '$1אצלך'],
+    [new RegExp(`${L}([ושכ]{0,2})איתכם${R}`, 'g'), '$1איתך'],
+    [new RegExp(`${L}([ושכ]{0,2})עליכם${R}`, 'g'), '$1עליך'],
+    [new RegExp(`${L}([ושכ]{0,2})בכם${R}`, 'g'), '$1בך'],
+    [new RegExp(`${L}([ושכ]{0,2})מכם${R}`, 'g'), '$1ממך'],
+    [new RegExp(`${L}([א-ת]{2,}?)תם${R}`, 'g'), '$1ת'],    // ראיתם, לחצתם, קראתם, הגעתם
+  ];
+  let t = String(text ?? '');
+  for (const [re, to] of pairs) t = t.replace(re, to);
   return t;
 }

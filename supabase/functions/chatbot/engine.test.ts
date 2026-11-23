@@ -78,7 +78,7 @@ Deno.test('opening task names the business bot and keeps the meeting out of the 
   if (!t.includes(harpatka.botName) || !t.includes('אין להזכיר בפתיחה מפגש')) throw new Error(t);
 });
 
-import { distressIn, neutralize } from './guard.ts';
+import { distressIn, neutralize, stripGreeting, toSingular } from './guard.ts';
 Deno.test('distress net catches plain phrasings and not ordinary talk', () => {
   for (const t of ['אני חושבת על למות', 'לפעמים אני חושבת שעדיף שלא אהיה פה', 'רוצה למות', 'אין טעם לחיות']) if (!distressIn(t)) throw new Error('missed: ' + t);
   for (const t of ['הייתי רוצה להרגיש חלק ממשהו', 'מתי המפגש הקרוב?', 'מת מצחוק', 'עייפה ולא ישנה']) if (distressIn(t)) throw new Error('false alarm: ' + t);
@@ -125,4 +125,17 @@ Deno.test('opening with no ad sentence leans on the pain topic of the campaign',
   const o = openingTask(harpatka, '', 'female', 'נשים בזוגיות: שינה ועייפות');
   if (!o.includes('שעסקה בנושא: נשים בזוגיות: שינה ועייפות')) throw new Error(o);
   if (openingTask(harpatka, 'משפט', 'female', 'נושא').includes('שעסקה בנושא')) throw new Error('the ad sentence wins');
+});
+
+Deno.test('plural address is rewritten into the singular of the link gender; the bot is never a he or a she', () => {
+  eq(toSingular('ראיתם את המודעה, ואני שמח שאתם כאן. מה הביא אתכם? מה עלה לכם כשקראתם?', 'female'), 'ראית את המודעה, ואני שמח שאת כאן. מה הביא אותך? מה עלה לך כשקראת?', 'female singular');
+  eq(toSingular('שאתם כאן, לחצתם עליה', 'male'), 'שאתה כאן, לחצת עליה', 'male singular');
+  eq(toSingular('נפגשים בקבוצה, נשמע טוב', 'female'), 'נפגשים בקבוצה, נשמע טוב', 'unrelated words untouched');
+  eq(neutralize('ואני שמח שאתם כאן'), 'ושמחים שאתם כאן', 'bot joy is plural');
+  eq(neutralize('אני שמחה לשמוע'), 'שמחים לשמוע', 'bot joy fem');
+});
+Deno.test('a reply never opens with a second greeting', () => {
+  eq(stripGreeting('היי, נשמע שאת פשוט מסתכלת'), 'נשמע שאת פשוט מסתכלת', 'plain');
+  eq(stripGreeting('היי 🙂 זה לגיטימי'), 'זה לגיטימי', 'with emoji');
+  eq(stripGreeting('הייתי רוצה לשמוע'), 'הייתי רוצה לשמוע', 'a word that only starts with the same letters');
 });
