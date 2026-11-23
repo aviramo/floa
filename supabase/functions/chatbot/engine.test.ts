@@ -78,7 +78,7 @@ Deno.test('opening task names the business bot and keeps the meeting out of the 
   if (!t.includes(harpatka.botName) || !t.includes('אפשר להזכיר שמדובר בערב תנועה')) throw new Error(t);
 });
 
-import { mentionsEvening, padChips, CHAT_POOL, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { offersUpdates, mentionsEvening, padChips, CHAT_POOL, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 Deno.test('distress net catches plain phrasings and not ordinary talk', () => {
   for (const t of ['אני חושבת על למות', 'לפעמים אני חושבת שעדיף שלא אהיה פה', 'רוצה למות', 'אין טעם לחיות']) if (!distressIn(t)) throw new Error('missed: ' + t);
   for (const t of ['הייתי רוצה להרגיש חלק ממשהו', 'מתי המפגש הקרוב?', 'מת מצחוק', 'עייפה ולא ישנה']) if (distressIn(t)) throw new Error('false alarm: ' + t);
@@ -217,4 +217,9 @@ Deno.test('quick replies are always at least three, without repeats', () => {
   eq(padChips([], CHAT_POOL).length, 3, 'none');
   eq(padChips(['לא כרגע'], CHAT_POOL), ['לא כרגע', 'כן, עוד פרטים', 'יש לי שאלה'], 'one, no repeat');
   eq(padChips(['א', 'ב', 'ג', 'ד'], CHAT_POOL).length, 4, 'four stay');
+});
+
+Deno.test('a reply that offers the updates group always carries the button', () => {
+  eq(offersUpdates('אם תרצי, הנה קבוצת העדכונים, ואפשר להצטרף בלי להתחייב'), true, 'offered');
+  eq(offersUpdates('מה עוזר לך להירגע?'), false, 'not offered');
 });

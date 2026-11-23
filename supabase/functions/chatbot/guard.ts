@@ -112,3 +112,6 @@ export const CHAT_POOL = ['כן, עוד פרטים', 'לא כרגע', 'יש לי
 
 // Any word about the evening itself (not only date and price): before the bridge it is a skipped milestone.
 export const mentionsEvening = (reply: string) => /(הערב|ערב (תנועה|כזה|שבו|התנסות)|מפגש|מפגשים|מפגשי|במוזיקה ובתנועה|בלי לדעת לרקוד|לא צריך לדעת לרקוד|להתנסות איתם)/.test(String(reply ?? ''));
+
+// The reply offers the updates group in words: the button must be there too, whatever action the model reported.
+export const offersUpdates = (reply: string) => /קבוצת (ה)?עדכונים/.test(String(reply ?? ''));
