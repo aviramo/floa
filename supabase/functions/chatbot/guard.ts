@@ -101,3 +101,12 @@ export function pitchAllowed(a: { turns: number; lastUser: string; prevDone: str
   return a.turns >= 4 || asked || reluctant || a.prevDone.includes('bridge') || a.prevDone.includes('curiosity') || classifyReply(a.lastUser) === 'yes';
 }
 export const earlyPitchFix = '## הצעה מוקדמת מדי\nהטיוטה הציגה את פרטי הערב לפני שהאדם הגיב לחיבור. כתבו שוב: משפט אחד שמקשר את מה שהאדם אמר לערב, ושאלה אחת אם זה מתחבר לו. בלי תאריך, מחיר או קישור.';
+
+// Never one quick reply or none: at least three, topped up from a neutral pool without repeating what the model already offered.
+export function padChips(chips: string[], pool: string[], min = 3): string[] {
+  const out = [...chips];
+  for (const c of pool) { if (out.length >= min) break; if (!out.includes(c)) out.push(c); }
+  return out;
+}
+export const OPENING_POOL = ['סתם סקרנות', 'קשה לי לדבר על זה', 'רוצה להבין קודם'];
+export const CHAT_POOL = ['כן, עוד פרטים', 'לא כרגע', 'יש לי שאלה'];

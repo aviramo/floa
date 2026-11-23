@@ -8,7 +8,7 @@ import { buildMessages, MAX_USER_TURNS, parse, parseOpening, quoteSafe } from '.
 import { BUSINESSES } from './businesses/index.ts';
 import { journeyOf } from './journey.ts';
 import { openingTask, sessionFacts, stableSystem, stateBlock, addressOf, turnReminder } from './prompt.ts';
-import { assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { CHAT_POOL, OPENING_POOL, padChips, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 import { ctaFor, ctasOf, diffEvents, extractState, initialState, linkGender, mergeState, stateFromClient } from './state.ts';
 import type { CampaignContext, JourneyBusiness, SessionState } from './types.ts';
 
@@ -164,7 +164,7 @@ Deno.serve(async (req) => {
       if (op2 && op2.messages.length) op = op2;
     }
     if (op) op.messages = op.messages.map((m) => fixAddress(neutralize(m), addressOf(fromLink)));
-    if (op) op.chips = op.chips.filter((c) => !c.includes('/') && !repeatedWord(c));   // "לא יודע/ת" is gendered; the plain filter misses the slash form
+    if (op) op.chips = padChips(op.chips.filter((c) => !c.includes('/') && !repeatedWord(c)), OPENING_POOL);   // "לא יודע/ת" is gendered; the plain filter misses the slash form
     if (!op || !op.messages.length) return json(b, origin, { error: 'upstream' }, 502);
     const st: SessionState = { ...initialState(journey, fromLink), meta };
     persist(b, session, src, campaignId, op.messages.map((content) => ({ role: 'assistant', content })), null, st, []);
@@ -209,7 +209,7 @@ Deno.serve(async (req) => {
   let cta = ctaFor(next.action, !!facts);
   if (next.action === 'safety' || next.action === 'end') { cta = null; chips = []; }
   // Someone is never left with only a text box: when the model sent no quick replies, neutral ones are offered
-  else if (chips.length < 2) chips = ['כן, עוד פרטים', 'לא כרגע', 'יש לי שאלה'];
+  else chips = padChips(chips, CHAT_POOL);
   if (next.action === 'safety') cta = 'whatsapp';
   // Registrations are the point of the paid ad: the page offers the evening from the third message of the visitor, or at once when the reply itself
   // gives the date and the price, unless the visitor ended it or said no
