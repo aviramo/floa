@@ -54,7 +54,7 @@ Deno.test('journeyOf: a broken row falls back to the default journey', () => {
 
 Deno.test('the stable prompt: engine rules, journey, no staged flow of the old bot, no dash in text shown to people', () => {
   const t = stableSystem(harpatka, PAIN_JOURNEY);
-  for (const needle of ['סדר קדימויות', 'connect', 'action', '<state>', 'ער"ן 1201']) if (!t.includes(needle)) throw new Error('missing ' + needle);
+  for (const needle of ['סדר קדימויות', 'connect', 'action', '<state>', 'המטרה והקצב']) if (!t.includes(needle)) throw new Error('missing ' + needle);
   if (/שלב [א-ו]\b/.test(t)) throw new Error('old stage reference left in prompt');
   if (/\{AGE\}/.test(t)) throw new Error('age placeholder not filled');
   if (/[—–]/.test(harpatka.persona('35–55').replace('35–55', ''))) throw new Error('long dash in persona');
@@ -75,7 +75,7 @@ Deno.test('state block nudges a long conversation toward a clear step', () => {
 
 Deno.test('opening task names the business bot and keeps the meeting out of the opening', () => {
   const t = openingTask(harpatka, 'כמה זמן עבר?');
-  if (!t.includes(harpatka.botName) || !t.includes('אין להזכיר בפתיחה מפגש')) throw new Error(t);
+  if (!t.includes(harpatka.botName) || !t.includes('אפשר להזכיר שמדובר בערב תנועה')) throw new Error(t);
 });
 
 import { campaignKey, distressIn, neutralize, parseSegment, stripGreeting, toSingular } from './guard.ts';
@@ -97,7 +97,7 @@ Deno.test('address follows the audience of the link: woman, man, or plural when 
   if (!f.includes('לשון נקבה יחידה')) throw new Error('session facts must carry the address block');
   for (const [a, needle] of [['female', 'אליה בלשון נקבה'], ['male', 'אליו בלשון זכר'], ['plural', 'לשון רבים בלבד']] as const) {
     const o = openingTask(harpatka, 'x', a);
-    if (!o.includes(needle) || !o.includes('אין מגדר ואין רגש') || !o.includes('אין להזכיר בפתיחה מפגש')) throw new Error('opening ' + a);
+    if (!o.includes(needle) || !o.includes('אין מגדר ואין רגש') || !o.includes('אפשר להזכיר שמדובר בערב תנועה')) throw new Error('opening ' + a);
   }
   if (!turnReminder('male').includes('זכר') || !turnReminder('plural').includes('<state>')) throw new Error('reminder');
 });
@@ -155,4 +155,14 @@ Deno.test('the segment of a link is one separate parameter per dimension, safely
   eq(parseSegment(null), {}, 'null');
   eq(parseSegment(['a']), {}, 'array');
   eq(Object.keys(parseSegment({ a: '1', b: '1', c: '1', d: '1', e: '1', f: '1' })).length, 5, 'capped');
+});
+
+Deno.test('hardship is not an emergency: no hotline in the rules or the persona, the evening is the answer to a reluctant visitor', () => {
+  const s = stableSystem(harpatka, PAIN_JOURNEY);
+  if (s.includes('ער"ן') || s.includes('1201')) throw new Error('the hotline must not be in the stable prompt');
+  for (const needle of ['קשה לי לדבר על זה', 'אינו מצב חירום', 'הערב הקרוב', 'לא מניחים שהאדם סובל']) if (!s.includes(needle)) throw new Error('missing ' + needle);
+});
+Deno.test('the opening never quotes an ad that is not there', () => {
+  const o = openingTask(harpatka, '', 'male', 'בדידות');
+  if (!o.includes('אסור לכתוב ״המשפט במודעה״')) throw new Error(o);
 });

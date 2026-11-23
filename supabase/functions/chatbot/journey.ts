@@ -5,7 +5,7 @@ import type { JourneyDef, Milestone } from './types.ts';
 export const PAIN_JOURNEY: JourneyDef = {
   type: 'pain',
   version: 1,
-  targetBotMessages: 7,
+  targetBotMessages: 4,
   milestones: [
     {
       id: 'connect', title: 'חיבור והזדהות',
@@ -61,5 +61,5 @@ export function journeyOf(row: { journey_type: string; version: number; definiti
     doneWhen: String(m.doneWhen), skipWhen: m.skipWhen ? String(m.skipWhen) : undefined,
   })) : [];
   if (!row || !ms.length) return PAIN_JOURNEY;
-  return { type: row.journey_type, version: row.version, milestones: ms, targetBotMessages: Number(d.targetBotMessages) || 7 };
+  return { type: row.journey_type, version: row.version, milestones: ms, targetBotMessages: Number(d.targetBotMessages) || 4 };
 }

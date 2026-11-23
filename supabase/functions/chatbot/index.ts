@@ -191,7 +191,9 @@ Deno.serve(async (req) => {
   if (distress) { next.action = 'safety'; next.readiness = 'concerned'; }
   let cta = ctaFor(next.action, !!facts);
   if (next.action === 'safety' || next.action === 'end') { cta = null; chips = []; }
-  if (next.action === 'safety') cta = 'whatsapp';   // a person to talk to, never a conversion step
+  if (next.action === 'safety') cta = 'whatsapp';
+  // Registrations are the point of the paid ad: from the third message of the visitor the page always offers the evening, unless they ended it or said no
+  if (!cta && facts && turns >= 3 && !['end', 'safety'].includes(next.action) && next.readiness !== 'not_fit') cta = 'register';   // a person to talk to, never a conversion step
 
   persist(b, session, src, campaignId, [...clean, { role: 'assistant', content: reply }], cta, next, diffEvents(prev, next));
   return json(b, origin, { reply, chips, cta, state: next, hasFacts: !!facts, hasMeeting: !!facts });
