@@ -106,8 +106,9 @@ export const readableId = (topic, gender) =>
   String(topic ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") + "-" + (gender === "female" ? "women" : gender === "male" ? "men" : "all");
 
 export const validCampaignId = (id) => /^[a-z0-9][a-z0-9_-]{1,38}$/.test(id ?? "");
-/* Every link carries exactly two readable parameters, always both: the pain code and the gender. */
-export const campaignLink = (business, pain, gender) => `${BASE}/${business}?pain=${encodeURIComponent(pain)}&gender=${encodeURIComponent(gender)}`;
+/* A link carries separate readable parameters: the pain code and one parameter per segment dimension (gender today, maybe age later). */
+export const campaignLink = (business, pain, segment = {}) =>
+  `${BASE}/${business}?pain=${encodeURIComponent(pain)}` + Object.entries(segment).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `&${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join("");
 
 /* A SQL string literal that cannot be broken out of by the content (dollar quoting with a tag the content does not contain) */
 export function dollar(text) {

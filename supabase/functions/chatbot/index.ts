@@ -8,7 +8,7 @@ import { buildMessages, MAX_USER_TURNS, parse, parseOpening, quoteSafe } from '.
 import { BUSINESSES } from './businesses/index.ts';
 import { journeyOf } from './journey.ts';
 import { openingTask, sessionFacts, stableSystem, stateBlock, addressOf, turnReminder } from './prompt.ts';
-import { campaignKey, distressIn, neutralize, stripGreeting, toSingular } from './guard.ts';
+import { campaignKey, distressIn, neutralize, parseSegment, stripGreeting, toSingular } from './guard.ts';
 import { ctaFor, diffEvents, extractState, initialState, linkGender, mergeState, stateFromClient } from './state.ts';
 import type { CampaignContext, JourneyBusiness, SessionState } from './types.ts';
 
@@ -77,6 +77,16 @@ async function usageHit(b: JourneyBusiness, device: string, ip: string, mode: st
 
 // The campaign of this session. A row in chatbot.campaigns wins; an old ad key without a row still works as a campaign built from
 // the business's own ad table; anything else is a plain session of the default journey (no ad, no hypothesis, no invented research).
+// The campaign a link names by its separate parameters: the pain and the segment (one parameter per dimension).
+async function loadByParams(b: JourneyBusiness, pain: string, segment: Record<string, string>): Promise<CampaignContext | null> {
+  if (!SB_URL || !SB_SERVICE || !pain) return null;
+  try {
+    const r = await rpc('chatbot_session_context_for', { p_business: b.key, p_topic: pain, p_segment: segment });
+    if (r.ok) { const d = await r.json(); if (d && d.campaign) return { ...d, insights: d.insights ?? [] } as CampaignContext; }
+  } catch (_) { /* falls through to the campaign-name lookup */ }
+  return null;
+}
+
 async function loadContext(b: JourneyBusiness, campaignId: string): Promise<CampaignContext> {
   if (SB_URL && SB_SERVICE && campaignId) {
     try {
@@ -126,9 +136,11 @@ Deno.serve(async (req) => {
   }
 
   const legacyKey = tx(body.campaign ?? body.ad).slice(0, 40);   // an old link with the single parameter ?pain=touch
-  const campaignId = campaignKey(body.pain ?? legacyKey, body.gender).slice(0, 60);
-  let ctx = await loadContext(b, campaignId);
-  if (!ctx.campaign.topic_id && legacyKey && legacyKey !== campaignId) ctx = await loadContext(b, legacyKey);   // not a campaign row: maybe an old ad key
+  const pain = tx(body.pain ?? legacyKey).slice(0, 40).toLowerCase();
+  const segment = parseSegment(body.segment ?? (body.gender ? { gender: body.gender } : {}));
+  const campaignId = campaignKey(pain, segment.gender).slice(0, 60);   // a label for the saved conversation
+  let ctx = await loadByParams(b, pain, segment) ?? await loadContext(b, campaignId);
+  if (!ctx.campaign.topic_id && legacyKey && legacyKey !== campaignId) ctx = await loadContext(b, legacyKey);   // not a campaign: maybe an old ad key
   const journey = journeyOf(ctx.journey);
   const adText = tx(ctx.campaign.creative?.ad) || quoteSafe(tx(body.adText).slice(0, 300));
   const meta = { campaign: campaignId, journeyType: journey.type, topicId: ctx.campaign.topic_id, segment: ctx.campaign.segment_filters, contentVersionId: ctx.content_version_id, journeyVersion: journey.version };

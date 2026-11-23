@@ -7,7 +7,9 @@
   const q = new URLSearchParams(location.search);
   const ENDPOINT = SB.url + '/functions/v1/chatbot';
   const cid = (q.get('pain') || '').slice(0, 40);
-  const gender = q.get('gender') === 'female' ? 'female' : q.get('gender') === 'male' ? 'male' : '';
+  // every other parameter of the link that is a plain name is a segment dimension (gender today, maybe age later), sent separately
+  const segment = {}; q.forEach((v, k) => { if (!['pain', 's', 'c', 'engine'].includes(k) && /^[a-z][a-z0-9_]{0,29}$/.test(k)) segment[k] = String(v).slice(0, 30); });
+  const segKey = Object.keys(segment).sort().map((k) => k + '=' + segment[k]).join('&');
   const src = (q.get('s') || '').slice(0, 20);
   // מזהה אקראי של המכשיר (לא טביעת אצבע), נשלח לשרת רק להגנה מניצול לרעה של הצ'אט
   const DEVKEY = 'floa_chat_dev';
@@ -31,7 +33,7 @@
       const r = await fetch(ENDPOINT, {
         method: 'POST', signal: ctl.signal,
         headers: { 'Content-Type': 'application/json', apikey: SB.anonKey, Authorization: 'Bearer ' + SB.anonKey },
-        body: JSON.stringify({ business, mode: 'opening', session, pain: cid, gender, ad: cid, src, device }),
+        body: JSON.stringify({ business, mode: 'opening', session, pain: cid, segment, ad: cid, src, device }),
       });
       const d = await r.json().catch(() => ({}));
       return r.ok && Array.isArray(d.messages) ? { messages: d.messages.map(String).filter(Boolean).slice(0, 3), chips: Array.isArray(d.chips) ? d.chips.map(String) : [], state: d.state || null } : null;
@@ -106,7 +108,7 @@
         const r = await fetch(ENDPOINT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', apikey: SB.anonKey, Authorization: 'Bearer ' + SB.anonKey },
-          body: JSON.stringify({ business, pain: cid, gender, ad: cid, state: st.state || null, prevOffer: lastChips().offer, prevChips: lastChips().shown, chipClicked: lastChips().clicked, session: st.session, messages: st.msgs.map((m) => ({ role: m.role, content: m.content })), ad: cid, adText: openerInfo.ad, opening: openerInfo.opening.join('\n'), src, device }),
+          body: JSON.stringify({ business, pain: cid, segment, ad: cid, state: st.state || null, prevOffer: lastChips().offer, prevChips: lastChips().shown, chipClicked: lastChips().clicked, session: st.session, messages: st.msgs.map((m) => ({ role: m.role, content: m.content })), ad: cid, adText: openerInfo.ad, opening: openerInfo.opening.join('\n'), src, device }),
         });
         const d = await r.json().catch(() => ({}));
         if (!r.ok && !d.reply) throw new Error(String(r.status));
@@ -146,7 +148,7 @@
     (async () => {
       openerInfo = await loadOpener(cfg);
       let saved = null; try { saved = JSON.parse(sessionStorage.getItem(KEY) || 'null'); } catch (e) {}
-      st = saved && saved.c === cid + '|' + gender && Array.isArray(saved.msgs) ? saved : { c: cid + '|' + gender, session: uuid(), msgs: [] };
+      st = saved && saved.c === cid + '|' + segKey && Array.isArray(saved.msgs) ? saved : { c: cid + '|' + segKey, session: uuid(), msgs: [] };
       if (!st.msgs.length) {
         // הפתיחה נכתבת על ידי הבוט (ולומדת מפתיחות קודמות). בזמן ההמתנה מחוון הקלדה; אם השרת לא עונה בזמן, פתיחה קבועה מ-openers.json
         who(); const t = typing(); const t0 = Date.now();

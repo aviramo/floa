@@ -47,7 +47,8 @@ assert.equal(checkSegment({ age: 45 }, dims).length, 1);
 {
   const a = campaignId(), b = campaignId();
   assert.ok(validCampaignId(a) && a !== b && a.length === 7);
-  assert.equal(campaignLink("harpatka", "stress_overload", "female"), "https://chatbot.floa.co.il/harpatka?pain=stress_overload&gender=female");
+  assert.equal(campaignLink("harpatka", "stress_overload", { gender: "female" }), "https://chatbot.floa.co.il/harpatka?pain=stress_overload&gender=female");
+  assert.equal(campaignLink("harpatka", "lost_joy", { gender: "male", age: "40" }), "https://chatbot.floa.co.il/harpatka?pain=lost_joy&age=40&gender=male", "a new dimension is just one more parameter");
   assert.ok(!validCampaignId("a b") && !validCampaignId("") && !validCampaignId("x".repeat(60)));
 }
 

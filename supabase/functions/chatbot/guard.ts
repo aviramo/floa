@@ -59,3 +59,15 @@ export const campaignKey = (pain: unknown, gender: unknown) => {
   const p = String(pain ?? '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   return p ? p + '-' + (gender === 'female' ? 'women' : gender === 'male' ? 'men' : 'all') : '';
 };
+
+// The segment a link carries: one separate parameter per dimension. Only plain keys and values, a handful at most; what no campaign
+// matches simply finds no campaign. The browser can only choose among campaigns that exist.
+export function parseSegment(raw: unknown): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>).slice(0, 8)) {
+    const key = String(k).toLowerCase(), val = String(v ?? '').trim().toLowerCase();
+    if (/^[a-z][a-z0-9_]{0,29}$/.test(key) && /^[a-z0-9_-]{1,30}$/.test(val) && Object.keys(out).length < 5) out[key] = val;
+  }
+  return out;
+}

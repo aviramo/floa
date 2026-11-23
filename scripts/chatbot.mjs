@@ -115,22 +115,22 @@ async function main() {
       const creative = flags.ad ? { ad: String(flags.ad) } : {};
       sql(`insert into chatbot.campaigns (id, business, journey_type, topic_id, segment_filters, status, creative, note)
            values (${dollar(id)}, ${dollar(business)}, 'pain', ${topic ? dollar(topic) : "null"}, ${lit(seg)}::jsonb, 'draft', ${lit(creative)}::jsonb, ${flags.note ? dollar(String(flags.note)) : "null"})`);
-      console.log(`נוצרה טיוטת קמפיין ${id}. להפעלה: node scripts/chatbot.mjs campaign activate ${id}\nהקישור: ${campaignLink(business, topic ?? "", seg.gender ?? "")}`);
+      console.log(`נוצרה טיוטת קמפיין ${id}. להפעלה: node scripts/chatbot.mjs campaign activate ${id}\nהקישור: ${campaignLink(business, topic ?? "", seg)}`);
       return;
     }
     if (sub === "activate" || sub === "pause") {
       const id = pos[0] ?? fail("usage: campaign " + sub + " <id>");
-      const out = sql(`update chatbot.campaigns set status = ${dollar(sub === "activate" ? "active" : "paused")} where id = ${dollar(id)} returning id, business, topic_id, segment_filters->>'gender' as gender`);
+      const out = sql(`update chatbot.campaigns set status = ${dollar(sub === "activate" ? "active" : "paused")} where id = ${dollar(id)} returning id, business, topic_id, segment_filters`);
       if (!out.length) fail("קמפיין לא נמצא");
-      return console.log(sub === "activate" ? `פעיל. הקישור: ${campaignLink(out[0].business, out[0].topic_id, out[0].gender)}` : "הושהה. הנתונים נשמרו.");
+      return console.log(sub === "activate" ? `פעיל. הקישור: ${campaignLink(out[0].business, out[0].topic_id, out[0].segment_filters)}` : "הושהה. הנתונים נשמרו.");
     }
     if (sub === "list") return table(sql("select id, business, topic_id, segment_filters::text as segment, status, creative->>'ad' as ad from chatbot.campaigns order by created_at desc"));
   }
 
   if (cmd === "links") {
     const where = flags.business ? `and business = ${dollar(String(flags.business))}` : "";
-    const rows = sql(`select id, business, topic_id, segment_filters->>'gender' as gender, segment_filters::text as segment, creative->>'ad' as ad from chatbot.campaigns where status = 'active' ${where} order by business, topic_id, gender`);
-    return console.log(rows.length ? rows.map((r) => `${campaignLink(r.business, r.topic_id, r.gender)}\n   נושא: ${r.topic_id ?? "-"}  פילוח: ${r.segment}${r.ad ? `  מודעה: ${r.ad}` : ""}`).join("\n") : "אין קמפיינים פעילים.");
+    const rows = sql(`select id, business, topic_id, segment_filters, segment_filters::text as segment, creative->>'ad' as ad from chatbot.campaigns where status = 'active' ${where} order by business, topic_id, segment`);
+    return console.log(rows.length ? rows.map((r) => `${campaignLink(r.business, r.topic_id, r.segment_filters)}\n   נושא: ${r.topic_id ?? "-"}  פילוח: ${r.segment}${r.ad ? `  מודעה: ${r.ad}` : ""}`).join("\n") : "אין קמפיינים פעילים.");
   }
 
   fail("פקודה לא מוכרת. ראו את ההערה בראש הקובץ.");

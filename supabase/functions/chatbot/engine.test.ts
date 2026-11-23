@@ -78,7 +78,7 @@ Deno.test('opening task names the business bot and keeps the meeting out of the 
   if (!t.includes(harpatka.botName) || !t.includes('אין להזכיר בפתיחה מפגש')) throw new Error(t);
 });
 
-import { campaignKey, distressIn, neutralize, stripGreeting, toSingular } from './guard.ts';
+import { campaignKey, distressIn, neutralize, parseSegment, stripGreeting, toSingular } from './guard.ts';
 Deno.test('distress net catches plain phrasings and not ordinary talk', () => {
   for (const t of ['אני חושבת על למות', 'לפעמים אני חושבת שעדיף שלא אהיה פה', 'רוצה למות', 'אין טעם לחיות']) if (!distressIn(t)) throw new Error('missed: ' + t);
   for (const t of ['הייתי רוצה להרגיש חלק ממשהו', 'מתי המפגש הקרוב?', 'מת מצחוק', 'עייפה ולא ישנה']) if (distressIn(t)) throw new Error('false alarm: ' + t);
@@ -146,4 +146,13 @@ Deno.test('a link names its campaign by two readable parameters', () => {
   eq(campaignKey('loneliness', ''), 'loneliness-all', 'no gender');
   eq(campaignKey('', 'female'), '', 'no pain means no campaign');
   eq(campaignKey('../../x y', 'male'), 'x-y-men', 'junk is flattened to a safe key');
+});
+
+Deno.test('the segment of a link is one separate parameter per dimension, safely parsed', () => {
+  eq(parseSegment({ gender: 'Female' }), { gender: 'female' }, 'gender');
+  eq(parseSegment({ gender: 'male', age: '40' }), { gender: 'male', age: '40' }, 'a second dimension');
+  eq(parseSegment({ 'bad key!': 'x', gender: 'male; drop' }), {}, 'junk dropped');
+  eq(parseSegment(null), {}, 'null');
+  eq(parseSegment(['a']), {}, 'array');
+  eq(Object.keys(parseSegment({ a: '1', b: '1', c: '1', d: '1', e: '1', f: '1' })).length, 5, 'capped');
 });
