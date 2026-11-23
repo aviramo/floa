@@ -78,7 +78,7 @@ Deno.test('opening task names the business bot and keeps the meeting out of the 
   if (!t.includes(harpatka.botName) || !t.includes('אפשר להזכיר שמדובר בערב תנועה')) throw new Error(t);
 });
 
-import { assertsCondition, campaignKey, conditionFix, distressIn, genderFix, neutralize, parseSegment, pluralAddress, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 Deno.test('distress net catches plain phrasings and not ordinary talk', () => {
   for (const t of ['אני חושבת על למות', 'לפעמים אני חושבת שעדיף שלא אהיה פה', 'רוצה למות', 'אין טעם לחיות']) if (!distressIn(t)) throw new Error('missed: ' + t);
   for (const t of ['הייתי רוצה להרגיש חלק ממשהו', 'מתי המפגש הקרוב?', 'מת מצחוק', 'עייפה ולא ישנה']) if (distressIn(t)) throw new Error('false alarm: ' + t);
@@ -194,4 +194,19 @@ Deno.test('a quick reply with a doubled word is dropped, and an opening that sta
   for (const s of ['נשמע שיש משהו שמלחיץ אותך כבר זמן', 'נראה שאתה סובל', 'כנראה שקשה לך']) if (!assertsCondition(s)) throw new Error('missed: ' + s);
   for (const s of ['ראית את המודעה על לחץ בעבודה. מה הביא אותך לחפש משהו כזה?', 'נראה לי שזה מתאים']) if (assertsCondition(s)) throw new Error('false alarm: ' + s);
   if (!conditionFix.includes('אין להצהיר על מצבו')) throw new Error('fix text');
+});
+
+Deno.test('the evening is offered after a bridge the visitor reacted to, never straight after one-word answers', () => {
+  const base = { turns: 3, lastUser: 'רגועה', prevDone: ['connect', 'desire'], prevReadiness: 'connecting' };
+  eq(pitchAllowed(base), false, 'quiet, then calm: first the bridge');
+  eq(pitchAllowed({ ...base, prevDone: ['connect', 'desire', 'bridge'] }), true, 'the bridge was made');
+  eq(pitchAllowed({ ...base, lastUser: 'כן, מתחבר לי' }), true, 'reacted yes');
+  eq(pitchAllowed({ ...base, lastUser: 'מתי זה ובכמה?' }), true, 'asked');
+  eq(pitchAllowed({ ...base, lastUser: 'קשה לי לדבר על זה' }), true, 'rather not talk: invite at once');
+  eq(pitchAllowed({ ...base, turns: 4 }), true, 'fourth message');
+  eq(putsEveningOnTable('יש מפגש ביום רביעי, 2.12, בשעה 20:30. המחיר 80 ש"ח'), true, 'date and price');
+  eq(putsEveningOnTable('שקט זה בדיוק מה שמחפשים, ואיך זה נשמע לך?'), false, 'a bridge');
+  if (!earlyPitchFix.includes('בלי תאריך, מחיר או קישור')) throw new Error('fix text');
+  const s = stableSystem(harpatka, PAIN_JOURNEY);
+  for (const needle of ['לא קופצים להצעה', 'הודעה אחת מחברת', 'אסור בהודעה אחת גם לחבר']) if (!s.includes(needle)) throw new Error('missing ' + needle);
 });

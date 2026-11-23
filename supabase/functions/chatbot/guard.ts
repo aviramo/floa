@@ -1,3 +1,4 @@
+import { classifyReply } from './parse.ts';
 // Server-side safety nets that do not depend on the model obeying the prompt (the model is small and fast: Haiku).
 
 // Priority one of the spec: severe distress stops the marketing path. The model is told to do this, and this check is the
@@ -88,3 +89,15 @@ export const repeatedWord = (t: string) => /(^|\s)([א-ת]{2,})\s+\2(?![א-ת])/
 const CONDITION = new RegExp(`${L}(נשמע ש|נשמע לי ש|נראה ש|כנראה ש|סובל|סובלת|מרגיש ש|מרגישה ש)`);
 export const assertsCondition = (t: string) => CONDITION.test(String(t ?? ''));
 export const conditionFix = '## תיקון: אין להצהיר על מצבו\nהטיוטה הצהירה על מצבו של האדם (״נשמע ש...״, ״נראה ש...״). כתבו שוב בלי שום הצהרה על מצבו או על מה שהוא מרגיש: רק שראה מודעה בנושא, ושאלה אחת על מה הביא אותו.';
+
+// Date and price in a reply means the evening was put on the table.
+export const putsEveningOnTable = (reply: string) => /\d{1,2}\.\d{1,2}/.test(String(reply ?? '')) && /(בשעה|ש"ח)/.test(String(reply ?? ''));
+
+// The evening is offered after a bridge the visitor reacted to, or when they ask, or when they would rather not talk, or by their fourth message.
+// A reply that offers it earlier is asked again once. Never a jump from "I want quiet" straight to a date and a price.
+export function pitchAllowed(a: { turns: number; lastUser: string; prevDone: string[]; prevReadiness: string }): boolean {
+  const asked = /(מתי|כמה|מחיר|עולה|הרשמ|נרשמ|קישור|איפה|תאריך|פרטים|לשלוח)/.test(a.lastUser);
+  const reluctant = /(קשה לי לדבר|לא רוצה לדבר|לא בא לי לדבר|אין לי כוח לדבר)/.test(a.lastUser) || a.prevReadiness === 'not_now';
+  return a.turns >= 4 || asked || reluctant || a.prevDone.includes('bridge') || a.prevDone.includes('curiosity') || classifyReply(a.lastUser) === 'yes';
+}
+export const earlyPitchFix = '## הצעה מוקדמת מדי\nהטיוטה הציגה את פרטי הערב לפני שהאדם הגיב לחיבור. כתבו שוב: משפט אחד שמקשר את מה שהאדם אמר לערב, ושאלה אחת אם זה מתחבר לו. בלי תאריך, מחיר או קישור.';

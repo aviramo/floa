@@ -5,7 +5,7 @@ import type { JourneyDef, Milestone } from './types.ts';
 export const PAIN_JOURNEY: JourneyDef = {
   type: 'pain',
   version: 1,
-  targetBotMessages: 4,
+  targetBotMessages: 5,
   milestones: [
     {
       id: 'connect', title: 'חיבור והזדהות',
@@ -31,7 +31,7 @@ export const PAIN_JOURNEY: JourneyDef = {
       id: 'bridge', title: 'חיבור לפתרון',
       goal: 'ליצור חיבור הגיוני בין מה שהוא מחפש לבין חוויה שמפגש תנועה יכול להציע, ברצון שלו ובמילים שלו.',
       learn: ['האם החיבור מדבר אליו'],
-      doneWhen: 'נוצר קשר אמין וברור בין הצורך האישי לאפשרות. אין צורך בהתלהבות. אם אין התאמה אמיתית בין מה שהוא מחפש לבין מה שהמפגש נותן, לא כופים: מכירים בכך ועוברים לסיום מכבד.',
+      doneWhen: 'נוצר קשר אמין וברור בין הצורך האישי לאפשרות, והאדם הגיב לחיבור (מתחבר, שואל או אומר שלא). אין צורך בהתלהבות. אם אין התאמה אמיתית בין מה שהוא מחפש לבין מה שהמפגש נותן, לא כופים: מכירים בכך ועוברים לסיום מכבד.',
     },
     {
       id: 'curiosity', title: 'סקרנות וביטחון',
@@ -61,5 +61,5 @@ export function journeyOf(row: { journey_type: string; version: number; definiti
     doneWhen: String(m.doneWhen), skipWhen: m.skipWhen ? String(m.skipWhen) : undefined,
   })) : [];
   if (!row || !ms.length) return PAIN_JOURNEY;
-  return { type: row.journey_type, version: row.version, milestones: ms, targetBotMessages: Number(d.targetBotMessages) || 4 };
+  return { type: row.journey_type, version: row.version, milestones: ms, targetBotMessages: Number(d.targetBotMessages) || 5 };
 }

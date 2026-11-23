@@ -8,7 +8,7 @@ import { buildMessages, MAX_USER_TURNS, parse, parseOpening, quoteSafe } from '.
 import { BUSINESSES } from './businesses/index.ts';
 import { journeyOf } from './journey.ts';
 import { openingTask, sessionFacts, stableSystem, stateBlock, addressOf, turnReminder } from './prompt.ts';
-import { assertsCondition, campaignKey, conditionFix, distressIn, genderFix, neutralize, parseSegment, pluralAddress, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 import { ctaFor, ctasOf, diffEvents, extractState, initialState, linkGender, mergeState, stateFromClient } from './state.ts';
 import type { CampaignContext, JourneyBusiness, SessionState } from './types.ts';
 
@@ -191,8 +191,12 @@ Deno.serve(async (req) => {
   if (raw === null) return json(b, origin, { error: 'upstream' }, 502);
   let { text, state: incoming } = extractState(raw);
   let parsed = parse(text);
-  if (address !== 'plural' && pluralAddress(parsed.reply)) {   // the reply still speaks to a woman or a man in the plural: one more try, told exactly why
-    const raw2 = await claude(apiKey, model, [...system, { type: 'text', text: genderFix(address) }], merged, 800);
+  // One more try, told exactly why, when the reply still speaks to a woman or a man in the plural, or offers the evening before the visitor reacted to the bridge
+  const replyFixes: { type: string; text: string }[] = [];
+  if (address !== 'plural' && pluralAddress(parsed.reply)) replyFixes.push({ type: 'text', text: genderFix(address) });
+  if (!distress && putsEveningOnTable(parsed.reply) && !pitchAllowed({ turns, lastUser, prevDone: prev.done, prevReadiness: prev.readiness })) replyFixes.push({ type: 'text', text: earlyPitchFix });
+  if (replyFixes.length) {
+    const raw2 = await claude(apiKey, model, [...system, ...replyFixes], merged, 800);
     if (raw2) { const o2 = extractState(raw2), p2 = parse(o2.text); if (p2.reply) { text = o2.text; incoming = o2.state; parsed = p2; } }
   }
   let chips = parsed.chips.filter((c) => !c.includes('/') && !repeatedWord(c));
@@ -208,7 +212,7 @@ Deno.serve(async (req) => {
   // Registrations are the point of the paid ad: the page offers the evening from the third message of the visitor, or at once when the reply itself
   // gives the date and the price, unless the visitor ended it or said no
   const putsTheEveningOnTheTable = /\d{1,2}\.\d{1,2}/.test(reply) && /(בשעה|ש"ח)/.test(reply);
-  if (!cta && facts && (turns >= 3 || putsTheEveningOnTheTable) && !['end', 'safety'].includes(next.action) && next.readiness !== 'not_fit') cta = 'register';
+  if (!cta && facts && (turns >= 4 || putsTheEveningOnTheTable) && !['end', 'safety'].includes(next.action) && next.readiness !== 'not_fit') cta = 'register';
 
   persist(b, session, src, campaignId, [...clean, { role: 'assistant', content: reply }], cta, next, diffEvents(prev, next));
   return json(b, origin, { reply, chips, cta, ctas: ctasOf(cta as any, !!facts), state: next, hasFacts: !!facts, hasMeeting: !!facts });
