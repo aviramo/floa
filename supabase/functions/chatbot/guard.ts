@@ -47,7 +47,7 @@ export function toSingular(text: string, gender: 'female' | 'male'): string {
     [new RegExp(`${L}([ושכ]{0,2})עליכם${R}`, 'g'), '$1עליך'],
     [new RegExp(`${L}([ושכ]{0,2})בכם${R}`, 'g'), '$1בך'],
     [new RegExp(`${L}([ושכ]{0,2})מכם${R}`, 'g'), '$1ממך'],
-    [new RegExp(`${L}([א-ת]{2,}?)תם${R}`, 'g'), '$1ת'],    // ראיתם, לחצתם, קראתם, הגעתם
+    [new RegExp(`${L}([ושכ]{0,2})אליכם${R}`, 'g'), '$1אליך'],
   ];
   let t = String(text ?? '');
   for (const [re, to] of pairs) t = t.replace(re, to);
@@ -71,3 +71,10 @@ export function parseSegment(raw: unknown): Record<string, string> {
   }
   return out;
 }
+
+// Does a reply to a woman or a man still speak to them in the plural? A conservative list of explicit markers: pronouns and common past forms.
+// The model is asked again when this fires, because rewriting the grammar around a plural word by pattern breaks ordinary words.
+const PLURAL = new RegExp(`${L}(אתם|אתכם|לכם|אליכם|שלכם|אצלכם|איתכם|עליכם|מכם|בכם|ראיתם|הייתם|לחצתם|קראתם|הגעתם|שמעתם|חשבתם|הרגשתם|רציתם|ניסיתם|בחרתם|עשיתם|אמרתם|מצאתם|חיפשתם|נכנסתם|התחלתם|החלטתם|שאלתם|ידעתם|עברתם|סיפרתם|הסתכלתם)${R}`);
+export const pluralAddress = (text: string) => PLURAL.test(String(text ?? ''));
+export const genderFix = (gender: 'female' | 'male') =>
+  '## תיקון לשון\nהטיוטה הקודמת פנתה ברבים. כתבו אותה מחדש בלשון ' + (gender === 'female' ? 'נקבה' : 'זכר') + ' יחיד בלבד: ״' + (gender === 'female' ? 'את' : 'אתה') + '״, ״לך״, ״אותך״, ״שלך״, בלי ״אתם״, ״לכם״, ״אליכם״ ובלי ריבוי בפעלים ובתארים כלפי האדם. אותו תוכן.';

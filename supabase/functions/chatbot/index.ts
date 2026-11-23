@@ -8,7 +8,7 @@ import { buildMessages, MAX_USER_TURNS, parse, parseOpening, quoteSafe } from '.
 import { BUSINESSES } from './businesses/index.ts';
 import { journeyOf } from './journey.ts';
 import { openingTask, sessionFacts, stableSystem, stateBlock, addressOf, turnReminder } from './prompt.ts';
-import { campaignKey, distressIn, neutralize, parseSegment, stripGreeting, toSingular } from './guard.ts';
+import { campaignKey, distressIn, genderFix, neutralize, parseSegment, pluralAddress, stripGreeting, toSingular } from './guard.ts';
 import { ctaFor, diffEvents, extractState, initialState, linkGender, mergeState, stateFromClient } from './state.ts';
 import type { CampaignContext, JourneyBusiness, SessionState } from './types.ts';
 
@@ -152,8 +152,14 @@ Deno.serve(async (req) => {
 
   // The opening is written by the bot: milestone one
   if (body.mode === 'opening') {
-    const raw = await claude(apiKey, model, [stable, { type: 'text', text: [sessionFacts(b, ctx, null, adText, addressOf(fromLink)), openingTask(b, adText, addressOf(fromLink), ctx.profile?.title ?? '')].join('\n\n') }], [{ role: 'user', content: 'התחילו.' }], 500);
-    const op = raw ? parseOpening(raw) : null;
+    const openSystem = [stable, { type: 'text', text: [sessionFacts(b, ctx, null, adText, addressOf(fromLink)), openingTask(b, adText, addressOf(fromLink), ctx.profile?.title ?? '')].join('\n\n') }];
+    let raw = await claude(apiKey, model, openSystem, [{ role: 'user', content: 'התחילו.' }], 500);
+    let op = raw ? parseOpening(raw) : null;
+    if (fromLink && op && op.messages.some(pluralAddress)) {   // a woman or a man was addressed in the plural: one more try, told exactly why
+      const raw2 = await claude(apiKey, model, [...openSystem, { type: 'text', text: genderFix(fromLink) }], [{ role: 'user', content: 'התחילו.' }], 500);
+      const op2 = raw2 ? parseOpening(raw2) : null;
+      if (op2 && op2.messages.length) op = op2;
+    }
     if (op) op.messages = op.messages.map((m) => fixAddress(neutralize(m), addressOf(fromLink)));
     if (op) op.chips = op.chips.filter((c) => !c.includes('/'));   // "לא יודע/ת" is gendered; the plain filter misses the slash form
     if (!op || !op.messages.length) return json(b, origin, { error: 'upstream' }, 502);
@@ -180,8 +186,12 @@ Deno.serve(async (req) => {
 
   const raw = await claude(apiKey, model, system, merged, 800);
   if (raw === null) return json(b, origin, { error: 'upstream' }, 502);
-  const { text, state: incoming } = extractState(raw);
-  const parsed = parse(text);
+  let { text, state: incoming } = extractState(raw);
+  let parsed = parse(text);
+  if (address !== 'plural' && pluralAddress(parsed.reply)) {   // the reply still speaks to a woman or a man in the plural: one more try, told exactly why
+    const raw2 = await claude(apiKey, model, [...system, { type: 'text', text: genderFix(address) }], merged, 800);
+    if (raw2) { const o2 = extractState(raw2), p2 = parse(o2.text); if (p2.reply) { text = o2.text; incoming = o2.state; parsed = p2; } }
+  }
   let chips = parsed.chips.filter((c) => !c.includes('/'));
   const reply = fixAddress(stripGreeting(neutralize(parsed.reply)), address);
   if (!reply) return json(b, origin, { error: 'empty' }, 502);
@@ -192,8 +202,10 @@ Deno.serve(async (req) => {
   let cta = ctaFor(next.action, !!facts);
   if (next.action === 'safety' || next.action === 'end') { cta = null; chips = []; }
   if (next.action === 'safety') cta = 'whatsapp';
-  // Registrations are the point of the paid ad: from the third message of the visitor the page always offers the evening, unless they ended it or said no
-  if (!cta && facts && turns >= 3 && !['end', 'safety'].includes(next.action) && next.readiness !== 'not_fit') cta = 'register';   // a person to talk to, never a conversion step
+  // Registrations are the point of the paid ad: the page offers the evening from the third message of the visitor, or at once when the reply itself
+  // gives the date and the price, unless the visitor ended it or said no
+  const putsTheEveningOnTheTable = /\d{1,2}\.\d{1,2}/.test(reply) && /(בשעה|ש"ח)/.test(reply);
+  if (!cta && facts && (turns >= 3 || putsTheEveningOnTheTable) && !['end', 'safety'].includes(next.action) && next.readiness !== 'not_fit') cta = 'register';
 
   persist(b, session, src, campaignId, [...clean, { role: 'assistant', content: reply }], cta, next, diffEvents(prev, next));
   return json(b, origin, { reply, chips, cta, state: next, hasFacts: !!facts, hasMeeting: !!facts });

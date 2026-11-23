@@ -78,7 +78,7 @@ Deno.test('opening task names the business bot and keeps the meeting out of the 
   if (!t.includes(harpatka.botName) || !t.includes('אפשר להזכיר שמדובר בערב תנועה')) throw new Error(t);
 });
 
-import { campaignKey, distressIn, neutralize, parseSegment, stripGreeting, toSingular } from './guard.ts';
+import { campaignKey, distressIn, genderFix, neutralize, parseSegment, pluralAddress, stripGreeting, toSingular } from './guard.ts';
 Deno.test('distress net catches plain phrasings and not ordinary talk', () => {
   for (const t of ['אני חושבת על למות', 'לפעמים אני חושבת שעדיף שלא אהיה פה', 'רוצה למות', 'אין טעם לחיות']) if (!distressIn(t)) throw new Error('missed: ' + t);
   for (const t of ['הייתי רוצה להרגיש חלק ממשהו', 'מתי המפגש הקרוב?', 'מת מצחוק', 'עייפה ולא ישנה']) if (distressIn(t)) throw new Error('false alarm: ' + t);
@@ -128,8 +128,8 @@ Deno.test('opening with no ad sentence leans on the pain topic of the campaign',
 });
 
 Deno.test('plural address is rewritten into the singular of the link gender; the bot is never a he or a she', () => {
-  eq(toSingular('ראיתם את המודעה, ואני שמח שאתם כאן. מה הביא אתכם? מה עלה לכם כשקראתם?', 'female'), 'ראית את המודעה, ואני שמח שאת כאן. מה הביא אותך? מה עלה לך כשקראת?', 'female singular');
-  eq(toSingular('שאתם כאן, לחצתם עליה', 'male'), 'שאתה כאן, לחצת עליה', 'male singular');
+  eq(toSingular('ראיתם את המודעה, ואני שמח שאתם כאן. מה הביא אתכם? מה עלה לכם?', 'female'), 'ראיתם את המודעה, ואני שמח שאת כאן. מה הביא אותך? מה עלה לך?', 'pronouns only');
+  eq(toSingular('שאתם כאן, סתם לחצתם עליה', 'male'), 'שאתה כאן, סתם לחצתם עליה', 'male pronoun, and the word סתם is left alone');
   eq(toSingular('נפגשים בקבוצה, נשמע טוב', 'female'), 'נפגשים בקבוצה, נשמע טוב', 'unrelated words untouched');
   eq(neutralize('ואני שמח שאתם כאן'), 'ושמחים שאתם כאן', 'bot joy is plural');
   eq(neutralize('אני שמחה לשמוע'), 'שמחים לשמוע', 'bot joy fem');
@@ -165,4 +165,10 @@ Deno.test('hardship is not an emergency: no hotline in the rules or the persona,
 Deno.test('the opening never quotes an ad that is not there', () => {
   const o = openingTask(harpatka, '', 'male', 'בדידות');
   if (!o.includes('אסור לכתוב ״המשפט במודעה״')) throw new Error(o);
+});
+
+Deno.test('plural address is detected by explicit markers only, so the model is asked again only when it really spoke to the plural', () => {
+  for (const s of ['יש מצב שמשהו בה דיבר אליכם', 'ראיתם את המודעה', 'מה הביא אתכם', 'שסתם הייתם סקרנים']) if (!pluralAddress(s)) throw new Error('missed: ' + s);
+  for (const s of ['סתם ערב נעים', 'אנשים מרגישים כך', 'ראית את המודעה, מה הביא אותך?', 'הייתי שמח']) if (pluralAddress(s)) throw new Error('false alarm: ' + s);
+  if (!genderFix('female').includes('נקבה') || !genderFix('male').includes('זכר')) throw new Error('fix text');
 });
