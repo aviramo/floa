@@ -133,6 +133,19 @@
       "icons": {
         "/favicon.svg": "/floa/assets/apps/roster.svg"
       }
+    },
+    {
+      "host": "chatbot.floa.co.il",
+      "project": "floa-site",
+      "enabled": true,
+      "folder": "chatbot/",
+      "clean": true,
+      "spa": true,
+      "devSpa": true,
+      "icons": {
+        "/favicon.ico": "favicon.ico",
+        "/apple-touch-icon.png": "apple-touch-icon.png"
+      }
     }
   ],
   "redirectOld": true,

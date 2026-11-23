@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="he" dir="rtl" class="pg-chat">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="robots" content="noindex, nofollow">
+<title>שיחה</title>
+<meta name="theme-color" content="#064452">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<script>
+/* The page is the same for every business: the address says whose bot this is.
+   chatbot.floa.co.il/<business>?pain=<ad> on the sub-domain, and /chatbot/<business> under floa.co.il or localhost. */
+(function () {
+  var sub = /^chatbot\./.test(location.hostname), parts = location.pathname.split('/').filter(Boolean);
+  var biz = (sub ? parts[0] : parts[1]) || '';
+  var base = sub ? '/' : '/' + (parts[0] || 'chatbot') + '/';
+  window.CHATBOT = { biz: /^[a-z0-9-]{1,40}$/.test(biz) ? biz : '', base: base };
+  document.write('<base href="' + base + '">');
+})();
+</script>
+<link rel="stylesheet" href="assets/chat.css?v=1">
+</head>
+<body>
+<main class="ch-app" id="chatRoot" aria-label="שיחה עם הבוט"></main>
+<script src="/supabase.js"></script>
+<script src="assets/chat.js?v=1"></script>
+<script>
+(async function () {
+  var root = document.getElementById('chatRoot'), biz = window.CHATBOT.biz;
+  if (!biz) { root.innerHTML = '<p class="ch-note">כתובת לא מוכרת</p>'; return; }
+  var cfg = null;
+  try { var r = await fetch('businesses/' + biz + '.json', { cache: 'no-cache' }); if (r.ok) cfg = await r.json(); } catch (e) {}
+  if (!cfg) { root.innerHTML = '<p class="ch-note">כתובת לא מוכרת</p>'; return; }
+  document.title = cfg.title;
+  var tc = document.querySelector('meta[name=theme-color]'); if (tc) tc.content = cfg.themeColor;
+  Object.keys(cfg.theme || {}).forEach(function (k) { document.documentElement.style.setProperty(k, cfg.theme[k]); });
+  if (cfg.fonts) { var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = cfg.fonts; document.head.appendChild(l); }
+  if (cfg.pixel) {
+    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', cfg.pixel); fbq('track', 'PageView');
+  }
+  root.setAttribute('aria-label', 'שיחה עם ' + cfg.botName);
+  FloaChat.init({ root: root, business: biz, cfg: cfg });
+})();
+</script>
+</body>
+</html>

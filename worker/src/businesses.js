@@ -34,6 +34,17 @@ export const BUSINESSES = {
     ],
     "pages": []
   },
+  "chatbot": {
+    "brand": "צ'אטבוט",
+    "to": "LEAD_TO",
+    "origins": [
+      "https://floa.co.il",
+      "https://www.floa.co.il",
+      "https://chatbot.floa.co.il",
+      "http://localhost:5173"
+    ],
+    "pages": []
+  },
   "chords": {
     "brand": "אקורדים",
     "to": "LEAD_TO",
