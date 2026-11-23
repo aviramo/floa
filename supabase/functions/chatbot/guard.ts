@@ -1,4 +1,3 @@
-import { classifyReply } from './parse.ts';
 // Server-side safety nets that do not depend on the model obeying the prompt (the model is small and fast: Haiku).
 
 // Priority one of the spec: severe distress stops the marketing path. The model is told to do this, and this check is the
@@ -96,8 +95,11 @@ export const putsEveningOnTable = (reply: string) => /\d{1,2}\.\d{1,2}/.test(Str
 // The evening is offered after a bridge the visitor reacted to, or when they ask, or when they would rather not talk, or by their fourth message.
 // A reply that offers it earlier is asked again once. Never a jump from "I want quiet" straight to a date and a price.
 export function pitchAllowed(a: { turns: number; lastUser: string; prevDone: string[]; prevReadiness: string }): boolean {
-  const asked = /(מתי|כמה|מחיר|עולה|הרשמ|נרשמ|קישור|איפה|תאריך|פרטים|לשלוח)/.test(a.lastUser);
-  return a.turns >= 4 || asked || a.prevDone.includes('bridge') || a.prevDone.includes('curiosity') || classifyReply(a.lastUser) === 'yes';
+  // Only an explicit question about the evening, or a conversation that really got through connect, desire and motivation (or a long one), opens the door.
+  // A "yes", a chip or a message count alone does not: the visitor learned from the ad about a pain, not about a meeting.
+  const asked = /(מתי (זה|המפגש|הערב|הבא)|כמה (זה )?עולה|מחיר|הרשמ|נרשמ|קישור|תאריך|איפה (זה|המפגש|הערב|מתקיים)|מה זה (מפגש|הערב|הפעילות)|על מה (המפגש|הערב))/.test(a.lastUser);
+  const gotThere = ['connect', 'desire', 'motivation'].every((d) => a.prevDone.includes(d)) || a.prevDone.includes('bridge');
+  return a.turns >= 6 || asked || gotThere;
 }
 export const earlyPitchFix = '## הצעה מוקדמת מדי\nהטיוטה הזכירה את הערב או המפגש לפני שהושלם החיבור. כתבו שוב בלי להזכיר את הערב, המפגש, תאריך, מחיר או קישור: התייחסות קצרה למה שהאדם אמר ושאלה אחת קלה על הנושא עצמו.';
 
