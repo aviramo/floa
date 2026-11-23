@@ -110,7 +110,9 @@ export function padChips(chips: string[], pool: string[], min = 3): string[] {
   return out;
 }
 export const OPENING_POOL = ['סתם סקרנות', 'קשה לי לדבר על זה', 'רוצה להבין קודם'];
-export const CHAT_POOL = ['כן, עוד פרטים', 'לא כרגע', 'יש לי שאלה'];
+export const CHAT_POOL = ['כן, עוד פרטים', 'לא כרגע', 'איך נרשמים'];
+// "I have a question" is a dead end: it asks the visitor to type, and the bot answers with a menu about the offer
+export const deadEndChip = (c: string) => /^(יש לי שאלה|שאלה|אני רוצה לשאול|רוצה לשאול)/.test(c.trim());
 // Before the offer is on the table the pool answers a plain question about the topic, never "more details" about something not yet presented
 export const TOPIC_POOL = ['כן', 'קצת', 'לא כל כך'];
 

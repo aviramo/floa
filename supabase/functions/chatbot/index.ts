@@ -8,7 +8,7 @@ import { buildMessages, MAX_USER_TURNS, parse, parseOpening, quoteSafe } from '.
 import { BUSINESSES } from './businesses/index.ts';
 import { journeyOf } from './journey.ts';
 import { openingTask, sessionFacts, stableSystem, stateBlock, addressOf, turnReminder } from './prompt.ts';
-import { TOPIC_POOL, offersUpdates, mentionsEvening, CHAT_POOL, OPENING_POOL, padChips, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { deadEndChip, TOPIC_POOL, offersUpdates, mentionsEvening, CHAT_POOL, OPENING_POOL, padChips, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 import { ctaFor, ctasOf, diffEvents, extractState, initialState, linkGender, mergeState, stateFromClient } from './state.ts';
 import type { CampaignContext, JourneyBusiness, SessionState } from './types.ts';
 
@@ -199,7 +199,9 @@ Deno.serve(async (req) => {
     const raw2 = await claude(apiKey, model, [...system, ...replyFixes], merged, 800);
     if (raw2) { const o2 = extractState(raw2), p2 = parse(o2.text); if (p2.reply) { text = o2.text; incoming = o2.state; parsed = p2; } }
   }
-  let chips = parsed.chips.filter((c) => !c.includes('/') && !repeatedWord(c));
+  const pitchOk = pitchAllowed({ turns, lastUser, prevDone: prev.done, prevReadiness: prev.readiness });
+  // Quick replies never name the evening or its people before the visitor may hear about them, and never offer "I have a question"
+  let chips = parsed.chips.filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && (pitchOk || !mentionsEvening(c)));
   const reply = fixAddress(stripGreeting(neutralize(parsed.reply)), address);
   if (!reply) return json(b, origin, { error: 'empty' }, 502);
 

@@ -78,7 +78,7 @@ Deno.test('opening task names the business bot and keeps the meeting out of the 
   if (!t.includes(harpatka.botName) || !t.includes('אפשר להזכיר שמדובר בערב תנועה')) throw new Error(t);
 });
 
-import { offersUpdates, mentionsEvening, padChips, CHAT_POOL, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { deadEndChip, offersUpdates, mentionsEvening, padChips, CHAT_POOL, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 Deno.test('distress net catches plain phrasings and not ordinary talk', () => {
   for (const t of ['אני חושבת על למות', 'לפעמים אני חושבת שעדיף שלא אהיה פה', 'רוצה למות', 'אין טעם לחיות']) if (!distressIn(t)) throw new Error('missed: ' + t);
   for (const t of ['הייתי רוצה להרגיש חלק ממשהו', 'מתי המפגש הקרוב?', 'מת מצחוק', 'עייפה ולא ישנה']) if (distressIn(t)) throw new Error('false alarm: ' + t);
@@ -218,7 +218,7 @@ Deno.test('the evening is offered after a bridge the visitor reacted to, never s
 
 Deno.test('quick replies are always at least three, without repeats', () => {
   eq(padChips([], CHAT_POOL).length, 3, 'none');
-  eq(padChips(['לא כרגע'], CHAT_POOL), ['לא כרגע', 'כן, עוד פרטים', 'יש לי שאלה'], 'one, no repeat');
+  eq(padChips(['לא כרגע'], CHAT_POOL), ['לא כרגע', 'כן, עוד פרטים', 'איך נרשמים'], 'one, no repeat');
   eq(padChips(['א', 'ב', 'ג', 'ד'], CHAT_POOL).length, 4, 'four stay');
 });
 
@@ -229,4 +229,10 @@ Deno.test('a reply that offers the updates group always carries the button', () 
 
 Deno.test('quick replies answer the last question of the message', () => {
   if (!stableSystem(harpatka, PAIN_JOURNEY).includes('תשובות אפשריות של האדם לשאלה האחרונה')) throw new Error('chips rule');
+});
+
+Deno.test('no dead-end quick reply', () => {
+  for (const s of ['יש לי שאלה', 'שאלה קטנה']) if (!deadEndChip(s)) throw new Error('missed ' + s);
+  for (const s of ['קצת', 'בעיקר בערבים']) if (deadEndChip(s)) throw new Error('false alarm ' + s);
+  if (CHAT_POOL.some(deadEndChip)) throw new Error('pool has a dead end');
 });
