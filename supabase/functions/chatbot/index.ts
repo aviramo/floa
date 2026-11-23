@@ -8,7 +8,7 @@ import { buildMessages, MAX_USER_TURNS, parse, parseOpening, quoteSafe } from '.
 import { BUSINESSES } from './businesses/index.ts';
 import { journeyOf } from './journey.ts';
 import { openingTask, sessionFacts, stableSystem, stateBlock, addressOf, turnReminder } from './prompt.ts';
-import { offersUpdates, mentionsEvening, CHAT_POOL, OPENING_POOL, padChips, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { TOPIC_POOL, offersUpdates, mentionsEvening, CHAT_POOL, OPENING_POOL, padChips, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 import { ctaFor, ctasOf, diffEvents, extractState, initialState, linkGender, mergeState, stateFromClient } from './state.ts';
 import type { CampaignContext, JourneyBusiness, SessionState } from './types.ts';
 
@@ -209,13 +209,13 @@ Deno.serve(async (req) => {
   let cta = ctaFor(next.action, !!facts);
   if (next.action === 'safety' || next.action === 'end') { cta = null; chips = []; }
   // Someone is never left with only a text box: when the model sent no quick replies, neutral ones are offered
-  else chips = padChips(chips, CHAT_POOL);
   if (next.action === 'safety') cta = 'whatsapp';
   // Registrations are the point of the paid ad: the page offers the evening from the third message of the visitor, or at once when the reply itself
   // gives the date and the price, unless the visitor ended it or said no
   const putsTheEveningOnTheTable = /\d{1,2}\.\d{1,2}/.test(reply) && /(בשעה|ש"ח)/.test(reply);
   // The link to the site appears only once the evening was actually put on the table (this reply or an earlier one), never before
   const eveningSeen = putsTheEveningOnTheTable || clean.some((m: any) => m.role === 'assistant' && /\d{1,2}\.\d{1,2}/.test(String(m.content)) && /(בשעה|ש"ח)/.test(String(m.content)));
+  if (next.action !== 'safety' && next.action !== 'end') chips = padChips(chips, eveningSeen ? CHAT_POOL : TOPIC_POOL);
   if (cta === 'register' && !eveningSeen) cta = null;
   if (!cta && offersUpdates(reply) && next.action !== 'safety') cta = 'updates';
   if (!cta && facts && putsTheEveningOnTheTable && !['end', 'safety'].includes(next.action) && next.readiness !== 'not_fit') cta = 'register';

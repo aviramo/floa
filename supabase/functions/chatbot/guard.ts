@@ -109,9 +109,11 @@ export function padChips(chips: string[], pool: string[], min = 3): string[] {
 }
 export const OPENING_POOL = ['סתם סקרנות', 'קשה לי לדבר על זה', 'רוצה להבין קודם'];
 export const CHAT_POOL = ['כן, עוד פרטים', 'לא כרגע', 'יש לי שאלה'];
+// Before the offer is on the table the pool answers a plain question about the topic, never "more details" about something not yet presented
+export const TOPIC_POOL = ['כן', 'קצת', 'לא כל כך'];
 
 // Any word about the evening itself (not only date and price): before the bridge it is a skipped milestone.
-export const mentionsEvening = (reply: string) => /(הערב|ערב (תנועה|כזה|שבו|התנסות)|מפגש|מפגשים|מפגשי|במוזיקה ובתנועה|בלי לדעת לרקוד|לא צריך לדעת לרקוד|להתנסות איתם)/.test(String(reply ?? ''));
+export const mentionsEvening = (reply: string) => /(הדר ואופיר|המנחים|הערב|ערב (תנועה|כזה|שבו|התנסות)|מפגש|מפגשים|מפגשי|במוזיקה ובתנועה|בלי לדעת לרקוד|לא צריך לדעת לרקוד|להתנסות איתם)/.test(String(reply ?? ''));
 
 // The reply offers the updates group in words: the button must be there too, whatever action the model reported.
 export const offersUpdates = (reply: string) => /קבוצת (ה)?עדכונים/.test(String(reply ?? ''));

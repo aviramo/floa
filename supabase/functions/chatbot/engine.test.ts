@@ -204,6 +204,7 @@ Deno.test('the evening is offered after a bridge the visitor reacted to, never s
   eq(pitchAllowed({ ...base, lastUser: 'מתי זה ובכמה?' }), true, 'asked');
   eq(pitchAllowed({ ...base, lastUser: 'קשה לי לדבר על זה' }), false, 'rather not talk: still no evening before the bridge');
   eq(mentionsEvening('יש ערב שבו לא צריך לדעת לרקוד'), true, 'evening mentioned');
+  eq(mentionsEvening('הדר ואופיר מוכנים לענות'), true, 'names before the offer');
   eq(mentionsEvening('לפעמים יש רצון לקשר. איך זה נראה אצלך?'), false, 'topic only');
   eq(pitchAllowed({ ...base, turns: 4 }), true, 'fourth message');
   eq(putsEveningOnTable('יש מפגש ביום רביעי, 2.12, בשעה 20:30. המחיר 80 ש"ח'), true, 'date and price');
