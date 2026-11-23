@@ -60,6 +60,13 @@ async function claude(apiKey: string, model: string, system: unknown[], messages
   } catch (e) { console.error('chat', e); return null; }
 }
 
+// The model gave fewer than three quick replies: ask once, in a short call, for answers to the last question of this very message.
+// A fixed list can never fit every question, so it is only the last resort.
+async function chipsFor(apiKey: string, model: string, reply: string): Promise<string[]> {
+  const raw = await claude(apiKey, model, [{ type: 'text', text: 'כותבים תשובות מוכנות לצ׳אט. עונים רק בשורה אחת: שלוש עד ארבע תשובות קצרות (עד ארבע מילים כל אחת), מופרדות ב-|. כל תשובה היא מה שאדם יכול לענות בדיוק על השאלה האחרונה בהודעה. בלי מגדר בגוף ראשון, בלי ״יש לי שאלה״, ובלי להזכיר מפגש, ערב או אנשים אלא אם ההודעה עצמה מזכירה אותם.' }], [{ role: 'user', content: 'ההודעה:\n' + reply }], 120);
+  return (raw ?? '').replace(/<[^>]*>/g, '').split(/[|\n]/).map((s) => s.trim().replace(/^[-•\d.\s]+/, '')).filter((s) => s && s.length <= 30);
+}
+
 const rpc = (name: string, args: Record<string, unknown>) =>
   fetch(SB_URL + '/rest/v1/rpc/' + name, { method: 'POST', headers: { apikey: SB_SERVICE, Authorization: 'Bearer ' + SB_SERVICE, 'Content-Type': 'application/json' }, body: JSON.stringify(args) });
 
@@ -217,7 +224,13 @@ Deno.serve(async (req) => {
   const putsTheEveningOnTheTable = /\d{1,2}\.\d{1,2}/.test(reply) && /(בשעה|ש"ח)/.test(reply);
   // The link to the site appears only once the evening was actually put on the table (this reply or an earlier one), never before
   const eveningSeen = putsTheEveningOnTheTable || clean.some((m: any) => m.role === 'assistant' && /\d{1,2}\.\d{1,2}/.test(String(m.content)) && /(בשעה|ש"ח)/.test(String(m.content)));
-  if (next.action !== 'safety' && next.action !== 'end') chips = padChips(chips, eveningSeen ? CHAT_POOL : TOPIC_POOL);
+  if (next.action !== 'safety' && next.action !== 'end') {
+    if (chips.length < 3) {
+      const extra = (await chipsFor(apiKey, model, reply)).filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && (pitchOk || !mentionsEvening(c)));
+      chips = [...new Set([...chips, ...extra])].slice(0, 4);
+    }
+    chips = padChips(chips, eveningSeen ? CHAT_POOL : TOPIC_POOL);   // last resort only
+  }
   if (cta === 'register' && !eveningSeen) cta = null;
   if (!cta && offersUpdates(reply) && next.action !== 'safety') cta = 'updates';
   if (!cta && facts && putsTheEveningOnTheTable && !['end', 'safety'].includes(next.action) && next.readiness !== 'not_fit') cta = 'register';
