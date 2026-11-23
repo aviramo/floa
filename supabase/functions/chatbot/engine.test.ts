@@ -1,4 +1,4 @@
-import { extractState, mergeState, diffEvents, ctaFor, initialState, stateFromClient } from './state.ts';
+import { extractState, mergeState, diffEvents, ctaFor, initialState, stateFromClient, linkGender } from './state.ts';
 import { journeyOf, PAIN_JOURNEY } from './journey.ts';
 import { stableSystem, sessionFacts, stateBlock, openingTask, addressOf, addressBlock, turnReminder } from './prompt.ts';
 import { harpatka } from './businesses/harpatka/index.ts';
@@ -91,13 +91,32 @@ Deno.test('neutralize rewrites the bot speaking about itself with a gender, and 
 });
 
 Deno.test('address follows the audience of the link: woman, man, or plural when the ad defined no gender', () => {
-  eq([addressOf({ gender: 'female' }), addressOf({ gender: 'male' }), addressOf({}), addressOf(null)], ['female', 'male', 'plural', 'plural'], 'addressOf');
+  eq([addressOf('female'), addressOf('male'), addressOf(null), addressOf(undefined)], ['female', 'male', 'plural', 'plural'], 'addressOf');
   if (!addressBlock('female').includes('נקבה יחידה') || !addressBlock('male').includes('זכר יחיד') || !addressBlock('plural').includes('רבים')) throw new Error('blocks');
-  const f = sessionFacts(harpatka, ctx({ campaign: { id: 'x', journey_type: 'pain', topic_id: null, segment_filters: { gender: 'female' }, creative: {} } }), null, '');
+  const f = sessionFacts(harpatka, ctx({ campaign: { id: 'x', journey_type: 'pain', topic_id: null, segment_filters: { gender: 'female' }, creative: {} } }), null, '', 'female');
   if (!f.includes('לשון נקבה יחידה')) throw new Error('session facts must carry the address block');
   for (const [a, needle] of [['female', 'אליה בלשון נקבה'], ['male', 'אליו בלשון זכר'], ['plural', 'לשון רבים בלבד']] as const) {
     const o = openingTask(harpatka, 'x', a);
     if (!o.includes(needle) || !o.includes('אין מגדר ואין רגש') || !o.includes('אין להזכיר בפתיחה מפגש')) throw new Error('opening ' + a);
   }
   if (!turnReminder('male').includes('זכר') || !turnReminder('plural').includes('<state>')) throw new Error('reminder');
+});
+
+Deno.test('gender is a saved parameter: from the link, kept, replaced only when the person reveals, never re-imposed by the link', () => {
+  eq([linkGender({ gender: 'female' }), linkGender({ gender: 'x' }), linkGender({}), linkGender(null)], ['female', null, null, null], 'linkGender');
+  const s0 = initialState(PAIN_JOURNEY, 'female');
+  eq([s0.gender, s0.genderSource], ['female', 'link'], 'from the link');
+  const same = mergeState(s0, { gender: 'female' }, PAIN_JOURNEY);
+  eq([same.gender, same.genderSource], ['female', 'link'], 'the model repeating it changes nothing');
+  const rev = mergeState(s0, { gender: 'male' }, PAIN_JOURNEY);
+  eq([rev.gender, rev.genderSource], ['male', 'visitor'], 'the person revealed otherwise');
+  eq(mergeState(s0, { gender: 'robot' }, PAIN_JOURNEY).gender, 'female', 'garbage ignored');
+  // the echo from the browser: a revealed gender survives the next request, an echoed plain value cannot override the link
+  const echoed = stateFromClient({ ...rev }, PAIN_JOURNEY, 'female');
+  eq([echoed.gender, echoed.genderSource], ['male', 'visitor'], 'revealed gender kept across requests');
+  const forged = stateFromClient({ gender: 'male', genderSource: 'link' }, PAIN_JOURNEY, 'female');
+  eq([forged.gender, forged.genderSource], ['female', 'link'], 'an echo claiming the link cannot change it');
+  eq(stateFromClient(null, PAIN_JOURNEY, null).gender, null, 'no gender: plural');
+  eq(diffEvents(s0, rev).map((e) => e.type).includes('gender_set'), true, 'gender_set event');
+  if (!stateBlock(rev, PAIN_JOURNEY, 0).includes('מגדר שמור: male')) throw new Error('model sees the saved gender');
 });

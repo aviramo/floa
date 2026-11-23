@@ -1,6 +1,6 @@
 // Builds what the model sees. Three layers, never mixed (spec 22.2): the persona of the business, the rules of the engine
 // with the journey of the campaign (stable, cached), and the facts of this session (state, research, live facts, insights).
-import type { CampaignContext, JourneyBusiness, JourneyDef, SessionState } from './types.ts';
+import type { CampaignContext, Gender, JourneyBusiness, JourneyDef, SessionState } from './types.ts';
 import { ACTIONS, READINESS } from './types.ts';
 
 const ENGINE_RULES = `## איך מנהלים את השיחה
@@ -47,7 +47,7 @@ register: קישור לאתר, למוכן להתנסות. updates: קבוצת ע
 ## פורמט התשובה
 בסוף כל הודעה, כל סימון בשורה משלו, והמערכת מסתירה אותם מהאדם:
 <chips>תשובה|תשובה|תשובה</chips> עד ארבע תשובות מוכנות של עד חמש מילים, כשהשאלה מתאימה לכך. שם עצם או ביטוי ניטרלי בלי גוף ראשון בלשון זכר או נקבה. אם השאלה אישית או פתוחה, בלי תשובות מוכנות.
-<state>{"milestone":"<id>","done":["<id>"],"readiness":"<${READINESS.join('|')}>","action":"<${ACTIONS.join('|')}>","learned":{"pain":"","desire":"","changeTrigger":"","coping":"","concerns":[]}}</state> חובה בכל הודעה, שורה אחת של JSON תקין. done: אבני הדרך שהושלמו עד עכשיו. learned: רק מה שהאדם אמר או אישר במילים שלו, ורק שדות שנוספו. בלי ניחושים ובלי השערות מהמחקר.`;
+<state>{"milestone":"<id>","done":["<id>"],"readiness":"<${READINESS.join('|')}>","action":"<${ACTIONS.join('|')}>","gender":"<female|male|null>","learned":{"pain":"","desire":"","changeTrigger":"","coping":"","concerns":[]}}</state> חובה בכל הודעה, שורה אחת של JSON תקין. done: אבני הדרך שהושלמו עד עכשיו. gender: המגדר השמור (מופיע בבלוק "מצב השיחה"). מעתיקים אותו כמו שהוא, ומשנים רק כשהאדם חושף במפורש או בבירור מגדר אחר. learned: רק מה שהאדם אמר או אישר במילים שלו, ורק שדות שנוספו. בלי ניחושים ובלי השערות מהמחקר.`;
 
 export function journeyBlock(j: JourneyDef): string {
   const lines = j.milestones.map((m, i) =>
@@ -65,17 +65,16 @@ export function stableSystem(b: JourneyBusiness<any>, j: JourneyDef): string {
 export function stateBlock(s: SessionState, j: JourneyDef, botMessages: number): string {
   const cur = j.milestones.find((m) => m.id === s.milestone) ?? j.milestones[0];
   const parts = [
-    `## מצב השיחה עד עכשיו\nאבן הדרך הנוכחית: ${cur.title} (${cur.id})\nהושלמו: ${s.done.join(', ') || 'עדיין אף אחת'}\nמוכנות משוערת: ${s.readiness}\nמה שהאדם אמר או אישר: ${JSON.stringify(s.learned)}`,
+    `## מצב השיחה עד עכשיו\nאבן הדרך הנוכחית: ${cur.title} (${cur.id})\nהושלמו: ${s.done.join(', ') || 'עדיין אף אחת'}\nמוכנות משוערת: ${s.readiness}\nמה שהאדם אמר או אישר: ${JSON.stringify(s.learned)}\nמגדר שמור: ${s.gender ?? 'לא ידוע'}${s.genderSource ? ` (${s.genderSource === 'link' ? 'מהקישור' : 'האדם עצמו אמר'})` : ''}`,
   ];
   if (botMessages >= j.targetBotMessages) parts.push('## אורך השיחה\nהשיחה כבר ארוכה מהיעד. אם אין התקדמות, הציעו בבירור קבלת פרטים, שיחה עם המנחים או סיום, ואל תמשיכו לשאול.');
   return parts.join('\n\n');
 }
 
-// The ad that brought the person targeted a defined audience, so the link tells us how to address them (the owner's rule).
-// What the person says about themselves later overrides it. With no gender in the campaign: plural until they reveal one.
+// How to address the person comes from the saved gender parameter of the session: set from the link (the ad targeted a defined audience,
+// the owner's rule), replaced only if the person reveals otherwise. With no gender: plural.
 export type Address = 'female' | 'male' | 'plural';
-export const addressOf = (segment: Record<string, unknown> | null | undefined): Address =>
-  segment?.gender === 'female' ? 'female' : segment?.gender === 'male' ? 'male' : 'plural';
+export const addressOf = (gender: Gender | undefined): Address => (gender === 'female' ? 'female' : gender === 'male' ? 'male' : 'plural');
 
 export function addressBlock(a: Address): string {
   const base = '## פנייה בלשון\n';
@@ -84,8 +83,8 @@ export function addressBlock(a: Address): string {
   return base + 'המודעה לא הגדירה מגדר, ולכן פונים בלשון רבים בלבד ("אתם", "לכם", "אתכם"), בלי "לך" ו"אותך". כשהאדם חושף מגדר בבירור, עוברים ללשונו.';
 }
 
-export function sessionFacts(b: JourneyBusiness<any>, ctx: CampaignContext, facts: unknown, adText: string): string {
-  const parts: string[] = [addressBlock(addressOf(ctx.campaign.segment_filters))];
+export function sessionFacts(b: JourneyBusiness<any>, ctx: CampaignContext, facts: unknown, adText: string, address: Address = 'plural'): string {
+  const parts: string[] = [addressBlock(address)];
   if (adText) parts.push(`## המודעה שהאדם ראה\nהמודעה שאליה לחץ היא: "${adText}"\nהשיחה כבר נפתחה בהתייחסות אליה, ולכן לא מצטטים אותה שוב.`);
   const hyp = ctx.hypothesis;
   if (ctx.profile) {

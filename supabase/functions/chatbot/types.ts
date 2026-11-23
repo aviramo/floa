@@ -21,6 +21,7 @@ export interface JourneyDef {
 export const READINESS = ['checking', 'connecting', 'open', 'interested', 'concerned', 'not_now', 'not_fit'] as const;
 export const ACTIONS = ['continue', 'deepen', 'skip', 'reroute', 'answer', 'register', 'updates', 'guide', 'end', 'safety'] as const;
 export type Readiness = typeof READINESS[number];
+export type Gender = 'female' | 'male' | null;
 export type Action = typeof ACTIONS[number];
 
 // What the engine learned about this visitor. Only what the visitor said or confirmed goes in `learned`;
@@ -39,6 +40,10 @@ export interface SessionState {
   readiness: Readiness;
   action: Action;
   learned: Learned;
+  // Saved parameter: how to address the person. Set from the link (the campaign's audience), kept for the whole conversation,
+  // and replaced only when the person reveals otherwise (then the source is 'visitor' and the link never overrides it again).
+  gender: Gender;
+  genderSource: 'link' | 'visitor' | null;
   meta?: { campaign: string; journeyType: string; topicId: string | null; segment: Record<string, unknown>; contentVersionId: string | null; journeyVersion: number };
 }
 

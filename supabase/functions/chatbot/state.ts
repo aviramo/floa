@@ -1,8 +1,13 @@
-import { ACTIONS, READINESS, type Action, type JourneyDef, type Readiness, type SessionState } from './types.ts';
+import { ACTIONS, READINESS, type Action, type Gender, type JourneyDef, type Readiness, type SessionState } from './types.ts';
 
 const cut = (v: unknown, n: number) => String(v ?? '').replace(/[\r\n]+/g, ' ').trim().slice(0, n);
 
-export const initialState = (j: JourneyDef): SessionState => ({ milestone: j.milestones[0].id, done: [], readiness: 'checking', action: 'continue', learned: {} });
+const asGender = (v: unknown): Gender => (v === 'female' || v === 'male' ? v : null);
+// The gender the link implies: the audience of the campaign (segment.gender), or none
+export const linkGender = (segment: Record<string, unknown> | null | undefined): Gender => asGender(segment?.gender);
+
+export const initialState = (j: JourneyDef, gender: Gender = null): SessionState =>
+  ({ milestone: j.milestones[0].id, done: [], readiness: 'checking', action: 'continue', learned: {}, gender, genderSource: gender ? 'link' : null });
 
 // The model returns <state>{...}</state> on every reply. Parsed and checked here: the model's word steers the
 // conversation, but a malformed or hostile value can never break a session or reach the database unbounded.
@@ -24,6 +29,9 @@ export function mergeState(prev: SessionState, incoming: Record<string, unknown>
   if (Array.isArray(incoming.done)) for (const d of incoming.done) if (typeof d === 'string' && ids.includes(d) && !next.done.includes(d)) next.done.push(d);
   if (READINESS.includes(incoming.readiness as Readiness)) next.readiness = incoming.readiness as Readiness;
   next.action = ACTIONS.includes(incoming.action as Action) ? incoming.action as Action : 'continue';
+  // The person revealed a gender: it replaces the one from the link and stays. The model repeating the current value changes nothing.
+  const g = asGender(incoming.gender);
+  if (g && g !== next.gender) { next.gender = g; next.genderSource = 'visitor'; }
   const l = incoming.learned as Record<string, unknown> | undefined;
   if (l && typeof l === 'object') {
     const set = (k: 'pain' | 'desire' | 'changeTrigger' | 'coping', v: unknown) => { const s = cut(v, 240); if (s) next.learned[k] = s; };
@@ -41,16 +49,23 @@ export function diffEvents(prev: SessionState, next: SessionState) {
   const ev: { type: string; milestone: string | null; data: Record<string, unknown> }[] = [];
   for (const d of next.done) if (!prev.done.includes(d)) ev.push({ type: 'milestone_done', milestone: d, data: {} });
   if ((next.learned.concerns?.length ?? 0) > (prev.learned.concerns?.length ?? 0)) ev.push({ type: 'concern', milestone: next.milestone, data: { count: next.learned.concerns!.length } });
+  if (next.gender !== prev.gender) ev.push({ type: 'gender_set', milestone: next.milestone, data: { gender: next.gender, source: next.genderSource } });
   if (next.readiness !== prev.readiness) ev.push({ type: 'readiness', milestone: next.milestone, data: { from: prev.readiness, to: next.readiness } });
   if (['register', 'updates', 'guide', 'end', 'safety'].includes(next.action)) ev.push({ type: 'action_' + next.action, milestone: next.milestone, data: {} });
   return ev;
 }
 
 // The visitor's state as echoed by the browser is only a hint: shape-checked against the journey, never trusted further
-export function stateFromClient(v: unknown, j: JourneyDef): SessionState {
-  const base = initialState(j);
+export function stateFromClient(v: unknown, j: JourneyDef, fromLink: Gender = null): SessionState {
+  const base = initialState(j, fromLink);
   if (!v || typeof v !== 'object') return base;
-  return mergeState(base, v as Record<string, unknown>, j);
+  const c = v as Record<string, unknown>;
+  const merged = mergeState({ ...base, gender: null, genderSource: null }, c, j);   // the echo's own gender is judged below, not by the link
+  // What the person revealed is kept; anything else is the link's, so an echoed value can never override the campaign by itself
+  const revealed = c.genderSource === 'visitor' ? asGender(c.gender) : null;
+  merged.gender = revealed ?? fromLink;
+  merged.genderSource = revealed ? 'visitor' : fromLink ? 'link' : null;
+  return merged;
 }
 
 // action -> the button the page shows. Registration needs a real meeting to register to.
