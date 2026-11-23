@@ -71,8 +71,8 @@ export function validateResearch(file, dims) {
 const flat = (v) => (Array.isArray(v) ? v.map(flat).join("; ") : v && typeof v === "object" ? Object.values(v).map(flat).join("; ") : String(v ?? ""));
 
 /* The short brief a session receives (spec 22.3: about 400-700 tokens, so roughly 1200-2400 Hebrew characters). */
-export function buildSummary(p, max = 2400) {
-  const order = ["description", "visible", "hidden", "why_hidden", "triggers_pain", "triggers_change", "triggers_trial", "coping", "effectiveness", "desires", "biodanza", "concerns", "grounding", "frequency", "exercises", "experiences"];
+export function buildSummary(p, max = 3200) {
+  const order = ["description", "frequency", "hidden", "visible", "why_hidden", "triggers_pain", "triggers_change", "triggers_trial", "experiences", "biodanza", "exercises", "concerns", "coping", "effectiveness", "desires", "grounding"];
   const parts = [];
   for (const k of order) {
     const v = flat(p.profile?.[k]).replace(/\s+/g, " ").trim();

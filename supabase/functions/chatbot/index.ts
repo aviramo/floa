@@ -137,7 +137,7 @@ Deno.serve(async (req) => {
 
   // The opening is written by the bot: milestone one
   if (body.mode === 'opening') {
-    const raw = await claude(apiKey, model, [stable, { type: 'text', text: [sessionFacts(b, ctx, null, adText, addressOf(fromLink)), openingTask(b, adText, addressOf(fromLink))].join('\n\n') }], [{ role: 'user', content: 'התחילו.' }], 500);
+    const raw = await claude(apiKey, model, [stable, { type: 'text', text: [sessionFacts(b, ctx, null, adText, addressOf(fromLink)), openingTask(b, adText, addressOf(fromLink), ctx.profile?.title ?? '')].join('\n\n') }], [{ role: 'user', content: 'התחילו.' }], 500);
     const op = raw ? parseOpening(raw) : null;
     if (op) op.chips = op.chips.filter((c) => !c.includes('/'));   // "לא יודע/ת" is gendered; the plain filter misses the slash form
     if (!op || !op.messages.length) return json(b, origin, { error: 'upstream' }, 502);

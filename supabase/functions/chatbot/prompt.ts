@@ -101,10 +101,10 @@ export function sessionFacts(b: JourneyBusiness<any>, ctx: CampaignContext, fact
   return parts.join('\n\n');
 }
 
-export function openingTask(b: JourneyBusiness<any>, adText: string, address: Address = 'plural'): string {
+export function openingTask(b: JourneyBusiness<any>, adText: string, address: Address = 'plural', topic = ''): string {
   const how = address === 'female' ? 'פונים אליה בלשון נקבה יחידה, בצורות שמסמנות נקבה בבירור ולא בצורות שזהות לשני המינים (את, מרגישה, מחפשת, שלך)' : address === 'male' ? 'פונים אליו בלשון זכר יחיד, בצורות שמסמנות זכר בבירור ולא בצורות שזהות לשני המינים (אתה, מרגיש, מחפש, שלך)' : 'פונים בלשון רבים בלבד (אתם, לכם, ראיתם, לחצתם) ולא "לך" או "אותך", כי עוד לא ידוע אם מדובר באישה או בגבר';
   return `## המשימה עכשיו: הודעת הפתיחה
-האדם הרגע לחץ על המודעה${adText ? ` ("${adText}")` : ''} ועוד לא כתב כלום. זו אבן הדרך הראשונה.
+האדם הרגע לחץ על המודעה${adText ? ` ("${adText}")` : topic ? ` שעסקה בנושא: ${topic}` : ''} ועוד לא כתב כלום. זו אבן הדרך הראשונה.
 - הודעה ראשונה: ברכה קצרה והצגה כ"${b.botName}". חם, ואימוג'י קטן אחד לכל היותר.
 - הודעה שנייה: נוגעת בנושא של המודעה במילים אנושיות ושלכם, בלי לצטט אותה מילה במילה, ומסתיימת בשאלה אחת פשוטה וקלה לענות עליה.
 - ${how}.

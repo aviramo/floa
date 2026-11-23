@@ -120,3 +120,9 @@ Deno.test('gender is a saved parameter: from the link, kept, replaced only when 
   eq(diffEvents(s0, rev).map((e) => e.type).includes('gender_set'), true, 'gender_set event');
   if (!stateBlock(rev, PAIN_JOURNEY, 0).includes('מגדר שמור: male')) throw new Error('model sees the saved gender');
 });
+
+Deno.test('opening with no ad sentence leans on the pain topic of the campaign', () => {
+  const o = openingTask(harpatka, '', 'female', 'נשים בזוגיות: שינה ועייפות');
+  if (!o.includes('שעסקה בנושא: נשים בזוגיות: שינה ועייפות')) throw new Error(o);
+  if (openingTask(harpatka, 'משפט', 'female', 'נושא').includes('שעסקה בנושא')) throw new Error('the ad sentence wins');
+});
