@@ -80,3 +80,11 @@ const PLURAL = new RegExp(`${L}(אתם|אתכם|לכם|אליכם|שלכם|אצ�
 export const pluralAddress = (text: string) => PLURAL.test(String(text ?? ''));
 export const genderFix = (gender: 'female' | 'male') =>
   '## תיקון לשון\nהטיוטה הקודמת פנתה ברבים. כתבו אותה מחדש בלשון ' + (gender === 'female' ? 'נקבה' : 'זכר') + ' יחיד בלבד: ״' + (gender === 'female' ? 'את' : 'אתה') + '״, ״לך״, ״אותך״, ״שלך״, בלי ״אתם״, ״לכם״, ״אליכם״ ובלי ריבוי בפעלים ובתארים כלפי האדם. אותו תוכן.';
+
+// A quick reply with the same word twice in a row ("יום יום עמוס מדי") reads like a typo even when the idiom is correct: dropped.
+export const repeatedWord = (t: string) => /(^|\s)([א-ת]{2,})\s+\2(?![א-ת])/.test(String(t ?? ''));
+
+// The opening is the first words a stranger reads: it must not state their condition ("נשמע שיש משהו שמלחיץ אותך"). The model is asked again when it does.
+const CONDITION = new RegExp(`${L}(נשמע ש|נשמע לי ש|נראה ש|כנראה ש|סובל|סובלת|מרגיש ש|מרגישה ש)`);
+export const assertsCondition = (t: string) => CONDITION.test(String(t ?? ''));
+export const conditionFix = '## תיקון: אין להצהיר על מצבו\nהטיוטה הצהירה על מצבו של האדם (״נשמע ש...״, ״נראה ש...״). כתבו שוב בלי שום הצהרה על מצבו או על מה שהוא מרגיש: רק שראה מודעה בנושא, ושאלה אחת על מה הביא אותו.';

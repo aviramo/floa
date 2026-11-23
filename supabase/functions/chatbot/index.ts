@@ -8,7 +8,7 @@ import { buildMessages, MAX_USER_TURNS, parse, parseOpening, quoteSafe } from '.
 import { BUSINESSES } from './businesses/index.ts';
 import { journeyOf } from './journey.ts';
 import { openingTask, sessionFacts, stableSystem, stateBlock, addressOf, turnReminder } from './prompt.ts';
-import { campaignKey, distressIn, genderFix, neutralize, parseSegment, pluralAddress, stripGreeting, toSingular } from './guard.ts';
+import { assertsCondition, campaignKey, conditionFix, distressIn, genderFix, neutralize, parseSegment, pluralAddress, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 import { ctaFor, ctasOf, diffEvents, extractState, initialState, linkGender, mergeState, stateFromClient } from './state.ts';
 import type { CampaignContext, JourneyBusiness, SessionState } from './types.ts';
 
@@ -155,13 +155,16 @@ Deno.serve(async (req) => {
     const openSystem = [stable, { type: 'text', text: [sessionFacts(b, ctx, null, adText, addressOf(fromLink)), openingTask(b, adText, addressOf(fromLink), ctx.profile?.title ?? '')].join('\n\n') }];
     let raw = await claude(apiKey, model, openSystem, [{ role: 'user', content: 'התחילו.' }], 500);
     let op = raw ? parseOpening(raw) : null;
-    if (fromLink && op && op.messages.some(pluralAddress)) {   // a woman or a man was addressed in the plural: one more try, told exactly why
-      const raw2 = await claude(apiKey, model, [...openSystem, { type: 'text', text: genderFix(fromLink) }], [{ role: 'user', content: 'התחילו.' }], 500);
+    const fixes: { type: string; text: string }[] = [];
+    if (fromLink && op && op.messages.some(pluralAddress)) fixes.push({ type: 'text', text: genderFix(fromLink) });   // a woman or a man was addressed in the plural
+    if (op && op.messages.some(assertsCondition)) fixes.push({ type: 'text', text: conditionFix });                   // the opening stated the visitor's condition
+    if (op && fixes.length) {   // one more try, told exactly why
+      const raw2 = await claude(apiKey, model, [...openSystem, ...fixes], [{ role: 'user', content: 'התחילו.' }], 500);
       const op2 = raw2 ? parseOpening(raw2) : null;
       if (op2 && op2.messages.length) op = op2;
     }
     if (op) op.messages = op.messages.map((m) => fixAddress(neutralize(m), addressOf(fromLink)));
-    if (op) op.chips = op.chips.filter((c) => !c.includes('/'));   // "לא יודע/ת" is gendered; the plain filter misses the slash form
+    if (op) op.chips = op.chips.filter((c) => !c.includes('/') && !repeatedWord(c));   // "לא יודע/ת" is gendered; the plain filter misses the slash form
     if (!op || !op.messages.length) return json(b, origin, { error: 'upstream' }, 502);
     const st: SessionState = { ...initialState(journey, fromLink), meta };
     persist(b, session, src, campaignId, op.messages.map((content) => ({ role: 'assistant', content })), null, st, []);
@@ -192,7 +195,7 @@ Deno.serve(async (req) => {
     const raw2 = await claude(apiKey, model, [...system, { type: 'text', text: genderFix(address) }], merged, 800);
     if (raw2) { const o2 = extractState(raw2), p2 = parse(o2.text); if (p2.reply) { text = o2.text; incoming = o2.state; parsed = p2; } }
   }
-  let chips = parsed.chips.filter((c) => !c.includes('/'));
+  let chips = parsed.chips.filter((c) => !c.includes('/') && !repeatedWord(c));
   const reply = fixAddress(stripGreeting(neutralize(parsed.reply)), address);
   if (!reply) return json(b, origin, { error: 'empty' }, 502);
 

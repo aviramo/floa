@@ -78,7 +78,7 @@ Deno.test('opening task names the business bot and keeps the meeting out of the 
   if (!t.includes(harpatka.botName) || !t.includes('אפשר להזכיר שמדובר בערב תנועה')) throw new Error(t);
 });
 
-import { campaignKey, distressIn, genderFix, neutralize, parseSegment, pluralAddress, stripGreeting, toSingular } from './guard.ts';
+import { assertsCondition, campaignKey, conditionFix, distressIn, genderFix, neutralize, parseSegment, pluralAddress, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 Deno.test('distress net catches plain phrasings and not ordinary talk', () => {
   for (const t of ['אני חושבת על למות', 'לפעמים אני חושבת שעדיף שלא אהיה פה', 'רוצה למות', 'אין טעם לחיות']) if (!distressIn(t)) throw new Error('missed: ' + t);
   for (const t of ['הייתי רוצה להרגיש חלק ממשהו', 'מתי המפגש הקרוב?', 'מת מצחוק', 'עייפה ולא ישנה']) if (distressIn(t)) throw new Error('false alarm: ' + t);
@@ -186,4 +186,12 @@ Deno.test('findings of the five conversations: the bot is never a he or a she in
   eq(ctasOf('register', true), ['register'], 'register');
   eq(ctasOf(null, true), [], 'none');
   if (!stableSystem(harpatka, PAIN_JOURNEY).includes('משפט אחד שמתאר את הערב')) throw new Error('curiosity rule');
+});
+
+Deno.test('a quick reply with a doubled word is dropped, and an opening that states the visitor condition is caught', () => {
+  for (const s of ['יום יום עמוס מדי', 'ממש ממש עייפים']) if (!repeatedWord(s)) throw new Error('missed: ' + s);
+  for (const s of ['יום עמוס מדי', 'סתם סקרנות', 'רוצה לנסות משהו חדש']) if (repeatedWord(s)) throw new Error('false alarm: ' + s);
+  for (const s of ['נשמע שיש משהו שמלחיץ אותך כבר זמן', 'נראה שאתה סובל', 'כנראה שקשה לך']) if (!assertsCondition(s)) throw new Error('missed: ' + s);
+  for (const s of ['ראית את המודעה על לחץ בעבודה. מה הביא אותך לחפש משהו כזה?', 'נראה לי שזה מתאים']) if (assertsCondition(s)) throw new Error('false alarm: ' + s);
+  if (!conditionFix.includes('אין להצהיר על מצבו')) throw new Error('fix text');
 });
