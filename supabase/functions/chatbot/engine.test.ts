@@ -78,7 +78,7 @@ Deno.test('opening task names the business bot and keeps the meeting out of the 
   if (!t.includes(harpatka.botName) || !t.includes('אפשר להזכיר שמדובר בערב תנועה')) throw new Error(t);
 });
 
-import { padChips, CHAT_POOL, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { mentionsEvening, padChips, CHAT_POOL, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 Deno.test('distress net catches plain phrasings and not ordinary talk', () => {
   for (const t of ['אני חושבת על למות', 'לפעמים אני חושבת שעדיף שלא אהיה פה', 'רוצה למות', 'אין טעם לחיות']) if (!distressIn(t)) throw new Error('missed: ' + t);
   for (const t of ['הייתי רוצה להרגיש חלק ממשהו', 'מתי המפגש הקרוב?', 'מת מצחוק', 'עייפה ולא ישנה']) if (distressIn(t)) throw new Error('false alarm: ' + t);
@@ -160,7 +160,7 @@ Deno.test('the segment of a link is one separate parameter per dimension, safely
 Deno.test('hardship is not an emergency: no hotline in the rules or the persona, the evening is the answer to a reluctant visitor', () => {
   const s = stableSystem(harpatka, PAIN_JOURNEY);
   if (s.includes('ער"ן') || s.includes('1201')) throw new Error('the hotline must not be in the stable prompt');
-  for (const needle of ['קשה לי לדבר על זה', 'אינו מצב חירום', 'הערב הקרוב', 'לא מניחים שהאדם סובל']) if (!s.includes(needle)) throw new Error('missing ' + needle);
+  for (const needle of ['קשה לי לדבר על זה', 'אינו מצב חירום', 'לא מניחים שהאדם סובל']) if (!s.includes(needle)) throw new Error('missing ' + needle);
 });
 Deno.test('the opening never quotes an ad that is not there', () => {
   const o = openingTask(harpatka, '', 'male', 'בדידות');
@@ -202,11 +202,13 @@ Deno.test('the evening is offered after a bridge the visitor reacted to, never s
   eq(pitchAllowed({ ...base, prevDone: ['connect', 'desire', 'bridge'] }), true, 'the bridge was made');
   eq(pitchAllowed({ ...base, lastUser: 'כן, מתחבר לי' }), true, 'reacted yes');
   eq(pitchAllowed({ ...base, lastUser: 'מתי זה ובכמה?' }), true, 'asked');
-  eq(pitchAllowed({ ...base, lastUser: 'קשה לי לדבר על זה' }), true, 'rather not talk: invite at once');
+  eq(pitchAllowed({ ...base, lastUser: 'קשה לי לדבר על זה' }), false, 'rather not talk: still no evening before the bridge');
+  eq(mentionsEvening('יש ערב שבו לא צריך לדעת לרקוד'), true, 'evening mentioned');
+  eq(mentionsEvening('לפעמים יש רצון לקשר. איך זה נראה אצלך?'), false, 'topic only');
   eq(pitchAllowed({ ...base, turns: 4 }), true, 'fourth message');
   eq(putsEveningOnTable('יש מפגש ביום רביעי, 2.12, בשעה 20:30. המחיר 80 ש"ח'), true, 'date and price');
   eq(putsEveningOnTable('שקט זה בדיוק מה שמחפשים, ואיך זה נשמע לך?'), false, 'a bridge');
-  if (!earlyPitchFix.includes('בלי תאריך, מחיר או קישור')) throw new Error('fix text');
+  if (!earlyPitchFix.includes('בלי להזכיר את הערב')) throw new Error('fix text');
   const s = stableSystem(harpatka, PAIN_JOURNEY);
   for (const needle of ['לא קופצים להצעה', 'הודעה אחת מחברת', 'אסור בהודעה אחת גם לחבר']) if (!s.includes(needle)) throw new Error('missing ' + needle);
 });

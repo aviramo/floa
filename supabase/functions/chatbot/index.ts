@@ -8,7 +8,7 @@ import { buildMessages, MAX_USER_TURNS, parse, parseOpening, quoteSafe } from '.
 import { BUSINESSES } from './businesses/index.ts';
 import { journeyOf } from './journey.ts';
 import { openingTask, sessionFacts, stableSystem, stateBlock, addressOf, turnReminder } from './prompt.ts';
-import { CHAT_POOL, OPENING_POOL, padChips, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { mentionsEvening, CHAT_POOL, OPENING_POOL, padChips, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 import { ctaFor, ctasOf, diffEvents, extractState, initialState, linkGender, mergeState, stateFromClient } from './state.ts';
 import type { CampaignContext, JourneyBusiness, SessionState } from './types.ts';
 
@@ -194,7 +194,7 @@ Deno.serve(async (req) => {
   // One more try, told exactly why, when the reply still speaks to a woman or a man in the plural, or offers the evening before the visitor reacted to the bridge
   const replyFixes: { type: string; text: string }[] = [];
   if (address !== 'plural' && pluralAddress(parsed.reply)) replyFixes.push({ type: 'text', text: genderFix(address) });
-  if (!distress && putsEveningOnTable(parsed.reply) && !pitchAllowed({ turns, lastUser, prevDone: prev.done, prevReadiness: prev.readiness })) replyFixes.push({ type: 'text', text: earlyPitchFix });
+  if (!distress && (putsEveningOnTable(parsed.reply) || mentionsEvening(parsed.reply)) && !pitchAllowed({ turns, lastUser, prevDone: prev.done, prevReadiness: prev.readiness })) replyFixes.push({ type: 'text', text: earlyPitchFix });
   if (replyFixes.length) {
     const raw2 = await claude(apiKey, model, [...system, ...replyFixes], merged, 800);
     if (raw2) { const o2 = extractState(raw2), p2 = parse(o2.text); if (p2.reply) { text = o2.text; incoming = o2.state; parsed = p2; } }

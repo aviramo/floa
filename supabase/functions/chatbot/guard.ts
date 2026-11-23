@@ -97,10 +97,9 @@ export const putsEveningOnTable = (reply: string) => /\d{1,2}\.\d{1,2}/.test(Str
 // A reply that offers it earlier is asked again once. Never a jump from "I want quiet" straight to a date and a price.
 export function pitchAllowed(a: { turns: number; lastUser: string; prevDone: string[]; prevReadiness: string }): boolean {
   const asked = /(מתי|כמה|מחיר|עולה|הרשמ|נרשמ|קישור|איפה|תאריך|פרטים|לשלוח)/.test(a.lastUser);
-  const reluctant = /(קשה לי לדבר|לא רוצה לדבר|לא בא לי לדבר|אין לי כוח לדבר)/.test(a.lastUser) || a.prevReadiness === 'not_now';
-  return a.turns >= 4 || asked || reluctant || a.prevDone.includes('bridge') || a.prevDone.includes('curiosity') || classifyReply(a.lastUser) === 'yes';
+  return a.turns >= 4 || asked || a.prevDone.includes('bridge') || a.prevDone.includes('curiosity') || classifyReply(a.lastUser) === 'yes';
 }
-export const earlyPitchFix = '## הצעה מוקדמת מדי\nהטיוטה הציגה את פרטי הערב לפני שהאדם הגיב לחיבור. כתבו שוב: משפט אחד שמקשר את מה שהאדם אמר לערב, ושאלה אחת אם זה מתחבר לו. בלי תאריך, מחיר או קישור.';
+export const earlyPitchFix = '## הצעה מוקדמת מדי\nהטיוטה הזכירה את הערב או המפגש לפני שהושלם החיבור. כתבו שוב בלי להזכיר את הערב, המפגש, תאריך, מחיר או קישור: התייחסות קצרה למה שהאדם אמר ושאלה אחת קלה על הנושא עצמו.';
 
 // Never one quick reply or none: at least three, topped up from a neutral pool without repeating what the model already offered.
 export function padChips(chips: string[], pool: string[], min = 3): string[] {
@@ -110,3 +109,6 @@ export function padChips(chips: string[], pool: string[], min = 3): string[] {
 }
 export const OPENING_POOL = ['סתם סקרנות', 'קשה לי לדבר על זה', 'רוצה להבין קודם'];
 export const CHAT_POOL = ['כן, עוד פרטים', 'לא כרגע', 'יש לי שאלה'];
+
+// Any word about the evening itself (not only date and price): before the bridge it is a skipped milestone.
+export const mentionsEvening = (reply: string) => /(הערב|ערב (תנועה|כזה|שבו|התנסות)|מפגש|מפגשים|מפגשי|במוזיקה ובתנועה|בלי לדעת לרקוד|לא צריך לדעת לרקוד|להתנסות איתם)/.test(String(reply ?? ''));
