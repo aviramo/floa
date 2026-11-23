@@ -1,6 +1,6 @@
 import { extractState, mergeState, diffEvents, ctaFor, initialState, stateFromClient } from './state.ts';
 import { journeyOf, PAIN_JOURNEY } from './journey.ts';
-import { stableSystem, sessionFacts, stateBlock, openingTask } from './prompt.ts';
+import { stableSystem, sessionFacts, stateBlock, openingTask, addressOf, addressBlock, turnReminder } from './prompt.ts';
 import { harpatka } from './businesses/harpatka/index.ts';
 import type { CampaignContext } from './types.ts';
 
@@ -90,9 +90,14 @@ Deno.test('neutralize rewrites the bot speaking about itself with a gender, and 
   eq(neutralize('את אמרת שאת מבינה'), 'את אמרת שאת מבינה', 'visitor words untouched');
 });
 
-import { TURN_REMINDER } from './prompt.ts';
-Deno.test('opening asks for plural address and no first-person feeling; every turn ends with the reminder', () => {
-  const t = openingTask(harpatka, 'x');
-  for (const needle of ['לשון רבים', 'נגע בי', 'אין להזכיר בפתיחה מפגש']) if (!t.includes(needle)) throw new Error('missing ' + needle);
-  if (!TURN_REMINDER.includes('<state>') || !TURN_REMINDER.includes('לשון רבים')) throw new Error('reminder');
+Deno.test('address follows the audience of the link: woman, man, or plural when the ad defined no gender', () => {
+  eq([addressOf({ gender: 'female' }), addressOf({ gender: 'male' }), addressOf({}), addressOf(null)], ['female', 'male', 'plural', 'plural'], 'addressOf');
+  if (!addressBlock('female').includes('נקבה יחידה') || !addressBlock('male').includes('זכר יחיד') || !addressBlock('plural').includes('רבים')) throw new Error('blocks');
+  const f = sessionFacts(harpatka, ctx({ campaign: { id: 'x', journey_type: 'pain', topic_id: null, segment_filters: { gender: 'female' }, creative: {} } }), null, '');
+  if (!f.includes('לשון נקבה יחידה')) throw new Error('session facts must carry the address block');
+  for (const [a, needle] of [['female', 'אליה בלשון נקבה'], ['male', 'אליו בלשון זכר'], ['plural', 'לשון רבים בלבד']] as const) {
+    const o = openingTask(harpatka, 'x', a);
+    if (!o.includes(needle) || !o.includes('אין מגדר ואין רגש') || !o.includes('אין להזכיר בפתיחה מפגש')) throw new Error('opening ' + a);
+  }
+  if (!turnReminder('male').includes('זכר') || !turnReminder('plural').includes('<state>')) throw new Error('reminder');
 });

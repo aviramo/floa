@@ -7,7 +7,7 @@
 import { buildMessages, MAX_USER_TURNS, parse, parseOpening, quoteSafe } from './parse.ts';
 import { BUSINESSES } from './businesses/index.ts';
 import { journeyOf } from './journey.ts';
-import { openingTask, sessionFacts, stableSystem, stateBlock, TURN_REMINDER } from './prompt.ts';
+import { openingTask, sessionFacts, stableSystem, stateBlock, addressOf, turnReminder } from './prompt.ts';
 import { distressIn, neutralize } from './guard.ts';
 import { ctaFor, diffEvents, extractState, initialState, mergeState, stateFromClient } from './state.ts';
 import type { CampaignContext, JourneyBusiness, SessionState } from './types.ts';
@@ -129,6 +129,7 @@ Deno.serve(async (req) => {
   const journey = journeyOf(ctx.journey);
   const adText = tx(ctx.campaign.creative?.ad) || quoteSafe(tx(body.adText).slice(0, 300));
   const meta = { campaign: campaignId, journeyType: journey.type, topicId: ctx.campaign.topic_id, segment: ctx.campaign.segment_filters, contentVersionId: ctx.content_version_id, journeyVersion: journey.version };
+  const address = addressOf(ctx.campaign.segment_filters);
   const stable = { type: 'text', text: stableSystem(b, journey), cache_control: { type: 'ephemeral' } };
   const src = tx(body.src).slice(0, 20), session = tx(body.session);
   // Model comparison: only from the business test site, and only a model from the list. Everyone else gets the usual model.
@@ -136,7 +137,7 @@ Deno.serve(async (req) => {
 
   // The opening is written by the bot: milestone one
   if (body.mode === 'opening') {
-    const raw = await claude(apiKey, model, [stable, { type: 'text', text: [sessionFacts(b, ctx, null, adText), openingTask(b, adText)].join('\n\n') }], [{ role: 'user', content: 'התחילו.' }], 500);
+    const raw = await claude(apiKey, model, [stable, { type: 'text', text: [sessionFacts(b, ctx, null, adText), openingTask(b, adText, address)].join('\n\n') }], [{ role: 'user', content: 'התחילו.' }], 500);
     const op = raw ? parseOpening(raw) : null;
     if (op) op.chips = op.chips.filter((c) => !c.includes('/'));   // "לא יודע/ת" is gendered; the plain filter misses the slash form
     if (!op || !op.messages.length) return json(b, origin, { error: 'upstream' }, 502);
@@ -153,7 +154,7 @@ Deno.serve(async (req) => {
   const prev = stateFromClient(body.state, journey);
   const botMessages = clean.filter((m) => m.role === 'assistant').length;
   const facts = await b.loadFacts();
-  const system = [stable, { type: 'text', text: [stateBlock(prev, journey, botMessages), sessionFacts(b, ctx, facts, adText), quoteSafe(tx(body.opening).slice(0, 600)) ? `## הודעת הפתיחה שהאדם כבר קיבל\n"${quoteSafe(tx(body.opening).slice(0, 600))}"` : '', TURN_REMINDER].filter(Boolean).join('\n\n') }];
+  const system = [stable, { type: 'text', text: [stateBlock(prev, journey, botMessages), sessionFacts(b, ctx, facts, adText), quoteSafe(tx(body.opening).slice(0, 600)) ? `## הודעת הפתיחה שהאדם כבר קיבל\n"${quoteSafe(tx(body.opening).slice(0, 600))}"` : '', turnReminder(address)].filter(Boolean).join('\n\n') }];
 
   // Priority one, second net: the visitor's last message shows severe distress. The model is told too, and its reply stands.
   const lastUser = [...clean].reverse().find((m) => m.role === 'user')?.content ?? '';
