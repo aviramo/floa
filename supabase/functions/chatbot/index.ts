@@ -9,7 +9,7 @@ import { BUSINESSES } from './businesses/index.ts';
 import { journeyOf } from './journey.ts';
 import { openingTask, sessionFacts, stableSystem, stateBlock, addressOf, turnReminder } from './prompt.ts';
 import { campaignKey, distressIn, genderFix, neutralize, parseSegment, pluralAddress, stripGreeting, toSingular } from './guard.ts';
-import { ctaFor, diffEvents, extractState, initialState, linkGender, mergeState, stateFromClient } from './state.ts';
+import { ctaFor, ctasOf, diffEvents, extractState, initialState, linkGender, mergeState, stateFromClient } from './state.ts';
 import type { CampaignContext, JourneyBusiness, SessionState } from './types.ts';
 
 const SB_URL = Deno.env.get('SUPABASE_URL') ?? '';
@@ -208,6 +208,6 @@ Deno.serve(async (req) => {
   if (!cta && facts && (turns >= 3 || putsTheEveningOnTheTable) && !['end', 'safety'].includes(next.action) && next.readiness !== 'not_fit') cta = 'register';
 
   persist(b, session, src, campaignId, [...clean, { role: 'assistant', content: reply }], cta, next, diffEvents(prev, next));
-  return json(b, origin, { reply, chips, cta, state: next, hasFacts: !!facts, hasMeeting: !!facts });
+  return json(b, origin, { reply, chips, cta, ctas: ctasOf(cta as any, !!facts), state: next, hasFacts: !!facts, hasMeeting: !!facts });
 });
 

@@ -76,7 +76,7 @@ function factsBlock(meeting: MeetingInfo | null): string {
     (where ? `- מקום: ${where}\n` : '') +
     (meeting.max ? `- מספר משתתפים מרבי: ${meeting.max}\n` : '') +
     (meeting.priceNow != null ? `- מחיר היום: ${meeting.priceNow} ש"ח\n` : '') +
-    (meeting.priceNote ? `- מדרגות מחיר: ${meeting.priceNote}\n` : '');
+    (meeting.priceNote ? `- מדרגות מחיר: ${meeting.priceNote}\n- כשמזכירים מדרגה, מצטטים את התאריך כפי שכתוב כאן (״מתאריך 28.11״), בלי ״מחר״, ״בקרוב״ או ״כמה ימים לפני״. אם לא שאלו על מחיר עתידי, מספיק המחיר של היום.\n` : '');
 }
 
 export const harpatka: JourneyBusiness<MeetingInfo> = {

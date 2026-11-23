@@ -75,3 +75,9 @@ export function ctaFor(action: Action, hasFacts: boolean): 'register' | 'whatsap
   if (action === 'guide') return 'whatsapp';
   return null;
 }
+
+// The buttons the page shows. Someone who is not ready keeps the way to register next to the updates group.
+export function ctasOf(cta: 'register' | 'whatsapp' | 'updates' | null, hasFacts: boolean): string[] {
+  if (!cta) return [];
+  return cta === 'updates' && hasFacts ? ['register', 'updates'] : [cta];
+}

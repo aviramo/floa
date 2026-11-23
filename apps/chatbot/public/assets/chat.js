@@ -70,7 +70,7 @@
     const userTurns = () => st.msgs.filter((m) => m.role === 'user').length;
     function extras(chips, cta) {
       clearExtras();
-      const kinds = cta ? [cta] : [];
+      const kinds = Array.isArray(cta) ? cta : (cta ? [cta] : []);
       if (kinds.length) { const w = el('div', 'ch-ctas'); kinds.forEach((k) => { const n = ctaNode(k); if (n) w.appendChild(n); }); if (w.childNodes.length) log.appendChild(w); }
       if (chips && chips.length) {
         const w = el('div', 'ch-chips');
@@ -119,8 +119,8 @@
         const ps = parts(d.reply);
         who(); bubble('bot', ps[0]);
         for (const x of ps.slice(1)) { const t2 = typing(); await wait(2000); t2.remove(); bubble('bot', x); scroll(); }
-        st.msgs.push({ role: 'assistant', content: d.reply, chips: d.chips || [], cta: d.cta || null, offer: d.offer || null }); save();
-        extras(d.chips, d.cta);
+        st.msgs.push({ role: 'assistant', content: d.reply, chips: d.chips || [], cta: (d.ctas && d.ctas.length ? d.ctas : d.cta) || null, offer: d.offer || null }); save();
+        extras(d.chips, d.ctas && d.ctas.length ? d.ctas : d.cta);
       } catch (e) {
         t.remove();
         bubble('bot', cfg.errorText);

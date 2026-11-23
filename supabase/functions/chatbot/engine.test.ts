@@ -1,4 +1,4 @@
-import { extractState, mergeState, diffEvents, ctaFor, initialState, stateFromClient, linkGender } from './state.ts';
+import { extractState, mergeState, diffEvents, ctaFor, ctasOf, initialState, stateFromClient, linkGender } from './state.ts';
 import { journeyOf, PAIN_JOURNEY } from './journey.ts';
 import { stableSystem, sessionFacts, stateBlock, openingTask, addressOf, addressBlock, turnReminder } from './prompt.ts';
 import { harpatka } from './businesses/harpatka/index.ts';
@@ -171,4 +171,19 @@ Deno.test('plural address is detected by explicit markers only, so the model is 
   for (const s of ['יש מצב שמשהו בה דיבר אליכם', 'ראיתם את המודעה', 'מה הביא אתכם', 'שסתם הייתם סקרנים']) if (!pluralAddress(s)) throw new Error('missed: ' + s);
   for (const s of ['סתם ערב נעים', 'אנשים מרגישים כך', 'ראית את המודעה, מה הביא אותך?', 'הייתי שמח']) if (pluralAddress(s)) throw new Error('false alarm: ' + s);
   if (!genderFix('female').includes('נקבה') || !genderFix('male').includes('זכר')) throw new Error('fix text');
+});
+
+Deno.test('findings of the five conversations: the bot is never a he or a she in I can / I think, the opening claims nothing, tiers are quoted exactly, a hesitant visitor keeps the register button', () => {
+  eq(neutralize('ואני יכול לספר לך על המפגשים'), 'ואפשר לספר לך על המפגשים', 'I can');
+  eq(neutralize('אני חושבת שזה מתאים'), 'נראה לי שזה מתאים', 'I think');
+  const o = openingTask(harpatka, '', 'female', 'שמחת החיים');
+  for (const needle of ['אסור ״כתבת״', 'לחץ בעבודה']) if (!o.includes(needle)) throw new Error('opening missing ' + needle);
+  if (o.includes('על הנושא הזה')) throw new Error('the example must not be a sentence the model can copy');
+  const facts = harpatka.factsBlock({ date: '2026-12-02', time: '20:30', name: '', city: 'תל אביב', place: 'סמינר', max: 30, priceNow: 80, priceNote: 'המחיר הרגיל 80 ש"ח, מתאריך 28.11 100 ש"ח' } as any);
+  if (!facts.includes('בלי ״מחר״')) throw new Error('tier quoting rule missing');
+  eq(ctasOf('updates', true), ['register', 'updates'], 'hesitant keeps register');
+  eq(ctasOf('updates', false), ['updates'], 'no meeting: only updates');
+  eq(ctasOf('register', true), ['register'], 'register');
+  eq(ctasOf(null, true), [], 'none');
+  if (!stableSystem(harpatka, PAIN_JOURNEY).includes('משפט אחד שמתאר את הערב')) throw new Error('curiosity rule');
 });
