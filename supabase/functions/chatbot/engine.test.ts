@@ -241,3 +241,8 @@ Deno.test('a bare "glad that" is not a gender of the bot', () => {
   eq(neutralize('שמחה שכתבת. מה הביא אותך?'), 'טוב שכתבת. מה הביא אותך?', 'glad');
   eq(neutralize('שמח שזה מתחבר'), 'טוב שזה מתחבר', 'glad m');
 });
+
+Deno.test('flow rules for a visitor who only clicked a quick reply', async () => {
+  const { FLOW_PROMPT } = await import('./businesses/harpatka/flow.ts');
+  for (const needle of ['אסור ״שכתבת״', 'התשובות המוכנות הן א ו-ב']) if (!FLOW_PROMPT.includes(needle)) throw new Error('missing ' + needle);
+});

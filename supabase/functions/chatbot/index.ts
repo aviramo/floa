@@ -4,7 +4,7 @@
 // Per-business facts live in businesses/<key>/ and are registered in businesses/index.ts; the journey is data (chatbot.journeys).
 // Deploy: supabase functions deploy chatbot --no-verify-jwt --project-ref aexmnaxvahblveejsbup
 // Secrets: ANTHROPIC_API_KEY (set). Optional: CHAT_MODEL (default Sonnet 5.5), CHAT_SALT, CHAT_DEVICE_DAY, CHAT_IP_DAY, CHAT_TOTAL_DAY.
-import { buildMessages, MAX_USER_TURNS, parse, parseOpening, quoteSafe } from './parse.ts';
+import { lastSentence, buildMessages, MAX_USER_TURNS, parse, parseOpening, quoteSafe } from './parse.ts';
 import { BUSINESSES } from './businesses/index.ts';
 import { journeyOf } from './journey.ts';
 import { openingTask, sessionFacts, stableSystem, stateBlock, addressOf, turnReminder } from './prompt.ts';
@@ -211,6 +211,8 @@ Deno.serve(async (req) => {
   let chips = parsed.chips.filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && (pitchOk || !mentionsEvening(c)));
   const reply = fixAddress(stripGreeting(neutralize(parsed.reply)), address);
   if (!reply) return json(b, origin, { error: 'empty' }, 502);
+  // A question that offers a choice ("A or B") is not answered by a bare yes or no
+  if (/\sאו\s/.test(lastSentence(reply))) chips = chips.filter((c) => !/^(כן|לא)(,.*)?$/.test(c.trim()));
 
   const next = { ...mergeState(prev, incoming, journey), meta };
   if (!incoming) next.action = 'continue';      // a reply without a state block advances nothing
