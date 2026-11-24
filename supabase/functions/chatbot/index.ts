@@ -219,7 +219,7 @@ Deno.serve(async (req) => {
   let chips = parsed.chips.filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && (pitchOk || !mentionsEvening(c)) && chipOk(c)).map((c) => genderChip(c, address));
   let replyText = parsed.reply;
   if (!distress && !pitchAllowed({ turns, lastUser, prevDone: prev.done, prevReadiness: prev.readiness }) && mentionsEvening(replyText)) replyText = stripMeeting(replyText);   // told once already
-  const reply = fixAddress(stripGreeting(neutralize(replyText)), address);
+  let reply = fixAddress(stripGreeting(neutralize(replyText)), address);
   if (!reply) return json(b, origin, { reply: 'מובן. אם בא לך להמשיך, אני כאן', chips: ['קצת עוד', 'איך זה נראה בפועל', 'לא כרגע'], cta: null, ctas: [], state: prev, hasFacts: !!b.siteOnly, hasMeeting: false });   // the model sent only marks twice: a short human line, never an error page
   // A question that offers a choice ("A or B") is not answered by a bare yes or no
   if (/\sאו\s/.test(lastSentence(reply))) chips = chips.filter((c) => !/^(כן|לא)(,.*)?$/.test(c.trim()));
@@ -251,6 +251,8 @@ Deno.serve(async (req) => {
   if (b.siteOnly && !cta && pitchOk && /(באתר|בקישור|\blink\b|website)/i.test(reply) && next.action !== 'safety') cta = 'register';   // the reply points at the site: the button is the way there
   if (b.siteOnly && !cta && pitchOk && asksDetails(lastUser) && next.action !== 'safety') cta = 'register';   // asked when, how much, how to register: the site link is the answer
   if (!cta && offersUpdates(reply) && next.action !== 'safety') cta = 'updates';
+  // The button to the site is always introduced in words, in the message itself
+  if (b.siteOnly && cta === 'register' && !/(באתר|אתר)/.test(reply)) reply = reply.replace(/\s*$/, '') + ' אשמח להפנות אותך לאתר, שם אפשר לקרוא עוד.';
   if (!cta && facts && putsTheEveningOnTheTable && !['end', 'safety'].includes(next.action) && next.readiness !== 'not_fit') cta = 'register';
 
   persist(b, session, src, campaignId, [...clean, { role: 'assistant', content: reply }], cta, next, diffEvents(prev, next));
