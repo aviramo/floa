@@ -104,6 +104,12 @@ async function chipsCheck(apiKey: string, reply: string, chips: string[]): Promi
 const rpc = (name: string, args: Record<string, unknown>) =>
   fetch(SB_URL + '/rest/v1/rpc/' + name, { method: 'POST', headers: { apikey: SB_SERVICE, Authorization: 'Bearer ' + SB_SERVICE, 'Content-Type': 'application/json' }, body: JSON.stringify(args) });
 
+// The rule-violation log (all businesses): every time the agent broke a hard rule and the server corrected it, one row. Never awaited, never fails the reply.
+function logViolation(b: JourneyBusiness, session: string, rule: string, before: string, after: string, fixed = true) {
+  if (!SB_SERVICE || !SB_URL) return;
+  rpc('chatbot_violation', { p_business: b.key, p_session: session || null, p_rule: rule, p_before: before, p_after: after, p_fixed: fixed }).catch(() => {});
+}
+
 // Abuse guard: every call is recorded (a random device id plus a hash of the network address, never the address) and the
 // database returns how many calls there were in 24 hours. A failure of the guard never stops the chat.
 const DEVICE_DAY = Number(Deno.env.get('CHAT_DEVICE_DAY')) || 80, IP_DAY = Number(Deno.env.get('CHAT_IP_DAY')) || 400, TOTAL_DAY = Number(Deno.env.get('CHAT_TOTAL_DAY')) || 2000;
@@ -182,6 +188,7 @@ Deno.serve(async (req) => {
     const recentC = msgsC.slice(-6).map((m) => (m.role === 'user' ? 'האדם: ' : 'הבוט: ') + m.content.slice(0, 300)).join('\n');
     const traceC: unknown[] = [];
     const chipsC = await makeChips(apiKey, MODEL, { reply: lastBot.content, lastUser: lastUserC, address: addressC, recent: recentC, pitchOk: pitchC, offerWords: b.lexicon.offerWords, trace: traceC });
+    for (const t of traceC as any[]) if (t && t.vetoed) logViolation(b, /^[0-9a-f-]{36}$/i.test(tx(body.session)) ? tx(body.session) : '', 'chips_vetoed', JSON.stringify(t.vetoed), JSON.stringify(chipsC));
     return json(b, origin, { chips: chipsC, ...(device.startsWith('selftest') ? { dbg: traceC } : {}) });
   }
 
@@ -200,7 +207,7 @@ Deno.serve(async (req) => {
   (ctx as any).brief = b.painBriefs?.[pain] ?? b.painBriefs?.[legacyKey ?? ''];   // the pain's briefing, from the owner's research   // not a campaign: maybe an old ad key
   const journey = journeyOf(ctx.journey);
   const adText = tx(ctx.campaign.creative?.ad) || quoteSafe(tx(body.adText).slice(0, 300));
-  if (!adText) console.warn(JSON.stringify({ missing_ad_text: true, business: b.key, pain }));   // every campaign of every business must carry the text of its ad (creative.ad)
+  if (!adText) { console.warn(JSON.stringify({ missing_ad_text: true, business: b.key, pain })); logViolation(b, '', 'missing_ad_text', pain, '', false); }   // every campaign of every business must carry the text of its ad (creative.ad)
   const meta = { campaign: campaignId, journeyType: journey.type, topicId: ctx.campaign.topic_id, segment: ctx.campaign.segment_filters, contentVersionId: ctx.content_version_id, journeyVersion: journey.version };
   const fromLink = linkGender(ctx.campaign.segment_filters) ?? linkGender(segment);   // the link itself says the gender even when no campaign row exists for it
   const stable = { type: 'text', text: b.flowPrompt ?? stableSystem(b, journey), cache_control: { type: 'ephemeral' } };
@@ -253,11 +260,13 @@ Deno.serve(async (req) => {
   let parsed = parse(text); parsed.reply = scrub(parsed.reply);
   // One more try, told exactly why, when the reply still speaks to a woman or a man in the plural, or offers the evening before the visitor reacted to the bridge
   const replyFixes: { type: string; text: string }[] = [];
-  if (address !== 'plural' && pluralAddress(parsed.reply)) replyFixes.push({ type: 'text', text: genderFix(address) });
-  if (!distress && (putsEveningOnTable(parsed.reply) || mentionsOffer(parsed.reply, b.lexicon.offerWords)) && !pitchAllowed({ turns, lastUser, prevDone: prev.done, prevReadiness: prev.readiness })) replyFixes.push({ type: 'text', text: earlyPitchFix });
-  if (address !== 'plural' && wrongSingular(parsed.reply, address)) replyFixes.push({ type: 'text', text: genderFix(address) });
-  if (!parsed.reply) replyFixes.push({ type: 'text', text: '## חסר טקסט\nהתשובה הקודמת הייתה רק סימונים. כתבו הודעה קצרה לאדם לפני הסימונים.' });
-  { const sf = styleFix(parsed.reply, lastUser, clean.filter((m: any) => m.role === 'user').map((m: any) => String(m.content)).join(' ')); if (sf) replyFixes.push({ type: 'text', text: sf }); }
+  const hits: string[] = [];   // the names of the rules the draft broke
+  if (address !== 'plural' && pluralAddress(parsed.reply)) { replyFixes.push({ type: 'text', text: genderFix(address) }); hits.push('gender_plural'); }
+  if (!distress && (putsEveningOnTable(parsed.reply) || mentionsOffer(parsed.reply, b.lexicon.offerWords)) && !pitchAllowed({ turns, lastUser, prevDone: prev.done, prevReadiness: prev.readiness })) { replyFixes.push({ type: 'text', text: earlyPitchFix }); hits.push('offer_too_early'); }
+  if (address !== 'plural' && wrongSingular(parsed.reply, address)) { replyFixes.push({ type: 'text', text: genderFix(address) }); hits.push('gender_wrong_form'); }
+  if (!parsed.reply) { hits.push('empty_reply'); replyFixes.push({ type: 'text', text: '## חסר טקסט\nהתשובה הקודמת הייתה רק סימונים. כתבו הודעה קצרה לאדם לפני הסימונים.' }); }
+  { const sf = styleFix(parsed.reply, lastUser, clean.filter((m: any) => m.role === 'user').map((m: any) => String(m.content)).join(' ')); if (sf) { replyFixes.push({ type: 'text', text: sf }); for (const p of sf.replace(/^## תיקון\nהטיוטה: /, '').replace(/\. כתבו שוב.*$/s, '').split('; ')) hits.push('style: ' + p.slice(0, 48)); } }
+  const draftReply = parsed.reply;
   if (replyFixes.length) {
     const raw2 = await claude(apiKey, model, [...system, ...replyFixes], merged, 1400);
     if (raw2) { const o2 = extractState(raw2), p2 = parse(o2.text); if (p2.reply) { text = o2.text; incoming = o2.state; parsed = p2; parsed.reply = scrub(parsed.reply); } }
@@ -274,8 +283,13 @@ Deno.serve(async (req) => {
 
   const next = { ...mergeState(prev, incoming, journey), meta };
   if (distress) next.action = 'safety';   // detected from the visitor's words, not left to the model
+  const r0 = reply;
   reply = stripReferrals(reply, distress, b.lexicon.crisisDoor, /הדר/);   // never a hotline, emergency services or a professional
+  if (reply !== r0) hits.push('referral_cut');
+  const r1 = reply;
   if (!distress && next.action !== 'safety' && next.action !== 'end') reply = endOnQuestion(reply);   // the reply always ends on its question
+  if (reply !== r1) hits.push('tail_after_question_cut');
+  { const sess = /^[0-9a-f-]{36}$/i.test(session) ? session : ''; const allUser = clean.filter((m: any) => m.role === 'user').map((m: any) => String(m.content)).join(' '); const still = !!styleFix(reply, lastUser, allUser); for (const h of hits) logViolation(b, sess, h, draftReply, reply, !still); }
   if (!incoming) next.action = 'continue';      // a reply without a state block advances nothing
   if (distress) { next.action = 'safety'; next.readiness = 'concerned'; }
   let cta: 'register' | 'whatsapp' | 'updates' | null = b.flowPrompt ? ((['register', 'whatsapp', 'updates'] as const).find((c) => c === parsed.cta) ?? null) : ctaFor(next.action, !!facts);
