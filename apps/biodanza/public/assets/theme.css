@@ -33,7 +33,7 @@
 
 /* the exercise page and the catalog layer tint their muted text (the catalog one toward violet) */
 #pd:has(#ipg) { --text-muted: oklch(40% .07 255); background: var(--page); color: var(--text) }
-#catLayer { --text-muted: oklch(40% .07 305); color: var(--text) }
+.bio-catlayer { --text-muted: oklch(40% .07 305); color: var(--text) }
 
 /* law 6: a sheet on a narrow screen has no rounded corners at all, not even the top ones (kit.css rounds them; this overrides it for this app only) */
 @media (width < 760px) { dialog.rsheet, dialog.rsheet[data-from], dialog.rsheet:not([data-from]) { border-radius: 0 !important; } }
@@ -74,3 +74,20 @@ dialog.rsheet[data-size="s"] .sheet { gap: 0; }
 .bio-ihead--m > .bio-tabs.bio-tabs { padding-block-start: var(--ring-over); }
 .bio-tabs .bio-tab { gap: calc(var(--ring-over) + var(--gap-tight)); }
 }
+/* the title of a catalog is its search field: empty, it shows the title as the title looks */
+input[data-cattitle]::placeholder { color: var(--text); opacity: 1; }
+input[data-cattitle]:focus::placeholder { color: var(--text-muted); }
+/* a layer over another slides as ONE piece, like a physical object from the right: its two halves (the list and the exercise opened from it) move together with the layer, in and out; transform only, --t-base, --ease, never a fade (only the scrim under it fades) */
+.bio-catlayer.bio-catlayer.bio-catlayer--over { transform: translateX(100%); transition: transform var(--t-base) var(--ease), visibility 0s linear var(--t-base); }
+.bio-catlayer.bio-catlayer.bio-catlayer--over.is-open { transform: none; transition: visibility 0s; animation: bio-layer-in var(--t-base) var(--ease); }
+@keyframes bio-layer-in { from { transform: translateX(100%); } }
+.bio-catlayer.bio-catlayer--over .catmain { transform: none; transition: none; }
+@media (prefers-reduced-motion: reduce) { .bio-catlayer.bio-catlayer.bio-catlayer--over, .bio-catlayer.bio-catlayer.bio-catlayer--over.is-open { transition: none; animation: none } }
+/* the title group of a header with a mark beside the name (the playing exercise's number): one centred line, not top-aligned like a title over its sub line */
+#pl > .rhead .rhead__text.rhead__text--row { align-items: center; }
+/* the name and the mark beside it (the number with the sound ring): --gap-section between them, on the group that holds both */
+.rtitle:has(> .bio-vsym), .rhead__text--row:has(> #vgo) { gap: var(--gap-section); }
+/* the dim of the layer below a catalog layer: a scrim that stays where it is (between the two layers, over the left side) and only fades; the layer above it is what slides */
+.bio-catscrim { position: fixed; z-index: var(--z-menu); background: var(--scrim); opacity: 0; pointer-events: none; transition: opacity var(--t-base) var(--ease); }
+.bio-catscrim.is-on { opacity: 1; pointer-events: auto; }
+@media (prefers-reduced-motion: reduce) { .bio-catscrim { transition: none } }

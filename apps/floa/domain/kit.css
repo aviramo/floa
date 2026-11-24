@@ -347,7 +347,7 @@ button.rrow__main { appearance: none; border: 0; background: none; padding: 0; t
    Extensions are chosen by the control itself (select, textarea, input[type]) or by a modifier on the same element:
             rfield--switch, rfield--check (row with a switch or a checkbox), rfield--ltr (value written left to right).
    Needs the page tokens --page --border-strong --text --text-muted --danger --font. */
-:root { --ring-over: calc(var(--gap-tight) * 2); /* the room a ring of the sound picture keeps round a number */ --row-card: calc(var(--icon) + var(--gap-tight)); /* the pitch of a card's two rows (an icon row plus the gap under it): the touch area of an icon button inside a card is --ctl wide and this tall, so two buttons' areas touch and never overlap */ --field-max-h: calc(var(--ctl) * 6); /* the tallest a text area grows before it scrolls */ --rf-label-top: var(--gap-tight); --rf-line-h: calc(var(--fs-m) * var(--lh-tight)); /* the one line of a field: the label's line and the control's text line */ --rf-scale: .75; /* how much the label shrinks when it floats */ --rf-label-h: calc(var(--rf-line-h) * var(--rf-scale)); /* the floated label's real rendered height */ --rf-pad-top: calc(var(--rf-label-top) + var(--rf-label-h)); /* the control text starts under the floated label: its top offset plus the label's real height, so the text never overlaps it */ --rf-line: var(--border-strong); --rf-ink: var(--text); --rf-ink-2: var(--text-muted); --rf-red: var(--danger); }
+:root { --kbd-strip: 4.5rem; /* the height of the strip above the keyboard that the browser does not count (autofill, suggestions) */ --ring-over: calc(var(--gap-tight) * 2); /* the room a ring of the sound picture keeps round a number */ --row-card: calc(var(--icon) + var(--gap-tight)); /* the pitch of a card's two rows (an icon row plus the gap under it): the touch area of an icon button inside a card is --ctl wide and this tall, so two buttons' areas touch and never overlap */ --field-max-h: calc(var(--ctl) * 6); /* the tallest a text area grows before it scrolls */ --rf-label-top: var(--gap-tight); --rf-line-h: calc(var(--fs-m) * var(--lh-tight)); /* the one line of a field: the label's line and the control's text line */ --rf-scale: .75; /* how much the label shrinks when it floats */ --rf-label-h: calc(var(--rf-line-h) * var(--rf-scale)); /* the floated label's real rendered height */ --rf-pad-top: calc(var(--rf-label-top) + var(--rf-label-h)); /* the control text starts under the floated label: its top offset plus the label's real height, so the text never overlaps it */ --rf-line: var(--border-strong); --rf-ink: var(--text); --rf-ink-2: var(--text-muted); --rf-red: var(--danger); }
 
 .rfield[hidden], .rfield > [hidden] { display: none !important; }
 .rfield { overflow-x: clip; }   /* the floating label's box is 133% wide (it is scaled to fit); its overflow must never make a scrollbar appear when the field is focused */
@@ -504,6 +504,8 @@ dialog.rsheet::backdrop { transition: opacity .2s cubic-bezier(.2, .8, .2, 1); }
 dialog.rsheet.rs-closing::backdrop { opacity: 0; }
 dialog.rsheet[data-from="top"] { margin-block: var(--rs-top, 0px) auto; }
 dialog.rsheet[data-from="bottom"], dialog.rsheet:not([data-from]) { margin-block: auto var(--rs-kb, 0px); }
+/* a text field is being typed in: the keyboard's own strip (autofill, suggestions) is drawn OVER the page and is not part of the visible window the browser reports, so the popup is lifted by its height as well, and its button is never under it */
+html.rs-kbd dialog.rsheet:not([data-from="top"]):has(:is(input, textarea, select):focus) { margin-block-end: calc(var(--rs-kb, 0px) + var(--kbd-strip)); }
 dialog.rsheet.rs-dragging { transition: none; }
 dialog.rsheet.rs-settle { transition: transform .2s cubic-bezier(.2, .8, .2, 1); }
 
@@ -579,7 +581,7 @@ dialog.rsheet[open]::backdrop { animation: rs-fade .24s ease-out; }
   dialog.rsheet[data-desktop="side"] { border-radius: 0 var(--r) var(--r) 0 !important; }
   dialog.rsheet[data-anchored] { position: fixed; inset: auto; margin: 0; width: max-content; min-width: 0; max-width: min(var(--w), calc(100vw - var(--gap) * 2)); max-height: calc(100dvh - var(--gap) * 2); }
 }
-@keyframes rs-in-center { from { opacity: 0; transform: translateY(12px); } }
+@keyframes rs-in-center { from { transform: translateY(100%); } }   /* a window on a computer rises like a physical object, from the bottom edge: transform only, never a fade (only the backdrop fades) */
 @keyframes rs-in-side { from { transform: translateX(-100%); } }
 @media (min-width: 760px) and (prefers-reduced-motion: reduce) { dialog.rsheet[open], dialog.rsheet[open][data-from] { animation: none !important; } }
 

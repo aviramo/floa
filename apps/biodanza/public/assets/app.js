@@ -485,7 +485,7 @@
     }
     /* wide screen: the history is a layer that comes in from the left, as the catalog comes in from the right; its songs are cards in the same grid as any music */
     var histLayer = null, histOpen = false, leftStack = [];   /* leftStack: the open side layers, the top last */
-    (function () { var st = document.createElement("style"); st.textContent = ".bio-left { position: fixed; z-index: var(--z-menu); display: flex; flex-direction: column; min-height: 0; visibility: hidden; transform: translateX(-100%); transition: transform var(--t-base) var(--ease), visibility 0s linear var(--t-base); box-shadow: 1px 0 0 var(--border) } .bio-left.is-open { visibility: visible; transform: none; transition: transform var(--t-base) var(--ease), visibility 0s } .bio-left > .rlist { flex: 1 1 auto; min-height: 0 } .bio-left.bio-under, #catLayer.bio-under { opacity: 0; transition: none; pointer-events: none } #pl::after { content: \"\"; position: absolute; inset: 0; z-index: 5; background: var(--scrim); opacity: 0; pointer-events: none; transition: opacity var(--t-base) var(--ease) } #pl.bio-dim::after { opacity: 1; pointer-events: auto } @media (prefers-reduced-motion: reduce) { .bio-left, #pl::after { transition: none } }"; document.head.appendChild(st); })();
+    (function () { var st = document.createElement("style"); st.textContent = ".bio-left { position: fixed; z-index: var(--z-menu); display: flex; flex-direction: column; min-height: 0; visibility: hidden; transform: translateX(-100%); transition: transform var(--t-base) var(--ease), visibility 0s linear var(--t-base); box-shadow: 1px 0 0 var(--border) } .bio-left.is-open { visibility: visible; transform: none; transition: transform var(--t-base) var(--ease), visibility 0s } .bio-left > .rlist { flex: 1 1 auto; min-height: 0 } .bio-left.bio-under, .bio-catlayer.bio-under { opacity: 0; transition: none; pointer-events: none } #pl::after { content: \"\"; position: absolute; inset: 0; z-index: 5; background: var(--scrim); opacity: 0; pointer-events: none; transition: opacity var(--t-base) var(--ease) } #pl.bio-dim::after { opacity: 1; pointer-events: auto } @media (prefers-reduced-motion: reduce) { .bio-left, #pl::after { transition: none } }"; document.head.appendChild(st); })();
     function placeHist() { var a = pd.getBoundingClientRect(); [histLayer].concat(leftStack).forEach(function (el) { if (!el) return; el.style.top = a.top + "px"; el.style.height = a.height + "px"; el.style.left = a.left + "px"; el.style.width = a.width + "px"; }); }
     /* THE SIDE LAYERS (law 8): ONE stack. A layer opened from a layer goes on top of it, same place and size; the one under is kept exactly as it is (its DOM, scroll, search, mark), only hidden and inert. Closing the top one shows the one under. The first layer is #histLayer; the catalog, when it is open, is covered the same way. */
     var catCovered = false;
@@ -592,7 +592,7 @@
         c.setAttribute("aria-current", "true"); playName(e.n, e.t, e.a);
       };
     }
-    document.addEventListener("click", function (ev) { var dm = ev.target.closest && ev.target.closest("[data-dockmore]"); if (!dm) return; var cnt = function (o) { return Object.keys(o).filter(function (k) { return o[k]; }).length; }; menu(dm, [{ label: "קטלוג", icon: I.catalog, fn: function () { if (wide()) { if (catPanel) closeCatPanel(); else openCatPanel(); } else { resetPk(); pickerSheet(); } } }, { label: "היסטוריה", icon: HIST, fn: function () { if (wide() && histOpen) closeLeftAll(); else openHistory(); } }].concat(state.offline ? [] : [{ label: "ויוונסיות שאהבתי", meta: String(cnt(likesViv)), icon: I.heart, fn: function () { likedVivScreen(); } }, { label: "תרגילים שאהבתי", meta: String(cnt(likesEx)), icon: I.heart, fn: function () { likedExScreen(); } }, { label: "מוסיקה שאהבתי", meta: String(cnt(likes)), icon: I.heart, fn: function () { likedScreen(); } }]).concat(state.me && state.me.admin ? [{ label: "ניהול משתמשים", icon: I.users, fn: allowPopup }] : []), { up: true, ref: dm.closest(".bio-dock") }); });
+    document.addEventListener("click", function (ev) { var dm = ev.target.closest && ev.target.closest("[data-dockmore]"); if (!dm) return; var cnt = function (o) { return Object.keys(o).filter(function (k) { return o[k]; }).length; }; menu(dm, [{ label: "קטלוג תרגילים", icon: I.catalog, fn: function () { openCatalog("ex"); } }, { label: "קטלוג מוזיקות", icon: I.play, fn: function () { openCatalog("mu"); } }, { label: "היסטוריה", icon: HIST, fn: function () { if (wide() && histOpen) closeLeftAll(); else openHistory(); } }].concat(state.offline ? [] : [{ label: "ויוונסיות שאהבתי", meta: String(cnt(likesViv)), icon: I.heart, fn: function () { likedVivScreen(); } }, { label: "תרגילים שאהבתי", meta: String(cnt(likesEx)), icon: I.heart, fn: function () { likedExScreen(); } }, { label: "מוסיקה שאהבתי", meta: String(cnt(likes)), icon: I.heart, fn: function () { likedScreen(); } }]).concat(state.me && state.me.admin ? [{ label: "ניהול משתמשים", icon: I.users, fn: allowPopup }] : []), { up: true, ref: dm.closest(".bio-dock") }); });
     document.addEventListener("click", function (ev) { var b = ev.target.closest && ev.target.closest("[data-hist]"); if (b) { if (wide() && histOpen) closeLeftAll(); else openHistory(); } });
     document.addEventListener("click", function (ev) {   /* a tap on the name in the player: a popup with the whole name and the performer; a song outside the catalog can be edited from it */
       var nmEl = ev.target.closest && ev.target.closest(".bio-dock__name"); if (!nmEl) return;
@@ -720,12 +720,12 @@
             if (lb && lb.textContent !== "הוספה") { lb.textContent = "הוספה"; ac.title = "הוספת המוסיקה שבנגן: בחירה לאן"; }   /* the popup asks where: a vivencia or an exercise */
           }
         }
-        var vtE = document.getElementById("vtimer");   /* wide screen: the time left of whichever song of this vivencia plays, in the header of the list */
-        if (vtE) {
+        var vtE = document.getElementById("vtimer");   /* wide screen: the time left of whichever song of this vivencia plays, in the header of the list; and, on every screen, the number of the exercise that plays beside the name */
+        if (vtE || document.getElementById("vgo")) {
           var vOn = !!(playing && loaded && curD > 0 && state.viv && state.items && (function (n) { var has = function (m) { return m && m.audio_object === n; };
             return state.items.some(function (x) { return has(x.music) || (x.item_music_options || []).some(function (o) { return has(o.music); }); }) || ["start", "end"].some(function (k) { return (recvCache[state.viv.id + "|" + k] || []).some(function (o) { return has(o.music); }); }); })(curName));
-          if (vOn) { var vTxt = clk(Math.max(0, Math.ceil(curD - curT))); if (vtE.textContent !== vTxt) vtE.textContent = vTxt; }
-          timerToggle(vtE, vOn);
+          if (vOn && vtE) { var vTxt = clk(Math.max(0, Math.ceil(curD - curT))); if (vtE.textContent !== vTxt) vtE.textContent = vTxt; }
+          if (vtE) timerToggle(vtE, vOn);
           var vgE = document.getElementById("vgo");   /* the button is for going to the exercise that plays, and its number with the sound ring: it is there the whole time a song of this vivencia plays, also while that exercise is the one that is open */
           if (vgE) { var itO = liveItem && state.items ? state.items.filter(function (x) { return x.id === liveItem.id; })[0] : null, vShow = vOn && state.items.some(function (x) { return optList(x).some(function (m) { return m.audio_object === curName; }); });   /* only for a song of an exercise: not for the start or the end music */ if (vgE.hidden === vShow) vgE.hidden = !vShow; var dsp = vShow ? "" : "none"; if (vgE.style.display !== dsp) vgE.style.display = dsp;
             if (vShow) {   /* the number of the exercise that plays, as on its card: its place in the vivencia, a dot for an additional one, nothing for the start and the end music */
@@ -1021,9 +1021,9 @@
   var volBack = 0.5;   /* the level a press on the speaker brings back after it was muted */
   /* the volume of the player: a speaker (press it to mute and to unmute) and a slider, on a wide screen only */
   function volDock() { var v = typeof volState === "object" ? volState.v : 1; return '<div class="bio-volume" style="--p:' + Math.round(v * 100) + '%"><button type="button" class="rbtn rbtn--icon" data-vmute aria-label="השתקה" title="השתקה">' + (v ? SPK : SPK0) + '</button><input class="rrange" type="range" min="0" max="100" step="1" value="' + Math.round(v * 100) + '" aria-label="עוצמת שמע"></div>'; }
-  function head(title, sub, back, trail, lead) {
+  function head(title, sub, back, trail, lead, after) {   /* after: what sits right beside the title, in one group with it (--gap between): a mark that belongs to the name */
     return '<header class="rhead">' + (lead || '') + (back ? '<button class="rbtn rbtn--icon" data-act="back" aria-label="חזרה" title="חזרה">' + I.back + '</button>' : '') +
-      '<div class="rhead__text"><h1 class="rhead__title">' + esc(title) + '</h1>' + (sub ? '<span class="rhead__sub">' + esc(sub) + '</span>' : '') + '</div>' +
+      '<div class="rhead__text' + (after ? ' rhead__text--row' : '') + '"><h1 class="rhead__title' + (after ? ' rhead__title--clip' : '') + '">' + esc(title) + '</h1>' + (sub ? '<span class="rhead__sub">' + esc(sub) + '</span>' : '') + (after || '') + '</div>' +
       (trail || '') + '</header>';   /* the volume, while a song plays: a bar across the free room of the header */
   }
   /* the header that walks a sequence: previous on the right, next on the left, the name centred between them */
@@ -1049,7 +1049,7 @@
   }
   (function () {
     var st = document.createElement("style");
-    st.textContent = ".bio-card, .bio-icard { background: var(--on-primary); border: 0 !important }  .rhead [data-act=\"vmore\"] { margin-right: auto !important } .rhead:has(#vtimer:not([hidden])) [data-act=\"vmore\"] { margin-right: 0 !important } .rhead #vtimer:not([hidden]) { margin-right: auto !important } .rhead:has(#vgo:not([hidden])) #vtimer { margin-right: 0 !important } .rhead #vgo:not([hidden]) { margin-right: auto !important } .rhead #vtimer { cursor: pointer }    .rrow[data-vrow] { padding-block: var(--gap) !important; min-height: 0 !important } .bio-card[aria-current=true]:is([data-opt], [data-am], [data-sgc], [data-liked], [data-hi]) { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary), var(--shadow) } [data-catopen]:not(.bio-dock__cat) { background: transparent !important; border-color: transparent !important; box-shadow: none !important; color: var(--primary) !important } .bio-dock .bio-dock__cat[aria-pressed=\"true\"] { background: var(--primary) !important; border-color: var(--primary) !important; color: var(--on-primary) !important } .rfield:has(> .rf-rich[contenteditable=true]), .rfield:has(> .rf-rich[contenteditable=true]) > *, .rf-rich[contenteditable=true], .rf-rich[contenteditable=true] * { cursor: text !important } .rf-rich [data-mention] { cursor: default !important } @keyframes bioTin { from { opacity: 0; transform: translateY(-8px) } to { opacity: 1; transform: none } } @keyframes bioTout { from { opacity: 1; transform: none } to { opacity: 0; transform: translateY(-8px) } } #vtimer.is-in, #itimer.is-in { animation: bioTin var(--t-base) var(--ease) both } #vtimer.is-out, #itimer.is-out { animation: bioTout var(--t-base) ease-in both } @media (prefers-reduced-motion: reduce) { #vtimer.is-in, #itimer.is-in, #vtimer.is-out, #itimer.is-out { animation: none } }   .bio-card.is-play[aria-current], .bio-card.is-play[aria-current=\"true\"], .bio-card:has([data-audio][data-st=\"pause\"])[aria-current] { border-color: transparent !important; box-shadow: var(--shadow) !important; outline: 0 !important }   @keyframes bioWave { 0% { stroke-dashoffset: 1.05 } 45% { stroke-dashoffset: 0 } 70% { stroke-dashoffset: 0 } 100% { stroke-dashoffset: -1.05 } }     [data-opening] [data-sech-row], [data-opening] [data-sech-row] * { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent } [data-opening] [data-sech-row] { touch-action: pan-y } .rrow[data-vrow] { position: relative } .bio-vsym { position: absolute; inset-inline-end: calc(var(--ctl) + var(--gap-section)); top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; color: var(--primary); pointer-events: none } .bio-vsym__n { font: var(--fw-bold) var(--fs-l)/1 var(--font); font-variant-numeric: tabular-nums } .bio-vsym__n:empty { display: none }  @keyframes bio-wait { from { background-position: 100% 0 } to { background-position: -100% 0 } } .bio-card:has([data-audio][data-st=\"wait\"]) { background-image: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--primary) 22%, transparent) 50%, transparent 70%) !important; background-size: 200% 100% !important; background-repeat: no-repeat !important; animation: bio-wait 1.1s linear infinite } @media (prefers-reduced-motion: reduce) { .bio-card:has([data-audio][data-st=\"wait\"]) { animation: none; background-image: linear-gradient(color-mix(in srgb, var(--primary) 14%, transparent), color-mix(in srgb, var(--primary) 14%, transparent)) !important } }  .rf-rich b, .rf-rich strong, .rcard__body b, .rhint__tx b { color: var(--text) !important } [data-opening] .bio-chipb { flex: none; gap: var(--gap-tight) } [data-sech-row] > .rtitle { flex: 1 1 auto } [data-opening] .bio-chipb > span:first-child { flex: none; white-space: nowrap } [data-opening] .rfield > span:first-child { transform: translateY(16px) !important; inset-inline-end: 0 !important; pointer-events: none; transition: opacity var(--t-base) var(--ease) } [data-opening] .rfield[data-rf=\"v\"] > span:first-child { opacity: 0 } .bio-card [data-upl-wrap] { gap: var(--gap) !important }   .bio-card.is-play-opt { border-color: transparent !important; box-shadow: var(--shadow) !important }  [data-recv] [data-audio] { display: none !important }         button.rchip { background: transparent; border: 1px solid var(--primary); color: var(--primary) } button.rchip[aria-pressed=\"true\"]:not([data-fac]) { background: var(--primary); color: var(--on-primary) } button.rchip[data-fac][aria-pressed=\"true\"], .rchip[data-fac-label] { background: var(--primary); color: var(--on-primary); border: 0 } button.rchip[data-fac][aria-pressed=\"false\"] { background: transparent; color: var(--primary); border: 1px solid var(--primary) } [data-audio]:not(.ricon-lg) { background: transparent !important; border-color: transparent !important; box-shadow: none !important; color: var(--danger) !important; --play-in: var(--on-primary) }   .bio-card, .bio-card * { user-select: none; -webkit-user-select: none }       .bio-bar, .bio-bar * { touch-action: none }  .bio-dock, .bio-dock * { transition: background-color calc(var(--t-base) * 2) var(--ease), color calc(var(--t-base) * 2) var(--ease), border-color calc(var(--t-base) * 2) var(--ease), fill calc(var(--t-base) * 2) var(--ease), stroke calc(var(--t-base) * 2) var(--ease) } @media (prefers-reduced-motion: reduce) { .bio-dock, .bio-dock * { transition: none } }   .bio-card.bio-mcard, .bio-card.bio-mcard[aria-current], .bio-card.bio-mcard.is-play, .bio-card.bio-mcard.is-play-opt, [data-recv] .bio-card { border: 0 !important; outline: 0 !important; box-shadow: var(--shadow) !important } .bio-card.bio-mcard[aria-current=true], [data-recv] .bio-card[aria-current=true] { background: var(--surface) !important } .bio-mcard [data-orm] { opacity: 1 !important } .rbtn--icon > svg, .rbtn--icon > span > svg { width: var(--icon); height: var(--icon) }  html .bio-card.bio-mcard .bio-lk { position: relative !important; inset: auto !important; display: grid !important; flex: none }   #catLayer .catmain, #catLayer .catbody { background: var(--page) } #catLayer { background: transparent } .catprev > .rhead + .rempty { flex: 1 1 auto; justify-content: center } #catLayer .catprev { background: var(--page) }";
+    st.textContent = ".bio-card, .bio-icard { background: var(--on-primary); border: 0 !important }  .rhead [data-act=\"vmore\"] { margin-right: auto !important } .rhead:has(#vtimer:not([hidden])) [data-act=\"vmore\"] { margin-right: 0 !important } .rhead #vtimer:not([hidden]) { margin-right: auto !important } .rhead #vtimer { cursor: pointer }    .rrow[data-vrow] { padding-block: var(--gap) !important; min-height: 0 !important } .bio-card[aria-current=true]:is([data-opt], [data-am], [data-sgc], [data-liked], [data-hi]) { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary), var(--shadow) } [data-catopen]:not(.bio-dock__cat) { background: transparent !important; border-color: transparent !important; box-shadow: none !important; color: var(--primary) !important } .bio-dock .bio-dock__cat[aria-pressed=\"true\"] { background: var(--primary) !important; border-color: var(--primary) !important; color: var(--on-primary) !important } .rfield:has(> .rf-rich[contenteditable=true]), .rfield:has(> .rf-rich[contenteditable=true]) > *, .rf-rich[contenteditable=true], .rf-rich[contenteditable=true] * { cursor: text !important } .rf-rich [data-mention] { cursor: default !important } @keyframes bioTin { from { opacity: 0; transform: translateY(-8px) } to { opacity: 1; transform: none } } @keyframes bioTout { from { opacity: 1; transform: none } to { opacity: 0; transform: translateY(-8px) } } #vtimer.is-in, #itimer.is-in { animation: bioTin var(--t-base) var(--ease) both } #vtimer.is-out, #itimer.is-out { animation: bioTout var(--t-base) ease-in both } @media (prefers-reduced-motion: reduce) { #vtimer.is-in, #itimer.is-in, #vtimer.is-out, #itimer.is-out { animation: none } }   .bio-card.is-play[aria-current], .bio-card.is-play[aria-current=\"true\"], .bio-card:has([data-audio][data-st=\"pause\"])[aria-current] { border-color: transparent !important; box-shadow: var(--shadow) !important; outline: 0 !important }   @keyframes bioWave { 0% { stroke-dashoffset: 1.05 } 45% { stroke-dashoffset: 0 } 70% { stroke-dashoffset: 0 } 100% { stroke-dashoffset: -1.05 } }     [data-opening] [data-sech-row], [data-opening] [data-sech-row] * { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent } [data-opening] [data-sech-row] { touch-action: pan-y } .rrow[data-vrow] { position: relative } .bio-vsym { display: flex; flex: none; align-items: center; padding-inline: var(--ring-over); color: var(--primary); pointer-events: none } .bio-vsym__n { font: var(--fw-bold) var(--fs-l)/1 var(--font); font-variant-numeric: tabular-nums } .bio-vsym__n:empty { display: none }  @keyframes bio-wait { from { background-position: 100% 0 } to { background-position: -100% 0 } } .bio-card:has([data-audio][data-st=\"wait\"]) { background-image: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--primary) 22%, transparent) 50%, transparent 70%) !important; background-size: 200% 100% !important; background-repeat: no-repeat !important; animation: bio-wait 1.1s linear infinite } @media (prefers-reduced-motion: reduce) { .bio-card:has([data-audio][data-st=\"wait\"]) { animation: none; background-image: linear-gradient(color-mix(in srgb, var(--primary) 14%, transparent), color-mix(in srgb, var(--primary) 14%, transparent)) !important } }  .rf-rich b, .rf-rich strong, .rcard__body b, .rhint__tx b { color: var(--text) !important } [data-opening] .bio-chipb { flex: none; gap: var(--gap-tight) } [data-sech-row] > .rtitle { flex: 1 1 auto } [data-opening] .bio-chipb > span:first-child { flex: none; white-space: nowrap } [data-opening] .rfield > span:first-child { transform: translateY(16px) !important; inset-inline-end: 0 !important; pointer-events: none; transition: opacity var(--t-base) var(--ease) } [data-opening] .rfield[data-rf=\"v\"] > span:first-child { opacity: 0 } .bio-card [data-upl-wrap] { gap: var(--gap) !important }   .bio-card.is-play-opt { border-color: transparent !important; box-shadow: var(--shadow) !important }  [data-recv] [data-audio] { display: none !important }         button.rchip { background: transparent; border: 1px solid var(--primary); color: var(--primary) } button.rchip[aria-pressed=\"true\"]:not([data-fac]) { background: var(--primary); color: var(--on-primary) } button.rchip[data-fac][aria-pressed=\"true\"], .rchip[data-fac-label] { background: var(--primary); color: var(--on-primary); border: 0 } button.rchip[data-fac][aria-pressed=\"false\"] { background: transparent; color: var(--primary); border: 1px solid var(--primary) } [data-audio]:not(.ricon-lg) { background: transparent !important; border-color: transparent !important; box-shadow: none !important; color: var(--danger) !important; --play-in: var(--on-primary) }   .bio-card, .bio-card * { user-select: none; -webkit-user-select: none }       .bio-bar, .bio-bar * { touch-action: none }  .bio-dock, .bio-dock * { transition: background-color calc(var(--t-base) * 2) var(--ease), color calc(var(--t-base) * 2) var(--ease), border-color calc(var(--t-base) * 2) var(--ease), fill calc(var(--t-base) * 2) var(--ease), stroke calc(var(--t-base) * 2) var(--ease) } @media (prefers-reduced-motion: reduce) { .bio-dock, .bio-dock * { transition: none } }   .bio-card.bio-mcard, .bio-card.bio-mcard[aria-current], .bio-card.bio-mcard.is-play, .bio-card.bio-mcard.is-play-opt, [data-recv] .bio-card { border: 0 !important; outline: 0 !important; box-shadow: var(--shadow) !important } .bio-card.bio-mcard[aria-current=true], [data-recv] .bio-card[aria-current=true] { background: var(--surface) !important } .bio-mcard [data-orm] { opacity: 1 !important } .rbtn--icon > svg, .rbtn--icon > span > svg { width: var(--icon); height: var(--icon) }  html .bio-card.bio-mcard .bio-lk { position: relative !important; inset: auto !important; display: grid !important; flex: none }   .bio-catlayer .catmain, .bio-catlayer .catbody { background: var(--page) } .bio-catlayer { background: transparent } .catprev > .rhead + .rempty { flex: 1 1 auto; justify-content: center } .bio-catlayer .catprev { background: var(--page) }";
     document.head.appendChild(st);
     /* the same edge from the header's side: a scroller under a page header (outside any popup) sets data-scrolled on that header while it is scrolled away from its top, same 2px threshold as sheet.js */
     (function () {
@@ -1141,7 +1141,7 @@
     }
     if (wire) wire(t); }
   var catPanel = null, catLayer = null, catPreview = false;
-  (function () { var st = document.createElement("style"); st.textContent = "#catLayer { position: fixed; z-index: var(--z-menu); transform: translateX(100%); transition: transform var(--t-base) var(--ease); display: flex; flex-direction: column; min-height: 0 } #catLayer[hidden] { display: none } #catLayer.is-open { transform: none }  #catLayer > .catbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; box-shadow: -1px 0 0 var(--border) } #catLayer > .catbody > .rlist { flex: 1 1 auto; min-height: 0 } @media (prefers-reduced-motion: reduce) { #catLayer { transition: none } }"; document.head.appendChild(st); })();
+  (function () { var st = document.createElement("style"); st.textContent = ".bio-catlayer { position: fixed; z-index: var(--z-menu); transform: translateX(100%); transition: transform var(--t-base) var(--ease); display: flex; flex-direction: column; min-height: 0 } .bio-catlayer[hidden] { display: none } .bio-catlayer.is-open { transform: none }  .bio-catlayer > .catbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; box-shadow: -1px 0 0 var(--border) } .bio-catlayer > .catbody > .rlist { flex: 1 1 auto; min-height: 0 } @media (prefers-reduced-motion: reduce) { .bio-catlayer { transition: none } }"; document.head.appendChild(st); })();
   /* The catalog is ONE popup, a single body that slides as a whole: it is as wide as the left and the right sides together; its right part is the catalog's list, its left part is the exercise opened from it. Closing moves the whole body; the left part only slides out from under the right one when an exercise is chosen. */
   /* the on-screen keyboard: while it is up, the player (hidden behind it anyway) keeps no room at the bottom of a popup, so the list reaches the keyboard */
   (function () {
@@ -1156,28 +1156,72 @@
     });
   })();
   var catPrev = null, catPrevId = null;
+  /* THE LAYERS: a catalog opened from inside an exercise (the exercises of one song) is a NEW layer over the one that is open, and from inside it another, layer over layer. Each layer keeps its own state (what is open on it, its search, its filter); the state of the layer below waits in the stack and comes back when the one above closes. */
+  var layerStack = [], mdepth = 0;
+  function pushLayer(filter) {
+    layerStack.push({ catPanel: catPanel, catLayer: catLayer, catPrev: catPrev, catPrevId: catPrevId, catPrevMus: catPrevMus, catPreview: catPreview, catPrevCtx: catPrevCtx, lastExPrev: lastExPrev, lastMusPrev: lastMusPrev, pk: pk, catApi: catApi, exFilter: exFilter });
+    catPanel = null; catLayer = null; catPrev = null; catPrevId = null; catPrevMus = null; catPreview = false; catPrevCtx = null; lastExPrev = null; lastMusPrev = null; catApi = null;
+    pk = { q: "", ln: "", cg: "", lv: "", cv: "", tab: "ex", mq: "", mln: "", mch: "", msp: "", mef: "", xo: "", mo: "" }; exFilter = filter;
+  }
+  function popLayer() {
+    var o = layerStack.pop(); if (!o) return;
+    catPanel = o.catPanel; catLayer = o.catLayer; catPrev = o.catPrev; catPrevId = o.catPrevId; catPrevMus = o.catPrevMus; catPreview = o.catPreview; catPrevCtx = o.catPrevCtx; lastExPrev = o.lastExPrev; lastMusPrev = o.lastMusPrev; pk = o.pk; catApi = o.catApi; exFilter = o.exFilter;
+  }
   var CAT_KEY = "biodanza.catalog";
-  function saveCat() {   /* a snapshot of the catalog: open or closed, the exercise looked at, the categories, the search, the scroll */
+  function snapOf(st, depth) {   /* what one layer of the catalog is: open or closed, the exercise looked at, the search and the boxes, the categories, the scroll */
+    var k = st.pk || {}, o = { open: false, prev: null, q: k.q || "", tab: k.tab || "ex", mq: k.mq || "", mln: k.mln || "", mch: k.mch || "", msp: k.msp || "", mef: k.mef || "", cats: k.open || {}, sc: 0 };
+    if (wide()) {
+      if (!st.catLayer) return null;
+      var pks = st.catLayer.querySelector("#pks"); o.open = !!st.catPanel; o.prev = st.catPrevId || null; o.sc = pks ? pks.scrollTop : 0;
+    } else {   /* a phone: the two popups of that depth */
+      var sf = depth ? "_" + depth : "", cd = document.getElementById("catDlg" + sf), xd = document.getElementById("exDlg" + sf), pk2 = cd && cd.querySelector("#pks");
+      o.open = !!(cd && cd.open); o.prev = xd && xd.open && xd.dataset.ex ? xd.dataset.ex : null; o.sc = pk2 ? pk2.scrollTop : 0;
+    }
+    return o;
+  }
+  function saveCat() {   /* a snapshot of the catalog and of every layer opened over it, in order: a refresh brings all of them back */
     try {
-      if (wide()) {
-        if (!catLayer) return;
-        var pks = catLayer.querySelector("#pks"); localStorage.setItem(CAT_KEY, JSON.stringify({ open: !!catPanel, prev: catPrevId || null, q: pk.q || "", tab: pk.tab || "ex", mq: pk.mq || "", mln: pk.mln || "", mch: pk.mch || "", msp: pk.msp || "", mef: pk.mef || "", cats: pk.open || {}, sc: pks ? pks.scrollTop : 0 }));
-      } else {   /* a phone: the two popups */
-        var cd = document.getElementById("catDlg"), xd = document.getElementById("exDlg"), pk2 = cd && cd.querySelector("#pks");
-        localStorage.setItem(CAT_KEY, JSON.stringify({ open: !!(cd && cd.open), prev: xd && xd.open && xd.dataset.ex ? xd.dataset.ex : null, q: pk.q || "", tab: pk.tab || "ex", mq: pk.mq || "", mln: pk.mln || "", mch: pk.mch || "", msp: pk.msp || "", mef: pk.mef || "", cats: pk.open || {}, sc: pk2 ? pk2.scrollTop : 0 }));
-      }
+      var cur = { catPanel: catPanel, catLayer: catLayer, catPrevId: catPrevId, pk: pk, exFilter: exFilter }, all = layerStack.concat([cur]);
+      var base = snapOf(all[0], 0); if (!base) return;
+      base.layers = all.slice(1).map(function (st, i) { var o = snapOf(st, i + 1) || {}; o.song = st.exFilter && st.exFilter.id; o.name = st.exFilter && st.exFilter.name; return o; });
+      localStorage.setItem(CAT_KEY, JSON.stringify(base));
     } catch (e) { /* not kept */ }
+  }
+  function whenSettled(cb, n) {   /* waits until what is looked at has been drawn (no skeleton left), so the layer opened next does not take its place */
+    n = n || 0;
+    var left = wide() ? !!(catPrev && catPrev.querySelector(".rskel")) : !!(document.querySelector("#exDlg" + dsfx() + " .rskel"));
+    if (!left || n > 30) cb(); else setTimeout(function () { whenSettled(cb, n + 1); }, 100);
+  }
+  function restoreLayers(list, i) {   /* the layers over the catalog come back one by one, in order: its song filter, its search, the exercise that was open in it */
+    if (!list || i >= list.length) return;
+    var l = list[i];
+    whenSettled(function () {
+      api("/rest/v1/exercise_music?music_id=eq." + l.song + "&select=exercise_id&limit=1000").then(function (rows) {
+        var ids = {}; (rows || []).forEach(function (x) { ids[x.exercise_id] = 1; });
+        openFilteredLayer({ id: l.song, name: l.name || "", ids: ids });
+        setTimeout(function () {
+          var root = wide() ? catLayer : document.getElementById("catDlg" + dsfx()), qi = root && root.querySelector("input[data-cattitle]");
+          if (qi && l.q) { qi.value = l.q; qi.dispatchEvent(new Event("input", { bubbles: true })); }
+          var ex = l.prev && (state.cat || []).filter(function (x) { return x.id === l.prev; })[0];
+          if (ex) { if (wide()) previewEx(ex); else previewSheet(ex); }
+          restoreLayers(list, i + 1);
+        }, 700);
+      }, function () { /* no connection: the layers below stay as they are */ });
+    });
   }
   function restoreCatMobile() {   /* a phone after a refresh: the catalog opens again where it was, on the exercise that was chosen */
     if (wide()) return;
-    var snap = loadCatSnap(); if (!snap || !snap.open) return;
+    var snap = loadCatSnap(), lay = snap && Array.isArray(snap.layers) && snap.layers.length ? snap.layers : null;
+    if (!snap || (!snap.open && !lay)) return;
     var cd = document.getElementById("catDlg"); if (cd && cd.open) return;
+    if (!snap.open) { restoreLayers(lay, 0); return; }   /* the layers were opened from an exercise screen, with no catalog under them */
     resetPk(); pk.q = snap.q || ""; pk.tab = snap.tab === "mu" ? "mu" : "ex"; pk.mq = snap.mq || ""; pk.mln = snap.mln || ""; pk.mch = snap.mch || ""; pk.msp = snap.msp || ""; pk.mef = snap.mef || ""; pk.open = snap.cats || {};
     var drawn = pickerSheet(); if (!drawn || !drawn.then) return;
     drawn.then(function () {
       var pks = document.querySelector("#catDlg #pks"); if (pks) pks.scrollTop = snap.sc || 0;
       var ex = snap.prev && (state.cat || []).filter(function (x) { return x.id === snap.prev; })[0];
       if (ex) previewSheet(ex);
+      if (lay) restoreLayers(lay, 0);
     });
   }
   var catPrevCtx = null;   /* the exercise of the catalog that is looked at: what the add button adds */
@@ -1197,26 +1241,27 @@
     catPrev.classList.remove("is-open"); catPrevMus = null; catPrevId = null; catPreview = false; catPrevCtx = null; refreshPrevLabel(); saveCat();
     if (catLayer) catLayer.querySelectorAll(".bio-card[aria-current]").forEach(function (c) { c.removeAttribute("aria-current"); });
   }
-  (function () { var st = document.createElement("style"); st.textContent = "#catLayer#catLayer { transform: none; transition: visibility 0s linear var(--t-base); visibility: hidden; pointer-events: none } #catLayer#catLayer.is-open { visibility: visible; transition: visibility 0s } #catLayer .catmain { transform: translateX(100%); transition: transform var(--t-base) var(--ease) } #catLayer.is-open .catmain { transform: none } @media (prefers-reduced-motion: reduce) { #catLayer .catmain { transition: none } } #catLayer .catsh { position: absolute; z-index: 5; inset-block: 0; right: calc(var(--plw) - var(--gap-tight)); width: var(--handle-w); pointer-events: auto; cursor: col-resize; touch-action: none } #catLayer .catsh::after { content: ''; position: absolute; inset-block: 0; right: 4px; width: 2px; background: transparent; transition: background var(--t-base) } #catLayer .catsh:hover::after, #catLayer .catsh:focus-visible::after, html.split-drag #catLayer .catsh::after { background: var(--border-strong) } #catLayer .catsh:focus-visible { outline: none } #catLayer { position: fixed; z-index: var(--z-menu); pointer-events: none; transform: translateX(100%); transition: transform var(--t-base) var(--ease) } #catLayer[hidden] { display: none } #catLayer.is-open { transform: none } #catLayer > .catmain { position: absolute; z-index: var(--z-raised); inset-block: 0; right: 0; width: var(--plw); display: flex; flex-direction: column; min-height: 0; pointer-events: auto; box-shadow: -1px 0 0 var(--border) } #catLayer .catbody > .rhead { padding-inline-end: var(--gap) } #catLayer .catbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column } #catLayer .catbody > .rlist { flex: 1 1 auto; min-height: 0 } #catLayer > .catprev { position: absolute; z-index: 0; inset-block: 0; left: 0; width: var(--pdw); display: flex; flex-direction: column; min-height: 0; overflow: hidden; pointer-events: auto; visibility: hidden; transform: translateX(100%); transition: transform var(--t-base) var(--ease), visibility 0s linear var(--t-base) } #catLayer > .catprev.is-open { visibility: visible; transform: none; transition: transform var(--t-base) var(--ease), visibility 0s } #catLayer > .catprev > .rlist { flex: 1 1 auto; min-height: 0 } @media (prefers-reduced-motion: reduce) { #catLayer, #catLayer > .catprev { transition: none } }"; document.head.appendChild(st); })();
+  (function () { var st = document.createElement("style"); st.textContent = ".bio-catlayer.bio-catlayer { transform: none; transition: visibility 0s linear var(--t-base); visibility: hidden; pointer-events: none } .bio-catlayer.bio-catlayer.is-open { visibility: visible; transition: visibility 0s } .bio-catlayer .catmain { transform: translateX(100%); transition: transform var(--t-base) var(--ease) } .bio-catlayer.is-open .catmain { transform: none } @media (prefers-reduced-motion: reduce) { .bio-catlayer .catmain { transition: none } } .bio-catlayer .catsh { position: absolute; z-index: 5; inset-block: 0; right: calc(var(--plw) - var(--gap-tight)); width: var(--handle-w); pointer-events: auto; cursor: col-resize; touch-action: none } .bio-catlayer .catsh::after { content: ''; position: absolute; inset-block: 0; right: 4px; width: 2px; background: transparent; transition: background var(--t-base) } .bio-catlayer .catsh:hover::after, .bio-catlayer .catsh:focus-visible::after, html.split-drag .bio-catlayer .catsh::after { background: var(--border-strong) } .bio-catlayer .catsh:focus-visible { outline: none } .bio-catlayer { position: fixed; z-index: var(--z-menu); pointer-events: none; transform: translateX(100%); transition: transform var(--t-base) var(--ease) } .bio-catlayer[hidden] { display: none } .bio-catlayer.is-open { transform: none } .bio-catlayer > .catmain { position: absolute; z-index: var(--z-raised); inset-block: 0; right: 0; width: var(--plw); display: flex; flex-direction: column; min-height: 0; pointer-events: auto; box-shadow: -1px 0 0 var(--border) } .bio-catlayer .catbody > .rhead { padding-inline-end: var(--gap) } .bio-catlayer .catbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column } .bio-catlayer .catbody > .rlist { flex: 1 1 auto; min-height: 0 } .bio-catlayer > .catprev { position: absolute; z-index: 0; inset-block: 0; left: 0; width: var(--pdw); display: flex; flex-direction: column; min-height: 0; overflow: hidden; pointer-events: auto; visibility: hidden; transform: translateX(100%); transition: transform var(--t-base) var(--ease), visibility 0s linear var(--t-base) } .bio-catlayer > .catprev.is-open { visibility: visible; transform: none; transition: transform var(--t-base) var(--ease), visibility 0s } .bio-catlayer > .catprev > .rlist { flex: 1 1 auto; min-height: 0 } @media (prefers-reduced-motion: reduce) { .bio-catlayer, .bio-catlayer > .catprev { transition: none } }"; document.head.appendChild(st); })();
   function placeCatLayer() {   /* the one body spans both sides, from the left side's edge to the right side's edge */
     if (!catLayer) return; var a = pd.getBoundingClientRect(), b = pl.getBoundingClientRect();
     catLayer.style.top = b.top + "px"; catLayer.style.height = b.height + "px"; catLayer.style.left = a.left + "px"; catLayer.style.width = (b.right - a.left) + "px";
     catLayer.style.setProperty("--pdw", a.width + "px"); catLayer.style.setProperty("--plw", b.width + "px");
+    var sc = catLayer.__scrim; if (sc) { sc.style.top = b.top + "px"; sc.style.height = b.height + "px"; sc.style.left = a.left + "px"; sc.style.width = a.width + "px"; }   /* the scrim covers the left side, and stays there */
   }
   function ensureCatLayer() {   /* built once, closed, waiting off the right edge of the screen */
     if (catLayer) return;
     resetPk();   /* the search box reads the catalog's state: it must exist before the layer is drawn */
-    var snap = loadCatSnap(); if (snap) { pk.q = snap.q || ""; pk.tab = snap.tab === "mu" ? "mu" : "ex"; pk.mq = snap.mq || ""; pk.mln = snap.mln || ""; pk.mch = snap.mch || ""; pk.msp = snap.msp || ""; pk.mef = snap.mef || ""; pk.open = snap.cats || {}; }   /* back to where it was before the refresh */
+    var snap = layerStack.length ? null : loadCatSnap(); if (snap) { pk.q = snap.q || ""; pk.tab = snap.tab === "mu" ? "mu" : "ex"; pk.mq = snap.mq || ""; pk.mln = snap.mln || ""; pk.mch = snap.mch || ""; pk.msp = snap.msp || ""; pk.mef = snap.mef || ""; pk.open = snap.cats || {}; }   /* back to where it was before the refresh */
     var bg = getComputedStyle(document.body).backgroundColor;
-    var d = document.createElement("div"); d.id = "catLayer";
-    d.innerHTML = '<div class="catprev" style="background:' + bg + '"></div><div class="catmain" style="background:' + bg + '"><div class="catbody" inert><header class="rhead"><button type="button" id="catX" class="rbtn rbtn--icon" aria-label="סגירת הקטלוג" title="סגירת הקטלוג">' + I.x + '</button><div class="rhead__text" style="padding-inline-start:0">' + pickerTabs() + '</div></header>' + pickerBody(false) + '</div></div>';
+    var d = document.createElement("div"); d.className = "bio-catlayer";
+    d.innerHTML = '<div class="catprev" style="background:' + bg + '"></div><div class="catmain" style="background:' + bg + '"><div class="catbody" inert><header class="rhead"><button type="button" id="catX" class="rbtn rbtn--icon" aria-label="סגירת הקטלוג" title="סגירת הקטלוג">' + I.x + '</button><div class="rhead__text">' + catField() + '</div></header>' + pickerBody(false, null, !!exFilter) + '</div></div>';
     d.insertAdjacentHTML("beforeend", '<div class="catsh" role="separator" aria-orientation="vertical" aria-label="רוחב הרשימה (גרירה, חצים במקלדת, לחיצה כפולה לברירת המחדל)" title="גרירה לשינוי הרוחב · לחיצה כפולה: ברירת מחדל" tabindex="0"></div>'); if (window.__bioSplitWire) window.__bioSplitWire(d.querySelector(".catsh"));
     document.body.appendChild(d); catLayer = d; catPrev = d.querySelector(".catprev"); (d.querySelector("#catAdd") || document.createElement("i")).addEventListener("click", function (ev) {
       var c = catPrevCtx; if (!c) return;
       chooseDest(name(c.e), { vivId: state.viv && state.viv.id }, function (d) { var es = effSel(c.fake); addExTo(c.e, d.vivId, es.mid, es.all); }, { vivOnly: true });
     });
-    d.querySelector("#catX").addEventListener("click", function () { closeCatPanel(); });
-    var drawn = pickerWire(d.querySelector(".catbody"), undefined, false); placeCatLayer();
+    d.querySelector("#catX").addEventListener("click", function () { var f = d.querySelector("input[data-cattitle]"); if (f && f.__letGo && f.__letGo()) return; closeCatPanel(); });
+    var drawn = pickerWire(d.querySelector(".catbody"), undefined, false); d.__api = catApi; placeCatLayer();
     if (snap && snap.open) drawn.then(function () {   /* it was open: it opens again, on the same place and on the same exercise */
       if (catPanel || catLayer.hidden || !wide()) return;
       openCatPanel();
@@ -1224,11 +1269,17 @@
       var ex = snap.prev && (state.cat || []).filter(function (x) { return x.id === snap.prev; })[0];
       if (ex) { var cardEl = catLayer.querySelector('[data-ex="' + ex.id + '"]'); if (cardEl) (cardEl.closest(".bio-card") || cardEl).setAttribute("aria-current", "true"); previewEx(ex); }
     });
+    if (snap && Array.isArray(snap.layers) && snap.layers.length) drawn.then(function () { setTimeout(function () { if (wide()) restoreLayers(snap.layers, 0); }, 0); });   /* the layers that were over it */
     window.addEventListener("resize", placeCatLayer);
     if (window.ResizeObserver) { var ro = new ResizeObserver(placeCatLayer); ro.observe(pl); ro.observe(pd); }
   }
   function closeCatPanel(quiet) {
     if (!catPanel) return;
+    if (layerStack.length) {   /* a layer over another: it slides off, removed when it is gone, and the one below is as it was (still open, its left side still dark) */
+      var up = catLayer; up.classList.remove("is-open"); up.querySelector(".catbody").setAttribute("inert", "");   /* both halves leave together with the layer (its left part is left alone) */
+      var usc = up.__scrim; if (usc) { usc.classList.remove("is-on"); setTimeout(function () { usc.remove(); }, 400); }   /* the scrim fades out where it is */
+      popLayer(); setTimeout(function () { up.remove(); }, 400); saveCat(); return;
+    }
     catPanel = null; state.pickerShow = false; pd.classList.remove("bio-dim");
     document.querySelectorAll("[data-catopen]").forEach(function (b) { b.setAttribute("aria-pressed", "false"); });
     closeCatPrev();   /* the left part leaves with its own motion, the right part with its own: each moves only its own width */
@@ -1262,7 +1313,19 @@
       }).then(null, function (e) { ab.disabled = false; fail(e); }));
       return;
     } });
-  document.addEventListener("click", function (ev) { var b = ev.target.closest && ev.target.closest("[data-catopen]"); if (!b) return; if (wide()) { if (catPanel) closeCatPanel(); else openCatPanel(); } else { resetPk(); pickerSheet(); } });   /* a computer: the layer; a phone: the popup from the bottom, from anywhere the player is */
+    /* the catalog button (and the dock's menu item) asks which catalog: the exercises' or the music's. A computer: the layer, switched to that catalog (pressing the one that is open closes it); a phone: the popup from the bottom, from anywhere the player is */
+  function openCatalog(kind) {
+    if (wide()) {
+      ensureCatLayer();
+      if (catPanel && pk.tab === kind) { closeCatPanel(); return; }
+      pk.tab = kind; if (!catPanel) openCatPanel(); if (catLayer && catLayer.__api) catLayer.__api.goKind(kind);
+    } else { pk.tab = kind; resetPk(); pickerSheet(); var cd0 = document.getElementById("catDlg"); if (cd0 && cd0.__api) cd0.__api.goKind(kind); }
+  }
+  function catalogMenu(anchor, opts) {
+    var open = wide() ? !!catPanel : !!(document.getElementById("catDlg") || {}).open;
+    menu(anchor, [{ label: "קטלוג תרגילים", icon: I.catalog, check: undefined, fn: function () { openCatalog("ex"); } }, { label: "קטלוג מוזיקות", icon: I.play, fn: function () { openCatalog("mu"); } }], opts);
+  }
+  document.addEventListener("click", function (ev) { var b = ev.target.closest && ev.target.closest("[data-catopen]"); if (!b) return; catalogMenu(b, { end: true }); });
   pd.addEventListener("click", function (ev) { if (catPanel && pd.classList.contains("bio-dim")) closeCatPanel(); });   /* a tap on the dark side closes the layer, like any popup */
   /* wide screen: the vivencia list on the right, and after choosing one its exercises take that place and the open exercise is on the left. Back from the exercises is the vivencia list again. */
   function homeWide() { state.viv = null; state.lastItem = null; emptyDetail(); home(); }
@@ -1453,10 +1516,9 @@
     document.querySelectorAll("[data-vrow]").forEach(function (r) {
       var on = !!(nowViv.playing && nowViv.id && nowViv.id === r.dataset.vrow), sym = r.querySelector(".bio-vsym"), vc = r.querySelector(".bio-vcnt");
       if (!on) { if (sym) sym.remove(); return; }
-      if (!sym) { sym = document.createElement("span"); sym.className = "bio-vsym"; sym.setAttribute("role", "img"); sym.setAttribute("aria-label", "המוסיקה שמתנגנת היא מהוויוונסיה הזאת"); r.appendChild(sym); }
+      if (!sym) { sym = document.createElement("span"); sym.className = "bio-vsym"; sym.setAttribute("role", "img"); sym.setAttribute("aria-label", "המוסיקה שמתנגנת היא מהוויוונסיה הזאת"); var tt = r.querySelector(".rtitle"); (tt || r).appendChild(sym); }
       var h = '<span class="bio-vsym__n">' + esc(nowViv.num || "") + '</span>';   /* the number only, with the sound ring round it (sound.js), as in the header of a vivencia on a computer */
       if (sym.dataset.h !== h) { sym.dataset.h = h; sym.innerHTML = h; }
-      sym.style.insetInlineEnd = "auto"; sym.style.left = Math.round((vc ? vc.offsetLeft + vc.offsetWidth : 0) + 14) + "px";   /* the playing exercise is at the right of the count, which sits at the left end of the row, after the dots */
     });
   }
   window.addEventListener("resize", function () { paintVivPlay(); });
@@ -1479,7 +1541,7 @@
   /* THE VIVENCIA ROW (law 4): heart at the start, the name (and who it is shared by), the exercise count with its wave glyph, then the menu. ONE builder for the home list and the liked list; mainAttr is the only difference (what the row opens). */
   function vivRow(v, mainAttr) {
     var n = v.vivencia_items && v.vivencia_items[0] ? v.vivencia_items[0].count : 0;
-    return '<div class="rrow rrow--link" data-vrow="' + v.id + '">' + '' + '<button type="button" class="rrow__main" ' + mainAttr + '="' + v.id + '"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub">' + (v.role === "owner" ? "" : "משותף" + (v.role === "view" ? " (צפייה)" : " (עריכה)")) + '</span></button><span class="bio-vcnt" data-vc="' + v.id + '" aria-label="' + n + ' תרגילים" title="' + n + ' תרגילים"><span data-nn>' + n + '</span><span class="bio-vcnt__c" aria-hidden="true">' + I.curve + '</span></span>' + (state.offline ? '' : '<button type="button" class="rbtn rbtn--icon" data-vm="' + v.id + '" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>') + '</div>';
+    return '<div class="rrow rrow--link" data-vrow="' + v.id + '">' + '' + '<button type="button" class="rrow__main" ' + mainAttr + '="' + v.id + '">' + titleRow("", '<span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span>') + '<span class="rrow__sub">' + (v.role === "owner" ? "" : "משותף" + (v.role === "view" ? " (צפייה)" : " (עריכה)")) + '</span></button><span class="bio-vcnt" data-vc="' + v.id + '" aria-label="' + n + ' תרגילים" title="' + n + ' תרגילים"><span data-nn>' + n + '</span><span class="bio-vcnt__c" aria-hidden="true">' + I.curve + '</span></span>' + (state.offline ? '' : '<button type="button" class="rbtn rbtn--icon" data-vm="' + v.id + '" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>') + '</div>';
   }
   function applyVq() {   /* the rows whose name does not match what is typed are not shown */
     var l = document.getElementById("hl"); if (!l) return; var q = state.vq || "";
@@ -2000,10 +2062,10 @@
   function editor() {
     var v = state.viv; setUrl(BASE + v.id); curJoin(v.id); refreshPrevLabel();
     var vbtns = heartBtnViv(v.id, "") + '<button type="button" class="rbtn rbtn--icon" data-act="vmore" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>';   /* the heart, and the three dots: rename, print, delete */
-    show(head(v.title || "ויוונסיה חדשה", "", true, wide() ? '<button type="button" id="vgo" class="rbtn rbtn--icon" hidden aria-label="לתרגיל שמתנגן" title="לתרגיל שמתנגן" style="display:none;flex:none;flex-direction:column;gap:0;color:var(--danger);background:transparent;border-color:transparent"><span id="vgon" style="font:var(--fw-bold) var(--fs-l)/1 var(--font);font-variant-numeric:tabular-nums"></span></button><span id="vtimer" hidden aria-live="off" style="flex:none;margin-left:var(--gap);font:var(--fw-bold) var(--fs-l)/var(--lh-tight) var(--font);font-variant-numeric:tabular-nums;color:var(--text);direction:ltr"></span>' + vbtns : vbtns) +   /* the way to the catalog is a word in the header, not a floating button */
+    show(head(v.title || "ויוונסיה חדשה", "", true, wide() ? '<span id="vtimer" hidden aria-live="off" style="flex:none;margin-left:var(--gap);font:var(--fw-bold) var(--fs-l)/var(--lh-tight) var(--font);font-variant-numeric:tabular-nums;color:var(--text);direction:ltr"></span>' + vbtns : vbtns, null, '<button type="button" id="vgo" class="rbtn rbtn--icon" hidden aria-label="לתרגיל שמתנגן" title="לתרגיל שמתנגן" style="display:none;flex:none;flex-direction:column;gap:0;color:var(--danger);background:transparent;border-color:transparent"><span id="vgon" style="font:var(--fw-bold) var(--fs-l)/1 var(--font);font-variant-numeric:tabular-nums"></span></button>') +   /* the mark of the exercise that plays sits beside the name; the way to the catalog is a word in the header, not a floating button */
       '<div class="rlist" data-fab-room id="list"><div class="rskel rskel--title"></div></div>' +
       '', function (r) {   /* on a wide screen the way to the catalog is a green banner down the side, added by show() */
-      on(r, "back", back); on(r, "add", function () { resetPk(); if (wide()) goSub(picker); else pickerSheet(); });
+      on(r, "back", back); on(r, "add", function () { resetPk(); pk.tab = "ex"; if (wide()) goSub(picker); else { pickerSheet(); if (catApi) catApi.goKind("ex"); } });
       on(r, "vmore", function (b) {
         menu(b, (v.role === "view" ? [] : [{ label: "עריכת שם", icon: I.pen, fn: function () { namePopup(v, false, b); } }]).concat([{ label: "הדפסה", icon: I.print || '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><path d="M6 18H4a1 1 0 0 1-1-1v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a1 1 0 0 1-1 1h-2"/><rect x="6" y="14" width="12" height="7"/></svg>', fn: function () { printOpening(); } }]).concat(v.role === "owner" ? [{ label: "מחיקה", icon: I.trash, tone: "danger", fn: function () { confirmDelete(v); } }] : []));
       });
@@ -2499,11 +2561,13 @@
   }
   /* the page of an exercise, below its header: the songs (cards), the texts. ro: the catalog's exercise, only read (no facilitators, no notes, the texts are not edited) */
   function itemPageHtml(it, ro) {
+    function hideEmpty(k, html) { return ro && !txt(it, k) ? '' : html; }   /* the catalog's exercise shows only the fields that have words; a vivencia's exercise keeps them all, to be written in */
     var mus = '<div id="imus" style="flex:none">' + musCards(it, ro) + '</div>';   /* the songs this exercise is torn between, as cards: the chosen one plays in the vivencia; on a catalog exercise they come after the texts */
     return '<style>#ipg, #ipg * { touch-action: pan-y } #ipg textarea, #ipg .rf-rich { max-height: none } #ipg .rfield, [data-opening] .rfield { margin: 0 } #ifields .rf-rich { font-size: var(--fs-m); line-height: var(--lh-text) } #ifields[data-ro] .rf-rich { font-size: var(--fs-m); line-height: var(--lh-text) } #imus [data-audio] svg { width: var(--icon) !important; height: var(--icon) !important } #ipg:has(#ifields:not([data-ro])) #imus [data-audio] { display: none } #ipg:has(#ifields:not([data-ro])) #imus .bio-card[aria-current] { border-color: var(--border); box-shadow: var(--shadow) }</style><div id="ipg" style="display:flex;flex-direction:column;flex:1 1 auto;min-height:0">' +   /* nothing between the header and the scroller: the content goes right under the header's edge, where its shadow is */
       '<div id="iscroll" style="flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:var(--gap);padding:var(--gap) var(--gap) 0">' +   /* everything under the name scrolls together; ONE parent: its padding is the gutter, its gap sequences the fields, the songs and the end room */
-      '<div id="ifields"' + (ro ? ' data-ro' : '') + ' style="flex:none;display:flex;flex-direction:column;gap:var(--gap)">' + (!ro && (!wide() || (it.music && it.music.audio_object)) ? '<div id="iplay" class="rmid" style="flex:none">' + (it.music && it.music.audio_object ? bigPlay(it.music) : '') + (wide() ? '' : heartBtnEx(it.exercise_id || ("item:" + it.id), "")) + '</div>' : '') + '<label class="rfield" style="flex:none"><span>פואטיקה</span><div id="ipo" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true"' + (isDraft(it, "poetics") ? DRAFT_FIELD : "") + '>' + rtHtml(txt(it, "poetics")) + '</div></label>' +
-      '<label class="rfield" style="flex:none"><span>הנחיה</span><div id="igu" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true"' + (isDraft(it, "guidance") ? DRAFT_FIELD : "") + '>' + rtHtml(txt(it, "guidance")) + '</div></label>' +
+      '<div id="ifields"' + (ro ? ' data-ro' : '') + ' style="flex:none;display:flex;flex-direction:column;gap:var(--gap)">' + (!ro && (!wide() || (it.music && it.music.audio_object)) ? '<div id="iplay" class="rmid" style="flex:none">' + (it.music && it.music.audio_object ? bigPlay(it.music) : '') + (wide() ? '' : heartBtnEx(it.exercise_id || ("item:" + it.id), "")) + '</div>' : '') + hideEmpty("poetics", '<label class="rfield" style="flex:none"><span>פואטיקה</span><div id="ipo" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true"' + (isDraft(it, "poetics") ? DRAFT_FIELD : "") + '>' + rtHtml(txt(it, "poetics")) + '</div></label>') +
+      hideEmpty("guidance", '<label class="rfield" style="flex:none"><span>הנחיה</span><div id="igu" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true"' + (isDraft(it, "guidance") ? DRAFT_FIELD : "") + '>' + rtHtml(txt(it, "guidance")) + '</div></label>') +
+      (ro && it.exercises && it.exercises.emphasis ? '<label class="rfield" style="flex:none"><span>הערות</span><div id="iem" class="rf-rich" contenteditable="false" spellcheck="false" role="textbox" aria-multiline="true">' + rtHtml(it.exercises.emphasis) + '</div></label>' : '') +
       (ro ? '' : '<label class="rfield" style="flex:none"><span>הערות</span><div id="it" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true">' + rtHtml(it.notes || "") + '</div></label>') + '</div>' +
       mus + '<div id="ibtns" style="flex:none;height:calc(2 * var(--fab) + var(--gap) + 2 * var(--gap) + var(--inset-b))"></div></div></div>';
   }
@@ -2734,7 +2798,7 @@
         layoutFields(); it = fresh;
       } };
       on(r, "del", function () { confirmRemoveItem(it); });
-      on(r, "swap", function () { resetPk(); if (wide()) goSub(function () { picker(it); }); else pickerSheet(it); });   /* the catalog, to put another exercise in this place */   /* the catalog, to put another exercise in this place */
+      on(r, "swap", function () { resetPk(); pk.tab = "ex"; if (wide()) goSub(function () { picker(it); }); else pickerSheet(it); });   /* the catalog, to put another exercise in this place */   /* the catalog, to put another exercise in this place */
     }, "d");
   }
 
@@ -2967,7 +3031,7 @@
   /* a song with no file: the card has no YouTube sign, a tap on it opens YouTube; the only mark is the upload (a file from this device), with no background */
   (function () {
     var st = document.createElement("style");
-    st.textContent = ".bio-tab .bio-tab__n, .bio-tab .bio-tab__f { transform: none !important } .bio-tab__t { display: inline-flex; flex-direction: column; align-items: center } .bio-tab__t::before { content: attr(data-t); height: 0; overflow: hidden; visibility: hidden; font-weight: var(--fw-bold); pointer-events: none; user-select: none; white-space: nowrap } .bio-tab button.rchip.bio-tab__f[data-fac] { position: relative } .bio-tab button.rchip.bio-tab__f[data-fac]::after { content: \"\"; position: absolute; inset: -3px -18px -16px } .bio-tab [data-nameedit]::after { content: \"\"; position: absolute; inset: -14px -18px -3px } .bio-tab [data-nameedit] { position: relative }   #iscroll:has(#iplay) { padding-top: 0 !important } #iplay [data-likex] { width: var(--icon) !important; height: var(--icon) !important; min-height: 0 !important } #iplay [data-likex] svg { width: var(--icon) !important; height: var(--icon) !important } #itemDlg .bio-tab input.bio-tab__in, #itemDlg .rhead input.bio-tab__in { margin: 0 !important; margin-block: 0 !important; order: 0 !important; height: 1.25em !important; min-height: 0 !important; line-height: 1.25 !important; padding: 0 !important } .bio-tab__in { field-sizing: content; min-width: var(--ctl); max-width: 78vw; border: 0 !important; outline: 0; background: transparent !important; padding: 0 !important; margin: 0 !important; text-align: center; direction: rtl; font-family: inherit; text-overflow: ellipsis; height: auto; min-height: 0; line-height: var(--lh-tight); box-sizing: content-box; display: block } .bio-tab__in::placeholder { color: var(--text-muted); font-weight: var(--fw-regular) } .bio-dock .bio-dock__name { flex: 0 1 auto !important; max-width: var(--w) } #pl > .rhead [data-act=\"new\"] { transition: none !important } #pl > .rhead { position: relative } #pl > .rhead [data-catopen] { margin-inline-start: auto } #pl > .rhead #vtimer:not([hidden]) { margin-inline-start: auto } #pl > .rhead:has(#vtimer:not([hidden])) [data-catopen] { margin-inline-start: 0 } #pl > .rhead .rhead__text { align-items: flex-start; text-align: start } #pl > .rhead .rhead__title { flex: none; text-box: normal; line-height: 1.4; padding-block: 0; text-align: start; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100% } #pl > .rhead input.rhead__title { flex: 1 1 auto; width: 100%; border: 0; outline: 0; background: transparent; padding: 0; margin: 0; color: inherit; font-family: inherit } @media (width < 760px) { html.bio-docked dialog.rsheet:has(.sheet-foot) .sheet { padding-bottom: calc(var(--dockfull) + var(--gap)) !important } html.bio-kb.bio-docked dialog.rsheet:has(.sheet-foot) .sheet, html.bio-kb dialog.rsheet:has(.sheet-foot) .sheet { padding-bottom: var(--gap) !important; margin-bottom: 0 !important } html.bio-kb dialog.rsheet:has(.sheet-foot) { padding-bottom: 0 !important; height: auto !important; min-height: 0 !important; top: auto !important; bottom: 0 !important; inset-block-start: auto !important; margin-top: auto !important } html.bio-kb dialog.rsheet:has(.sheet-foot) .sheet { flex: 0 1 auto !important; min-height: 0 !important } } #pl > #list { padding-block-start: var(--gap); padding-inline: var(--gap); gap: var(--gap) }   /* the end padding is the kit's: --end-pad, and the add button's room only while that button is on the screen */ [data-recv], [data-opening], [data-exsec] { display: flex; flex-direction: column } :is([data-recv], [data-opening], [data-exsec]):has(> .racc__body:not([data-closed]) > div > :not(:empty)) { gap: var(--gap) }  [data-vrow] .rrow__main { justify-content: center; min-width: 0 } [data-vrow] .rrow__title { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap } [data-vrow] .rrow__sub:empty { display: none } .bio-vcnt__c { display: grid; flex: none; width: var(--icon); height: var(--icon); color: var(--text-muted) } .bio-vcnt__c svg { width: 100%; height: 100%; display: block; stroke-width: var(--icon-w) } .bio-vcnt__c svg path { animation: none !important; stroke-dasharray: none !important } .bio-vcnt { flex: none; display: inline-flex; align-items: center; gap: var(--gap-tight); color: var(--text-muted); font: var(--fw-bold) var(--fs-m)/1 var(--font); font-variant-numeric: tabular-nums; pointer-events: none } button:has(> [data-exn][data-zero]), button:has(> [data-exn]:empty) { display: none !important } #vtimer, #itimer { display: inline-flex; align-items: center; height: var(--ctl); line-height: 1 !important } #vtimer[hidden], #itimer[hidden] { display: none } .bio-tab .bio-tab__t, .bio-tab.is-cur .bio-tab__t { --e: max(0, calc(1 - abs(var(--cx, 0px) + var(--tx, 0px) - var(--cw, 360px) / 2) / (var(--cw, 360px) * .28))); color: color-mix(in srgb, var(--text) calc(var(--e) * 100%), var(--text-muted)); font-weight: calc(var(--fw-regular) + (var(--fw-bold) - var(--fw-regular)) * var(--e)); transition: color var(--t-base) var(--ease) } .bio-tabs__track.is-drag .bio-tab .bio-tab__t { transition: none !important } .bio-tab .bio-tab__n, .bio-tab .bio-tab__f { transition: transform var(--t-base) var(--ease), opacity var(--t-base) var(--ease) } .bio-tabs__track.is-drag .bio-tab .bio-tab__n, .bio-tabs__track.is-drag .bio-tab .bio-tab__f { transition: none !important } .bio-tab { --nx: calc(clamp(var(--cw, 360px) * .13, var(--cx, 0px) + var(--tx, 0px), var(--cw, 360px) * .87) - (var(--cx, 0px) + var(--tx, 0px))) } .bio-tab .bio-tab__n, .bio-tab .bio-tab__f { opacity: calc(1 - var(--nb, 0) * min(1, abs(var(--nx)) / (var(--cw, 360px) * .36))) !important } .bio-tab[data-far] { opacity: clamp(0, calc(1.5 - abs(var(--cx, 0px) + var(--tx, 0px) - var(--cw, 360px) / 2) / (var(--cw, 360px) * .37)), .7) !important } #iplay [data-likex] { width: var(--icon) !important; height: var(--icon) !important; min-height: 0 !important; padding: 0 !important; margin: 0 !important } #iplay [data-likex] svg { width: var(--icon); height: var(--icon) } .bio-card[aria-current=true][data-ex], .bio-card[aria-current=true][data-ex]:hover, .bio-icard[aria-current=true] { background: var(--surface) !important; border-color: transparent !important; box-shadow: var(--shadow) !important; outline: 0 !important } .bio-card [data-yt] { display: none !important } .bio-card [data-upl] { width: var(--icon) !important; height: var(--icon) !important; min-height: 0 !important; padding: 0 !important; background: transparent !important; border-color: transparent !important; box-shadow: none !important; color: var(--text) !important } .bio-card [data-upl] svg { width: var(--icon) !important; height: var(--icon) !important; stroke-width: 2 !important } ";
+    st.textContent = ".bio-tab .bio-tab__n, .bio-tab .bio-tab__f { transform: none !important } .bio-tab__t { display: inline-flex; flex-direction: column; align-items: center } .bio-tab__t::before { content: attr(data-t); height: 0; overflow: hidden; visibility: hidden; font-weight: var(--fw-bold); pointer-events: none; user-select: none; white-space: nowrap } .bio-tab button.rchip.bio-tab__f[data-fac] { position: relative } .bio-tab button.rchip.bio-tab__f[data-fac]::after { content: \"\"; position: absolute; inset: -3px -18px -16px } .bio-tab [data-nameedit]::after { content: \"\"; position: absolute; inset: -14px -18px -3px } .bio-tab [data-nameedit] { position: relative }   #iscroll:has(#iplay) { padding-top: 0 !important } #iplay [data-likex] { width: var(--icon) !important; height: var(--icon) !important; min-height: 0 !important } #iplay [data-likex] svg { width: var(--icon) !important; height: var(--icon) !important } #itemDlg .bio-tab input.bio-tab__in, #itemDlg .rhead input.bio-tab__in { margin: 0 !important; margin-block: 0 !important; order: 0 !important; height: 1.25em !important; min-height: 0 !important; line-height: 1.25 !important; padding: 0 !important } .bio-tab__in { field-sizing: content; min-width: var(--ctl); max-width: 78vw; border: 0 !important; outline: 0; background: transparent !important; padding: 0 !important; margin: 0 !important; text-align: center; direction: rtl; font-family: inherit; text-overflow: ellipsis; height: auto; min-height: 0; line-height: var(--lh-tight); box-sizing: content-box; display: block } .bio-tab__in::placeholder { color: var(--text-muted); font-weight: var(--fw-regular) } .bio-dock .bio-dock__name { flex: 0 1 auto !important; max-width: var(--w) } #pl > .rhead [data-act=\"new\"] { transition: none !important } #pl > .rhead { position: relative } #pl > .rhead [data-catopen] { margin-inline-start: auto } #pl > .rhead #vtimer:not([hidden]) { margin-inline-start: auto } #pl > .rhead:has(#vtimer:not([hidden])) [data-catopen] { margin-inline-start: 0 } #pl > .rhead .rhead__text { align-items: flex-start; text-align: start } #pl > .rhead .rhead__title { flex: none; text-box: normal; line-height: 1.4; padding-block: 0; text-align: start; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100% } .rhead input.rhead__title, dialog.rsheet .sheet-head > input.rhead__title { flex: 1 1 auto; width: 100%; border: 0; outline: 0; background: transparent; padding: 0; margin: 0; color: inherit; font-family: inherit } @media (width < 760px) { html.bio-docked dialog.rsheet:has(.sheet-foot) .sheet { padding-bottom: calc(var(--dockfull) + var(--gap)) !important } html.bio-kb.bio-docked dialog.rsheet:has(.sheet-foot) .sheet, html.bio-kb dialog.rsheet:has(.sheet-foot) .sheet { padding-bottom: var(--gap) !important; margin-bottom: 0 !important } html.bio-kb dialog.rsheet:has(.sheet-foot) { padding-bottom: 0 !important; height: auto !important; min-height: 0 !important; top: auto !important; bottom: 0 !important; inset-block-start: auto !important; margin-top: auto !important } html.bio-kb dialog.rsheet:has(.sheet-foot) .sheet { flex: 0 1 auto !important; min-height: 0 !important } } #pl > #list { padding-block-start: var(--gap); padding-inline: var(--gap); gap: var(--gap) }   /* the end padding is the kit's: --end-pad, and the add button's room only while that button is on the screen */ [data-recv], [data-opening], [data-exsec] { display: flex; flex-direction: column } :is([data-recv], [data-opening], [data-exsec]):has(> .racc__body:not([data-closed]) > div > :not(:empty)) { gap: var(--gap) }  [data-vrow] .rrow__main { justify-content: center; min-width: 0 } [data-vrow] .rrow__title { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap } [data-vrow] .rrow__sub:empty { display: none } .bio-vcnt__c { display: grid; flex: none; width: var(--icon); height: var(--icon); color: var(--text-muted) } .bio-vcnt__c svg { width: 100%; height: 100%; display: block; stroke-width: var(--icon-w) } .bio-vcnt__c svg path { animation: none !important; stroke-dasharray: none !important } .bio-vcnt { flex: none; display: inline-flex; align-items: center; gap: var(--gap-tight); color: var(--text-muted); font: var(--fw-bold) var(--fs-m)/1 var(--font); font-variant-numeric: tabular-nums; pointer-events: none } button:has(> [data-exn][data-zero]), button:has(> [data-exn]:empty) { display: none !important } #vtimer, #itimer { display: inline-flex; align-items: center; height: var(--ctl); line-height: 1 !important } #vtimer[hidden], #itimer[hidden] { display: none } .bio-tab .bio-tab__t, .bio-tab.is-cur .bio-tab__t { --e: max(0, calc(1 - abs(var(--cx, 0px) + var(--tx, 0px) - var(--cw, 360px) / 2) / (var(--cw, 360px) * .28))); color: color-mix(in srgb, var(--text) calc(var(--e) * 100%), var(--text-muted)); font-weight: calc(var(--fw-regular) + (var(--fw-bold) - var(--fw-regular)) * var(--e)); transition: color var(--t-base) var(--ease) } .bio-tabs__track.is-drag .bio-tab .bio-tab__t { transition: none !important } .bio-tab .bio-tab__n, .bio-tab .bio-tab__f { transition: transform var(--t-base) var(--ease), opacity var(--t-base) var(--ease) } .bio-tabs__track.is-drag .bio-tab .bio-tab__n, .bio-tabs__track.is-drag .bio-tab .bio-tab__f { transition: none !important } .bio-tab { --nx: calc(clamp(var(--cw, 360px) * .13, var(--cx, 0px) + var(--tx, 0px), var(--cw, 360px) * .87) - (var(--cx, 0px) + var(--tx, 0px))) } .bio-tab .bio-tab__n, .bio-tab .bio-tab__f { opacity: calc(1 - var(--nb, 0) * min(1, abs(var(--nx)) / (var(--cw, 360px) * .36))) !important } .bio-tab[data-far] { opacity: clamp(0, calc(1.5 - abs(var(--cx, 0px) + var(--tx, 0px) - var(--cw, 360px) / 2) / (var(--cw, 360px) * .37)), .7) !important } #iplay [data-likex] { width: var(--icon) !important; height: var(--icon) !important; min-height: 0 !important; padding: 0 !important; margin: 0 !important } #iplay [data-likex] svg { width: var(--icon); height: var(--icon) } .bio-card[aria-current=true][data-ex], .bio-card[aria-current=true][data-ex]:hover, .bio-icard[aria-current=true] { background: var(--surface) !important; border-color: transparent !important; box-shadow: var(--shadow) !important; outline: 0 !important } .bio-card [data-yt] { display: none !important } .bio-card [data-upl] { width: var(--icon) !important; height: var(--icon) !important; min-height: 0 !important; padding: 0 !important; background: transparent !important; border-color: transparent !important; box-shadow: none !important; color: var(--text) !important } .bio-card [data-upl] svg { width: var(--icon) !important; height: var(--icon) !important; stroke-width: 2 !important } ";
     document.head.appendChild(st);
     document.addEventListener("click", function (ev) {
       var c = ev.target.closest && ev.target.closest(".bio-card"); if (!c || c.querySelector("[data-audio]")) return;
@@ -3374,14 +3438,15 @@
   function resetPk() { pk = { q: "", ln: "", cg: "", lv: "", cv: "", tab: pk.tab === "mu" ? "mu" : "ex", mq: "", mln: "", mch: "", msp: "", mef: "", xo: "", mo: "" }; }   /* a fresh search each time, but the tab stays where it was left */
   var LEVELS_FALLBACK = [{ key: "all", name_he: "מתחילים (מתאים לכל הקבוצות)" }, { key: "exp3", name_he: "לקבוצות עם ניסיון של כמה חודשים" }, { key: "exp6", name_he: "לקבוצות עם ניסיון של חצי שנה ויותר" }, { key: "deep", name_he: "לקבוצות העמקה ומתקדמות" }];   /* the index of group levels (biodanza.levels), when it has not come from the cloud */
   /* the catalog picker: a search and the list of categories; a category opens like an accordion onto its exercises. On a wide screen it is a pane; on a narrow one it is a popup from the bottom. */
+  function catField() {   /* the header of a catalog IS its search: the title is what the field shows when empty (the same field as the title of the vivencias list when it is searched) */
+    return '<input id="hq" class="rhead__title" data-cattitle type="text" placeholder="' + esc(catTitle()) + '" autocomplete="off" aria-label="' + esc(catTitle()) + '">';
+  }
   function searchInput(id, label) {
     id = id || "q"; label = label || "חיפוש תרגילים בקטלוג";
-    return '<div class="bio-search"><input id="' + id + '" class="rhead__title" type="text" placeholder="' + label + '" autocomplete="off" aria-label="' + label + '"></div>';
+    return '<input id="' + id + '" type="hidden">';
   }
-  /* the two tabs of the catalog: exercises (the first, on the right) and music; they are the pager's two pages */
-  function pickerTabs() {
-    return '<div class="rtabs" role="tablist" style="position:relative;flex:0 0 auto;width:100%;min-width:0;border-bottom:0"><button type="button" class="rtab" role="tab" data-pkt="ex" aria-selected="true" style="box-shadow:none">תרגילים</button><button type="button" class="rtab" role="tab" data-pkt="mu" aria-selected="false" style="box-shadow:none">מוסיקה</button><i data-pkind aria-hidden="true" style="position:absolute;inset-block-end:0;inset-inline-start:0;width:50%;height:var(--bw-bar);background:var(--primary);pointer-events:none;will-change:transform"></i></div>';
-  }
+  /* the catalog is two catalogs, chosen from the menu of the catalog button (pk.tab: "ex" the exercises', "mu" the music's): one page each, no tabs */
+  function catTitle() { return exFilter ? "התרגילים של " + exFilter.name : pk.tab === "mu" ? "קטלוג מוזיקות" : "קטלוג תרגילים"; }
   /* what the music tab filters by: the three tag columns of the music table. Values stay in English (they are the keys); a value with no entry here shows as it is. */
   var MU_LINE = [["Affectivity", "affectivity", "חיבתיות"], ["Creativity", "creativity", "יצירתיות"], ["Vitality", "vitality", "חיוניות"], ["Sexuality", "sexuality", "מיניות"], ["Trance", "transcendence", "התעלות"], ["Maze", "", "מבוך"]];   /* the app's own line names are used when it has them */
   var MU_CHAR = { "Rhythmic": "קצבי", "Melodic": "מלודי", "Other": "אחר" }, MU_SPEED = { "Slow": "איטי", "Medium": "בינוני", "Fast": "מהיר" };   /* the two new columns: character and speed, fixed order */
@@ -3390,15 +3455,15 @@
   function tagHit(m, f) {   /* a song matches when, in every box that is set, its array holds the chosen value; a song with no tags matches only when no box is set */
     return (!f.ln || (m.line_tags || []).indexOf(f.ln) >= 0) && (!f.ch || (m.rhythm_char_tags || []).indexOf(f.ch) >= 0) && (!f.sp || (m.rhythm_speed_tags || []).indexOf(f.sp) >= 0) && (!f.ef || (m.effect_tags || []).indexOf(f.ef) >= 0);
   }
-  function pickerBody(sheetMode, swapIt) {
-    var pageCss = '<style>.bio-search { display: flex; align-items: center; gap: var(--gap-tight); min-height: var(--ctl); border-bottom: var(--bw) solid transparent } .bio-search > [data-sicon] { display: grid; flex: none; width: var(--icon); height: var(--icon); color: var(--text-muted) } .bio-search > [data-sicon] svg { width: 100%; height: 100%; stroke-width: var(--icon-w) } .bio-search > input { flex: 1 1 auto; align-self: stretch; width: 100%; min-width: 0; margin: 0; padding: 0; border: 0; background: transparent; color: inherit; text-align: center; outline: 0; text-overflow: ellipsis; text-box: normal } .mfs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap) } @media (min-width: 760px) { .mfs { grid-template-columns: repeat(4, minmax(0, 1fr)) } } .pgh > .pgs { padding-inline: var(--gap); padding-block: 0 } .pgs > .rfield { margin: 0 } #pks, #pkl { scrollbar-width: none } #pks::-webkit-scrollbar, #pkl::-webkit-scrollbar { display: none } .pgh { position: absolute; inset: 0 0 auto 0; z-index: 2; display: flex; flex-direction: column; gap: var(--gap); background: var(--page); padding: var(--gap) 0 0; transform: translateY(calc(-1 * var(--ho, 0px))); will-change: transform } .pgp::after { content: \"\"; position: absolute; inset-inline: 0; top: calc(var(--hh, 0px) - var(--ho, 0px)); height: var(--gap-tight); background: linear-gradient(color-mix(in srgb, var(--scrim) 25%, transparent), transparent); opacity: 0; transition: opacity var(--t-base) var(--ease); pointer-events: none; z-index: 3 } .pgp[data-sc]::after { opacity: 1 } .pgp > .pgl { padding-top: var(--hh, 0px) } #pgr::-webkit-scrollbar { display: none } ' + (sheetMode ? '#catDlg .sheet-head { display: none } #catDlg [data-accb] > div > div, #catDlg #mgrid { padding-inline: 0 !important } #catDlg .sheet-body > #pgr, #catDlg .sheet-body > .rtabs { padding-inline: 0 } #catDlg .pgp > * { padding-inline: var(--bleed, var(--gap)) } #catDlg .pgh > .pgs { padding-inline: 0 }' : '') + '</style>';
+  function pickerBody(sheetMode, swapIt, noMusic) {
+    var pageCss = '<style>.bio-search { display: flex; align-items: center; gap: var(--gap-tight); min-height: var(--ctl); border-bottom: var(--bw) solid transparent } .bio-search > [data-sicon] { display: grid; flex: none; width: var(--icon); height: var(--icon); color: var(--text-muted) } .bio-search > [data-sicon] svg { width: 100%; height: 100%; stroke-width: var(--icon-w) } .bio-search > input { flex: 1 1 auto; align-self: stretch; width: 100%; min-width: 0; margin: 0; padding: 0; border: 0; background: transparent; color: inherit; text-align: center; outline: 0; text-overflow: ellipsis; text-box: normal } .mfs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap) } @media (min-width: 760px) { .mfs { grid-template-columns: repeat(4, minmax(0, 1fr)) } } .pgh > .pgs { padding-inline: var(--gap); padding-block: 0 } .pgs > .rfield { margin: 0 } #pks, #pkl { scrollbar-width: none } #pks::-webkit-scrollbar, #pkl::-webkit-scrollbar { display: none } .pgh { position: absolute; inset: 0 0 auto 0; z-index: 2; display: flex; flex-direction: column; gap: var(--gap); background: var(--page); padding: var(--gap) 0 0; transform: translateY(calc(-1 * var(--ho, 0px))); will-change: transform } .pgp::after { content: \"\"; position: absolute; inset-inline: 0; top: calc(var(--hh, 0px) - var(--ho, 0px)); height: var(--gap-tight); background: linear-gradient(color-mix(in srgb, var(--scrim) 25%, transparent), transparent); opacity: 0; transition: opacity var(--t-base) var(--ease); pointer-events: none; z-index: 3 } .pgp[data-sc]::after { opacity: 1 } .pgp > .pgl { padding-top: var(--hh, 0px) } #pgr::-webkit-scrollbar { display: none } ' + (sheetMode ? '#catDlg [data-accb] > div > div, #catDlg #mgrid { padding-inline: 0 !important } #catDlg .sheet-body > #pgr, #catDlg .sheet-body > .rtabs { padding-inline: 0 } #catDlg .pgp > * { padding-inline: var(--bleed, var(--gap)) } #catDlg .pgh > .pgs { padding-inline: 0 }' : '') + '</style>';
     var pageSt = 'position:relative;flex:0 0 100%;min-width:0;min-height:0;display:flex;flex-direction:column;scroll-snap-align:start;scroll-snap-stop:always', listSt = 'position:relative;flex:1 1 auto;min-height:0;overflow-y:auto';
-    var exPage = '<div class="pgp" role="tabpanel" style="' + pageSt + '"><div class="pgh"><div class="pgs">' + searchInput("q", "חיפוש תרגילים בקטלוג") + '</div></div><div class="rlist pgl" id="pks" style="' + listSt + '"><div id="list"><div class="rskel rskel--title"></div></div></div></div>';
-    var muPage = swapIt ? '' : '<div class="pgp" role="tabpanel" style="' + pageSt + '"><div class="pgh"><div class="pgs mfs">' +
+    var exPage = '<div class="pgp" role="tabpanel" style="' + pageSt + '">' + searchInput("q") + '<div class="rlist pgl" id="pks" style="' + listSt + '"><div id="list"><div class="rskel rskel--title"></div></div></div></div>';
+    var muPage = swapIt || noMusic ? '' : '<div class="pgp" role="tabpanel" style="' + pageSt + '"><div class="pgh"><div class="pgs mfs">' +
       [["mln", "קו"], ["mch", "אופי"], ["msp", "מהירות"], ["mef", "אפקט"]].map(function (b) { return '<label class="rfield"><span>' + b[1] + '</span><select data-mf="' + b[0] + '"><option value="">הכל</option></select></label>'; }).join("") +
-      '</div><div class="pgs">' + searchInput("mq", "חיפוש מוסיקה בקטלוג") + '</div></div><div class="rlist pgl" id="pkl" style="' + listSt + '"><div class="rskel rskel--title"></div></div></div>';
-    return pageCss + (sheetMode && !swapIt ? pickerTabs() : '') +
-      '<div id="pgr" style="flex:1 1 auto;min-height:0;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none">' + exPage + muPage + '</div>';
+      '</div></div>' + searchInput("mq") + '<div class="rlist pgl" id="pkl" style="' + listSt + '"><div class="rskel rskel--title"></div></div></div>';
+    return pageCss +
+      '<div id="pgr" style="flex:1 1 auto;min-height:0;display:flex;overflow:hidden">' + exPage + muPage + '</div>';
   }
   function pickerWire(r, swapIt, sheet) {
       var open = pk.open || (pk.open = {});   /* the categories that are open, kept while an exercise is looked at and back again */
@@ -3451,7 +3516,7 @@
         }
         catBy = by;
         hint(r.querySelector("#q"), catFind("").length, "תרגיל", "תרגילים");
-        var chip = exFilter ? '<div style="display:flex;align-items:center;gap:var(--gap);padding:var(--gap) var(--gap)"><span style="font:var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font);color:var(--text-muted)">התרגילים של</span><button type="button" data-xfx class="rchip" style="display:inline-flex;align-items:center;gap:var(--gap);cursor:pointer;max-width:100%" aria-label="שחרור הסינון" title="שחרור הסינון"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(exFilter.name) + '</span><span aria-hidden="true" class="ricon">' + I.x + '</span></button></div>' : '';
+        var chip = '';   /* the filter is the layer's title (the exercises of ...): closing the layer lets it go */
         l.innerHTML = chip + (cats.length ? cats.map(function (k) {
           var on = open[k] != null ? open[k] : false;   /* a category opens only when it is tapped: typing a search opens nothing */
           var head = foldRow('data-cat="' + esc(k) + '"', esc(catName(k) || "ללא קטגוריה"), "", by[k].length, on, true);
@@ -3459,7 +3524,13 @@
         }).join("") : ph("לא נמצא תרגיל", ""));   /* the exercises tab holds exercises only: the songs have their own tab */
       }
       /* the pager: two pages side by side in one horizontal scroller with scroll snap. In RTL the first page (exercises) is on the right and scrollLeft runs negative, so the target is signed by the direction. A tap on a tab scrolls the pager; a swipe changes the tab; the tab marker is the kit's own (aria-selected). */
-      var pgr = r.querySelector("#pgr"), tabEls = r.querySelectorAll("[data-pkt]"), TABS = ["ex", "mu"], goingTo = null, goT = 0, mq = r.querySelector("#mq");
+      var pgr = r.querySelector("#pgr"), TABS = ["ex", "mu"], mq = r.querySelector("#mq");
+      var hq = (r.closest("dialog") || r).querySelector("input[data-cattitle]");
+      if (hq) {
+        hq.addEventListener("input", function () { var t = r.querySelector(pk.tab === "mu" ? "#mq" : "#q"); if (!t) return; t.value = hq.value; t.dispatchEvent(new Event("input", { bubbles: true })); });
+        hq.addEventListener("keydown", function (e) { if (e.key === "Escape") { e.stopPropagation(); hq.value = ""; hq.dispatchEvent(new Event("input")); hq.blur(); } });
+        hq.__letGo = function () { if (!hq.value && document.activeElement !== hq) return false; hq.value = ""; hq.dispatchEvent(new Event("input")); hq.blur(); return true; };   /* the X: first the search goes and the title is back, then it closes */
+      }
       function hint(inp, n, one, many) {   /* the search box says how many there are to search in, after the boxes above it have filtered */
         if (!inp) return;
         var t = "חיפוש " + (n === 1 ? one + " אחת" : "בין " + n + " " + many);
@@ -3507,30 +3578,18 @@
         }, function () { musicLoading = false; var l = r.querySelector("#pkl"); if (l) l.innerHTML = ph("לא ניתן לטעון את המוסיקה", ""); });
       }
       function dirSign() { return getComputedStyle(pgr).direction === "rtl" ? -1 : 1; }
-      function curIdx() { var w = pgr.clientWidth || 1; return Math.max(0, Math.min(TABS.length - 1, Math.round(Math.abs(pgr.scrollLeft) / w))); }
-      function markTab(i) {
-        tabEls.forEach(function (t, j) { t.setAttribute("aria-selected", String(i === j)); });
-        if (pk.tab !== TABS[i]) { pk.tab = TABS[i]; saveCat(); syncLeftToTab(); }
+      function markKind(i) {   /* which of the two catalogs this is: the title says it, the left part follows it */
+        var t = TABS[i];
+        if (pk.tab !== t) { pk.tab = t; saveCat(); syncLeftToTab(); }
+        if (hq) { hq.placeholder = catTitle(); hq.setAttribute("aria-label", catTitle()); var cur = r.querySelector(i === 1 ? "#mq" : "#q"); hq.value = cur ? cur.value : ""; }
         if (i === 1) ensureMusic();
       }
-      function goTab(i, instant) {
-        var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        goingTo = instant || reduce ? null : i; clearTimeout(goT); if (goingTo != null) goT = setTimeout(function () { goingTo = null; }, 700);   /* the scroll listener leaves the tabs alone until the animation arrives */
-        pgr.scrollTo({ left: dirSign() * i * pgr.clientWidth, behavior: instant || reduce ? "auto" : "smooth" });
-        markTab(i);
-      }
-      catApi = { paint: paintCat, goEx: function () { goTab(0); } };
-      if (pgr && tabEls.length) {
-        var raf = 0, lastW = 0, maxS = 0, ind = r.querySelector("[data-pkind]");
-        function glide() { if (!ind || !maxS) return; var p = Math.min(1, Math.max(0, Math.abs(pgr.scrollLeft) / maxS)); ind.style.transform = "translateX(" + (dirSign() * p * 100) + "%)"; }   /* the marker follows the scroll itself: a swipe and a tap's animation alike, with transform only */
-        pgr.addEventListener("scroll", function () {
-          if (!pgr.clientWidth || raf) return;
-          raf = requestAnimationFrame(function () { raf = 0; if (!pgr.clientWidth) return; glide(); var i = curIdx(); if (goingTo != null) { if (i === goingTo) goingTo = null; return; } markTab(i); });
-        }, { passive: true });
-        tabEls.forEach(function (t, j) { t.addEventListener("click", function (ev) { goTab(j); if (ev.detail > 0) t.blur(); }); });   /* a tap or a click leaves no focus frame on the tab (the moving bar marks it); a keyboard press (detail 0) keeps the frame */
-        var resnap = function () { var w = pgr.clientWidth; maxS = pgr.scrollWidth - w; if (w && w !== lastW) { lastW = w; var i = TABS.indexOf(pk.tab); goTab(i < 0 ? 0 : i, true); glide(); } };   /* it came on screen (a hidden box forgets its scroll) or changed width: back on the page of the selected tab */
+      function goKind(i) { pgr.scrollTo({ left: dirSign() * i * pgr.clientWidth, behavior: "auto" }); markKind(i); }
+      catApi = { paint: paintCat, goEx: function () { goKind(0); }, goKind: function (k) { goKind(k === "mu" ? 1 : 0); } };
+      if (pgr) {
+        var lastW = 0, resnap = function () { var w = pgr.clientWidth; if (w && w !== lastW) { lastW = w; var i = TABS.indexOf(pk.tab); goKind(i < 0 ? 0 : i); } };   /* it came on screen (a hidden box forgets its scroll) or changed width: back on the page of its catalog */
         if (window.ResizeObserver) new ResizeObserver(resnap).observe(pgr); else window.addEventListener("resize", resnap);
-        var i0 = TABS.indexOf(pk.tab); markTab(i0 < 0 ? 0 : i0); requestAnimationFrame(resnap);
+        var i0 = TABS.indexOf(pk.tab); markKind(i0 < 0 ? 0 : i0); requestAnimationFrame(resnap);
       }
       if (mq) {
         mq.value = pk.mq || "";
@@ -3547,8 +3606,8 @@
         ml.addEventListener("click", function (ev) {   /* the same as before: a tap on a card plays, the chip adds an exercise with no name and that song */
           if (ev.target.closest("[data-audio], a")) return;
           var bt = ev.target.closest("[data-sg]");
-          if (!bt) { var cd = ev.target.closest("[data-sgc]"), pb = cd && cd.querySelector("[data-audio]"), fx = cd && cd.querySelector("[data-sg]"); if (pb) pb.click(); if (fx && wide() && cd.getAttribute("aria-current") !== "true") fx.click(); return; }   /* a tap on a song: it plays; on a wide screen its exercises open beside it, as if the curve button was pressed; on a phone only the curve button opens them */
-          var m = mById[bt.dataset.sg]; if (m) previewMusic(m);
+          if (!bt) { var cd = ev.target.closest("[data-sgc]"), pb = cd && cd.querySelector("[data-audio]"); if (pb) pb.click(); return; }   /* a tap on a song only plays it; its exercises open from the curve button */
+          var m = mById[bt.dataset.sg]; if (m) setExFilter(m);   /* the curve button: the exercises of the song, as a new layer (the same as from inside an exercise) */
         });
       }
       r.querySelectorAll(".pgp").forEach(function (P) {   /* the header (the boxes and the search) leaves with the scroll and comes back with it: the cards reach the tabs */
@@ -3571,7 +3630,7 @@
   }
   function picker(swapIt) {
     state.pickerShow = true;
-    show('<header class="rhead"><button class="rbtn rbtn--icon" data-act="back" aria-label="חזרה" title="חזרה">' + I.back + '</button><div class="rhead__text">' + (swapIt ? '<span class="rhead__title">הקטלוג</span>' : pickerTabs()) + '</div></header>' + pickerBody(false, swapIt), function (r) {
+    show('<header class="rhead"><button class="rbtn rbtn--icon" data-act="back" aria-label="חזרה" title="חזרה">' + I.back + '</button><div class="rhead__text">' + catField() + '</div></header>' + pickerBody(false, swapIt), function (r) {
       on(r, "back", !wide() ? back : swapIt ? function () { pending = { item: swapIt.id }; back(); }   /* leaving a replacement: the same exercise is open again on the left */
         : function () { show(phPick("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); back(); });
       pickerWire(r, swapIt, false);
@@ -3580,18 +3639,21 @@
     if (wide()) pd.classList.add("bio-dim");   /* the exercise of the vivencia on the left is dark while the catalog is open */
   }
   /* narrow screen: the catalog is a popup from the bottom, and a chosen exercise opens in a second popup on top of it, with the action as a green check in its header; closing it is back to the list */
-  function pickerSheet(swapIt) {
-    var dlg = document.getElementById("catDlg");
-    if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "catDlg"; document.body.appendChild(dlg); }
-    if (!swapIt && dlg.__bioKind === "main" && dlg.querySelector("#pgr")) {   /* built once: closing only lowers it, opening only raises it, with the search, the tab, the boxes and the scroll as they were */
-      if (dlg.__bioPk) pk = dlg.__bioPk;
+  function dsfx() { return mdepth ? "_" + mdepth : ""; }   /* the ids of the popups of a layer over a layer: catDlg_1, exDlg_1, catDlg_2, ... */
+  function pickerSheet(swapIt, over) {
+    var dlg = document.getElementById("catDlg" + dsfx());
+    if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "catDlg" + dsfx(); document.body.appendChild(dlg); }
+    if (over && !dlg.__layerWired) { dlg.__layerWired = true; dlg.addEventListener("close", function () { if (mdepth && dlg.id === "catDlg" + dsfx()) { var xd = document.getElementById("exDlg" + dsfx()); if (xd && xd.open) xd.close(); mdepth--; popLayer(); saveCat(); } }); }   /* closing the popup of a layer gives the layer below back */
+    if (!swapIt && !over && dlg.__bioKind === "main" && dlg.querySelector("#pgr")) {   /* built once: closing only lowers it, opening only raises it, with the search, the tab, the boxes and the scroll as they were */
+      if (dlg.__bioPk) pk = dlg.__bioPk; if (dlg.__api) catApi = dlg.__api;
       RosterSheet.open(dlg, "bottom"); bleedSet(dlg);
       if (document.activeElement && document.activeElement !== document.body && dlg.contains(document.activeElement)) document.activeElement.blur();
       saveCat();
       return Promise.resolve();
     }
-    RosterSheet.render(dlg, { title: "", from: "bottom", body: bleedCss("catDlg") + pickerBody(true, swapIt) });
-    dlg.__bioKind = swapIt ? "swap" : "main"; dlg.__bioPk = swapIt ? null : pk;
+    RosterSheet.render(dlg, { title: over ? catTitle() : swapIt ? "" : pk.tab === "mu" ? "קטלוג מוזיקות" : "קטלוג תרגילים", from: "bottom", body: bleedCss(dlg.id) + pickerBody(true, swapIt, over) });
+    dlg.__bioKind = swapIt || over ? "swap" : "main"; dlg.__bioPk = swapIt || over ? null : pk;
+    var hd0 = dlg.querySelector(".sheet-head"); if (hd0) { var h20 = hd0.querySelector("h2"); if (h20) h20.remove(); hd0.insertAdjacentHTML("afterbegin", catField()); }   /* the title of the sheet is the search field */
     bleedSet(dlg);   /* the content sits on the title's own edges, the same on both sides */
     var q0 = dlg.querySelector("#q"); if (q0) q0.blur();   /* the popup opens on the list: the keyboard comes up only when the search is touched */
     if (document.activeElement && document.activeElement !== document.body && dlg.contains(document.activeElement)) document.activeElement.blur();   /* showModal focuses the first control, now the first tab: it would show a focus frame, so nothing starts focused */
@@ -3599,12 +3661,12 @@
     r.style.overflowY = "hidden";   /* the search stays where it is and only the list scrolls, so nothing shows through above it */
     if (ls) ls.style.cssText += ";flex:1 1 auto;min-height:0;overflow-y:auto";
     if (!dlg.__catWired) { dlg.__catWired = true; dlg.addEventListener("close", function () { if (!swapIt) saveCat(); }); }
-    var drawn = pickerWire(r, swapIt, true); saveCat();
+    var drawn = pickerWire(r, swapIt, true); dlg.__api = catApi; saveCat();
     return drawn;
   }
   /* the catalog's exercise as an item of the page: its texts, its songs as options, the first one chosen; nothing of it is written anywhere */
-  function itemFake(e, rows, songs) {
-    return { __preview: true, id: "", exercise_id: e.id, exercises: Object.assign({}, e, { exercise_texts: rows || [] }), title: null, poetics: null, guidance: null, notes: "",
+  function itemFake(e, rows, songs, emphasis) {
+    return { __preview: true, id: "", exercise_id: e.id, exercises: Object.assign({}, e, { exercise_texts: rows || [], emphasis: emphasis || "" }), title: null, poetics: null, guidance: null, notes: "",
       sel: [], music_id: null, music: null,   /* no song is marked until the facilitator marks some: those come with the exercise */
       item_music_options: songs.map(function (m, i) { return { music_id: m.id, created_at: String(1000 + i), music: m }; }) };
   }
@@ -3645,16 +3707,17 @@
   }
   function previewSheet(e, swapIt) {
     var tok = ++previewTok;
-    var skelDlg = document.getElementById("exDlg"); if (!skelDlg) { skelDlg = document.createElement("dialog"); skelDlg.id = "exDlg"; document.body.appendChild(skelDlg); }
+    var exId = "exDlg" + dsfx();
+    var skelDlg = document.getElementById(exId); if (!skelDlg) { skelDlg = document.createElement("dialog"); skelDlg.id = exId; document.body.appendChild(skelDlg); }
     RosterSheet.render(skelDlg, { title: name(e), from: "bottom", body: '<div class="rlist"><div class="rskel rskel--title"></div></div>' });   /* law 7: the window opens now, its content comes after */
     loadPreview(e.id).then(function (res) { var rows = res.rows, songs = res.songs;
       if (tok !== previewTok) return;
-      var fake = itemFake(e, rows, songs);
+      var fake = itemFake(e, rows, songs, res.emphasis);
       var word = swapIt ? "החלפה בתרגיל הזה" : "הוספה לוויוונסיה";
-      var dlg = document.getElementById("exDlg");
-      if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "exDlg"; document.body.appendChild(dlg); }
+      var dlg = document.getElementById(exId);
+      if (!dlg) { dlg = document.createElement("dialog"); dlg.id = exId; document.body.appendChild(dlg); }
       RosterSheet.render(dlg, { title: name(e), from: "bottom",
-        body: bleedCss("exDlg") + '<style>html.rs-lock:not(.kb-open) #exDlg .rfab { opacity: 1; transform: none; pointer-events: auto }</style>' + itemPageHtml(fake, true) });
+        body: bleedCss(exId) + '<style>html.rs-lock:not(.kb-open) #' + exId + ' .rfab { opacity: 1; transform: none; pointer-events: auto }</style>' + itemPageHtml(fake, true) });
       bleedSet(dlg);
       dlg.dataset.ex = swapIt ? "" : e.id; if (!dlg.__catWired) { dlg.__catWired = true; dlg.addEventListener("close", function () { saveCat(); }); } saveCat();
       wireRoMusic(dlg, fake);
@@ -3690,15 +3753,26 @@
     var r = catFind0(q);
     return exFilter ? r.filter(function (e) { return exFilter.ids[e.id]; }) : r;
   }
-  function setExFilter(m) {
+  function setExFilter(m) {   /* the exercises of one song: the exercises catalog as a new layer over what is open, filtered to that song's exercises (the same list, the same behaviour: an exercise opens beside it on a computer, over it on a phone) */
     api("/rest/v1/exercise_music?music_id=eq." + m.id + "&select=exercise_id&limit=1000").then(function (rows) {
       var ids = {}; (rows || []).forEach(function (x) { ids[x.exercise_id] = 1; });
-      exFilter = { id: m.id, name: songName(m), ids: ids };
-      if (wide() && !catPanel) openCatPanel();
-      if (!wide()) { var xd = document.getElementById("exDlg"); if (xd) slideClose(xd); var cd = document.getElementById("catDlg"); if (!cd || !cd.open) { resetPk(); pickerSheet(); } }
-      var apply = function () { if (catApi) { catApi.goEx(); catApi.paint(); } };
-      apply(); if (!wide()) setTimeout(apply, 500);
+      openFilteredLayer({ id: m.id, name: songName(m), ids: ids });
     }, fail);
+  }
+  function openFilteredLayer(filter) {
+    var below = catPanel;   /* is a catalog layer open under this one? then its left side is dimmed, as the left pane is under the first layer */
+    pushLayer(filter);
+    if (wide()) {
+      ensureCatLayer(); catLayer.classList.add("bio-catlayer--over"); void catLayer.offsetWidth;   /* a layer over: both halves move as one; the first frame is drawn closed so it slides in */
+      if (below) {   /* the layer under it is dimmed by a scrim that stays where it is (it does not slide with the layer): it only fades, and a tap on it closes this layer only */
+        var up = catLayer, sc = document.createElement("div"); sc.className = "bio-catscrim"; sc.setAttribute("aria-hidden", "true");
+        document.body.insertBefore(sc, up); up.__scrim = sc;
+        sc.addEventListener("click", function () { if (catLayer === up) closeCatPanel(); });
+        var sync = function () { sc.classList.toggle("is-on", up.classList.contains("is-open") && !up.querySelector(".catprev.is-open")); };   /* dark while the layer is open and its own left part (the exercise opened from it) is not */
+        var mo = new MutationObserver(sync); mo.observe(up, { attributes: true, attributeFilter: ["class"] }); mo.observe(up.querySelector(".catprev"), { attributes: true, attributeFilter: ["class"] });
+      }
+      openCatPanel();
+    } else { mdepth++; pickerSheet(null, true); }
   }
   function catFind0(q) {
     var byName = nearest(state.cat || [], function (e) { return name(e) + " " + e.title_en + " " + catName(e.category); }, q);
@@ -3751,13 +3825,13 @@
   var previewTok = 0;
   /* what a catalog exercise shows before it is added: its words and every song linked to it */
   function loadPreview(id) {
-    return Promise.all([api("/rest/v1/exercise_texts?exercise_id=eq." + id + "&select=lang,poetics,guidance,level,curve,level_basis,curve_basis,source"), api("/rest/v1/exercise_music?exercise_id=eq." + id + "&select=music(id,name,title,artist,duration_sec,audio_object,in_catalog)")]).then(function (r) {
+    return Promise.all([api("/rest/v1/exercise_texts?exercise_id=eq." + id + "&select=lang,poetics,guidance,level,curve,level_basis,curve_basis,source"), api("/rest/v1/exercise_music?exercise_id=eq." + id + "&select=music(id,name,title,artist,duration_sec,audio_object,in_catalog)"), api("/rest/v1/exercises?id=eq." + id + "&select=emphasis&limit=1")]).then(function (r) {
       var seen = {}, songs = [];
       (r[1] || []).forEach(function (x) { if (x.music && !seen[x.music.id]) { seen[x.music.id] = 1; songs.push(x.music); } });
       return ensureExCnt().then(function () {   /* the most popular first: the song linked to the most exercises of the catalog */
         var c = function (m) { return (exCnt && exCnt[m.id]) || 0; };
         songs.sort(function (a, b) { return c(b) - c(a) || songName(a).localeCompare(songName(b)); });
-        return { rows: r[0] || [], songs: songs };
+        return { rows: r[0] || [], songs: songs, emphasis: (r[2] && r[2][0] && r[2][0].emphasis) || "" };
       });
     });
   }
@@ -3874,7 +3948,7 @@
     else show('<div class="rlist"><div class="rskel rskel--title"></div></div>', function () { /* the skeleton has nothing to wire */ }, "d");
     loadPreview(e.id).then(function (res) { var rows = res.rows, songs = res.songs;
       if (tok !== previewTok) return;   /* a later row was chosen meanwhile */
-      var fake = itemFake(e, rows, songs);
+      var fake = itemFake(e, rows, songs, res.emphasis);
       var word = swapIt ? "החלפה בתרגיל הזה" : "הוספה";   /* adding: a plus with the vivencia's name; in no vivencia, a plus with the word, and a tap asks which of the last three */
       /* the same page as the exercise of a vivencia, only read: its header, its song cards, its texts; the action is the green button in the header, where the delete is in the vivencia */
       var phtml = itemHead(false, false, "", e.id, name(e), true, word, undefined, undefined, !swapIt) + itemPageHtml(fake, true);

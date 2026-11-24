@@ -43,9 +43,10 @@
     dlg.style.setProperty("--rs-vvh", Math.round(v.height) + "px");
     dlg.style.setProperty("--rs-top", Math.round(v.offsetTop) + "px");
     dlg.style.setProperty("--rs-kb", Math.max(0, Math.round(window.innerHeight - v.height - v.offsetTop)) + "px");
-    if (dlg.getAttribute("data-from") !== "top") {   /* a popup from the bottom ends ABOVE the keyboard, with its own bottom padding: measure where it really ends and lift it by whatever still hides under the keyboard (the browser's measure of the keyboard is not always the whole of it) */
-      var over = Math.round(dlg.getBoundingClientRect().bottom - (v.offsetTop + v.height));
-      if (over > 0 && over < v.height) dlg.style.setProperty("--rs-kb", (parseInt(dlg.style.getPropertyValue("--rs-kb"), 10) + over) + "px");
+    var kbd = Math.round(window.innerHeight - v.height) > 120;
+    if (kbd && dlg.getAttribute("data-from") !== "top") {   /* the keyboard is up and a popup from the bottom must end ABOVE it, with its own bottom padding: measure where it really ends (its LAYOUT place, never the animated one: while it slides in, its drawn place is far lower) and lift it by whatever still hides under the keyboard (the browser's measure of the keyboard is not always the whole of it) */
+      var over = Math.round(dlg.offsetTop + dlg.offsetHeight - (v.offsetTop + v.height));
+      if (over > 0 && over < 200) dlg.style.setProperty("--rs-kb", (parseInt(dlg.style.getPropertyValue("--rs-kb"), 10) + over) + "px");
     }
     html.classList.toggle("rs-kbd", Math.round(window.innerHeight - v.height) > 120);   /* the keyboard is up: a tall popup is pinned to the top of what can be seen (see kit.css) */
   }
