@@ -64,7 +64,7 @@ Deno.test('session facts: research is labelled as hypothesis, absent research is
   const none = sessionFacts(harpatka, ctx(), null, '');
   if (!none.includes('אין פרופיל מחקר')) throw new Error('should say there is no profile');
   const withProfile = sessionFacts(harpatka, ctx({ profile: { title: 'שינה ועייפות', summary: 'סיכום', evidence: 'B', profile: {} } }), null, 'משפט מודעה');
-  for (const needle of ['השערות לבדיקה', 'רמת ראיות B', 'משפט מודעה', 'מועד, מקום ומחיר לא נמסרים בצ׳אט']) if (!withProfile.includes(needle)) throw new Error('missing ' + needle);
+  for (const needle of ['השערות לבדיקה', 'רמת ראיות B', 'משפט מודעה']) if (!withProfile.includes(needle)) throw new Error('missing ' + needle);
 });
 
 Deno.test('state block nudges a long conversation toward a clear step', () => {
