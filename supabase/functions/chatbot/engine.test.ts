@@ -292,3 +292,9 @@ Deno.test('round four: no time greetings, no "what exactly brought you", no quot
   for (const s of ['לילה טוב ושיהיה לך יום נעים', 'מה בדיוק הביא אותך למודעה?', '"אוקיי" נשמע כמו סימן שאתה מוכן', 'אני מציע לא לשאול יותר שאלות']) if (!styleFix(s)) throw new Error('missed: ' + s);
   if (styleFix('מה הכי חסר לך בערב כזה?')) throw new Error('false alarm');
 });
+
+Deno.test('round five: "ומתי" is a question about the meeting, "שאני מבינה" is not the bot gender', () => {
+  eq(asksDetails('ומתי?'), true, 'and when');
+  eq(asksDetails('מתי בפעם האחרונה הרגשתי חופשי'), false, 'a memory is not a question');
+  eq(neutralize('אני רוצה לוודא שאני מבינה נכון'), 'אני רוצה לוודא שהבנתי נכון', 'understand');
+});

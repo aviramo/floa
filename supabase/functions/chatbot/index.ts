@@ -240,7 +240,10 @@ Deno.serve(async (req) => {
     // The quick replies come from a short dedicated call that sees the visitor's words, the reply and the gender; the model's own are the fallback
     const gen = (await chipsFor(apiKey, model, { reply, lastUser, address, pitchOk })).filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && chipOk(c) && (pitchOk || !mentionsEvening(c))).map((c) => genderChip(c, address));
     chips = gen.length >= 3 ? gen.slice(0, 4) : [...new Set([...gen, ...chips])].slice(0, 4);
-    chips = padChips(chips, (b.siteOnly ? pitchOk : eveningSeen) ? CHAT_POOL : TOPIC_POOL);   // last resort only
+    // An "A or B" question is never answered by a bare yes or no, wherever the quick reply came from
+    const eitherOr = /\sאו\s/.test(lastSentence(reply));
+    if (eitherOr) chips = chips.filter((c) => !/^(כן|לא)(,.*)?$/.test(c.trim()));
+    chips = padChips(chips, eitherOr ? ['קצת משניהם', 'משהו אחר', 'לא בטוח עדיין'] : (b.siteOnly ? pitchOk : eveningSeen) ? CHAT_POOL : TOPIC_POOL).map((c) => genderChip(c, address));   // last resort only
   }
   if (cta === 'register' && !(b.siteOnly ? pitchOk : eveningSeen)) cta = null;
   if (b.siteOnly && !cta && pitchOk && /(באתר|בקישור)/.test(reply) && next.action !== 'safety') cta = 'register';   // the reply points at the site: the button is the way there
