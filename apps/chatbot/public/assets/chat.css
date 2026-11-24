@@ -53,8 +53,8 @@ html.pg-chat body { margin: 0; background: var(--cream); color: var(--ink); font
 .ch-form { align-items: flex-end; }
 .ch-in { min-height: 46px; box-sizing: border-box; }
 .ch-send { width: 46px; height: 46px; box-sizing: border-box; border: 1px solid var(--err); }
-/* כפתור השליחה באותה שפה של הכפתורים: כהה, אייקון לבן, אותו רדיוס; כבוי הוא עדין אבל קריא */
-.ch-send { background: var(--ink); color: var(--paper); border: 1px solid var(--ink); }
-.ch-send:disabled { opacity: .3; }
-.ch-send:not(:disabled):active { background: #4a3c33; }
-.ch-in { border-color: rgba(44, 35, 29, .45); }
+/* כפתור השליחה בצבע שלו (כמו קודם), עם גבול באותו צבע, ובדיוק באותו גובה ובאותה נקודת התחלה כמו שדה ההודעה */
+.ch-send { background: var(--err); color: var(--paper); border: 1px solid var(--err); }
+.ch-send:disabled { opacity: .4; }
+.ch-form { align-items: flex-end; }
+.ch-in { height: 46px; min-height: 46px; box-sizing: border-box; border-color: rgba(44, 35, 29, .3); }
