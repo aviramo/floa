@@ -40,3 +40,7 @@ html.pg-chat body { margin: 0; background: var(--cream); color: var(--ink); font
 .ch-bar .ch-chips { flex-direction: column; align-items: stretch; gap: .4rem; padding: 0 0 .5rem; }
 .ch-bar .ch-chips:empty { display: none; }
 .ch-bar .ch-chip { justify-content: flex-start; text-align: start; font-weight: 400; font-size: .98rem; line-height: 1.4; border-color: rgba(44, 35, 29, .25); }
+/* כפתור הקישור לאתר ושאר הצעדים: נראים בדיוק כמו התשובות המוכנות (גבול דק, בלי רקע), לא קישור קטן */
+.ch-ctas { flex-direction: column; align-items: stretch; gap: .4rem; padding: .2rem 0 0; }
+.ch-cta, .ch-cta.alt, .ch-cta.plain { justify-content: center; padding: .45rem 1rem; border: 1px solid rgba(44, 35, 29, .25); border-radius: var(--r); background: transparent; color: var(--ink); text-decoration: none; font-size: .98rem; font-weight: 600; min-height: 44px; }
+.ch-cta:active { background: rgba(44, 35, 29, .08); }
