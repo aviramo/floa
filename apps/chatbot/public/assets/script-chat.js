@@ -29,7 +29,7 @@
     if (!data) { try { const r = await fetch('businesses/' + business + '.script.json', { cache: 'no-cache' }); if (r.ok) { const d = await r.json(); if (d && d.ads) data = d; } } catch (e) { /* the fixed error below */ } }
     if (!data) { bubble('bot', cfg.errorText); return; }
 
-    // the ad comes from ?ad= (or the old ?pain=); no gender in the address means the version for both
+    // the ad comes from ?ad=; no gender in the address means the version for both
     const pid = cid;
     const ad = data.ads[pid] || data.ads[data.defaultAd] || Object.values(data.ads)[0];
     const g = ad[gp] ? gp : ad.both ? 'both' : ad.female ? 'female' : 'male';

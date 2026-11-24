@@ -6,9 +6,8 @@
   const SB = window.SUPABASE;
   const q = new URLSearchParams(location.search);
   const ENDPOINT = SB.url + '/functions/v1/chatbot';
-  const cid = (q.get('ad') || q.get('pain') || '').slice(0, 40);   // ?ad=<code>; ?pain= is the old name and still works
-  // every other parameter of the link that is a plain name is a segment dimension (gender today, maybe age later), sent separately
-  const segment = {}; q.forEach((v, k) => { if (!['ad', 'pain', 's', 'c', 'engine', 'mode', 'fresh'].includes(k) && /^[a-z][a-z0-9_]{0,29}$/.test(k)) segment[k] = String(v).slice(0, 30); });
+  const cid = (q.get('ad') || '').slice(0, 40);   // the address has two parameters only: ad (always) and gender (female, male or empty)
+  const segment = {}; { const gq = q.get('gender'); if (gq === 'female' || gq === 'male') segment.gender = gq; }
   const segKey = Object.keys(segment).sort().map((k) => k + '=' + segment[k]).join('&');
   const src = (q.get('s') || '').slice(0, 20);
   // מזהה אקראי של המכשיר (לא טביעת אצבע), נשלח לשרת רק להגנה מניצול לרעה של הצ'אט

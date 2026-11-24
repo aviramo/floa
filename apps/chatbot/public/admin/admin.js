@@ -9,7 +9,7 @@
   var BIZ = (q.get('business') || 'harpatka').replace(/[^a-z0-9_-]/gi, '') || 'harpatka';
   var ADS = { opening_up: 'רוצה קרבה אבל ברגע האמת משהו בך נסגר?', stress_overload: 'הגוף כבר במיטה והראש עדיין רץ', loneliness: 'איך זה להיות מוקף באנשים ועדיין להרגיש לבד?', lost_joy: 'הכול מסודר בחיים, אז למה שום דבר כבר לא מרגש?', low_confidence: 'הכי כואב להסתכל במראה ולא לאהוב את מי שרואים' };
   var ACTIONS = { site: 'האתר', updates: 'קבוצת העדכונים בוואטסאפ', whatsapp: 'כתיבה להדר ואופיר' };
-  var S = { content: null, version: null, published: null, ad: q.get('ad') || q.get('pain') || '', gender: q.get('gender') === 'male' ? 'male' : 'female', dirty: false };
+  var S = { content: null, version: null, published: null, ad: q.get('ad') || '', gender: q.get('gender') === 'male' ? 'male' : 'female', dirty: false };
 
   var $ = function (id) { return document.getElementById(id); };
   var el = function (tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
