@@ -87,6 +87,7 @@ export const harpatka: JourneyBusiness<MeetingInfo> = {
   testOrigin: 'https://test.harpatka.co.il',
   ageRange: '35–55',   // same range as shared/age.js on the Harpatka site
   persona: (age) => IDENTITY.replaceAll('{AGE}', age),
+  siteOnly: true,
   flowPrompt: FLOW_PROMPT.replaceAll('{AGE}', '35–55'),
   stageHints,
   flowReminder,

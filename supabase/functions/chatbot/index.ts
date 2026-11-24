@@ -8,7 +8,7 @@ import { lastSentence, buildMessages, MAX_USER_TURNS, parse, parseOpening, quote
 import { BUSINESSES } from './businesses/index.ts';
 import { journeyOf } from './journey.ts';
 import { openingTask, sessionFacts, stableSystem, stateBlock, addressOf, turnReminder } from './prompt.ts';
-import { deadEndChip, TOPIC_POOL, offersUpdates, mentionsEvening, CHAT_POOL, OPENING_POOL, padChips, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, TOPIC_POOL, offersUpdates, mentionsEvening, CHAT_POOL, OPENING_POOL, padChips, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 import { ctaFor, ctasOf, diffEvents, extractState, initialState, linkGender, mergeState, stateFromClient } from './state.ts';
 import type { CampaignContext, JourneyBusiness, SessionState } from './types.ts';
 
@@ -186,7 +186,7 @@ Deno.serve(async (req) => {
   const prev = stateFromClient(body.state, journey, fromLink);
   const address = addressOf(prev.gender);   // the saved gender parameter, not the link again
   const botMessages = clean.filter((m) => m.role === 'assistant').length;
-  const facts = await b.loadFacts();
+  const facts = b.siteOnly ? null : await b.loadFacts();
   const system = [stable, { type: 'text', text: [b.stageHints ? b.stageHints(turns) : stateBlock(prev, journey, botMessages), sessionFacts(b, ctx, facts, adText, address), quoteSafe(tx(body.opening).slice(0, 600)) ? `## הודעת הפתיחה שהאדם כבר קיבל\n"${quoteSafe(tx(body.opening).slice(0, 600))}"` : '', b.flowReminder ? b.flowReminder(address) : turnReminder(address)].filter(Boolean).join('\n\n') }];
 
   // Priority one, second net: the visitor's last message shows severe distress. The model is told too, and its reply stands.
@@ -194,7 +194,8 @@ Deno.serve(async (req) => {
   const distress = distressIn(lastUser);
   if (distress) system.push({ type: 'text', text: '## זוהתה מצוקה קשה בהודעה האחרונה\nזה קודם לכל דבר אחר: action=safety. עונים באמפתיה ובקצרה, ער"ן 1201 ושיחה עם המנחים, בלי מפגש, מחיר, הרשמה או שאלות על המודעה.' });
 
-  const raw = await claude(apiKey, model, system, merged, 800);
+  let raw = await claude(apiKey, model, system, merged, 800);
+  if (raw === null) raw = await claude(apiKey, model, system, merged, 800);   // one more try: an upstream hiccup must not end a conversation
   if (raw === null) return json(b, origin, { error: 'upstream' }, 502);
   let { text, state: incoming } = extractState(raw);
   let parsed = parse(text);
@@ -202,14 +203,17 @@ Deno.serve(async (req) => {
   const replyFixes: { type: string; text: string }[] = [];
   if (address !== 'plural' && pluralAddress(parsed.reply)) replyFixes.push({ type: 'text', text: genderFix(address) });
   if (!distress && (putsEveningOnTable(parsed.reply) || mentionsEvening(parsed.reply)) && !pitchAllowed({ turns, lastUser, prevDone: prev.done, prevReadiness: prev.readiness })) replyFixes.push({ type: 'text', text: earlyPitchFix });
+  { const sf = styleFix(parsed.reply); if (sf) replyFixes.push({ type: 'text', text: sf }); }
   if (replyFixes.length) {
     const raw2 = await claude(apiKey, model, [...system, ...replyFixes], merged, 800);
     if (raw2) { const o2 = extractState(raw2), p2 = parse(o2.text); if (p2.reply) { text = o2.text; incoming = o2.state; parsed = p2; } }
   }
   const pitchOk = pitchAllowed({ turns, lastUser, prevDone: prev.done, prevReadiness: prev.readiness });
   // Quick replies never name the evening or its people before the visitor may hear about them, and never offer "I have a question"
-  let chips = parsed.chips.filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && (pitchOk || !mentionsEvening(c)));
-  const reply = fixAddress(stripGreeting(neutralize(parsed.reply)), address);
+  let chips = parsed.chips.filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && (pitchOk || !mentionsEvening(c)) && chipOk(c)).map((c) => genderChip(c, address));
+  let replyText = parsed.reply;
+  if (!distress && !pitchAllowed({ turns, lastUser, prevDone: prev.done, prevReadiness: prev.readiness }) && mentionsEvening(replyText)) replyText = stripMeeting(replyText);   // told once already
+  const reply = fixAddress(stripGreeting(neutralize(replyText)), address);
   if (!reply) return json(b, origin, { error: 'empty' }, 502);
   // A question that offers a choice ("A or B") is not answered by a bare yes or no
   if (/\sאו\s/.test(lastSentence(reply))) chips = chips.filter((c) => !/^(כן|לא)(,.*)?$/.test(c.trim()));
@@ -218,7 +222,7 @@ Deno.serve(async (req) => {
   if (!incoming) next.action = 'continue';      // a reply without a state block advances nothing
   if (distress) { next.action = 'safety'; next.readiness = 'concerned'; }
   let cta: 'register' | 'whatsapp' | 'updates' | null = b.flowPrompt ? ((['register', 'whatsapp', 'updates'] as const).find((c) => c === parsed.cta) ?? null) : ctaFor(next.action, !!facts);
-  if (b.flowPrompt && cta === 'register' && !facts) cta = 'updates';
+  if (b.flowPrompt && cta === 'register' && !facts && !b.siteOnly) cta = 'updates';
   if (b.flowPrompt && cta) next.action = cta === 'whatsapp' ? 'guide' : cta;
   if (next.action === 'safety' || next.action === 'end') { cta = null; chips = []; }
   // Someone is never left with only a text box: when the model sent no quick replies, neutral ones are offered
@@ -233,13 +237,14 @@ Deno.serve(async (req) => {
       const extra = (await chipsFor(apiKey, model, reply)).filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && (pitchOk || !mentionsEvening(c)));
       chips = [...new Set([...chips, ...extra])].slice(0, 4);
     }
-    chips = padChips(chips, eveningSeen ? CHAT_POOL : TOPIC_POOL);   // last resort only
+    chips = padChips(chips, (b.siteOnly ? pitchOk : eveningSeen) ? CHAT_POOL : TOPIC_POOL);   // last resort only
   }
-  if (cta === 'register' && !eveningSeen) cta = null;
+  if (cta === 'register' && !(b.siteOnly ? pitchOk : eveningSeen)) cta = null;
+  if (b.siteOnly && !cta && pitchOk && asksDetails(lastUser) && next.action !== 'safety') cta = 'register';   // asked when, how much, how to register: the site link is the answer
   if (!cta && offersUpdates(reply) && next.action !== 'safety') cta = 'updates';
   if (!cta && facts && putsTheEveningOnTheTable && !['end', 'safety'].includes(next.action) && next.readiness !== 'not_fit') cta = 'register';
 
   persist(b, session, src, campaignId, [...clean, { role: 'assistant', content: reply }], cta, next, diffEvents(prev, next));
-  return json(b, origin, { reply, chips, cta, ctas: ctasOf(cta as any, !!facts && eveningSeen), state: next, hasFacts: !!facts, hasMeeting: !!facts });
+  return json(b, origin, { reply, chips, cta, ctas: ctasOf(cta as any, b.siteOnly ? pitchOk : !!facts && eveningSeen), state: next, hasFacts: !!facts || !!b.siteOnly, hasMeeting: !!facts });
 });
 

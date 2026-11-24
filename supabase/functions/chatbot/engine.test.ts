@@ -64,7 +64,7 @@ Deno.test('session facts: research is labelled as hypothesis, absent research is
   const none = sessionFacts(harpatka, ctx(), null, '');
   if (!none.includes('אין פרופיל מחקר')) throw new Error('should say there is no profile');
   const withProfile = sessionFacts(harpatka, ctx({ profile: { title: 'שינה ועייפות', summary: 'סיכום', evidence: 'B', profile: {} } }), null, 'משפט מודעה');
-  for (const needle of ['השערות לבדיקה', 'רמת ראיות B', 'משפט מודעה', 'כרגע לא נקבע מפגש']) if (!withProfile.includes(needle)) throw new Error('missing ' + needle);
+  for (const needle of ['השערות לבדיקה', 'רמת ראיות B', 'משפט מודעה', 'מועד, מקום ומחיר לא נמסרים בצ׳אט']) if (!withProfile.includes(needle)) throw new Error('missing ' + needle);
 });
 
 Deno.test('state block nudges a long conversation toward a clear step', () => {
@@ -78,7 +78,7 @@ Deno.test('opening task names the business bot and keeps the meeting out of the 
   if (!t.includes(harpatka.botName) || !t.includes('אפשר להזכיר שמדובר בערב תנועה')) throw new Error(t);
 });
 
-import { deadEndChip, offersUpdates, mentionsEvening, padChips, CHAT_POOL, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsEvening, padChips, CHAT_POOL, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 Deno.test('distress net catches plain phrasings and not ordinary talk', () => {
   for (const t of ['אני חושבת על למות', 'לפעמים אני חושבת שעדיף שלא אהיה פה', 'רוצה למות', 'אין טעם לחיות']) if (!distressIn(t)) throw new Error('missed: ' + t);
   for (const t of ['הייתי רוצה להרגיש חלק ממשהו', 'מתי המפגש הקרוב?', 'מת מצחוק', 'עייפה ולא ישנה']) if (distressIn(t)) throw new Error('false alarm: ' + t);
@@ -245,4 +245,25 @@ Deno.test('a bare "glad that" is not a gender of the bot', () => {
 Deno.test('flow rules for a visitor who only clicked a quick reply', async () => {
   const { FLOW_PROMPT } = await import('./businesses/harpatka/flow.ts');
   for (const needle of ['אסור ״שכתבת״', 'התשובות המוכנות הן א ו-ב']) if (!FLOW_PROMPT.includes(needle)) throw new Error('missing ' + needle);
+});
+
+Deno.test('round one of the live conversations: no machinery, no pressure, chips in the visitor gender, grammar', () => {
+  if (!styleFix('ההודעה נשמעת כמו תשובה מוכנה')) throw new Error('fourth wall');
+  if (!styleFix('מה הביא אותך אלינו היום?')) throw new Error('what brought you');
+  if (!styleFix('יש עד 30 משתתפים, אז כדאי לשמור מקום מוקדם')) throw new Error('pressure');
+  if (styleFix('באילו מצבים זה בולט יותר?')) throw new Error('false alarm');
+  eq(genderChip('אני צריך לחשוב על זה', 'female'), 'אני צריכה לחשוב על זה', 'to female');
+  eq(genderChip('לא בטוחה עדיין', 'male'), 'לא בטוח עדיין', 'to male');
+  eq(chipOk('ככה זה נשמע לי קצת:'), false, 'cut chip');
+  eq(chipOk('בסופי שבוע'), true, 'good chip');
+  eq(neutralize('נשמח שהגעת. אני לא יודע עדיין מה נכון לך'), 'שמחים שהגעת. לא ברור עדיין מה נכון לך', 'grammar and bot gender');
+  eq(stripMeeting('זה נשמע מתיש. יש מפגש ביום רביעי. מה הכי חסר לך?'), 'זה נשמע מתיש. מה הכי חסר לך?', 'strip');
+});
+
+Deno.test('the chat gives no meeting details: the site link does', async () => {
+  const { FLOW_PROMPT } = await import('./businesses/harpatka/flow.ts');
+  for (const needle of ['לא מפרטים בצ\'אט תאריך, מקום או מחיר', 'ושם אפשר גם להצטרף לקבוצת הוואטסאפ']) if (!FLOW_PROMPT.includes(needle)) throw new Error('missing ' + needle);
+  if (FLOW_PROMPT.includes('מספרים על המקום, התאריך, השעה והמחיר')) throw new Error('old stage text left');
+  eq(asksDetails('כמה זה עולה ומתי?'), true, 'asks price');
+  eq(asksDetails('אחרי יום עבודה הראש לא נרגע'), false, 'does not');
 });

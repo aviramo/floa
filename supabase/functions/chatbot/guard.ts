@@ -22,6 +22,9 @@ const SELF: [RegExp, string][] = [
   [/(^|[\s.,!?:;"]|ו)אני (יכול|יכולה)(?=[\s.,!?:;]|$)/g, '$1אפשר'],
   [/(^|[\s.,!?:;"]|ו)אני (חושב|חושבת) ש/g, '$1נראה לי ש'],
   [/(^|[.!?]s*)(שמח|שמחה) ש/g, '$1טוב ש'],
+  [/(^|[\s.,!?:;"]|ו)נשמח ש(הגעת|הגעתם|באת|באתם)/g, '$1שמחים ש$2'],
+  [/אני לא (יודע|יודעת|בטוח|בטוחה)( עדיין)? /g, 'לא ברור עדיין '],
+  [/אני לא (מפרט|מפרטת)/g, 'לא מפרטים'],
   [/(^|[\s.,!?:;"]|ו)אני (סקרנית|סקרן)(?=[\s.,!?:;]|$)/g, '$1מעניין'],
   [/(^|[\s.,!?:;"]|ו)אני (בטוחה|בטוח)(?=[\s.,!?:;]|$)/g, '$1ברור'],
   [/(^|[\s.,!?:;"]|ו)(מכבד|מכבדת) את (זה|ההחלטה)/g, '$1מכבדים את $3'],
@@ -122,3 +125,33 @@ export const mentionsEvening = (reply: string) => /(הדר ואופיר|המנח
 
 // The reply offers the updates group in words: the button must be there too, whatever action the model reported.
 export const offersUpdates = (reply: string) => /קבוצת (ה)?עדכונים/.test(String(reply ?? ''));
+
+// Things the visitor must never read: the machinery, "what brought you", pressure to hurry. A reply with one is written again once.
+export function styleFix(reply: string): string | null {
+  const r = String(reply ?? '');
+  const probs: string[] = [];
+  if (/(תשובה מוכנה|תשובות מוכנות|הכפתור|לחצת על|הודעה מוכנה)/.test(r)) probs.push('אסור להזכיר תשובות מוכנות, כפתורים או הודעות: מגיבים לתוכן שהאדם אמר');
+  if (/(מה|איזה דבר) (הביא|גרם) (אותך|אותנו|לך|לכם)|למה (באת|נכנסת|הגעת)|מה (אתה|את) מחפש/.test(r)) probs.push('אסור לשאול מה הביא את האדם או מה הוא מחפש: שואלים על חייו ועל מצבים');
+  if (/(כדאי (להקדים|לשמור|לשריין|להירשם)|מקום מוקדם|המקומות נגמרים|הזדמנות אחרונה)/.test(r)) probs.push('בלי לחץ להזדרז: מחיר ומקומות הם מידע בלבד');
+  return probs.length ? '## תיקון\nהטיוטה: ' + probs.join('; ') + '. כתבו שוב בלי זה, באותו תוכן.' : null;
+}
+
+// A masculine first-person quick reply for a woman (and the reverse) reads like a stranger wrote it
+const TO_FEM: [RegExp, string][] = [[/(?<![א-ת])לא בטוח(?![א-ת])/g, 'לא בטוחה'], [/(?<![א-ת])אני צריך(?![א-ת])/g, 'אני צריכה'], [/(?<![א-ת])מסתדר(?![א-ת])/g, 'מסתדרת'], [/(?<![א-ת])מתלבט(?![א-ת])/g, 'מתלבטת'], [/(?<![א-ת])מעוניין(?![א-ת])/g, 'מעוניינת'], [/(?<![א-ת])סקרן(?![א-ת])/g, 'סקרנית'], [/(?<![א-ת])חושש(?![א-ת])/g, 'חוששת'], [/(?<![א-ת])מתבייש(?![א-ת])/g, 'מתביישת'], [/(?<![א-ת])עייף(?![א-ת])/g, 'עייפה'], [/(?<![א-ת])מתוח(?![א-ת])/g, 'מתוחה'], [/(?<![א-ת])אני מתחיל(?![א-ת])/g, 'אני מתחילה']];
+const TO_MASC: [RegExp, string][] = [[/(?<![א-ת])לא בטוחה(?![א-ת])/g, 'לא בטוח'], [/(?<![א-ת])אני צריכה(?![א-ת])/g, 'אני צריך'], [/(?<![א-ת])מסתדרת(?![א-ת])/g, 'מסתדר'], [/(?<![א-ת])מתלבטת(?![א-ת])/g, 'מתלבט'], [/(?<![א-ת])מעוניינת(?![א-ת])/g, 'מעוניין'], [/(?<![א-ת])סקרנית(?![א-ת])/g, 'סקרן'], [/(?<![א-ת])חוששת(?![א-ת])/g, 'חושש'], [/(?<![א-ת])מתביישת(?![א-ת])/g, 'מתבייש'], [/(?<![א-ת])עייפה(?![א-ת])/g, 'עייף'], [/(?<![א-ת])מתוחה(?![א-ת])/g, 'מתוח']];
+export function genderChip(c: string, a: 'female' | 'male' | 'plural'): string {
+  if (a === 'plural') return c;
+  return (a === 'female' ? TO_FEM : TO_MASC).reduce((t, [re, to]) => t.replace(re, to), c);
+}
+export const chipOk = (c: string) => c.length > 1 && !/[:,]$/.test(c.trim()) && c.trim().split(/\s+/).length <= 7 && !/ככה זה נשמע/.test(c);
+
+// Last resort when the model still names the meeting before its stage: keep the sentences that do not, if a question is left
+export function stripMeeting(reply: string): string {
+  const parts = String(reply ?? '').split(/(?<=[.!?])\s+/);
+  const kept = parts.filter((s) => !mentionsEvening(s));
+  const out = kept.join(' ').trim();
+  return /\?/.test(out) ? out : reply;
+}
+
+// The visitor asks for the details or wants to register: the site link is the answer
+export const asksDetails = (t: string) => /(מתי (זה|המפגש|הערב|הבא)|כמה (זה )?עולה|מחיר|הרשמ|נרשמ|קישור|תאריך|איפה (זה|המפגש|הערב|מתקיים)|פרטים|לשלוח)/.test(String(t ?? ''));
