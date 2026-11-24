@@ -29,8 +29,8 @@
     if (!data) { try { const r = await fetch('businesses/' + business + '.script.json', { cache: 'no-cache' }); if (r.ok) { const d = await r.json(); if (d && d.ads) data = d; } } catch (e) { /* the fixed error below */ } }
     if (!data) { bubble('bot', cfg.errorText); return; }
 
-    // the name of the ad parameter is part of the content (default pain); no gender in the address means the version for both
-    const pid = data.param ? (new URLSearchParams(location.search).get(data.param) || cid) : cid;
+    // the ad comes from ?ad= (or the old ?pain=); no gender in the address means the version for both
+    const pid = cid;
     const ad = data.ads[pid] || data.ads[data.defaultAd] || Object.values(data.ads)[0];
     const g = ad[gp] ? gp : ad.both ? 'both' : ad.female ? 'female' : 'male';
     const steps = ad[g];

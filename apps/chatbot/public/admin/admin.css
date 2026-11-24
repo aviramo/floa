@@ -63,3 +63,15 @@ details.acc > summary:hover { background: #fbf6ee; border-radius: var(--r); }
 .tag { background: var(--ok); color: #fff; border-radius: 99px; padding: 0 .5rem; font-size: .72rem; }
 .ver .btn { min-height: 26px; padding: 0 .6rem; }
 .gate { max-width: 28rem; margin: 3rem auto; padding: 1.2rem; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); }
+
+.layout { display: grid; grid-template-columns: 16rem minmax(0, 1fr); gap: 1rem; align-items: start; padding-top: .8rem; }
+.side { position: sticky; top: calc(var(--toph, 40px) + .8rem); display: flex; flex-direction: column; gap: .4rem; max-height: calc(100vh - var(--toph, 40px) - 1.6rem); }
+.side .count { font-size: .75rem; color: var(--muted); }
+.adlist { overflow-y: auto; display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--line); border-radius: var(--r); background: var(--paper); padding: 3px; min-height: 6rem; }
+.adi { font: inherit; text-align: start; border: 0; background: transparent; border-radius: 7px; padding: .3rem .5rem; cursor: pointer; display: grid; gap: 0; color: var(--ink); }
+.adi:hover { background: #f4ece0; }
+.adi.on { background: var(--ink); color: #fff; }
+.adi .code { font-weight: 700; font-size: .85rem; direction: ltr; text-align: start; }
+.adi .ttl { font-size: .72rem; opacity: .7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.filters { top: var(--toph, 40px); }
+.settings { grid-template-columns: 1fr; }

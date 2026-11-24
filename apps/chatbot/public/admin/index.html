@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>עריכת הצ'אט</title>
-<link rel="stylesheet" href="admin.css?v=4">
+<link rel="stylesheet" href="admin.css?v=5">
 </head>
 <body>
 <header class="top">
@@ -20,9 +20,16 @@
   </section>
 
   <section id="editor" hidden>
+    <div class="layout">
+    <aside class="side">
+      <input class="field" id="adq" type="search" placeholder="חיפוש מודעה לפי קוד או כותרת">
+      <div class="count" id="adcount"></div>
+      <div class="adlist" id="adlist" role="listbox" aria-label="מודעות"></div>
+      <button type="button" class="btn ghost" id="newAd">מודעה חדשה</button>
+    </aside>
+    <div class="mainc">
     <div class="filters">
       <div class="bar">
-        <div class="seg" id="ads" role="tablist" aria-label="מודעה"></div>
         <div class="seg" id="genders" role="tablist" aria-label="מגדר">
           <button type="button" data-g="female" class="on">אישה</button>
           <button type="button" data-g="male">גבר</button>
@@ -34,7 +41,6 @@
           <button type="button" class="btn ghost" id="copyOther">העתק ממגדר אחר</button>
           <button type="button" class="btn ghost" id="copyUrl">העתק כתובת</button>
           <a class="btn ghost" id="preview" target="_blank" rel="noopener">פתח לבדיקה</a>
-          <button type="button" class="btn ghost" id="newAd">מודעה חדשה</button>
         </div>
       </div>
       <div class="adset">
@@ -48,12 +54,8 @@
       <summary><span class="sum"><span class="t">הגדרות כלליות</span><span class="kind" id="generalSum"></span></span></summary>
       <div class="settings">
         <div>
-          <label class="lbl" for="pname">שם הפרמטר של המודעה בכתובת</label>
-          <input class="field" id="pname" type="text" dir="ltr" maxlength="30">
-          <p class="hint">ברירת מחדל pain. gender קבוע: female או male. בלי gender מוצגת הגרסה של שני המינים.</p>
-        </div>
-        <div>
           <label class="lbl" for="greeting">הברכה הראשונה (בועה נפרדת, משותפת לכל המודעות והמגדרים)</label>
+          <p class="hint">הכתובת: ad=קוד המודעה, ובנוסף gender=female או male. בלי gender מוצגת גרסת שני המינים.</p>
           <input class="field" id="greeting" type="text">
         </div>
       </div>
@@ -71,11 +73,13 @@
       <summary><span class="sum"><span class="t">גרסאות</span><span class="kind">שמירה יוצרת גרסה חדשה ומפרסמת מיד. אפשר להחזיר גרסה קודמת</span></span></summary>
       <div class="body" id="versions"></div>
     </details>
+    </div>
+    </div>
   </section>
 </main>
 
 <script src="/supabase.js"></script>
 <script src="/auth.js"></script>
-<script src="admin.js?v=5"></script>
+<script src="admin.js?v=6"></script>
 </body>
 </html>

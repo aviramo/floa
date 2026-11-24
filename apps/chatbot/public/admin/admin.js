@@ -9,7 +9,7 @@
   var BIZ = (q.get('business') || 'harpatka').replace(/[^a-z0-9_-]/gi, '') || 'harpatka';
   var ADS = { opening_up: 'רוצה קרבה אבל ברגע האמת משהו בך נסגר?', stress_overload: 'הגוף כבר במיטה והראש עדיין רץ', loneliness: 'איך זה להיות מוקף באנשים ועדיין להרגיש לבד?', lost_joy: 'הכול מסודר בחיים, אז למה שום דבר כבר לא מרגש?', low_confidence: 'הכי כואב להסתכל במראה ולא לאהוב את מי שרואים' };
   var ACTIONS = { site: 'האתר', updates: 'קבוצת העדכונים בוואטסאפ', whatsapp: 'כתיבה להדר ואופיר' };
-  var S = { content: null, version: null, published: null, ad: q.get('pain') || 'opening_up', gender: q.get('gender') === 'male' ? 'male' : 'female', dirty: false };
+  var S = { content: null, version: null, published: null, ad: q.get('ad') || q.get('pain') || '', gender: q.get('gender') === 'male' ? 'male' : 'female', dirty: false };
 
   var $ = function (id) { return document.getElementById(id); };
   var el = function (tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
@@ -45,21 +45,33 @@
   function steps() { return S.content.ads[S.ad][S.gender] || null; }
   var OPEN = {};
   var KEYRE = /^[a-z][a-z0-9_]{0,29}$/;
-  function pname() { return S.content.param || 'pain'; }
-  function pageUrl() { return location.origin + '/' + BIZ + '?' + pname() + '=' + encodeURIComponent(S.ad) + (S.gender === 'both' ? '' : '&gender=' + S.gender); }
+  function pageUrl() { return location.origin + '/' + BIZ + '?ad=' + encodeURIComponent(S.ad) + (S.gender === 'both' ? '' : '&gender=' + S.gender); }
   function firstOther() { var a = S.content.ads[S.ad]; return ['female', 'male', 'both'].filter(function (g) { return g !== S.gender && a[g]; })[0] || null; }
   var GN = { female: 'אישה', male: 'גבר', both: 'שני המינים' };
 
+  function drawAds() {
+    var c = S.content, box = $('adlist'), term = $('adq').value.trim().toLowerCase(), keys = Object.keys(c.ads), shown = 0;
+    box.textContent = '';
+    keys.forEach(function (k) {
+      var t = String(c.ads[k].ad || '');
+      if (term && k.toLowerCase().indexOf(term) < 0 && t.toLowerCase().indexOf(term) < 0) return;
+      shown++;
+      var b = el('button', k === S.ad ? 'adi on' : 'adi'); b.type = 'button';
+      b.appendChild(el('span', 'code', k)); if (t) b.appendChild(el('span', 'ttl', t));
+      b.addEventListener('click', function () { S.ad = k; render(); });
+      box.appendChild(b);
+    });
+    if (!shown) box.appendChild(el('p', 'hint', 'לא נמצאה מודעה'));
+    $('adcount').textContent = (term ? shown + ' מתוך ' : '') + keys.length + ' מודעות';
+  }
   function render() {
     var c = S.content;
     // the ad tabs
-    var ads = $('ads'); ads.textContent = '';
-    Object.keys(c.ads).forEach(function (k) { var b = el('button', k === S.ad ? 'on' : '', k); b.type = 'button'; b.addEventListener('click', function () { S.ad = k; render(); }); ads.appendChild(b); });
+    drawAds();
     Array.prototype.forEach.call($('genders').children, function (b) { b.className = b.getAttribute('data-g') === S.gender ? 'on' : ''; });
     var cur = c.ads[S.ad];
     $('adcode').value = S.ad; $('adtextin').value = cur.ad || ADS[S.ad] || '';
-    $('pname').value = pname();
-    $('generalSum').textContent = 'פרמטר ' + pname() + ' · ברכה: ' + String(c.greeting || '').slice(0, 40);
+    $('generalSum').textContent = 'ברכה: ' + String(c.greeting || '').slice(0, 40);
     $('preview').href = pageUrl() + '&fresh=' + Date.now();
     var g = $('greeting'); g.value = c.greeting || ''; g.oninput = function () { c.greeting = g.value; dirty(true); };
 
@@ -162,6 +174,8 @@
     Array.prototype.forEach.call($('genders').children, function (b) { b.addEventListener('click', function () { S.gender = b.getAttribute('data-g'); render(); }); });
     $('save').addEventListener('click', save);
     $('copyOther').addEventListener('click', copyOther);
+    $('adq').addEventListener('input', drawAds);
+    $('adq').addEventListener('keydown', function (e) { if (e.key === 'Enter') { var f = $('adlist').querySelector('.adi'); if (f) f.click(); } });
     $('expandAll').addEventListener('click', function () { document.querySelectorAll('#steps details').forEach(function (d) { d.open = true; }); });
     $('collapseAll').addEventListener('click', function () { document.querySelectorAll('#steps details').forEach(function (d) { d.open = false; }); });
     $('copyUrl').addEventListener('click', function () {
@@ -179,11 +193,6 @@
       var next = {}; Object.keys(ads).forEach(function (k) { next[k === S.ad ? v : k] = ads[k]; });
       if (S.content.defaultAd === S.ad) S.content.defaultAd = v;
       S.content.ads = next; S.ad = v; render(); dirty(true);
-    });
-    $('pname').addEventListener('change', function () {
-      var v = $('pname').value.trim() || 'pain';
-      if (!KEYRE.test(v) || v === 'gender') { status('שם פרמטר: אותיות קטנות באנגלית, ספרות וקו תחתון, ולא gender', 'err'); $('pname').value = pname(); return; }
-      S.content.param = v === 'pain' ? undefined : v; render(); dirty(true);
     });
     $('newAd').addEventListener('click', function () {
       var v = (prompt('קוד למודעה החדשה (אותיות קטנות באנגלית)') || '').trim();
