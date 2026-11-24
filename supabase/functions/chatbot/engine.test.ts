@@ -377,3 +377,12 @@ Deno.test('round eleven: two questions in one reply are sent back', () => {
   if (!styleFix('מתי זה התחיל? ואיך זה נראה לך?', 'כשמישהו מתקרב אלי')) throw new Error('two questions missed');
   if (styleFix('מתי זה התחיל, ואיך זה נראה לך?', 'כשמישהו מתקרב אלי')) throw new Error('false alarm on one question');
 });
+
+Deno.test('round eleven: a question that asks whether they want to share is sent back', () => {
+  if (!styleFix('זה נשמע כבד. רוצה לספר לי קצת יותר?', 'כשמישהו מתקרב')) throw new Error('willingness question missed');
+  if (styleFix('זה נשמע כבד. מה קורה בדיוק באותו רגע?', 'כשמישהו מתקרב')) throw new Error('false alarm on a content question');
+});
+Deno.test('round eleven: the hard rules sit in one titled set', async () => {
+  const { FLOW_PROMPT } = await import('./businesses/harpatka/flow.ts');
+  for (const needle of ['כללים שאסור לעבור עליהם', 'שאלה אחת בלבד בכל הודעה', 'לא ממציאים דבר על חיי האדם', 'תאריך, שעה, מקום ומחיר לא נמסרים', 'ער"ן 1201']) if (!FLOW_PROMPT.includes(needle)) throw new Error('missing ' + needle);
+});
