@@ -43,6 +43,7 @@
   function line(get, set, label) { var t = el('input', 'field'); t.type = 'text'; t.value = get(); return bindField(t, get, set, label); }
 
   function steps() { return S.content.ads[S.ad][S.gender] || null; }
+  var OPEN = {};
   var KEYRE = /^[a-z][a-z0-9_]{0,29}$/;
   function pname() { return S.content.param || 'pain'; }
   function pageUrl() { return location.origin + '/' + BIZ + '?' + pname() + '=' + encodeURIComponent(S.ad) + (S.gender === 'both' ? '' : '&gender=' + S.gender); }
@@ -58,6 +59,7 @@
     var cur = c.ads[S.ad];
     $('adcode').value = S.ad; $('adtextin').value = cur.ad || ADS[S.ad] || '';
     $('pname').value = pname();
+    $('generalSum').textContent = 'פרמטר ' + pname() + ' · ברכה: ' + String(c.greeting || '').slice(0, 40);
     $('preview').href = pageUrl() + '&fresh=' + Date.now();
     var g = $('greeting'); g.value = c.greeting || ''; g.oninput = function () { c.greeting = g.value; dirty(true); };
 
@@ -70,30 +72,38 @@
       if (firstOther()) em.appendChild(mk);
       box.appendChild(em); return;
     }
+    var cut = function (t, n) { t = String(t || '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n) + '…' : t; };
     list.forEach(function (m, i) {
-      var card = el('section', 'card step');
-      var h = el('h2'); h.appendChild(document.createTextNode('הודעה ' + (i + 1))); h.appendChild(el('small', '', i === 4 ? 'האחרונה: שלוש הפעולות' : 'שלוש אפשרויות ותגובה לכל אחת'));
-      card.appendChild(h);
-      card.appendChild(el('label', 'lbl', 'ההודעה (אפשר ירידת שורה)'));
-      card.appendChild(area(function () { return m.say; }, function (v) { m.say = v; }, 4));
-      var opts = el('div', 'opts');
+      var id = S.ad + '|' + S.gender + '|' + i;
+      var card = el('details', 'acc'); card.open = !!OPEN[id];
+      card.addEventListener('toggle', function () { if (card.open) OPEN[id] = 1; else delete OPEN[id]; });
+      var sm = el('summary'); var inner = el('span', 'sum');
+      sm.appendChild(el('span', 'num', String(i + 1)));
+      var tt = el('span', 't', cut(m.say, 90)); inner.appendChild(tt);
+      var chips = el('span', 'chips'); inner.appendChild(chips);
+      sm.appendChild(inner); card.appendChild(sm);
+      var drawChips = function () { chips.textContent = ''; m.options.forEach(function (o) { chips.appendChild(el('span', 'chip', cut(o.label, 24))); }); tt.textContent = cut(m.say, 90); };
+      drawChips();
+      var body = el('div', 'body'), cols = el('div', 'cols');
+      var first = el('div'); first.appendChild(el('label', 'lbl', i === 4 ? 'ההודעה האחרונה (פעולות)' : 'ההודעה'));
+      first.appendChild(area(function () { return m.say; }, function (v) { m.say = v; drawChips(); }, 5));
+      cols.appendChild(first);
       m.options.forEach(function (o, k) {
-        var op = el('div', 'opt');
-        op.appendChild(el('label', 'lbl', 'אפשרות ' + (k + 1)));
-        var row = el('div', i === 4 ? 'row act' : 'row');
-        row.appendChild(line(function () { return o.label; }, function (v) { o.label = v; }, true));
+        var op = el('div', 'opt'); op.appendChild(el('h3', '', 'אפשרות ' + (k + 1)));
+        var row = el('div', i === 4 ? 'row2 act' : 'row2');
+        row.appendChild(line(function () { return o.label; }, function (v) { o.label = v; drawChips(); }, true));
         if (i === 4) {
           var sel = el('select', 'field');
-          Object.keys(ACTIONS).forEach(function (a) { var opt = el('option', '', ACTIONS[a]); opt.value = a; if (o.action === a) opt.selected = true; sel.appendChild(opt); });
+          Object.keys(ACTIONS).forEach(function (a2) { var opt = el('option', '', ACTIONS[a2]); opt.value = a2; if (o.action === a2) opt.selected = true; sel.appendChild(opt); });
           sel.addEventListener('change', function () { o.action = sel.value; dirty(true); });
           row.appendChild(sel);
         }
         op.appendChild(row);
-        op.appendChild(el('label', 'lbl', i === 4 ? 'תגובה בלחיצה (לא חובה)' : 'התגובה לאפשרות הזאת'));
-        op.appendChild(area(function () { return o.reply || ''; }, function (v) { o.reply = v; }, 2));
-        opts.appendChild(op);
+        op.appendChild(el('label', 'lbl', i === 4 ? 'תגובה בלחיצה (לא חובה)' : 'התגובה לאפשרות'));
+        op.appendChild(area(function () { return o.reply || ''; }, function (v) { o.reply = v; }, 3));
+        cols.appendChild(op);
       });
-      card.appendChild(opts);
+      body.appendChild(cols); card.appendChild(body);
       box.appendChild(card);
     });
   }
@@ -152,6 +162,8 @@
     Array.prototype.forEach.call($('genders').children, function (b) { b.addEventListener('click', function () { S.gender = b.getAttribute('data-g'); render(); }); });
     $('save').addEventListener('click', save);
     $('copyOther').addEventListener('click', copyOther);
+    $('expandAll').addEventListener('click', function () { document.querySelectorAll('#steps details').forEach(function (d) { d.open = true; }); });
+    $('collapseAll').addEventListener('click', function () { document.querySelectorAll('#steps details').forEach(function (d) { d.open = false; }); });
     $('copyUrl').addEventListener('click', function () {
       var u = pageUrl();
       var done = function () { status('הכתובת הועתקה: ' + u, 'ok'); };
