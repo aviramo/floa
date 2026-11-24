@@ -86,6 +86,8 @@ async function forceQuestion(apiKey: string, model: string, a: { reply: string; 
 function cleanReaction(raw: string | null, address: 'female' | 'male' | 'plural', b: JourneyBusiness): string | null {
   let r = String(raw ?? '').replace(/<[^>]*>/g, '').replace(/\s*\n+\s*/g, ' ').trim().replace(/^["״“]+|["״”]+$/g, '');
   r = fixAddress(neutralize(r), address);
+  r = r.replace(/^(מבינה|מבין|שומעת|שומע) ש/, 'נשמע ש');   // the bot has no gender: an opening verb about itself becomes "it sounds that"
+  if (/^(מבינה|מבין|שומעת|שומע|רואה|מרגישה|מרגיש)(\s|$)/.test(r)) return null;
   const first = sentencesOf(r).find((p) => !/\?/.test(p)) ?? '';
   r = stripFinalDot(first);
   if (!r || r.length > 140 || /[—–]/.test(r) || mentionsOffer(r, b.lexicon.offerWords) || hasReferral(r)) return null;
