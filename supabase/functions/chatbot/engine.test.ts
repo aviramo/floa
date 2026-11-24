@@ -338,3 +338,7 @@ Deno.test('round eleven: no hotline for silence or a bare question mark', () => 
   if (!styleFix('אני כאן. אם קשה, אפשר להתקשר לער"ן 1201', '?')) throw new Error('missed');
   if (styleFix('אני כאן. אפשר להתקשר לער"ן 1201 בכל שעה', 'אני רוצה למות')) throw new Error('blocked a real crisis');
 });
+
+Deno.test('round eleven: hotline stays allowed in a conversation that had real distress earlier', () => {
+  if (styleFix('אם אתה בסכנה התקשר ל-101', 'לא יודע', 'אני לא רוצה לחיות יותר לא יודע')) throw new Error('blocked a hotline inside an ongoing crisis');
+});

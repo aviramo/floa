@@ -175,7 +175,7 @@ Deno.serve(async (req) => {
       if (op2 && op2.messages.length) op = op2;
     }
     if (op) op.messages = op.messages.map((m) => fixAddress(neutralize(m), addressOf(fromLink)));
-    if (op) op.chips = padChips(op.chips.filter((c) => !c.includes('/') && !repeatedWord(c)), OPENING_POOL);   // "לא יודע/ת" is gendered; the plain filter misses the slash form
+    if (op) op.chips = padChips(op.chips.filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c)), OPENING_POOL, 2).slice(0, 2);   // "לא יודע/ת" is gendered; the plain filter misses the slash form
     if (!op || !op.messages.length) return json(b, origin, { error: 'upstream' }, 502);
     const st: SessionState = { ...initialState(journey, fromLink), meta };
     persist(b, session, src, campaignId, op.messages.map((content) => ({ role: 'assistant', content })), null, st, []);
@@ -209,7 +209,7 @@ Deno.serve(async (req) => {
   if (!distress && (putsEveningOnTable(parsed.reply) || mentionsEvening(parsed.reply)) && !pitchAllowed({ turns, lastUser, prevDone: prev.done, prevReadiness: prev.readiness })) replyFixes.push({ type: 'text', text: earlyPitchFix });
   if (address !== 'plural' && wrongSingular(parsed.reply, address)) replyFixes.push({ type: 'text', text: genderFix(address) });
   if (!parsed.reply) replyFixes.push({ type: 'text', text: '## חסר טקסט\nהתשובה הקודמת הייתה רק סימונים. כתבו הודעה קצרה לאדם לפני הסימונים.' });
-  { const sf = styleFix(parsed.reply, lastUser); if (sf) replyFixes.push({ type: 'text', text: sf }); }
+  { const sf = styleFix(parsed.reply, lastUser, clean.filter((m: any) => m.role === 'user').map((m: any) => String(m.content)).join(' ')); if (sf) replyFixes.push({ type: 'text', text: sf }); }
   if (replyFixes.length) {
     const raw2 = await claude(apiKey, model, [...system, ...replyFixes], merged, 1400);
     if (raw2) { const o2 = extractState(raw2), p2 = parse(o2.text); if (p2.reply) { text = o2.text; incoming = o2.state; parsed = p2; parsed.reply = scrub(parsed.reply); } }

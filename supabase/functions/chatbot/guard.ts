@@ -117,7 +117,7 @@ export function padChips(chips: string[], pool: string[], min = 3): string[] {
   for (const c of pool) { if (out.length >= min) break; if (!out.includes(c)) out.push(c); }
   return out;
 }
-export const OPENING_POOL = ['סתם סקרנות', 'קשה לי לדבר על זה', 'רוצה להבין קודם'];
+export const OPENING_POOL = ['בא לי לספר קצת על זה', 'אני רוצה להבין על מה מדובר'];
 export const CHAT_POOL = ['כן, עוד פרטים', 'לא כרגע', 'איך נרשמים'];
 // "I have a question" is a dead end: it asks the visitor to type, and the bot answers with a menu about the offer
 export const deadEndChip = (c: string) => /^(יש לי שאלה|שאלה|אני רוצה לשאול|רוצה לשאול)/.test(c.trim());
@@ -131,10 +131,10 @@ export const mentionsEvening = (reply: string) => /(הדר ואופיר|המנח
 export const offersUpdates = (reply: string) => /קבוצת (ה)?עדכונים/.test(String(reply ?? ''));
 
 // Things the visitor must never read: the machinery, "what brought you", pressure to hurry. A reply with one is written again once.
-export function styleFix(reply: string, lastUser = ''): string | null {
+export function styleFix(reply: string, lastUser = '', allUser = ''): string | null {
   const r = String(reply ?? '');
   const probs: string[] = [];
-  if (/(ער"ן|ערן 1201|1201|(?<!\d)101(?!\d)|מוקד|מספר חירום|איש מקצוע|מטפל|פסיכולוג)/.test(r) && !distressIn(lastUser)) probs.push('אסור להפנות לער"ן, למוקד או לאיש מקצוע. האדם לא אמר שהוא רוצה למות או לפגוע בעצמו. שתיקה, סימן שאלה או הודעה קצרה הן לא מצוקה: עונים בחום קצר ושואלים שאלה קלה אחת');
+  if (/(ער"ן|ערן 1201|1201|(?<!\d)101(?!\d)|מוקד|מספר חירום|איש מקצוע|מטפל|פסיכולוג)/.test(r) && !distressIn(lastUser) && !distressIn(allUser)) probs.push('אסור להפנות לער"ן, למוקד או לאיש מקצוע. האדם לא אמר שהוא רוצה למות או לפגוע בעצמו. שתיקה, סימן שאלה או הודעה קצרה הן לא מצוקה: עונים בחום קצר ושואלים שאלה קלה אחת');
   if (/(המשפט (שלך )?(קצר|קצרצר)|קצר (מאוד|מדי)|כתבת (רק )?(מילה|מעט|קצר)|(ר|ק)ק מילה|לא ברור עדיין|תשובה קצרה|הודעה קצרה)/.test(r)) probs.push('אסור להעיר על האורך של מה שהאדם כתב או לחץ. תשובה קצרה היא תשובה לגיטימית: ממשיכים הלאה בטבעיות');
   if (String(lastUser).trim().split(/\s+/).length <= 4 && /(מה ש(כתבת|סיפרת|אמרת)|שכתבת|כתבת לי|סיפרת לי)/.test(r)) probs.push('האדם כתב רק כמה מילים או לחץ על תשובה: אסור "מה שכתבת", "סיפרת", "אמרת"');
   if (/(תשובה מוכנה|תשובות מוכנות|הכפתור|לחצת על|הודעה מוכנה)/.test(r)) probs.push('אסור להזכיר תשובות מוכנות, כפתורים או הודעות: מגיבים לתוכן שהאדם אמר');
