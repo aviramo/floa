@@ -19,8 +19,14 @@
     BASE = "https://api-test.floa.co.il/roster/v1";
     KEY = "rk_pub_XM9ZVQk6gU6tLNZcmmM31UWzswG0C08V";
   }
-  /* ל-roster אין שעת סיום למפגש (הוא מחשב כשעתיים מההתחלה), ובריטריט היום של AUM זה תמיד עד 16:00 */
-  var END = "16:00";
+  /* ל-roster אין שעת סיום למפגש, אז היא נגזרת משעת ההתחלה: תמיד 7 שעות קדימה (מ-9:00 עד 16:00). אם ההתחלה תזוז, הסיום יזוז איתה */
+  var DURATION_MIN = 7 * 60;
+  function endOf(start) {
+    var p = String(start || "").split(":"), h = parseInt(p[0], 10), m = parseInt(p[1], 10) || 0;
+    if (isNaN(h)) return "";
+    var t = Math.min(h * 60 + m + DURATION_MIN, 23 * 60 + 59);   /* לא חוצים חצות */
+    return ("0" + Math.floor(t / 60)).slice(-2) + ":" + ("0" + (t % 60)).slice(-2);
+  }
   var TIMEOUT = 15000;
 
   function call(method, path, body) {
@@ -47,7 +53,7 @@
           id: m.id,
           date: m.date,
           from: m.time,
-          to: END,
+          to: endOf(m.time),
           title: m.name || "ריטריט AUM",
           name: m.name || "ריטריט AUM",
           location: place,
