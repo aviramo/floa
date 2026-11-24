@@ -90,7 +90,7 @@ function cleanReaction(raw: string | null, address: 'female' | 'male' | 'plural'
   if (/^(מבינה|מבין|שומעת|שומע|רואה|מרגישה|מרגיש)(\s|$)/.test(r)) return null;
   const first = sentencesOf(r).find((p) => !/\?/.test(p)) ?? '';
   r = stripFinalDot(first);
-  if (!r || r.split(/\s+/).length > 8 || /(הרבה זמן|כל הזמן|תמיד|לאורך|בגלל|כנראה|בטח|נשמע כמו משהו|מלווה|קשור ל|אופי|דפוס)/.test(r) || r.length > 140 || /[—–]/.test(r) || mentionsOffer(r, b.lexicon.offerWords) || hasReferral(r)) return null;
+  if (!r || r.split(/\s+/).length > 6 || /(מוכר|אמיתי|אותי|הרבה זמן|כל הזמן|תמיד|לאורך|בגלל|כנראה|בטח|נשמע כמו משהו|מלווה|קשור ל|אופי|דפוס)/.test(r) || r.length > 140 || /[—–]/.test(r) || mentionsOffer(r, b.lexicon.offerWords) || hasReferral(r)) return null;
   return r;
 }
 
@@ -223,7 +223,7 @@ Deno.serve(async (req) => {
     const segR = parseSegment(body.segment ?? (body.gender ? { gender: body.gender } : {}));
     const addressR = addressOf(revealedGender([textR]) ?? linkGender(segR));
     const langR = addressR === 'female' ? 'נקבה' : addressR === 'male' ? 'זכר' : 'רבים';
-    const sysR = 'כותבים תגובה אמפתית קצרה בצ׳אט של "יוצאים להרפתקה". התפקיד היחיד הוא אמפתיה: משפט אחד קצר, עד שבע מילים, שמראה שהקשבת, למשל "זה נשמע לא פשוט", "תודה ששיתפת", "זה מובן". אסור: לפרש, להסביר, לאפיין את האדם או את מצבו, להשלים רעיונות שכתב, לחזור על מה שכתב במילים אחרות, להזכיר משך זמן או סיבה, לייעץ או לשאול. אם האדם שאל שאלה, כותבים רק "שאלה טובה, נגיע לזה בהמשך". בלי נקודה בסוף. הבוט עצמו בלי מגדר. פונים אל האדם בלשון ' + langR + ' אם צריך. מחזירים את המשפט בלבד.';
+    const sysR = 'כותבים תגובה אמפתית קצרה בצ׳אט של "יוצאים להרפתקה". התפקיד היחיד הוא אמפתיה: משפט אחד קצר, עד שש מילים, שמראה שהקשבת, למשל "זה נשמע לא פשוט", "תודה ששיתפת", "זה מובן". אסור: לפרש, להסביר, לאפיין את האדם או את מצבו, לומר שזה מוכר או אמיתי, להתייחס אל עצמך ("אותי"), להשלים רעיונות שכתב, לחזור על מה שכתב במילים אחרות, להזכיר משך זמן או סיבה, לייעץ או לשאול. אם האדם שאל שאלה, כותבים רק "שאלה טובה, נגיע לזה בהמשך". בלי נקודה בסוף. הבוט עצמו בלי מגדר. פונים אל האדם בלשון ' + langR + ' אם צריך. מחזירים את המשפט בלבד.';
     const adR = tx(body.ad).slice(0, 300);
     const histR = (Array.isArray(body.history) ? body.history : []).slice(-10).map((h: any) => (h && h.r === 'user' ? 'האדם: ' : 'הבוט: ') + tx(h && h.t).slice(0, 300)).join('\n');
     const genderLine = 'מגדר האדם: ' + (addressR === 'female' ? 'אישה' : addressR === 'male' ? 'גבר' : 'לא ידוע');

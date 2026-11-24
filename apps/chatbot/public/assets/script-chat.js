@@ -66,9 +66,18 @@
       row.appendChild(a); log.appendChild(row); scroll();
     }
 
+    // after the final offers (the site, the group, the team) the writing box is closed: the conversation does not go on
+    let closed = false;
+    function closeBar() {
+      closed = true;
+      const bar = log.parentElement && log.parentElement.querySelector('.ch-bar');
+      if (bar) bar.remove();
+    }
+
     function showOptions(i) {
       clearRow();
       const step = steps[i];
+      if (step.final) closeBar();
       row = el('div', 'ch-chips');
       step.options.forEach((o, k) => {
         if (step.final) {
@@ -114,7 +123,7 @@
     // a free message in the writing bar answers the current question
     c.onText = (text) => {
       text = String(text || '').trim().slice(0, 600);
-      if (!text || busyNow) return;
+      if (!text || busyNow || closed) return;
       inp.value = ''; grow();
       answer(Math.min(st.i, steps.length - 1), text, 'text', '');
     };
