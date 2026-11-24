@@ -75,7 +75,7 @@
       row = el('div', 'ch-chips');
       step.options.forEach((o, k) => {
         if (last && (o.action || o.url)) {
-          const own = /^https?:///i.test(o.url || '') ? o.url.trim() : '';
+          const own = /^https?:[/][/][^ ]+$/i.test((o.url || '').trim()) ? o.url.trim() : '';
           const href = own ? (o.action === 'site' ? withSrc(own) : own) : o.action === 'site' ? siteUrl() : o.action === 'updates' ? cfg.updatesLink : waUrl();
           const a = el('a', 'ch-chip', o.label); a.href = href; a.target = '_blank'; a.rel = 'noopener';
           a.addEventListener('click', () => { track('ChatCTA', { kind: o.action || 'link', ad: cid || 'default' }); record('cta', i + 1, k + 1, o.label); if (o.reply) { bubble('bot', o.reply); scroll(); } });

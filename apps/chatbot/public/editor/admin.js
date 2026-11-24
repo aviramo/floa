@@ -242,7 +242,7 @@
       var st = ads[ks[x]][g]; if (!st) continue;
       for (var i = 0; i < st.length; i++) {
         var empty = !String(st[i].say || '').trim() || st[i].options.some(function (o) { return !String(o.label || '').trim(); });
-        if (!empty && i === 4) empty = st[i].options.some(function (o) { return !/^https?://S+$/i.test(linkOf(o)); });
+        if (!empty && i === 4) empty = st[i].options.some(function (o) { return !/^https?:[/][/][^ ]+$/i.test(String(linkOf(o)).trim()); });
         if (empty) return { ad: ks[x], g: g, i: i };
       }
     }
