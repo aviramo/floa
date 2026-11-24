@@ -247,6 +247,7 @@ Deno.serve(async (req) => {
     if (eitherOr) chips = chips.filter((c) => !/^(כן|לא)(,.*)?$/.test(c.trim()));
   }
   if (cta === 'register' && !(b.siteOnly ? pitchOk : eveningSeen)) cta = null;
+  if (b.siteOnly && cta === 'whatsapp' && next.action !== 'safety' && !pitchOk) cta = null;   // a conversation with the facilitators is not offered before the meeting stage
   if (b.siteOnly && !cta && pitchOk && /(באתר|בקישור|\blink\b|website)/i.test(reply) && next.action !== 'safety') cta = 'register';   // the reply points at the site: the button is the way there
   if (b.siteOnly && !cta && pitchOk && asksDetails(lastUser) && next.action !== 'safety') cta = 'register';   // asked when, how much, how to register: the site link is the answer
   if (!cta && offersUpdates(reply) && next.action !== 'safety') cta = 'updates';
