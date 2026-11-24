@@ -78,7 +78,7 @@ Deno.test('opening task names the business bot and keeps the meeting out of the 
   if (!t.includes(harpatka.botName) || !t.includes('אסור להזכיר ערב, מפגש או תנועה')) throw new Error(t);
 });
 
-import { oneMessage, oneSentence, stripReferrals, endOnQuestion, revealedGender, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsOffer, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { needsQuestionRewrite, oneMessage, oneSentence, stripReferrals, endOnQuestion, revealedGender, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsOffer, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 Deno.test('distress net catches plain phrasings and not ordinary talk', () => {
   for (const t of ['אני חושבת על למות', 'לפעמים אני חושבת שעדיף שלא אהיה פה', 'רוצה למות', 'אין טעם לחיות']) if (!distressIn(t)) throw new Error('missed: ' + t);
   for (const t of ['הייתי רוצה להרגיש חלק ממשהו', 'מתי המפגש הקרוב?', 'מת מצחוק', 'עייפה ולא ישנה']) if (distressIn(t)) throw new Error('false alarm: ' + t);
@@ -384,7 +384,7 @@ Deno.test('round eleven: a question that asks whether they want to share is sent
 });
 Deno.test('round eleven: the hard rules sit in one titled set', async () => {
   const { FLOW_PROMPT } = await import('./businesses/harpatka/flow.ts');
-  for (const needle of ['כללים שאסור לעבור עליהם', 'לא ממציאים דבר על חיי האדם', 'תאריך, שעה, מקום ומחיר לא נמסרים', 'הדר ואופיר', 'משפט אחד בלבד']) if (!FLOW_PROMPT.includes(needle)) throw new Error('missing ' + needle);
+  for (const needle of ['כללים שאסור לעבור עליהם', 'לא ממציאים דבר על חיי האדם', 'תאריך, שעה, מקום ומחיר לא נמסרים', 'הדר ואופיר', 'שני משפטים לכל היותר']) if (!FLOW_PROMPT.includes(needle)) throw new Error('missing ' + needle);
 });
 
 Deno.test('round eleven: referrals to a hotline, emergency services or a professional are cut, the door to the team is added in a crisis', () => {
@@ -395,14 +395,22 @@ Deno.test('round eleven: referrals to a hotline, emergency services or a profess
 });
 
 Deno.test('round eleven: a message is one sentence, the last question stays; crisis, goodbye and the site line are left', () => {
-  eq(oneSentence('זה נשמע כבד מאוד. מה קורה בגוף באותו רגע?'), 'מה קורה בגוף באותו רגע?', 'last question');
+  eq(oneSentence('זה נשמע כבד מאוד. מה קורה בגוף באותו רגע?'), 'זה נשמע כבד מאוד. מה קורה בגוף באותו רגע?', 'a statement and a question stay');
+  eq(oneSentence('מה קרה? זה נשמע כבד. מה קורה בגוף באותו רגע?'), 'זה נשמע כבד. מה קורה בגוף באותו רגע?', 'only the last question with the statement before it');
   eq(oneSentence('מה קורה בגוף באותו רגע?'), 'מה קורה בגוף באותו רגע?', 'already one');
   eq(oneSentence('הכול כתוב באתר. אפשר להציץ שם.'), 'הכול כתוב באתר. אפשר להציץ שם.', 'site line stays');
-  if (!styleFix('זה נשמע כבד. מה קורה בגוף באותו רגע?', 'כשמישהו מתקרב')) throw new Error('two sentences missed');
-  if (styleFix('נשמע כבד, מה קורה בגוף באותו רגע?', 'כשמישהו מתקרב')) throw new Error('false alarm on one sentence');
+  if (!styleFix('זה נשמע כבד. אני מבין. מה קורה בגוף באותו רגע?', 'כשמישהו מתקרב')) throw new Error('three sentences missed');
+  if (styleFix('זה נשמע כבד. מה קורה בגוף באותו רגע?', 'כשמישהו מתקרב')) throw new Error('false alarm on a statement and a question');
 });
 
 Deno.test('round eleven: paragraphs become one message', () => {
   eq(oneMessage('נשמע כבד.\n\nמה קורה בגוף?'), 'נשמע כבד. מה קורה בגוף?', 'joined');
   eq(oneMessage('הכול באתר.\n\nאפשר להציץ.'), 'הכול באתר.\n\nאפשר להציץ.', 'site line keeps its paragraphs');
+});
+
+Deno.test('round eleven: a statement, two questions in a sentence, or talk about the question are rewritten', () => {
+  eq(needsQuestionRewrite('זה נשמע מאוד לא נעים, וחבל לשמוע שזה מה שאת מרגישה.'), true, 'statement only');
+  eq(needsQuestionRewrite('בתור שאלה אחת: מה קורה בגוף שלך באותו רגע, מתי את מרגישה את הרצון לברוח?'), true, 'two questions and process talk');
+  eq(needsQuestionRewrite('זה נשמע כבד. מה קורה בגוף שלך באותו רגע?'), false, 'a statement and one question');
+  eq(needsQuestionRewrite('הכול כתוב באתר, אפשר להציץ שם.'), false, 'site line');
 });

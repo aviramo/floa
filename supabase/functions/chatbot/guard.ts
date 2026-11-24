@@ -126,7 +126,7 @@ export function styleFix(reply: string, lastUser = '', allUser = ''): string | n
   const probs: string[] = [];
   if (/(רוצה|רוצים|בא לך|בא לכם|תרצי|תרצה|תרצו|מוכנה|מוכן|מוכנים) (לספר|לשתף|להרחיב)/.test(r) && /\?\s*$/.test(r.trim())) probs.push('אל תשאלו אם האדם רוצה לספר. שאלו ישר על התוכן: מה קרה, מתי, איך זה הרגיש');
   if ((r.match(/\?/g) ?? []).length > 1) probs.push('יש יותר משאלה אחת בהודעה. השאירו שאלה אחת בלבד, בסוף');
-  if (/(לפני ש(אני )?(אשאל|שואל|שואלת|נתקדם|מתקדמים|אמשיך)|אני רוצה להבין עוד|רוצה להבין עוד משהו)/.test(r)) probs.push('אל תדברו על השיחה עצמה ועל מה שאתם עושים. שאלו ישר את השאלה');
+  if (/(לפני ש(אני )?(אשאל|שואל|שואלת|נתקדם|מתקדמים|אמשיך)|אני רוצה להבין עוד|רוצה להבין עוד משהו|בתור שאלה|שאלה אחת|שאלה ראשונה)/.test(r)) probs.push('אל תדברו על השיחה עצמה ועל מה שאתם עושים. שאלו ישר את השאלה');
   if (!/\?\s*$/.test(r.trim()) && !/(באתר|בקישור|אתר|ביי|להתראות|יום טוב|שיהיה|בהצלחה|תודה)/.test(r) && r.trim().length > 0) probs.push('ההודעה חייבת להסתיים בשאלה קונקרטית אחת שאפשר לענות עליה, לא בהזמנה (״אם תרצו, אפשר לספר...״)');
   if (/[^.?!\n]*,[^.?!\n]*\sאו\s[^.?!\n]*\?\s*$/.test(r.trim())) probs.push('השאלה האחרונה מונה כמה אפשרויות (א, ב או ג). שאלו שאלה פתוחה אחת, בלי רשימת בחירות');
   if (/(בתשלום|עולה|מחיר|ש"ח|₪|פעם בשבוע|פעמיים בשבוע|בשעה \d|ביום (ראשון|שני|שלישי|רביעי|חמישי|שישי)|בימי)/.test(r)) probs.push('אסור למסור בצ׳אט מחיר, תשלום, מועד, תדירות או משך. הכול באתר. אומרים בחום שהפרטים באתר, בלי לפרט');
@@ -140,7 +140,7 @@ export function styleFix(reply: string, lastUser = '', allUser = ''): string | n
   if (/(כדאי (להקדים|לשמור|לשריין|להירשם)|מקום מוקדם|המקומות נגמרים|הזדמנות אחרונה)/.test(r)) probs.push('בלי לחץ להזדרז: מחיר ומקומות הם מידע בלבד');
   if (/(לילה טוב|בוקר טוב|ערב טוב|צהריים טובים)/.test(r)) probs.push('בלי ברכת זמן: לא יודעים מתי האדם קורא');
   if (/["״“][א-ת ]{1,14}["״”]\s+(נשמע|זה נשמע|הוא סימן|אומר)|אפשר לומר רק|אני מציע לא|בוא נשמור על/.test(r)) probs.push('אסור לצטט מילה של האדם בגרשיים ולפרש אותה, ואסור לדבר על השיחה עצמה: מגיבים לתוכן ושואלים');
-  if (!distressIn(lastUser) && !distressIn(allUser) && !ENDS_OK.test(r) && (sentencesOf(r).length > 1 || r.length > 260)) probs.push('ארוך מדי: משפט אחד בלבד, והוא השאלה');
+  if (!distressIn(lastUser) && !distressIn(allUser) && !ENDS_OK.test(r) && (sentencesOf(r).length > 2 || r.length > 320)) probs.push('ארוך מדי: עד שני משפטים, הראשון הכרה (לא שאלה) והשני שאלה אחת');
   return probs.length ? '## תיקון\nהטיוטה: ' + probs.join('; ') + '. כתבו שוב בלי זה, באותו תוכן.' : null;
 }
 
@@ -217,17 +217,32 @@ export function stripReferrals(reply: string, crisis: boolean, doorSentence: str
   return out || r;
 }
 
-// A message is one sentence (the owner's rule, 2026-11-24). When the writer still sent more, the last question stays: it is the sentence the visitor answers.
-// A crisis, a goodbye and the site invitation are left alone.
+// A message is a question, or a statement and then a question: two sentences at most (the owner's rule, 2026-11-24). A first sentence that is itself a question goes.
+// When the writer sent more, the last question stays with the statement right before it. A crisis, a goodbye and the site invitation are left alone.
 export const sentencesOf = (s: string): string[] => String(s ?? '').trim().split(/(?<=[.!?])\s+/).filter(Boolean);
 export function oneSentence(reply: string): string {
   const r = String(reply ?? '').trim();
   if (!r || ENDS_OK.test(r)) return r;
   const parts = sentencesOf(r);
-  if (parts.length <= 1) return r;
-  const questions = parts.filter((p) => /\?\s*$/.test(p));
-  return questions.length ? questions[questions.length - 1] : parts[0];
+  const qs = parts.map((p, k) => (/\?\s*$/.test(p) ? k : -1)).filter((k) => k >= 0);
+  if (!qs.length) return parts.length <= 2 ? r : parts.slice(0, 2).join(' ');
+  const last = qs[qs.length - 1];
+  const before = last > 0 && !/\?\s*$/.test(parts[last - 1]) ? parts[last - 1] : '';
+  return (before ? before + ' ' : '') + parts[last];
 }
 
 // One turn is one message: paragraphs become one line (a crisis, a goodbye and the site line keep theirs).
 export const oneMessage = (reply: string): string => ENDS_OK.test(String(reply ?? '')) ? String(reply ?? '') : String(reply ?? '').replace(/\s*\n+\s*/g, ' ').trim();
+
+// The one-sentence rule asks for one question at the end. A reply that is only a statement, or that packs two questions into one sentence ("מה קורה בגוף, מתי את מרגישה"),
+// or that talks about the question itself ("בתור שאלה אחת"), is rewritten once by a short call. A crisis, a goodbye and the site line are never rewritten.
+const INTERROGATIVE = /(^|[\s,.;:!?"(])(מה|מתי|איך|למה|איפה|האם|כמה|מי|איזה|איזו|אילו|באיזה|באילו)(?=[\s,.;:!?")]|$)/g;
+export function needsQuestionRewrite(reply: string): boolean {
+  const r = String(reply ?? '').trim();
+  if (!r || ENDS_OK.test(r)) return false;
+  if (!/\?\s*$/.test(r)) return true;
+  if ((r.match(/\?/g) ?? []).length > 1) return true;
+  const last = sentencesOf(r).pop() ?? r;
+  if ((last.match(INTERROGATIVE) ?? []).length > 1) return true;
+  return /(בתור שאלה|שאלה אחת|שאלה ראשונה|אשאל|אשאל אותך|לפני ש(אני )?שואל)/.test(r);
+}

@@ -8,7 +8,7 @@ import { lastSentence, buildMessages, MAX_USER_TURNS, parse, parseOpening, quote
 import { BUSINESSES } from './businesses/index.ts';
 import { journeyOf } from './journey.ts';
 import { openingTask, sessionFacts, stableSystem, stateBlock, addressOf, turnReminder } from './prompt.ts';
-import { oneMessage, oneSentence, stripReferrals, endOnQuestion, revealedGender, openingMeetingFix, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsOffer, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { needsQuestionRewrite, oneMessage, oneSentence, stripReferrals, endOnQuestion, revealedGender, openingMeetingFix, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsOffer, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 import { ctaFor, ctasOf, diffEvents, extractState, initialState, linkGender, mergeState, stateFromClient } from './state.ts';
 import type { CampaignContext, JourneyBusiness, SessionState } from './types.ts';
 
@@ -69,6 +69,16 @@ async function chipsFallback(apiKey: string, model: string, a: { reply: string; 
   a.trace?.push({ raw });
   const line = ((raw ?? '').match(/תשובות\s*:\s*(.*)/) ?? [])[1] ?? raw ?? '';
   return line.replace(/<[^>]*>/g, '').split(/[|\n]/).map((s) => s.trim().replace(/^[-•\d.\s]+/, '')).filter((s) => s && s.length <= 100);
+}
+
+// The last repair of the question rule: one short call that turns the reply into at most two sentences, a statement and then exactly one question about the content.
+// Used only when the draft and its retry still broke the rule.
+async function forceQuestion(apiKey: string, model: string, a: { reply: string; recent: string; address: 'female' | 'male' | 'plural' }): Promise<string | null> {
+  const lang = a.address === 'female' ? 'נקבה' : a.address === 'male' ? 'זכר' : 'רבים';
+  const sys = 'כותבים מחדש הודעה של בוט בשיחה. מקבלים את השיחה ואת הטיוטה. כותבים הודעה של שני משפטים לכל היותר: המשפט הראשון (אופציונלי) מכיר במה שהאדם אמר ואינו שאלה, והמשפט האחרון הוא שאלה אחת ממוקדת על התוכן (מה קורה, מתי, איך זה מרגיש), שנשענת על מה שהאדם אמר ומסתיימת בסימן שאלה אחד, בלי שתי שאלות ובלי לדבר על השיחה עצמה. בלי להמציא דבר על חיי האדם. פונים בלשון ' + lang + '. מחזירים את ההודעה בלבד.';
+  const raw = await claude(apiKey, model, [{ type: 'text', text: sys }], [{ role: 'user', content: 'השיחה עד עכשיו:\n' + a.recent + '\n\nהטיוטה שצריך לשכתב:\n' + a.reply }], 160);
+  const out = (raw ?? '').replace(/<[^>]*>/g, '').replace(/\s*\n+\s*/g, ' ').trim();
+  return out && /\?\s*$/.test(out) ? out : null;
 }
 
 // The second step of a turn: the quick replies are made from the FINAL message the visitor sees (the first step already sent it), checked once, written again once if they fail.
@@ -288,6 +298,12 @@ Deno.serve(async (req) => {
   if (reply !== r0) hits.push('referral_cut');
   const r1 = reply;
   if (!distress && next.action !== 'safety' && next.action !== 'end') reply = oneMessage(oneSentence(endOnQuestion(reply)));   // one sentence in one message, and it is the question
+  if (!distress && next.action !== 'safety' && next.action !== 'end' && needsQuestionRewrite(reply)) {
+    const recentQ = clean.slice(-6).map((m: any) => (m.role === 'user' ? 'האדם: ' : 'הבוט: ') + String(m.content).slice(0, 300)).join('\n');
+    hits.push('forced_question_rewrite');
+    const q = await forceQuestion(apiKey, model, { reply, recent: recentQ, address });
+    if (q) reply = oneMessage(oneSentence(fixAddress(neutralize(q), address)));
+  }
   if (reply !== r1) hits.push('tail_after_question_cut');
   { const sess = /^[0-9a-f-]{36}$/i.test(session) ? session : ''; const allUser = clean.filter((m: any) => m.role === 'user').map((m: any) => String(m.content)).join(' '); const still = !!styleFix(reply, lastUser, allUser); for (const h of hits) logViolation(b, sess, h, draftReply, reply, !still); }
   if (!incoming) next.action = 'continue';      // a reply without a state block advances nothing
