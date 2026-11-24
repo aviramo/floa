@@ -163,7 +163,7 @@ const ONE_WORD_OK = /^(כן|לא|קצת|אולי|בטח|מעניין|בבקשה|
 export const chipOk = (c: string) => {
   if (/^(כן|לא|קצת|אולי|לא כרגע|בסדר)[.!]?$/.test(c.trim()) || /(אליך|אצלך|בשבילך|אחזור אלי)/.test(c)) return false;
   const w = c.trim().split(/\s+/);
-  if (c.trim().length < 2 || /[:,]$/.test(c.trim()) || w.length > 8 || /ככה זה נשמע/.test(c)) return false;
+  if (c.trim().length < 2 || /[:,]$/.test(c.trim()) || w.length > 12 || /ככה זה נשמע/.test(c)) return false;
   if (w[w.length - 1].length < 2 && w.length > 1) return false;      // cut in the middle ("משהו ש")
   if (w.length === 1 && !ONE_WORD_OK.test(w[0])) return false;        // "האם" and the like
   return true;

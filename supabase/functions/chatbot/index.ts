@@ -66,7 +66,7 @@ async function chipsFallback(apiKey: string, model: string, a: { reply: string; 
   const lang = a.address === 'female' ? 'נקבה' : a.address === 'male' ? 'זכר' : 'ניטרלית (בלי פעלים או תארים בגוף ראשון שמסמנים מגדר)';
   const sys = 'כותבים שתי תשובות מוכנות לצ׳אט, בשורה אחת מופרדות ב-|. כל תשובה היא משפט טבעי של ארבע עד שבע מילים שהאדם עצמו אומר בגוף ראשון, כתשובה ישירה לשאלה בהודעה האחרונה של הבוט (ואם ההודעה היא הזמנה ולא שאלה, כל תשובה היא תחילת סיפור קונקרטי). שתיהן מקדמות את השיחה, בדרכים שונות, בלי סירוב ובלי ״לא יודע״, בגוף ראשון (אני, יש לי, זה קורה לי) ולא על ״מישהו״. כל תשובה היא מאותו סוג של השאלה: שאלה על "מה" (מה קורה, מה את מרגישה) נענית במה שקורה או מרגישים, שאלה על "מתי" נענית בזמן, "איך" באופן, "עד כמה" בדרגה, "למה" בסיבה. תשובה על מתי לשאלה על מה היא טעות. בלי להמציא פרטים על חיי האדם (עבודה, בוס, משפחה): רק מה שנאמר בשיחה. לא ניסוח של הבוט ולא שאלה אל הבוט. לשון האדם: ' + lang + '.';
   const raw = await claude(apiKey, model, [{ type: 'text', text: sys }], [{ role: 'user', content: 'השיחה עד עכשיו:\n' + a.recent + '\n\nהודעת הבוט האחרונה (עליה עונים):\n' + a.reply }], 220);
-  return (raw ?? '').replace(/<[^>]*>/g, '').split(/[|\n]/).map((s) => s.trim().replace(/^[-•\d.\s]+/, '')).filter((s) => s && s.length <= 60);
+  return (raw ?? '').replace(/<[^>]*>/g, '').split(/[|\n]/).map((s) => s.trim().replace(/^[-•\d.\s]+/, '')).filter((s) => s && s.length <= 100);
 }
 
 // A quick reply is checked by a model before the visitor sees it: does it answer the kind of question asked (what, when, how, how much, why), is it said in the first person,
