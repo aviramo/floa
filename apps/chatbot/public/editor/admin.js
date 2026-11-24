@@ -119,6 +119,18 @@
   var OPEN = {}, PENDING = null, PH = null, STATS = { opens: [], shown: [], clicks: [] };
   function num(list, ad, g, step, opt) { var n = 0; list.forEach(function (x) { if (x.ad === ad && x.gender === g && (step == null || x.step === step) && (opt == null || x.opt === opt)) n += x.n; }); return n; }
   function loadStats() { return call('stats').then(function (r) { if (r.ok) { STATS = { opens: r.d.opens || [], shown: r.d.shown || [], clicks: r.d.clicks || [] }; render(); } }); }
+  // live counts on the messages: fetched again every 20 seconds, and drawn only when they changed and nobody is typing
+  setInterval(function () {
+    if (document.hidden || !S.content) return;
+    var f = document.activeElement; if (f && /^(INPUT|TEXTAREA|SELECT)$/.test(f.tagName)) return;
+    call('stats').then(function (r) {
+      if (!r.ok) return;
+      var next = { opens: r.d.opens || [], shown: r.d.shown || [], clicks: r.d.clicks || [] };
+      if (JSON.stringify(next) === JSON.stringify(STATS)) return;
+      var g = document.activeElement; if (g && /^(INPUT|TEXTAREA|SELECT)$/.test(g.tagName)) return;
+      var y = scrollY; STATS = next; render(); scrollTo(0, y);
+    });
+  }, 20000);
   var KEYRE = /^[a-z][a-z0-9_]{0,29}$/;
   function pageUrl() { return location.origin + '/' + BIZ + '?ad=' + encodeURIComponent(S.ad) + (S.gender === 'both' ? '' : '&gender=' + S.gender); }
   function firstOther() { var a = S.content.ads[S.ad]; return ['female', 'male', 'both'].filter(function (g) { return g !== S.gender && a[g]; })[0] || null; }

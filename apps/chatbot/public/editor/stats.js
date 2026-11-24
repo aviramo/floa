@@ -9,7 +9,7 @@
   var $ = function (id) { return document.getElementById(id); };
   var el = function (tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
   var reduce = function () { return matchMedia('(prefers-reduced-motion: reduce)').matches; };
-  var ctx = null, seq = 0;
+  var ctx = null, seq = 0, timer = 0, LIVE_MS = 10000;
 
   function fetchJourneys(biz) {
     return AUTH.token().then(function (t) {
@@ -125,18 +125,31 @@
     for (var i = 0; i < 4; i++) body.appendChild(el('div', 'sk'));
   }
 
+  // live: while the window is open (and the tab is visible) the data is fetched again every few seconds, quietly, keeping the scroll
+  function refresh() {
+    var d = $('statsDlg'); if (!d.open || document.hidden || !ctx) return;
+    var my = seq;
+    fetchJourneys(ctx.biz).then(function (rows) {
+      if (my !== seq || !d.open) return;
+      var body = $('statsBody'), top = body.scrollTop; draw(rows); body.scrollTop = top; stamp();
+    }, function () {});
+  }
+  function stamp() { var t = $('statsLive'); if (t) t.textContent = 'מתעדכן חי, עודכן ב-' + new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', second: '2-digit' }); }
+
   function open(c) {
     ctx = c; var d = $('statsDlg'), my = ++seq;
     $('statsSub').textContent = 'כל המודעות, ומתחת המודעה הפתוחה בעורך';
     skeleton();
     if (!d.open) { d.showModal(); requestAnimationFrame(function () { requestAnimationFrame(function () { d.classList.add('in'); }); }); }
-    fetchJourneys(c.biz).then(function (rows) { if (my === seq) draw(rows); }, function () {
+    clearInterval(timer); timer = setInterval(refresh, LIVE_MS);
+    fetchJourneys(c.biz).then(function (rows) { if (my === seq) { draw(rows); stamp(); } }, function () {
       if (my !== seq) return; var body = $('statsBody'); body.textContent = '';
       body.appendChild(el('p', 'hint', 'לא הצלחתי לטעון את הנתונים. נסו שוב בעוד רגע.'));
     });
   }
   function close() {
     var d = $('statsDlg'); if (!d.open) return;
+    clearInterval(timer); timer = 0;
     d.classList.remove('in');
     if (reduce()) { d.close(); return; }
     var done = function () { d.removeEventListener('transitionend', done); clearTimeout(t); if (!d.classList.contains('in')) d.close(); };
@@ -148,6 +161,7 @@
     $('statsClose').addEventListener('click', close);
     d.addEventListener('cancel', function (e) { e.preventDefault(); close(); });
     d.addEventListener('click', function (e) { if (e.target === d) close(); });
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) refresh(); });
   });
   window.CHAT_STATS = { open: open, close: close };
 })();
