@@ -279,7 +279,7 @@ Deno.serve(async (req) => {
   if (distress) { next.action = 'safety'; next.readiness = 'concerned'; }
   let cta: 'register' | 'whatsapp' | 'updates' | null = b.flowPrompt ? ((['register', 'whatsapp', 'updates'] as const).find((c) => c === parsed.cta) ?? null) : ctaFor(next.action, !!facts);
   if (b.flowPrompt && cta === 'register' && !facts && !b.siteOnly) cta = 'updates';
-  if (b.flowPrompt && cta) next.action = cta === 'whatsapp' ? 'guide' : cta;
+  if (b.flowPrompt && cta && !distress) next.action = cta === 'whatsapp' ? 'guide' : cta;   // never over a crisis: safety stays
   if (next.action === 'safety' || next.action === 'end') { cta = null; chips = []; }
   // Someone is never left with only a text box: when the model sent no quick replies, neutral ones are offered
   if (next.action === 'safety') { cta = 'whatsapp'; chips = ['אני רוצה לדבר עם הדר ואופיר עכשיו', 'יש לי מישהו לדבר איתו', 'אני לא בסכנה, רק קשה לי']; }   // in a crisis too, answers to tap and not only a text box
