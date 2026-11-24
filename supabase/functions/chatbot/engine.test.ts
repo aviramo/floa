@@ -216,10 +216,10 @@ Deno.test('the evening is offered after a bridge the visitor reacted to, never s
   for (const needle of ['לא קופצים להצעה', 'הודעה אחת מחברת', 'אסור בהודעה אחת גם לחבר']) if (!s.includes(needle)) throw new Error('missing ' + needle);
 });
 
-Deno.test('quick replies are always at least three, without repeats', () => {
-  eq(padChips([], CHAT_POOL).length, 3, 'none');
-  eq(padChips(['לא כרגע'], CHAT_POOL), ['לא כרגע', 'כן, עוד פרטים', 'איך נרשמים'], 'one, no repeat');
-  eq(padChips(['א', 'ב', 'ג', 'ד'], CHAT_POOL).length, 4, 'four stay');
+Deno.test('quick replies are topped up from the pool without repeats (two now)', () => {
+  eq(padChips([], CHAT_POOL, 2).length, 2, 'none');
+  eq(padChips(['אפשר לשמוע עוד על זה'], CHAT_POOL, 2), ['אפשר לשמוע עוד על זה', 'איך אפשר להצטרף'], 'one, no repeat');
+  eq(padChips(['א', 'ב', 'ג', 'ד'], CHAT_POOL, 2).length, 4, 'four stay');
 });
 
 Deno.test('a reply that offers the updates group always carries the button', () => {

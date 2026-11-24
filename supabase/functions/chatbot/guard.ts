@@ -118,11 +118,11 @@ export function padChips(chips: string[], pool: string[], min = 3): string[] {
   return out;
 }
 export const OPENING_POOL = ['בא לי לספר קצת על זה', 'אני רוצה להבין על מה מדובר'];
-export const CHAT_POOL = ['כן, עוד פרטים', 'לא כרגע', 'איך נרשמים'];
+export const CHAT_POOL = ['אפשר לשמוע עוד על זה', 'איך אפשר להצטרף'];
 // "I have a question" is a dead end: it asks the visitor to type, and the bot answers with a menu about the offer
 export const deadEndChip = (c: string) => /^(יש לי שאלה|שאלה|אני רוצה לשאול|רוצה לשאול)/.test(c.trim());
 // Before the offer is on the table the pool answers a plain question about the topic, never "more details" about something not yet presented
-export const TOPIC_POOL = ['כן', 'קצת', 'לא כל כך'];
+export const TOPIC_POOL = ['זה מוכר לי מאוד', 'אני רוצה לספר קצת על זה'];
 
 // Any word about the evening itself (not only date and price): before the bridge it is a skipped milestone.
 export const mentionsEvening = (reply: string) => /(הדר ואופיר|המנחים|הערב|ערב (תנועה|כזה|שבו|התנסות)|מפגש|מפגשים|מפגשי|במוזיקה ובתנועה|בלי לדעת לרקוד|לא צריך לדעת לרקוד|להתנסות איתם)/.test(String(reply ?? ''));
@@ -198,3 +198,6 @@ export function revealedGender(userTexts: string[]): 'female' | 'male' | null {
   return g;
 }
 export const openingMeetingFix = '## תיקון: הפתיחה בלי מפגש\nהטיוטה הזכירה את הפעילות, את המפגשים או את המנחים. כתבו שוב: ההודעה הראשונה רק ברכה והצגה כבוט של "יוצאים להרפתקה", בלי שום תיאור של הפעילות.';
+
+// A quick reply reads like a normal message: at least three words (the one-word and two-word ones were the weak ones).
+export const fullChip = (c: string) => String(c ?? '').trim().split(/\s+/).length >= 3;
