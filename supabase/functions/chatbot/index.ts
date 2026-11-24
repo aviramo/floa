@@ -94,6 +94,39 @@ function cleanReaction(raw: string | null, address: 'female' | 'male' | 'plural'
   return r;
 }
 
+// The editor of the static texts: only a signed in person whose email is in chatbot.admins. The page sends its Google session token; it is checked against the database of the domain.
+async function adminEmail(token: string): Promise<string> {
+  try {
+    const base = Deno.env.get('SUPABASE_URL') ?? SB_URL;
+    const r = await fetch(base + '/auth/v1/user', { headers: { apikey: Deno.env.get('SUPABASE_ANON_KEY') ?? '', authorization: 'Bearer ' + token } });
+    if (!r.ok) return '';
+    const u = await r.json();
+    return u && u.email_confirmed_at !== null && typeof u.email === 'string' ? u.email.toLowerCase() : '';
+  } catch (_) { return ''; }
+}
+
+// The shape of the content (format 2) is checked on every save: five messages, three options each, for every ad and both genders.
+function scriptProblem(c: any): string | null {
+  if (!c || typeof c !== 'object' || !c.ads || typeof c.ads !== 'object') return 'ads missing';
+  if (JSON.stringify(c).length > 400000) return 'too large';
+  for (const [key, ad] of Object.entries<any>(c.ads)) {
+    for (const g of ['female', 'male']) {
+      const steps = ad && ad[g];
+      if (!Array.isArray(steps) || steps.length !== 5) return key + ' ' + g + ': five messages are needed';
+      for (let i = 0; i < 5; i++) {
+        const m = steps[i];
+        if (!m || typeof m.say !== 'string' || !m.say.trim()) return key + ' ' + g + ' message ' + (i + 1) + ': text missing';
+        if (!Array.isArray(m.options) || m.options.length !== 3) return key + ' ' + g + ' message ' + (i + 1) + ': three options are needed';
+        for (const o of m.options) {
+          if (!o || typeof o.label !== 'string' || !o.label.trim()) return key + ' ' + g + ' message ' + (i + 1) + ': an option has no text';
+          if (i === 4 && !['site', 'updates', 'whatsapp'].includes(o.action)) return key + ' ' + g + ' message 5: an option has no valid action';
+        }
+      }
+    }
+  }
+  return null;
+}
+
 // The second step of a turn: the quick replies are made from the FINAL message the visitor sees (the first step already sent it), checked once, written again once if they fail.
 async function makeChips(apiKey: string, model: string, a: { reply: string; lastUser: string; address: 'female' | 'male' | 'plural'; recent: string; pitchOk: boolean; offerWords: RegExp; trace?: unknown[] }): Promise<string[]> {
   const keep = (arr: string[]) => arr.filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && chipOk(c) && (a.pitchOk || !mentionsOffer(c, a.offerWords))).map((c) => genderChip(c, a.address));
@@ -246,6 +279,25 @@ Deno.serve(async (req) => {
     const out = json(b, origin, ds);
     out.headers.set('Cache-Control', 'public, max-age=30');
     return out;
+  }
+
+  if (body.mode === 'script_admin') {
+    const token = (req.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '');
+    const email = token ? await adminEmail(token) : '';
+    if (!email) return json(b, origin, { error: 'auth' }, 401);
+    const ra = await rpc('chatbot_is_admin', { p_email: email });
+    if (!(ra.ok && (await ra.json()) === true)) return json(b, origin, { error: 'forbidden', email }, 403);
+    const action = tx(body.action);
+    if (action === 'list') { const r = await rpc('chatbot_script_versions', { p_business: b.key }); return json(b, origin, { versions: r.ok ? await r.json() : [], email }); }
+    if (action === 'get') { const v = Number(body.version); const r = await rpc('chatbot_script_get', { p_business: b.key, p_version: Number.isFinite(v) && v > 0 ? v : null }); const d = r.ok ? await r.json() : null; return d ? json(b, origin, d) : json(b, origin, { error: 'none' }, 404); }
+    if (action === 'save') {
+      const problem = scriptProblem(body.content);
+      if (problem) return json(b, origin, { error: 'invalid', message: problem }, 400);
+      const r = await rpc('chatbot_script_save', { p_business: b.key, p_content: body.content, p_note: tx(body.note).slice(0, 200) + ' (' + email + ')' });
+      return r.ok ? json(b, origin, { version: await r.json() }) : json(b, origin, { error: 'save' }, 500);
+    }
+    if (action === 'publish') { const r = await rpc('chatbot_script_publish', { p_business: b.key, p_version: Number(body.version) }); return json(b, origin, { ok: r.ok ? await r.json() : false }); }
+    return json(b, origin, { error: 'action' }, 400);
   }
 
   const use = await usageHit(b, device, ip === 'unknown' ? '' : ip, body.mode === 'opening' ? 'opening' : 'chat');

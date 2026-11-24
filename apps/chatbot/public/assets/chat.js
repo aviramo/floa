@@ -51,6 +51,7 @@
     let st = null, busy = false, openerInfo = null;
     // The scripted mode (no AI, no database) when the business says so or the link asks for it (?mode=scripted); ?mode=agent keeps the old chat.
     const scripted = !!window.FloaScriptChat && q.get('mode') !== 'agent' && (cfg.mode === 'scripted' || q.get('mode') === 'scripted');
+    if (scripted) { const bar0 = root.querySelector('.ch-bar'); if (bar0) bar0.remove(); }   // nothing to type: the bar never appears
     const scriptCtx = {};
 
     const save = () => { try { sessionStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };

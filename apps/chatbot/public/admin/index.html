@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>עריכת הצ'אט</title>
+<link rel="stylesheet" href="admin.css?v=1">
+</head>
+<body>
+<header class="top">
+  <h1>עריכת הצ'אט</h1>
+  <div class="who" id="who"></div>
+</header>
+
+<main id="app">
+  <section id="gate" class="card">
+    <p id="gateMsg">כדי לערוך צריך להיכנס עם חשבון Google של מנהל.</p>
+    <button type="button" class="btn" id="signin">כניסה עם Google</button>
+  </section>
+
+  <section id="editor" hidden>
+    <div class="bar">
+      <div class="seg" id="ads" role="tablist" aria-label="מודעה"></div>
+      <div class="seg" id="genders" role="tablist" aria-label="מגדר">
+        <button type="button" data-g="female" class="on">אישה</button>
+        <button type="button" data-g="male">גבר</button>
+      </div>
+      <button type="button" class="btn ghost" id="copyOther">העתק מהמגדר השני</button>
+      <a class="btn ghost" id="preview" target="_blank" rel="noopener">פתח לבדיקה</a>
+    </div>
+
+    <p class="adtext" id="adtext"></p>
+
+    <div class="card">
+      <label class="lbl" for="greeting">הברכה הראשונה (בועה נפרדת, משותפת לכל המודעות והמגדרים)</label>
+      <input class="field" id="greeting" type="text">
+    </div>
+
+    <div id="steps"></div>
+
+    <div class="savebar">
+      <input class="field note" id="note" type="text" placeholder="הערה לגרסה (לא חובה)">
+      <button type="button" class="btn primary" id="save">שמור גרסה חדשה ופרסם</button>
+      <span class="status" id="status" role="status"></span>
+    </div>
+
+    <div class="card">
+      <h2>גרסאות</h2>
+      <p class="hint">שמירה יוצרת גרסה חדשה ומפרסמת אותה מיד. הגרסה הקודמת נשארת, וכאן אפשר להחזיר אותה.</p>
+      <div id="versions"></div>
+    </div>
+  </section>
+</main>
+
+<script src="/supabase.js"></script>
+<script src="/auth.js"></script>
+<script src="admin.js?v=1"></script>
+</body>
+</html>
