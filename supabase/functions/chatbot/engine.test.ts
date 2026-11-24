@@ -78,7 +78,7 @@ Deno.test('opening task names the business bot and keeps the meeting out of the 
   if (!t.includes(harpatka.botName) || !t.includes('אפשר להזכיר שמדובר בערב תנועה')) throw new Error(t);
 });
 
-import { scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsEvening, padChips, CHAT_POOL, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { revealedGender, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsEvening, padChips, CHAT_POOL, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 Deno.test('distress net catches plain phrasings and not ordinary talk', () => {
   for (const t of ['אני חושבת על למות', 'לפעמים אני חושבת שעדיף שלא אהיה פה', 'רוצה למות', 'אין טעם לחיות']) if (!distressIn(t)) throw new Error('missed: ' + t);
   for (const t of ['הייתי רוצה להרגיש חלק ממשהו', 'מתי המפגש הקרוב?', 'מת מצחוק', 'עייפה ולא ישנה']) if (distressIn(t)) throw new Error('false alarm: ' + t);
@@ -311,4 +311,12 @@ Deno.test('round seven: placeholders and pipe lines never reach the visitor, a b
   eq(scrub('ביודנסה היא שיטה.\n\n{{chips}}\nלא שמעתי|שמעתי קצת'), 'ביודנסה היא שיטה.', 'scrub');
   eq(scrub('שורה אחת\nכן|לא|אולי\nשורה שנייה'), 'שורה אחת\nשורה שנייה', 'pipe line');
   eq(pitchAllowed({ turns: 3, lastUser: 'מתי', prevDone: [], prevReadiness: '' }), true, 'bare when');
+});
+
+Deno.test('round eight: the visitor own words about gender win over the link; the opening does not describe the activity', () => {
+  eq(revealedGender(['אני בן 40 וגרוש']), 'male', 'בן 40');
+  eq(revealedGender(['אני מרגישה לבד']), 'female', 'מרגישה');
+  eq(revealedGender(['אני מרגישה לבד', 'אני גבר בעצם']), 'male', 'last one counts');
+  eq(revealedGender(['הכול מתנהל אבל שום דבר לא מרגש']), null, 'nothing said');
+  if (!mentionsEvening('מפגשי תנועה קבועים, עם הנחיה, לגברים ונשים')) throw new Error('opening intro not caught');
 });

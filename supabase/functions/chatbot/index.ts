@@ -8,7 +8,7 @@ import { lastSentence, buildMessages, MAX_USER_TURNS, parse, parseOpening, quote
 import { BUSINESSES } from './businesses/index.ts';
 import { journeyOf } from './journey.ts';
 import { openingTask, sessionFacts, stableSystem, stateBlock, addressOf, turnReminder } from './prompt.ts';
-import { scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, TOPIC_POOL, offersUpdates, mentionsEvening, CHAT_POOL, OPENING_POOL, padChips, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { revealedGender, openingMeetingFix, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, TOPIC_POOL, offersUpdates, mentionsEvening, CHAT_POOL, OPENING_POOL, padChips, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 import { ctaFor, ctasOf, diffEvents, extractState, initialState, linkGender, mergeState, stateFromClient } from './state.ts';
 import type { CampaignContext, JourneyBusiness, SessionState } from './types.ts';
 
@@ -167,7 +167,8 @@ Deno.serve(async (req) => {
     let op = raw ? parseOpening(raw) : null;
     const fixes: { type: string; text: string }[] = [];
     if (fromLink && op && op.messages.some(pluralAddress)) fixes.push({ type: 'text', text: genderFix(fromLink) });   // a woman or a man was addressed in the plural
-    if (op && op.messages.some(assertsCondition)) fixes.push({ type: 'text', text: conditionFix });                   // the opening stated the visitor's condition
+    if (op && op.messages.some(assertsCondition)) fixes.push({ type: 'text', text: conditionFix });
+    if (op && op.messages.some(mentionsEvening)) fixes.push({ type: 'text', text: openingMeetingFix });   // the opening must not describe the activity                   // the opening stated the visitor's condition
     if (op && fixes.length) {   // one more try, told exactly why
       const raw2 = await claude(apiKey, model, [...openSystem, ...fixes], [{ role: 'user', content: 'התחילו.' }], 800);
       const op2 = raw2 ? parseOpening(raw2) : null;
@@ -187,7 +188,7 @@ Deno.serve(async (req) => {
   if (turns > MAX_USER_TURNS) return json(b, origin, { error: 'limit', reply: 'זו כבר שיחה ארוכה. כדי להמשיך, הכי נוח לכתוב להדר ולאופיר בוואטסאפ', chips: [], cta: 'whatsapp' });
 
   const prev = stateFromClient(body.state, journey, fromLink);
-  const address = addressOf(prev.gender);   // the saved gender parameter, not the link again
+  const address = addressOf(revealedGender(clean.filter((m: any) => m.role === 'user').map((m: any) => String(m.content))) ?? prev.gender);   // what the visitor says about themselves wins over the link   // the saved gender parameter, not the link again
   const botMessages = clean.filter((m) => m.role === 'assistant').length;
   const facts = b.siteOnly ? null : await b.loadFacts();
   const system = [stable, { type: 'text', text: [b.stageHints ? b.stageHints(turns) : stateBlock(prev, journey, botMessages), sessionFacts(b, ctx, facts, adText, address), quoteSafe(tx(body.opening).slice(0, 600)) ? `## הודעת הפתיחה שהאדם כבר קיבל\n"${quoteSafe(tx(body.opening).slice(0, 600))}"` : '', b.flowReminder ? b.flowReminder(address) : turnReminder(address)].filter(Boolean).join('\n\n') }];

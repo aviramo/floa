@@ -182,3 +182,13 @@ export const asksDetails = (t: string) => /((^|\s)ו?מתי\s*\?|^ו?מתי$|מ�
 
 // The model sometimes writes a placeholder like {{chips}} and a line of choices separated by pipes into the text itself: never shown
 export const scrub = (s: string) => String(s ?? '').replace(/\{\{[\s\S]*$/, '').split('\n').filter((l) => !/\|.*\|/.test(l)).join('\n').trim();
+
+// The visitor says who they are ("אני גבר", "אני בן 40", "אני מרגישה"): that wins over the link, which only targets by guess. The last explicit statement counts.
+const FEM_SELF = /(^|[\s,.!?])אני (אישה|אשה|בת \d|אמא|מרגישה|עייפה|חושבת|מתביישת|מפחדת|גרושה|נשואה|רווקה)(?![א-ת])/;
+const MASC_SELF = /(^|[\s,.!?])אני (גבר|בן \d|אבא|מרגיש|עייף|חושב|מתבייש|מפחד|גרוש|נשוי|רווק)(?![א-ת])/;
+export function revealedGender(userTexts: string[]): 'female' | 'male' | null {
+  let g: 'female' | 'male' | null = null;
+  for (const t of userTexts) { if (FEM_SELF.test(t)) g = 'female'; else if (MASC_SELF.test(t)) g = 'male'; }
+  return g;
+}
+export const openingMeetingFix = '## תיקון: הפתיחה בלי מפגש\nהטיוטה הזכירה את הפעילות, את המפגשים או את המנחים. כתבו שוב: ההודעה הראשונה רק ברכה והצגה כבוט של "יוצאים להרפתקה", בלי שום תיאור של הפעילות.';
