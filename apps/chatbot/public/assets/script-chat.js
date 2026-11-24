@@ -22,6 +22,8 @@
       { say: data.common.s5.say, options: data.common.s5.options, final: true }];
 
     const SKEY = KEY + ':script:' + (cid || 'default') + ':' + g;
+    // the test page loads the chat with ?fresh=<time>: that always starts the conversation from the beginning
+    if (new URLSearchParams(location.search).get('fresh')) { try { sessionStorage.removeItem(SKEY); } catch (e) {} }
     let st = null;
     try { st = JSON.parse(sessionStorage.getItem(SKEY) || 'null'); } catch (e) {}
     if (!st || !Array.isArray(st.log)) st = { i: 0, log: [] };
