@@ -329,3 +329,7 @@ Deno.test('round ten: no "what you wrote" after a few words or a tap', () => {
 Deno.test('round eleven: "בעיקר" does not count as asking about price', () => {
   eq(pitchAllowed({ turns: 2, lastUser: 'בעיקר בערבים', prevDone: [], prevReadiness: '' }), false, 'בעיקר');
 });
+
+Deno.test('round eleven: never comment on a short answer', () => {
+  if (!styleFix('רואה שהמשפט שלך קצר, ולא ברור עדיין מה בדיוק התכוונת', 'קצת')) throw new Error('missed');
+});
