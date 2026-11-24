@@ -360,3 +360,8 @@ Deno.test('round eleven: a reply must end in a question, except a goodbye or the
   if (styleFix('חום של אנשים. מתי הרגשתם את זה הכי חזק?', 'הגעגוע לחום')) throw new Error('false alarm on a question');
   if (styleFix('הכול כתוב באתר, אפשר להציץ שם.', 'כן')) throw new Error('false alarm on the site line');
 });
+
+Deno.test('round eleven: asking what is offered opens the door at once', () => {
+  for (const q of ['מה אתם מציעים בעצם?', 'איך זה עובד', 'ספרי לי על זה', 'מה קורה שם']) eq(pitchAllowed({ turns: 2, lastUser: q, prevDone: [], prevReadiness: '' }), true, q);
+  eq(pitchAllowed({ turns: 2, lastUser: 'הבית שקט מדי בערב', prevDone: [], prevReadiness: '' }), false, 'a pain is not a request');
+});
