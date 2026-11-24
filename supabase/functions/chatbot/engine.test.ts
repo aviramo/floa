@@ -377,3 +377,8 @@ Deno.test('round eleven: talk about the conversation itself is sent back', () =>
   if (!styleFix('זה נשמע מתיש. לפני שאני שואל עוד, את רוצה לספר מה קורה?', 'הרגע שאחרי')) throw new Error('process talk missed');
   if (styleFix('זה נשמע מתיש. מה קורה בדיוק ברגע שבו זה נסגר?', 'הרגע שאחרי')) throw new Error('false alarm');
 });
+
+Deno.test('round eleven: the prompt tells the writer that an answer matches the kind of the question', async () => {
+  const { FLOW_PROMPT } = await import('./businesses/harpatka/flow.ts');
+  if (!FLOW_PROMPT.includes('מאותו סוג של השאלה')) throw new Error('kind-of-question rule missing');
+});
