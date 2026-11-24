@@ -64,7 +64,7 @@ async function claude(apiKey: string, model: string, system: unknown[], messages
 // It sees the conversation and the last message, and answers only that.
 async function chipsFallback(apiKey: string, model: string, a: { reply: string; lastUser: string; address: 'female' | 'male' | 'plural'; recent: string }): Promise<string[]> {
   const lang = a.address === 'female' ? 'נקבה' : a.address === 'male' ? 'זכר' : 'ניטרלית (בלי פעלים או תארים בגוף ראשון שמסמנים מגדר)';
-  const sys = 'כותבים שתי תשובות מוכנות לצ׳אט, בשורה אחת מופרדות ב-|. כל תשובה היא משפט טבעי של ארבע עד שבע מילים שהאדם עצמו אומר בגוף ראשון, כתשובה ישירה לשאלה בהודעה האחרונה של הבוט (ואם ההודעה היא הזמנה ולא שאלה, כל תשובה היא תחילת סיפור קונקרטי). שתיהן מקדמות את השיחה, בדרכים שונות, בלי סירוב ובלי ״לא יודע״. בלי להמציא פרטים על חיי האדם (עבודה, בוס, משפחה): רק מה שנאמר בשיחה. לא ניסוח של הבוט ולא שאלה אל הבוט. לשון האדם: ' + lang + '.';
+  const sys = 'כותבים שתי תשובות מוכנות לצ׳אט, בשורה אחת מופרדות ב-|. כל תשובה היא משפט טבעי של ארבע עד שבע מילים שהאדם עצמו אומר בגוף ראשון, כתשובה ישירה לשאלה בהודעה האחרונה של הבוט (ואם ההודעה היא הזמנה ולא שאלה, כל תשובה היא תחילת סיפור קונקרטי). שתיהן מקדמות את השיחה, בדרכים שונות, בלי סירוב ובלי ״לא יודע״, בגוף ראשון (אני, יש לי, זה קורה לי) ולא על ״מישהו״. בלי להמציא פרטים על חיי האדם (עבודה, בוס, משפחה): רק מה שנאמר בשיחה. לא ניסוח של הבוט ולא שאלה אל הבוט. לשון האדם: ' + lang + '.';
   const raw = await claude(apiKey, model, [{ type: 'text', text: sys }], [{ role: 'user', content: 'השיחה עד עכשיו:\n' + a.recent + '\n\nהודעת הבוט האחרונה (עליה עונים):\n' + a.reply }], 220);
   return (raw ?? '').replace(/<[^>]*>/g, '').split(/[|\n]/).map((s) => s.trim().replace(/^[-•\d.\s]+/, '')).filter((s) => s && s.length <= 60);
 }
@@ -259,9 +259,12 @@ Deno.serve(async (req) => {
     chips = keep(chips).slice(0, 2);   // the writer of the reply knows what it just asked, so its own quick replies come first
     if (chips.length < 2) {
       const recent = clean.slice(-6).map((m: any) => (m.role === 'user' ? 'האדם: ' : 'הבוט: ') + String(m.content).slice(0, 300)).join('\n');
-      const more = keep(await chipsFallback(apiKey, model, { reply, lastUser, address, recent }));
-      console.log(JSON.stringify({ chips_fallback: true, writer: parsed.chips, fallback: more }));
-      chips = [...new Set([...chips, ...more])].slice(0, 2);
+      for (let k = 0; k < 2 && chips.length < 2; k++) {
+        const have = chips.length ? '\nתשובה אחת כבר יש: "' + chips[0] + '". כתבו שתי תשובות שונות ממנה בכיוון, בגוף ראשון.' : '';
+        const more = keep(await chipsFallback(apiKey, model, { reply, lastUser, address, recent: recent + have }));
+        console.log(JSON.stringify({ chips_fallback: k, writer: parsed.chips, fallback: more }));
+        chips = [...new Set([...chips, ...more])].slice(0, 2);
+      }
     }
     // An "A or B" question is never answered by a bare yes or no, wherever the quick reply came from
     const eitherOr = /\sאו\s/.test(lastSentence(reply)) && /\?\s*$/.test(lastSentence(reply));

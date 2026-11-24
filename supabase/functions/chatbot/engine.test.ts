@@ -372,3 +372,8 @@ Deno.test('round eleven: a reply is cut after its last question, goodbyes and th
   eq(endOnQuestion('הכול כתוב באתר, אפשר להציץ שם.'), 'הכול כתוב באתר, אפשר להציץ שם.', 'site line');
   eq(endOnQuestion('אפשר לספר לי על זה'), 'אפשר לספר לי על זה', 'no question mark: left to the retry');
 });
+
+Deno.test('round eleven: talk about the conversation itself is sent back', () => {
+  if (!styleFix('זה נשמע מתיש. לפני שאני שואל עוד, את רוצה לספר מה קורה?', 'הרגע שאחרי')) throw new Error('process talk missed');
+  if (styleFix('זה נשמע מתיש. מה קורה בדיוק ברגע שבו זה נסגר?', 'הרגע שאחרי')) throw new Error('false alarm');
+});
