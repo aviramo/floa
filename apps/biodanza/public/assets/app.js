@@ -3393,17 +3393,16 @@
   function pickerBody(sheetMode, swapIt) {
     var pageCss = '<style>.bio-search { display: flex; align-items: center; gap: var(--gap-tight); min-height: var(--ctl); border-bottom: var(--bw) solid transparent } .bio-search > [data-sicon] { display: grid; flex: none; width: var(--icon); height: var(--icon); color: var(--text-muted) } .bio-search > [data-sicon] svg { width: 100%; height: 100%; stroke-width: var(--icon-w) } .bio-search > input { flex: 1 1 auto; align-self: stretch; width: 100%; min-width: 0; margin: 0; padding: 0; border: 0; background: transparent; color: inherit; text-align: center; outline: 0; text-overflow: ellipsis; text-box: normal } .mfs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap) } @media (min-width: 760px) { .mfs { grid-template-columns: repeat(4, minmax(0, 1fr)) } } .pgh > .pgs { padding-inline: var(--gap); padding-block: 0 } .pgs > .rfield { margin: 0 } #pks, #pkl { scrollbar-width: none } #pks::-webkit-scrollbar, #pkl::-webkit-scrollbar { display: none } .pgh { position: absolute; inset: 0 0 auto 0; z-index: 2; display: flex; flex-direction: column; gap: var(--gap); background: var(--page); padding: var(--gap) 0 0; transform: translateY(calc(-1 * var(--ho, 0px))); will-change: transform } .pgp::after { content: \"\"; position: absolute; inset-inline: 0; top: calc(var(--hh, 0px) - var(--ho, 0px)); height: var(--gap-tight); background: linear-gradient(color-mix(in srgb, var(--scrim) 25%, transparent), transparent); opacity: 0; transition: opacity var(--t-base) var(--ease); pointer-events: none; z-index: 3 } .pgp[data-sc]::after { opacity: 1 } .pgp > .pgl { padding-top: var(--hh, 0px) } #pgr::-webkit-scrollbar { display: none } ' + (sheetMode ? '#catDlg .sheet-head { display: none } #catDlg [data-accb] > div > div, #catDlg #mgrid { padding-inline: 0 !important } #catDlg .sheet-body > #pgr, #catDlg .sheet-body > .rtabs { padding-inline: 0 } #catDlg .pgp > * { padding-inline: var(--bleed, var(--gap)) } #catDlg .pgh > .pgs { padding-inline: 0 }' : '') + '</style>';
     var pageSt = 'position:relative;flex:0 0 100%;min-width:0;min-height:0;display:flex;flex-direction:column;scroll-snap-align:start;scroll-snap-stop:always', listSt = 'position:relative;flex:1 1 auto;min-height:0;overflow-y:auto';
-    var exPage = '<div class="pgp" role="tabpanel" style="' + pageSt + '"><div class="pgh"><div class="pgs"><label class="rfield"><span>מיון</span><select data-xo><option value="">לפי שם</option><option value="most">הכי הרבה מוסיקות</option><option value="least">הכי מעט מוסיקות</option></select></label></div><div class="pgs">' + searchInput("q", "חיפוש תרגילים בקטלוג") + '</div></div><div class="rlist pgl" id="pks" style="' + listSt + '"><div id="list"><div class="rskel rskel--title"></div></div></div></div>';
+    var exPage = '<div class="pgp" role="tabpanel" style="' + pageSt + '"><div class="pgh"><div class="pgs">' + searchInput("q", "חיפוש תרגילים בקטלוג") + '</div></div><div class="rlist pgl" id="pks" style="' + listSt + '"><div id="list"><div class="rskel rskel--title"></div></div></div></div>';
     var muPage = swapIt ? '' : '<div class="pgp" role="tabpanel" style="' + pageSt + '"><div class="pgh"><div class="pgs mfs">' +
       [["mln", "קו"], ["mch", "אופי"], ["msp", "מהירות"], ["mef", "אפקט"]].map(function (b) { return '<label class="rfield"><span>' + b[1] + '</span><select data-mf="' + b[0] + '"><option value="">הכל</option></select></label>'; }).join("") +
-      '</div><div class="pgs"><label class="rfield"><span>מיון</span><select data-mo><option value="">לפי שם</option><option value="most">הכי הרבה תרגילים</option><option value="least">הכי מעט תרגילים</option></select></label></div><div class="pgs">' + searchInput("mq", "חיפוש מוסיקה בקטלוג") + '</div></div><div class="rlist pgl" id="pkl" style="' + listSt + '"><div class="rskel rskel--title"></div></div></div>';
+      '</div><div class="pgs">' + searchInput("mq", "חיפוש מוסיקה בקטלוג") + '</div></div><div class="rlist pgl" id="pkl" style="' + listSt + '"><div class="rskel rskel--title"></div></div></div>';
     return pageCss + (sheetMode && !swapIt ? pickerTabs() : '') +
       '<div id="pgr" style="flex:1 1 auto;min-height:0;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none">' + exPage + muPage + '</div>';
   }
   function pickerWire(r, swapIt, sheet) {
       var open = pk.open || (pk.open = {});   /* the categories that are open, kept while an exercise is looked at and back again */
       r.querySelector("#q").value = pk.q;
-      var xos = r.querySelector("[data-xo]"); if (xos) { xos.value = pk.xo || ""; xos.addEventListener("change", function () { pk.xo = xos.value; paintCat(); }); }
       var catBy = {};
       function catCards(k) {
         return '<div class="rgrid rgrid--pad">' + (catBy[k] || []).map(function (e) {
@@ -3445,8 +3444,8 @@
           all.forEach(function (e, i) { var k = e.category || ""; if (top[k] == null) top[k] = i; });
           cats.sort(function (a, b) { return (top[a] == null ? 1e9 : top[a]) - (top[b] == null ? 1e9 : top[b]); });
         }
-        if (pk.xo) {   /* sorted by the number of songs: inside every category, and the categories by their best exercise */
-          var dir = pk.xo === "most" ? -1 : 1, cn = function (e) { return e.exercise_music && e.exercise_music[0] ? e.exercise_music[0].count : 0; }, best = {};
+        if (!q) {   /* with no search: always the most songs first, inside every category, and the categories by their best exercise (a search keeps its own order, nearest first) */
+          var dir = -1, cn = function (e) { return e.exercise_music && e.exercise_music[0] ? e.exercise_music[0].count : 0; }, best = {};
           cats.forEach(function (k) { by[k].sort(function (a, b) { return dir * (cn(a) - cn(b)); }); best[k] = cn(by[k][0]); });
           cats.sort(function (a, b) { return dir * (best[a] - best[b]); });
         }
@@ -3490,9 +3489,9 @@
         hint(mq, byTags.length, "מוסיקה", "מוסיקות");
         mList = s ? songTiers(byTags, s) : byTags; mxOf = {};
         if (s && xsFor === s) { var inT = {}, got = {}; byTags.forEach(function (m) { inT[m.id] = 1; }); mList.forEach(function (m) { got[m.id] = 1; }); xs.forEach(function (o) { if (inT[o.m.id] && !got[o.m.id]) { got[o.m.id] = 1; mList.push(mById[o.m.id] || o.m); if (o.ex) mxOf[o.m.id] = o.ex; } }); }
-        if (pk.mo) {   /* sorted by the number of exercises of the catalog the song belongs to */
+        if (!s) {   /* with no search: always the most exercises first (the number of exercises of the catalog the song belongs to); a search keeps its own order, nearest first */
           if (!exCnt) ensureExCnt().then(function () { if (r.isConnected) paintMu(); });
-          else { var md = pk.mo === "most" ? -1 : 1, mc = function (m) { return exCnt[m.id] || 0; }; mList = mList.slice().sort(function (a, b) { return md * (mc(a) - mc(b)); }); }
+          else { var md = -1, mc = function (m) { return exCnt[m.id] || 0; }; mList = mList.slice().sort(function (a, b) { return md * (mc(a) - mc(b)); }); }
         }
         mShown = Math.min(MP, mList.length); l.scrollTop = 0;
         l.innerHTML = mList.length ? '<div id="mgrid" class="rgrid rgrid--pad">' + musicCards(0, mShown) + '</div>' : ph("לא נמצאה מוסיקה", "");
@@ -3540,7 +3539,6 @@
           xsT = setTimeout(function () { warmEx().then(function () { var v = fold(mq.value.trim()); if (!r.isConnected || !v || !musicAll) return; xs = exSongs(v); xsFor = v; paintMu(); }); }, 150);
         });
         r.querySelectorAll("[data-mf]").forEach(function (sel) { sel.addEventListener("change", function () { pk[sel.dataset.mf] = sel.value; paintMu(); }); });
-        var mos = r.querySelector("[data-mo]"); if (mos) { mos.value = pk.mo || ""; mos.addEventListener("change", function () { pk.mo = mos.value; paintMu(); }); }
         var ml = r.querySelector("#pkl");
         ml.addEventListener("scroll", function () {
           if (mShown >= mList.length || ml.scrollTop + ml.clientHeight < ml.scrollHeight - 400) return;
