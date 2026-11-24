@@ -74,14 +74,18 @@ async function chipsFallback(apiKey: string, model: string, a: { reply: string; 
 async function makeChips(apiKey: string, model: string, a: { reply: string; lastUser: string; address: 'female' | 'male' | 'plural'; recent: string; pitchOk: boolean }): Promise<string[]> {
   const keep = (arr: string[]) => arr.filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && chipOk(c) && (a.pitchOk || !mentionsEvening(c))).map((c) => genderChip(c, a.address));
   let chips: string[] = [];
+  const pool: string[] = [];   // everything that passed the form checks, so a vetoed reply can still fill a missing place
   for (let k = 0; k < 3 && chips.length < 2; k++) {
     const have = chips.length ? '\nתשובה אחת כבר יש: "' + chips[0] + '". כתבו תשובה אחרת ממנה, מאותו סוג של השאלה.' : (k ? '\nהניסיון הקודם נפסל. כתבו שתי תשובות שמתאימות לסוג השאלה.' : '');
-    chips = [...new Set([...chips, ...keep(await chipsFallback(apiKey, model, { reply: a.reply, lastUser: a.lastUser, address: a.address, recent: a.recent + have }))])].slice(0, 2);
+    const made = keep(await chipsFallback(apiKey, model, { reply: a.reply, lastUser: a.lastUser, address: a.address, recent: a.recent + have }));
+    pool.push(...made);
+    chips = [...new Set([...chips, ...made])].slice(0, 2);
     if (chips.length === 2 && k < 2) {
       const verdict = await chipsCheck(apiKey, a.reply, chips);
       if (verdict.some((v) => !v)) { console.log(JSON.stringify({ chips_vetoed: chips, verdict })); chips = chips.filter((_, i) => verdict[i]); }
     }
   }
+  if (chips.length < 2) chips = [...new Set([...chips, ...pool])].slice(0, 2);
   return chips;
 }
 
