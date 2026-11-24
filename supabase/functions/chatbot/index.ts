@@ -224,7 +224,7 @@ Deno.serve(async (req) => {
     const segR = parseSegment(body.segment ?? (body.gender ? { gender: body.gender } : {}));
     const addressR = addressOf(revealedGender([textR]) ?? linkGender(segR));
     const langR = addressR === 'female' ? 'נקבה' : addressR === 'male' ? 'זכר' : 'רבים';
-    const sysR = 'כותבים תגובה אמפתית קצרה בצ׳אט של "יוצאים להרפתקה". התפקיד היחיד הוא אמפתיה: משפט אחד קצר, עד שש מילים, שמראה שהקשבת, למשל "זה נשמע לא פשוט", "תודה ששיתפת", "זה מובן". אסור: לפרש, להסביר, לאפיין את האדם או את מצבו, לומר שזה מוכר או אמיתי, להתייחס אל עצמך ("אותי"), להשלים רעיונות שכתב, לחזור על מה שכתב במילים אחרות, להזכיר משך זמן או סיבה, לייעץ או לשאול. אם האדם שאל שאלה, כותבים רק "שאלה טובה, נגיע לזה בהמשך". בלי נקודה בסוף. ' + (firstAnswer ? 'בתגובה הזאת בלבד מוסיפים כמה מילים שזו תופעה נפוצה אצל הרבה אנשים, למשל "זה מובן, וזה נפוץ אצל הרבה אנשים" (עד תשע מילים). ' : '') + 'הבוט עצמו בלי מגדר. פונים אל האדם בלשון ' + langR + ' אם צריך. מחזירים את המשפט בלבד.';
+    const sysR = 'כותבים תגובה אמפתית קצרה בצ׳אט של "יוצאים להרפתקה". התפקיד היחיד הוא אמפתיה: משפט אחד קצר, עד שש מילים, שמראה שהקשבת, למשל "זה נשמע לא פשוט", "תודה ששיתפת", "זה מובן". אסור: לפרש, להסביר, לאפיין את האדם או את מצבו, לומר שזה מוכר או אמיתי, להתייחס אל עצמך ("אותי"), להשלים רעיונות שכתב, לחזור על מה שכתב במילים אחרות, להזכיר משך זמן או סיבה, לייעץ או לשאול. אם האדם שאל שאלה, כותבים רק "שאלה טובה, נגיע לזה בהמשך". בלי נקודה בסוף. ' + 'הבוט עצמו בלי מגדר. פונים אל האדם בלשון ' + langR + ' אם צריך. מחזירים את המשפט בלבד.';
     const adR = tx(body.ad).slice(0, 300);
     const histR = (Array.isArray(body.history) ? body.history : []).slice(-10).map((h: any) => (h && h.r === 'user' ? 'האדם: ' : 'הבוט: ') + tx(h && h.t).slice(0, 300)).join('\n');
     const genderLine = 'מגדר האדם: ' + (addressR === 'female' ? 'אישה' : addressR === 'male' ? 'גבר' : 'לא ידוע');
@@ -232,7 +232,8 @@ Deno.serve(async (req) => {
     const histLine = histR ? 'השיחה עד עכשיו:\n' + histR : '';
     const askLine = 'השאלה האחרונה של הבוט: ' + (questionR || '(פתיחה)') + '\nמה האדם ענה (' + (viaText ? 'בכתיבה חופשית' : 'בלחיצה על כפתור') + '): ' + textR;
     const rawR = await claude(apiKey, MODEL, [{ type: 'text', text: sysR }], [{ role: 'user', content: [genderLine, adLine, histLine, askLine].filter(Boolean).join('\n\n') }], 80);
-    const reaction = cleanReaction(rawR, addressR, b, firstAnswer ? 9 : 6);
+    let reaction = cleanReaction(rawR, addressR, b, 6);
+    if (reaction && firstAnswer && !/(נפוץ|הרבה אנשים)/.test(reaction)) reaction += ', וזה נפוץ אצל הרבה אנשים';   // after the first question only, in all ads: a few words that it is common
     if (!reaction) console.log(JSON.stringify({ react_dropped: true, raw: String(rawR ?? '').slice(0, 160) }));
     return json(b, origin, { reaction });
   }
