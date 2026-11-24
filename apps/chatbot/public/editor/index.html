@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>עריכת הצ'אט</title>
-<link rel="stylesheet" href="editor/admin.css?v=20">
+<link rel="stylesheet" href="editor/admin.css?v=21">
 </head>
 <body>
 <header class="top">
@@ -21,6 +21,16 @@
 
   <section id="editor" hidden>
     <div class="layout">
+    <!-- the tools row: on a phone the topmost row, above the ad search; on a wide screen above the editor, beside the ad list -->
+    <div class="bar">
+      <div class="tools">
+        <button type="button" class="btn ghost icon" id="statsBtn" title="סטטיסטיקה: איפה עוזבים, מסלולים ומסעות" aria-label="סטטיסטיקה: איפה עוזבים, מסלולים ומסעות" aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><path d="M6 17v-5"/><path d="M11 17V6"/><path d="M16 17v-8"/><path d="M21 17v-3"/></svg></button>
+        <button type="button" class="btn ghost icon" id="refreshStats" title="רענן נתונים (לחיצות והצגות מהצ'אט החי)" aria-label="רענן נתונים (לחיצות והצגות מהצ'אט החי)"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.5-4.5L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14.5 4.5L20 16"/><path d="M20 20v-4h-4"/></svg></button>
+        <button type="button" class="btn ghost icon" id="undo" title="בטל צעד אחורה" aria-label="בטל צעד אחורה" disabled><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
+        <button type="button" class="btn ghost icon" id="expandAll" title="פתח את כל ההודעות" aria-label="פתח את כל ההודעות"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 8 5 5 5-5"/><path d="m7 14 5 5 5-5"/><path d="M5 4h14"/></svg></button>
+        <button type="button" class="btn ghost icon" id="collapseAll" title="סגור את כל ההודעות" aria-label="סגור את כל ההודעות"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 16 5-5 5 5"/><path d="m7 10 5-5 5 5"/><path d="M5 20h14"/></svg></button>
+      </div>
+    </div>
     <aside class="side" id="side">
       <button type="button" class="adtoggle" id="adToggle" aria-expanded="false"></button>
       <input class="field" id="adq" type="search" placeholder="חיפוש מודעה לפי קוד או כותרת">
@@ -30,15 +40,6 @@
     </aside>
     <div class="mainc">
     <div class="filters">
-      <div class="bar">
-        <div class="tools">
-          <button type="button" class="btn ghost icon" id="statsBtn" title="סטטיסטיקה: איפה עוזבים, מסלולים ומסעות" aria-label="סטטיסטיקה: איפה עוזבים, מסלולים ומסעות" aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><path d="M6 17v-5"/><path d="M11 17V6"/><path d="M16 17v-8"/><path d="M21 17v-3"/></svg></button>
-          <button type="button" class="btn ghost icon" id="refreshStats" title="רענן נתונים (לחיצות והצגות מהצ'אט החי)" aria-label="רענן נתונים (לחיצות והצגות מהצ'אט החי)"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.5-4.5L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14.5 4.5L20 16"/><path d="M20 20v-4h-4"/></svg></button>
-          <button type="button" class="btn ghost icon" id="undo" title="בטל צעד אחורה" aria-label="בטל צעד אחורה" disabled><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
-          <button type="button" class="btn ghost icon" id="expandAll" title="פתח את כל ההודעות" aria-label="פתח את כל ההודעות"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 8 5 5 5-5"/><path d="m7 14 5 5 5-5"/><path d="M5 4h14"/></svg></button>
-          <button type="button" class="btn ghost icon" id="collapseAll" title="סגור את כל ההודעות" aria-label="סגור את כל ההודעות"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 16 5-5 5 5"/><path d="m7 10 5-5 5 5"/><path d="M5 20h14"/></svg></button>
-        </div>
-      </div>
       <div class="adset">
         <div><label class="lbl" for="adcode">קוד המודעה בכתובת</label><input class="field" id="adcode" type="text" dir="ltr" maxlength="30"></div>
         <div><label class="lbl" for="adtextin">כותרת המודעה (לעצמנו)</label><textarea class="field" id="adtextin" rows="1"></textarea></div>
