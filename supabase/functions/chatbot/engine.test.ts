@@ -320,3 +320,8 @@ Deno.test('round eight: the visitor own words about gender win over the link; th
   eq(revealedGender(['הכול מתנהל אבל שום דבר לא מרגש']), null, 'nothing said');
   if (!mentionsEvening('מפגשי תנועה קבועים, עם הנחיה, לגברים ונשים')) throw new Error('opening intro not caught');
 });
+
+Deno.test('round ten: no "what you wrote" after a few words or a tap', () => {
+  if (!styleFix('מה שכתבת מוכר מאוד', 'מוכר מאוד')) throw new Error('missed');
+  if (styleFix('מה שכתבת מוכר מאוד', 'יש סביבי אנשים ובכל זאת חסר משהו וגם בבית יש עומס')) throw new Error('false alarm after a long message');
+});

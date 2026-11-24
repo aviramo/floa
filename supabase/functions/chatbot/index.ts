@@ -209,7 +209,7 @@ Deno.serve(async (req) => {
   if (!distress && (putsEveningOnTable(parsed.reply) || mentionsEvening(parsed.reply)) && !pitchAllowed({ turns, lastUser, prevDone: prev.done, prevReadiness: prev.readiness })) replyFixes.push({ type: 'text', text: earlyPitchFix });
   if (address !== 'plural' && wrongSingular(parsed.reply, address)) replyFixes.push({ type: 'text', text: genderFix(address) });
   if (!parsed.reply) replyFixes.push({ type: 'text', text: '## חסר טקסט\nהתשובה הקודמת הייתה רק סימונים. כתבו הודעה קצרה לאדם לפני הסימונים.' });
-  { const sf = styleFix(parsed.reply); if (sf) replyFixes.push({ type: 'text', text: sf }); }
+  { const sf = styleFix(parsed.reply, lastUser); if (sf) replyFixes.push({ type: 'text', text: sf }); }
   if (replyFixes.length) {
     const raw2 = await claude(apiKey, model, [...system, ...replyFixes], merged, 1400);
     if (raw2) { const o2 = extractState(raw2), p2 = parse(o2.text); if (p2.reply) { text = o2.text; incoming = o2.state; parsed = p2; parsed.reply = scrub(parsed.reply); } }

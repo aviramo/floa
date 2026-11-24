@@ -131,9 +131,10 @@ export const mentionsEvening = (reply: string) => /(הדר ואופיר|המנח
 export const offersUpdates = (reply: string) => /קבוצת (ה)?עדכונים/.test(String(reply ?? ''));
 
 // Things the visitor must never read: the machinery, "what brought you", pressure to hurry. A reply with one is written again once.
-export function styleFix(reply: string): string | null {
+export function styleFix(reply: string, lastUser = ''): string | null {
   const r = String(reply ?? '');
   const probs: string[] = [];
+  if (String(lastUser).trim().split(/\s+/).length <= 4 && /(מה ש(כתבת|סיפרת|אמרת)|שכתבת|כתבת לי|סיפרת לי)/.test(r)) probs.push('האדם כתב רק כמה מילים או לחץ על תשובה: אסור "מה שכתבת", "סיפרת", "אמרת"');
   if (/(תשובה מוכנה|תשובות מוכנות|הכפתור|לחצת על|הודעה מוכנה)/.test(r)) probs.push('אסור להזכיר תשובות מוכנות, כפתורים או הודעות: מגיבים לתוכן שהאדם אמר');
   if (/(מה|איזה דבר) ?ש?(בדיוק |ממש )?(הביא|גרם) (אותך|אותנו|לך|לכם)|למה (באת|נכנסת|הגעת)|מה (אתה|את) מחפש/.test(r)) probs.push('אסור לשאול מה הביא את האדם או מה הוא מחפש: שואלים על חייו ועל מצבים');
   if (/(ההנחיה כאן|ההנחיות שלי|לפי ההנחיות|אני מנחה את עצמי)/.test(r)) probs.push('אסור לצטט הנחיות או לתאר מה אתם עושים: שואלים ומגיבים');
