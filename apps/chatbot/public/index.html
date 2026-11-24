@@ -10,26 +10,35 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <script>
 /* The page is the same for every business: the address says whose bot this is.
-   chatbot.floa.co.il/<business>?pain=<ad> on the sub-domain, and /chatbot/<business> under floa.co.il or localhost. */
+   chatbot.floa.co.il/<business>?ad=<code> on the sub-domain, and /chatbot/<business> under floa.co.il or localhost. */
 (function () {
   var sub = /^chatbot\./.test(location.hostname), parts = location.pathname.split('/').filter(Boolean);
-  var biz = (sub ? parts[0] : parts[1]) || '';
+  var rel = sub ? parts : parts.slice(1);   // under floa.co.il or localhost the first part is /chatbot
+  var biz = rel[0] || '';
   var base = sub ? '/' : '/' + (parts[0] || 'chatbot') + '/';
-  // back from Google to the root (the editor's address is not among the Redirect URLs): carry the session on to the editor
-  try { var back = sessionStorage.getItem('chatbot.admin'); if (back !== null && location.hash.indexOf('#access_token') === 0) { sessionStorage.removeItem('chatbot.admin'); location.replace('/admin/' + back + location.hash); return; } } catch (e) {}
-  if (sub && parts.length === 2 && parts[1] === 'admin') { location.replace('/admin/?business=' + encodeURIComponent(parts[0])); return; }
+  // back from Google to the root (the address of the page that asked is not among the Redirect URLs): carry the session on to that page
+  try { var back = sessionStorage.getItem('chatbot.admin'); if (back !== null && location.hash.indexOf('#access_token') === 0) { sessionStorage.removeItem('chatbot.admin'); location.replace(back + location.hash); return; } } catch (e) {}
+  // the home page of the app (/) and the editor of a business (/<business>/admin) are pages of their own, shown in place so the address stays as it is
+  var own = !rel.length ? 'home/index.html' : (rel.length === 2 && rel[1] === 'admin' && /^[a-z0-9-]{1,40}$/.test(rel[0]) ? 'editor/index.html' : '');
+  if (own) {
+    try {
+      var x = new XMLHttpRequest(); x.open('GET', base + own, false); x.send();
+      if (x.status === 200) { document.open(); document.write(x.responseText.replace('<head>', '<head><base href="' + base + '">')); document.close(); window.CHATBOT_PAGE = true; return; }
+    } catch (e) {}
+  }
   window.CHATBOT = { biz: /^[a-z0-9-]{1,40}$/.test(biz) ? biz : '', base: base };
   document.write('<base href="' + base + '">');
 })();
 </script>
-<link rel="stylesheet" href="assets/chat.css?v=20261124t">
+<link rel="stylesheet" href="assets/chat.css?v=20261124r">
 </head>
 <body>
 <main class="ch-app" id="chatRoot" aria-label="שיחה עם הבוט"></main>
 <script src="/supabase.js"></script>
-<script src="assets/chat.js?v=20261124t"></script>
+<script src="assets/chat.js?v=20261124r"></script>
 <script>
 (async function () {
+  if (!window.CHATBOT) return;
   var root = document.getElementById('chatRoot'), biz = window.CHATBOT.biz;
   if (!biz) { root.innerHTML = '<p class="ch-note">כתובת לא מוכרת</p>'; return; }
   var cfg = null;

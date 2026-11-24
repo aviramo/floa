@@ -6,7 +6,8 @@
   var SB = window.SUPABASE, AUTH = window.FLOA_AUTH;
   var EP = SB.url + '/functions/v1/chatbot';
   var q = new URLSearchParams(location.search);
-  var BIZ = (q.get('business') || 'harpatka').replace(/[^a-z0-9_-]/gi, '') || 'harpatka';
+  var pm = location.pathname.match(/^\/(?:chatbot\/)?([a-z0-9-]+)\/admin\/?$/);
+  var BIZ = ((pm && pm[1]) || q.get('business') || 'harpatka').replace(/[^a-z0-9_-]/gi, '') || 'harpatka';
   var ADS = { opening_up: 'רוצה קרבה אבל ברגע האמת משהו בך נסגר?', stress_overload: 'הגוף כבר במיטה והראש עדיין רץ', loneliness: 'איך זה להיות מוקף באנשים ועדיין להרגיש לבד?', lost_joy: 'הכול מסודר בחיים, אז למה שום דבר כבר לא מרגש?', low_confidence: 'הכי כואב להסתכל במראה ולא לאהוב את מי שרואים' };
   var ACTIONS = { site: 'האתר', updates: 'קבוצת העדכונים בוואטסאפ', whatsapp: 'כתיבה להדר ואופיר' };
   var S = { content: null, version: null, published: null, ad: q.get('ad') || '', gender: q.get('gender') === 'male' ? 'male' : 'female', dirty: false };
@@ -107,7 +108,9 @@
   function line(get, set, label) { var t = el('input', 'field'); t.type = 'text'; t.value = get(); return bindField(t, get, set, label); }
 
   function steps() { return S.content.ads[S.ad][S.gender] || null; }
-  var OPEN = {}, PENDING = null, PH = null;
+  var OPEN = {}, PENDING = null, PH = null, STATS = { opens: [], shown: [], clicks: [] };
+  function num(list, ad, g, step, opt) { var n = 0; list.forEach(function (x) { if (x.ad === ad && x.gender === g && (step == null || x.step === step) && (opt == null || x.opt === opt)) n += x.n; }); return n; }
+  function loadStats() { return call('stats').then(function (r) { if (r.ok) { STATS = { opens: r.d.opens || [], shown: r.d.shown || [], clicks: r.d.clicks || [] }; render(); } }); }
   var KEYRE = /^[a-z][a-z0-9_]{0,29}$/;
   function pageUrl() { return location.origin + '/' + BIZ + '?ad=' + encodeURIComponent(S.ad) + (S.gender === 'both' ? '' : '&gender=' + S.gender); }
   function firstOther() { var a = S.content.ads[S.ad]; return ['female', 'male', 'both'].filter(function (g) { return g !== S.gender && a[g]; })[0] || null; }
@@ -140,6 +143,7 @@
     Array.prototype.forEach.call($('genders').children, function (b) { b.className = b.getAttribute('data-g') === S.gender ? 'on' : ''; });
     var cur = c.ads[S.ad];
     $('adcode').value = S.ad; $('adtextin').value = cur.ad || ADS[S.ad] || '';
+    var opensN = num(STATS.opens, S.ad, S.gender, null, null); $('opens').textContent = 'נפתח ' + opensN + ' פעמים בגרסה הזאת';
     $('generalSum').textContent = 'ברכה: ' + String(c.greeting || '').slice(0, 40);
     $('preview').href = pageUrl() + '&fresh=' + Date.now();
     var g = $('greeting'); g.value = c.greeting || ''; g.oninput = function () { c.greeting = g.value; dirty(true); };
@@ -162,7 +166,9 @@
       card.addEventListener('toggle', function () { if (card.open) OPEN[id] = 1; else delete OPEN[id]; });
       var sm = el('summary'); var inner = el('span', 'sum');
       sm.appendChild(el('span', 'num', String(i + 1)));
+      var shownN = num(STATS.shown, S.ad, S.gender, i + 1, null), tapsN = num(STATS.clicks, S.ad, S.gender, i + 1, null);
       var tt = el('span', 't', cut(m.say, 90)); inner.appendChild(tt);
+      if (!blank) inner.appendChild(el('span', 'stat', 'הוצגה ' + shownN + ' · לחיצות ' + tapsN));
       var chips = el('span', 'chips'); inner.appendChild(chips);
       sm.appendChild(inner); card.appendChild(sm);
       var drawChips = function () { chips.textContent = ''; m.options.forEach(function (o) { chips.appendChild(el('span', 'chip', cut(o.label, 24))); }); tt.textContent = cut(m.say, 90); };
@@ -172,7 +178,7 @@
       first.appendChild(area(function () { return m.say; }, function (v) { m.say = v; drawChips(); }, 5));
       cols.appendChild(first);
       m.options.forEach(function (o, k) {
-        var op = el('div', 'opt'); op.appendChild(el('h3', '', 'אפשרות ' + (k + 1)));
+        var op = el('div', 'opt'); var oh = el('h3', '', 'אפשרות ' + (k + 1)); if (!blank) { var cn = num(STATS.clicks, S.ad, S.gender, i + 1, k + 1), sh = num(STATS.shown, S.ad, S.gender, i + 1, null); oh.appendChild(el('span', 'cnt', cn + ' לחיצות' + (sh ? ' (' + Math.round(cn * 100 / sh) + '%)' : ''))); } op.appendChild(oh);
         var row = el('div', i === 4 ? 'row2 act' : 'row2');
         row.appendChild(line(function () { return o.label; }, function (v) { o.label = v; drawChips(); }, true));
         if (i === 4) {
@@ -253,10 +259,11 @@
   }
 
   function start() {
-    $('signin').addEventListener('click', function () { try { sessionStorage.setItem('chatbot.admin', location.search || '?business=' + BIZ); } catch (e) {} AUTH.signIn(location.origin + location.pathname + location.search); });
+    $('signin').addEventListener('click', function () { try { sessionStorage.setItem('chatbot.admin', location.pathname + location.search); } catch (e) {} AUTH.signIn(location.origin + location.pathname + location.search); });
     Array.prototype.forEach.call($('genders').children, function (b) { b.addEventListener('click', function () { S.gender = b.getAttribute('data-g'); render(); }); });
     $('save').addEventListener('click', save);
     $('undo').addEventListener('click', undo);
+    $('refreshStats').addEventListener('click', function () { loadStats().then(function () { status('הנתונים עודכנו', 'ok'); }); });
     $('saveDraft').addEventListener('click', saveDraft);
     $('adq').addEventListener('input', drawAds);
     $('adq').addEventListener('keydown', function (e) { if (e.key === 'Enter') { var f = $('adlist').querySelector('.adi'); if (f) f.click(); } });
@@ -303,10 +310,12 @@
       if (!r.ok) { $('gateMsg').textContent = 'לא ניתן לטעון כרגע.'; return; }
       $('gate').hidden = true; $('editor').hidden = false;
       renderVersions(r.d.versions || []);
+      loadStats();
       load(null).then(function () { return call('draft_get').then(function (x) { showDraft(x.ok ? x.d.draft : null); }); });
     }).catch(function () { $('gateMsg').textContent = 'שגיאת רשת.'; });
   }
   function topH() { var t = document.querySelector('.top'); if (t) document.documentElement.style.setProperty('--toph', t.offsetHeight + 'px'); }
   topH(); window.addEventListener('resize', topH);
+  var bn = document.getElementById('bizName'); if (bn) bn.textContent = BIZ;
   start();
 })();

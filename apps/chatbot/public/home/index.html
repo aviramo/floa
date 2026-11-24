@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>צ'אט לפרסום ברשתות | FLOA</title>
+<meta name="description" content="כותבים תסריט שיחה לכל מודעה ברשתות חברתיות. מי שלוחץ על המודעה נוחת בצ'אט שמוביל אותו, הודעה אחרי הודעה, לפעולה שביקשתם. את התסריט עורכים בעצמכם.">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;800&display=swap">
+<style>
+:root { --cream: #fff5e8; --paper: #fffdf9; --ink: #2c231d; --muted: #5d4f44; --teal: #064452; --plum: #9a2d5e; --sun: #f2a65a; --line: rgba(44, 35, 29, .14); --r: 18px; }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--cream); color: var(--ink); font-family: "Assistant", system-ui, sans-serif; font-size: 18px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+.wrap { width: min(72rem, 100% - 2.4rem); margin-inline: auto; }
+:focus-visible { outline: 3px solid var(--plum); outline-offset: 3px; }
+
+/* top bar */
+.bar { display: flex; align-items: center; justify-content: space-between; padding: 1.1rem 0; }
+.logo { font-weight: 800; font-size: 1.25rem; text-decoration: none; letter-spacing: .01em; }
+.logo span { color: var(--plum); }
+.nav { display: flex; gap: 1.4rem; align-items: center; font-size: .95rem; font-weight: 600; }
+.nav a { text-decoration: none; opacity: .8; }
+.nav a:hover { opacity: 1; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 52px; padding: 0 1.7rem; border-radius: 99px; font: inherit; font-weight: 700; font-size: 1.05rem; text-decoration: none; border: 2px solid var(--ink); background: var(--ink); color: #fff; transition: transform .15s, box-shadow .15s; }
+.btn:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(44, 35, 29, .22); }
+.btn.ghost { background: transparent; color: var(--ink); }
+.btn.small { min-height: 40px; padding: 0 1.2rem; font-size: .95rem; }
+
+/* hero */
+.hero { position: relative; overflow: hidden; background: radial-gradient(60rem 30rem at 85% -10%, #ffe2bd 0%, transparent 60%), radial-gradient(50rem 28rem at 0% 110%, #d9eef0 0%, transparent 60%), var(--cream); }
+.hero .grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 3rem; align-items: center; padding: 3rem 0 5rem; }
+.kicker { display: inline-block; font-weight: 700; font-size: .85rem; letter-spacing: .08em; color: var(--plum); background: rgba(154, 45, 94, .1); padding: .25rem .8rem; border-radius: 99px; margin-bottom: 1.2rem; }
+h1 { font-size: clamp(2.3rem, 5vw, 4rem); line-height: 1.08; margin: 0 0 1.2rem; font-weight: 800; letter-spacing: -.015em; }
+h1 em { font-style: normal; color: var(--teal); background: linear-gradient(transparent 62%, rgba(242, 166, 90, .55) 62%); }
+.sub { font-size: 1.3rem; color: var(--muted); max-width: 34rem; margin: 0 0 2rem; }
+.cta { display: flex; flex-wrap: wrap; gap: .8rem; }
+
+/* the phone with a chat that plays by itself */
+.phone { justify-self: center; width: min(21rem, 100%); background: var(--ink); border-radius: 2.4rem; padding: .7rem; box-shadow: 0 30px 60px rgba(44, 35, 29, .28), 0 0 0 2px rgba(255, 255, 255, .06) inset; transform: rotate(-2deg); }
+.screen { background: var(--cream); border-radius: 1.8rem; padding: 1.1rem .9rem 1rem; min-height: 25rem; display: flex; flex-direction: column; gap: .55rem; overflow: hidden; }
+.screen .top { display: flex; align-items: center; gap: .6rem; padding-bottom: .6rem; border-bottom: 1px solid var(--line); margin-bottom: .3rem; }
+.avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--sun), var(--plum)); }
+.screen .top b { font-size: .95rem; }
+.screen .top small { display: block; color: var(--muted); font-size: .75rem; line-height: 1.1; }
+.m { max-width: 88%; padding: .6rem .85rem; border-radius: 16px; font-size: .95rem; line-height: 1.45; opacity: 0; transform: translateY(8px); animation: pop .45s ease forwards; }
+.m.bot { align-self: flex-start; background: var(--paper); border: 1px solid var(--line); border-top-right-radius: 4px; }
+.m.me { align-self: flex-end; background: var(--ink); color: #fff; border-top-left-radius: 4px; }
+.opts { display: flex; flex-direction: column; align-items: flex-start; gap: .35rem; opacity: 0; animation: pop .45s ease forwards; }
+.opts span { background: var(--ink); color: #fff; font-weight: 600; font-size: .88rem; padding: .45rem .85rem; border-radius: 12px; }
+.m:nth-of-type(1) { animation-delay: .4s; } .m:nth-of-type(2) { animation-delay: 1.3s; }
+.opts { animation-delay: 2.1s; }
+.m:nth-of-type(3) { animation-delay: 3.6s; } .m:nth-of-type(4) { animation-delay: 4.6s; }
+@keyframes pop { to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .m, .opts { animation: none; opacity: 1; transform: none; } .btn { transition: none; } html { scroll-behavior: auto; } }
+
+/* sections */
+section { padding: 5rem 0; }
+.eyebrow { font-weight: 700; color: var(--plum); font-size: .9rem; letter-spacing: .06em; margin: 0 0 .5rem; }
+h2 { font-size: clamp(1.8rem, 3.5vw, 2.7rem); line-height: 1.15; margin: 0 0 1rem; font-weight: 800; letter-spacing: -.01em; }
+.lead { font-size: 1.2rem; color: var(--muted); max-width: 40rem; margin: 0 0 2.6rem; }
+
+.flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; counter-reset: s; }
+.step { position: relative; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); padding: 1.6rem 1.3rem 1.4rem; }
+.step::before { counter-increment: s; content: counter(s); position: absolute; top: -1rem; inset-inline-start: 1.2rem; width: 2rem; height: 2rem; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: .95rem; }
+.step h3 { margin: .2rem 0 .4rem; font-size: 1.15rem; }
+.step p { margin: 0; color: var(--muted); font-size: 1rem; }
+
+.band { background: var(--teal); color: #fff; }
+.band .eyebrow { color: var(--sun); }
+.band .lead { color: rgba(255, 255, 255, .8); }
+.feat { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.f { background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .16); border-radius: var(--r); padding: 1.5rem 1.4rem; }
+.f h3 { margin: 0 0 .4rem; font-size: 1.15rem; }
+.f p { margin: 0; color: rgba(255, 255, 255, .78); font-size: 1rem; }
+.f .ic { width: 42px; height: 42px; border-radius: 12px; background: var(--sun); color: var(--ink); display: grid; place-items: center; font-weight: 800; margin-bottom: .9rem; }
+
+.link { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); padding: 1.1rem 1.3rem; direction: ltr; font-size: 1.15rem; font-weight: 600; width: fit-content; max-width: 100%; overflow-wrap: anywhere; }
+.link b { color: var(--plum); }
+.link .p { color: var(--muted); font-weight: 400; }
+.ex { display: grid; gap: 1rem; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; }
+.points { list-style: none; margin: 0; padding: 0; display: grid; gap: .9rem; }
+.points li { display: flex; gap: .8rem; align-items: flex-start; }
+.points li::before { content: ""; flex: none; width: 1.5rem; height: 1.5rem; margin-top: .15rem; border-radius: 50%; background: var(--teal) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / 70% no-repeat; }
+
+.final { text-align: center; padding: 5rem 0 6rem; }
+.final h2 { max-width: 38rem; margin-inline: auto; }
+.final .lead { margin-inline: auto; }
+.final .cta { justify-content: center; }
+footer { border-top: 1px solid var(--line); padding: 1.6rem 0 2.4rem; color: var(--muted); font-size: .9rem; text-align: center; }
+
+@media (max-width: 52rem) {
+  .hero .grid, .two { grid-template-columns: 1fr; }
+  .flow, .feat { grid-template-columns: 1fr 1fr; }
+  .phone { transform: none; }
+  .nav a:not(.btn) { display: none; }
+}
+@media (max-width: 34rem) { .flow, .feat { grid-template-columns: 1fr; } section { padding: 3.5rem 0; } }
+</style>
+</head>
+<body>
+
+<header class="wrap bar">
+  <a class="logo" href="./">צ'אט<span>.</span>FLOA</a>
+  <nav class="nav" aria-label="ראשי">
+    <a href="#how">איך זה עובד</a>
+    <a href="#control">מה אתם שולטים בו</a>
+    <a class="btn small" href="admin/">כניסה לניהול</a>
+  </nav>
+</header>
+
+<div class="hero">
+  <div class="wrap grid">
+    <div>
+      <span class="kicker">תסריט שיחה לכל מודעה</span>
+      <h1>המודעה מושכת. <em>הצ'אט מוביל.</em></h1>
+      <p class="sub">כותבים תסריט שיחה קצר לכל מודעה ברשתות החברתיות. מי שלוחץ על המודעה נוחת בצ'אט שמלווה אותו הודעה אחרי הודעה, עד הפעולה שביקשתם. את התסריט עורכים בעצמכם, בלי מתכנת.</p>
+      <div class="cta">
+        <a class="btn" href="admin/">כניסה לניהול</a>
+        <a class="btn ghost" href="#how">איך זה עובד</a>
+      </div>
+    </div>
+    <div class="phone" aria-label="דוגמה לשיחה">
+      <div class="screen">
+        <div class="top"><div class="avatar"></div><div><b>העסק שלכם</b><small>עונה מיד</small></div></div>
+        <div class="m bot">היי, שמחים שהגעת. מה הכי קרוב למה שעובר עליך עכשיו?</div>
+        <div class="opts"><span>עמוס ואין לי רגע לעצמי</span><span>חסר לי חיבור לאנשים</span><span>משהו בי תקוע</span></div>
+        <div class="m me">חסר לי חיבור לאנשים</div>
+        <div class="m bot">מובן, ויש הרבה מי שמרגיש כך. ספר לי עוד קצת?</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section id="how">
+  <div class="wrap">
+    <p class="eyebrow">איך זה עובד</p>
+    <h2>ארבעה צעדים מהמודעה ועד הפנייה</h2>
+    <p class="lead">כל מודעה מקבלת צ'אט משלה, עם הטון והמסר שהבטחתם בה, כך שהשיחה ממשיכה בדיוק מאיפה שהמודעה עצרה.</p>
+    <div class="flow">
+      <div class="step"><h3>מפרסמים מודעה</h3><p>בפייסבוק, באינסטגרם או בכל רשת אחרת. הכפתור במודעה מוביל לקישור של הצ'אט.</p></div>
+      <div class="step"><h3>הצ'אט נפתח</h3><p>ברכה, ואז הודעה עם שלוש אפשרויות. המבקר לוחץ על מה שמתאים לו, ולכל בחירה יש תגובה משלה.</p></div>
+      <div class="step"><h3>חמש הודעות בלבד</h3><p>שיחה קצרה ומדויקת שמחממת, מבינה מה הוא צריך, ובסוף מציעה את הצעד הבא.</p></div>
+      <div class="step"><h3>פעולה</h3><p>האתר שלכם, קבוצת עדכונים או הודעה ישירה בוואטסאפ. אתם מחליטים מה מוצע.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="control">
+  <div class="wrap">
+    <p class="eyebrow">בשליטה שלכם</p>
+    <h2>כל מילה בצ'אט נכתבת על ידכם</h2>
+    <p class="lead">אין בינה מלאכותית שמאלתרת ואין הפתעות. מה שכתבתם הוא מה שהמבקר רואה, וכל שינוי עולה לאוויר תוך חצי דקה.</p>
+    <div class="feat">
+      <div class="f"><div class="ic">1</div><h3>צ'אט נפרד לכל מודעה</h3><p>כל מודעה מזוהה בקוד קצר בקישור, ולכל קוד תסריט משלו. כמה מודעות שתרצו, כולן בעורך אחד עם חיפוש.</p></div>
+      <div class="f"><div class="ic">2</div><h3>גרסה לנשים, לגברים או לכולם</h3><p>אפשר לנסח בלשון המתאימה לכל מגדר, או לכתוב גרסה אחת שמתאימה לשניהם.</p></div>
+      <div class="f"><div class="ic">3</div><h3>עורכים בלי מתכנת</h3><p>כל הודעה, אפשרות ותגובה בשדה כתיבה פשוט, עם תקציר מקופל שמאפשר לראות את כל השיחה במבט אחד.</p></div>
+      <div class="f"><div class="ic">4</div><h3>גרסאות, טיוטות וביטול</h3><p>כל שמירה נשמרת כגרסה ואפשר לחזור לכל גרסה קודמת. אפשר לשמור טיוטה בלי לפרסם, ולבטל צעד אחורה בכל רגע.</p></div>
+      <div class="f"><div class="ic">5</div><h3>כניסה מאובטחת</h3><p>עורכים רק מי שהוספתם, דרך חשבון Google. אף אחד אחר לא יכול לשנות את השיחה.</p></div>
+      <div class="f"><div class="ic">6</div><h3>מדידה</h3><p>רואים כמה נכנסו לצ'אט, איפה כל אחד עצר ומי הגיע לפעולה, ישירות בפיקסל של המודעות.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap two">
+    <div>
+      <p class="eyebrow">קישור אחד לכל עסק, קוד אחד לכל מודעה</p>
+      <h2>מעתיקים את הקישור, מדביקים במודעה</h2>
+      <p class="lead" style="margin-bottom:1.6rem">בעורך יש כפתור שמעתיק את הקישור המדויק של המודעה והמגדר שנבחרו.</p>
+      <ul class="points">
+        <li>לכל עסק כתובת קבועה משלו</li>
+        <li>הקוד של המודעה קובע איזה תסריט יופיע</li>
+        <li>בלי מגדר בקישור, מוצגת הגרסה לכולם</li>
+      </ul>
+    </div>
+    <div class="ex">
+      <div class="link"><span class="p">chatbot.floa.co.il/</span><b>your-business</b><span class="p">?ad=</span><b>summer_sale</b></div>
+      <div class="link"><span class="p">chatbot.floa.co.il/</span><b>your-business</b><span class="p">?ad=</span><b>summer_sale</b><span class="p">&amp;gender=</span><b>female</b></div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap final">
+  <h2>מוכנים לכתוב את השיחה הראשונה?</h2>
+  <p class="lead">היכנסו לניהול, בחרו עסק ותתחילו לערוך.</p>
+  <div class="cta"><a class="btn" href="admin/">כניסה לניהול</a></div>
+</div>
+
+<footer><div class="wrap">FLOA · צ'אט לפרסום ברשתות</div></footer>
+</body>
+</html>

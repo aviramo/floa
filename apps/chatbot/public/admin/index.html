@@ -4,87 +4,75 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>עריכת הצ'אט</title>
-<link rel="stylesheet" href="admin.css?v=7">
+<title>העסקים שלי | צ'אט</title>
+<style>
+:root { --bg: #f6f1ea; --paper: #fffdf9; --ink: #2a211b; --muted: #7b6e63; --line: #e3d9cc; --accent: #c2410c; --plum: #9a2d5e; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Assistant", system-ui, sans-serif; font-size: 16px; line-height: 1.5; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .6rem 1.4rem; background: var(--ink); color: #fff; }
+header a { color: #fff; text-decoration: none; font-weight: 700; }
+.who { font-size: .85rem; opacity: .75; }
+main { max-width: 56rem; margin: 0 auto; padding: 2rem 1.2rem 4rem; }
+h1 { margin: 0 0 .3rem; font-size: 1.6rem; }
+p.lead { margin: 0 0 1.6rem; color: var(--muted); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); gap: .9rem; }
+.card { display: grid; gap: .3rem; padding: 1.1rem 1.2rem; background: var(--paper); border: 1px solid var(--line); border-radius: 14px; color: var(--ink); text-decoration: none; transition: transform .12s, box-shadow .12s, border-color .12s; }
+.card:hover { transform: translateY(-2px); border-color: var(--ink); box-shadow: 0 6px 18px rgba(42, 33, 27, .1); }
+.card strong { font-size: 1.15rem; }
+.card .url { direction: ltr; text-align: start; color: var(--muted); font-size: .85rem; }
+.card .go { margin-top: .5rem; color: var(--plum); font-weight: 700; font-size: .9rem; }
+.btn { font: inherit; font-weight: 700; min-height: 42px; padding: 0 1.2rem; border: 0; border-radius: 10px; background: var(--ink); color: #fff; cursor: pointer; }
+.gate { max-width: 26rem; padding: 1.4rem; background: var(--paper); border: 1px solid var(--line); border-radius: 14px; }
+.gate p { margin-top: 0; }
+[hidden] { display: none !important; }
+</style>
 </head>
 <body>
-<header class="top">
-  <h1>עריכת הצ'אט</h1>
-  <div class="who" id="who"></div>
-</header>
+<header><a href="./">צ'אט</a><div class="who" id="who"></div></header>
+<main>
+  <h1>העסקים שלי</h1>
+  <p class="lead">כל עסק הוא צ'אט עם כתובת משלו ועמוד עריכה משלו.</p>
 
-<main id="app">
-  <section id="gate" class="gate">
-    <p id="gateMsg">כדי לערוך צריך להיכנס עם חשבון Google של מנהל.</p>
+  <section class="gate" id="gate">
+    <p id="gateMsg">כדי לראות את העסקים צריך להיכנס עם חשבון Google של מנהל.</p>
     <button type="button" class="btn" id="signin">כניסה עם Google</button>
   </section>
 
-  <section id="editor" hidden>
-    <div class="layout">
-    <aside class="side">
-      <input class="field" id="adq" type="search" placeholder="חיפוש מודעה לפי קוד או כותרת">
-      <div class="count" id="adcount"></div>
-      <div class="adlist" id="adlist" role="listbox" aria-label="מודעות"></div>
-      <button type="button" class="btn ghost" id="newAd">מודעה חדשה</button>
-    </aside>
-    <div class="mainc">
-    <div class="filters">
-      <div class="bar">
-        <div class="seg" id="genders" role="tablist" aria-label="מגדר">
-          <button type="button" data-g="female" class="on">אישה</button>
-          <button type="button" data-g="male">גבר</button>
-          <button type="button" data-g="both">שני המינים</button>
-        </div>
-        <div class="tools">
-          <button type="button" class="btn ghost" id="undo" disabled>בטל</button>
-          <button type="button" class="btn ghost" id="expandAll">פתח הכול</button>
-          <button type="button" class="btn ghost" id="collapseAll">סגור הכול</button>
-          <button type="button" class="btn ghost" id="copyUrl">העתק כתובת</button>
-          <a class="btn ghost" id="preview" target="_blank" rel="noopener">פתח לבדיקה</a>
-        </div>
-      </div>
-      <div class="adset">
-        <div><label class="lbl" for="adcode">קוד המודעה בכתובת</label><input class="field" id="adcode" type="text" dir="ltr" maxlength="30"></div>
-        <div><label class="lbl" for="adtextin">כותרת המודעה (לעצמנו)</label><input class="field" id="adtextin" type="text"></div>
-        <button type="button" class="btn ghost" id="delAd">מחק מודעה</button>
-      </div>
-    </div>
-
-    <details class="acc" id="general">
-      <summary><span class="sum"><span class="t">הגדרות כלליות</span><span class="kind" id="generalSum"></span></span></summary>
-      <div class="settings">
-        <div>
-          <label class="lbl" for="greeting">הברכה הראשונה (בועה נפרדת, משותפת לכל המודעות והמגדרים)</label>
-          <p class="hint">הכתובת: ad=קוד המודעה, ובנוסף gender=female או male. בלי gender מוצגת גרסת שני המינים.</p>
-          <input class="field" id="greeting" type="text">
-        </div>
-      </div>
-    </details>
-
-    <div class="draftbar" id="draftbar" hidden></div>
-
-    <div id="steps"></div>
-
-    <div class="savebar">
-      <input class="field note" id="note" type="text" placeholder="הערה לגרסה (לא חובה)">
-      <button type="button" class="btn ghost" id="saveDraft">שמור כטיוטה</button>
-      <button type="button" class="btn primary" id="save">שמור גרסה חדשה ופרסם</button>
-      <span class="status" id="status" role="status"></span>
-    </div>
-
-    <details class="acc">
-      <summary><span class="sum"><span class="t">גרסאות</span><span class="kind">שמירה יוצרת גרסה חדשה ומפרסמת מיד. אפשר להחזיר גרסה קודמת</span></span></summary>
-      <div class="body" id="versions"></div>
-    </details>
-    </div>
-    </div>
-  </section>
+  <section class="grid" id="list" hidden></section>
 </main>
-
-<dialog id="dlg" class="dlg"><p id="dlgMsg"></p><button type="button" class="btn primary" id="dlgOk">מחק</button></dialog>
 
 <script src="/supabase.js"></script>
 <script src="/auth.js"></script>
-<script src="admin.js?v=13"></script>
+<script>
+(function () {
+  var SB = window.SUPABASE, AUTH = window.FLOA_AUTH, EP = SB.url + '/functions/v1/chatbot';
+  var base = /^chatbot\./.test(location.hostname) ? '/' : '/chatbot/';
+  function $(id) { return document.getElementById(id); }
+  $('signin').addEventListener('click', function () {
+    try { sessionStorage.setItem('chatbot.admin', location.pathname + location.search); } catch (e) {}
+    AUTH.signIn(location.origin + location.pathname + location.search);
+  });
+  if (!AUTH.signedIn()) return;
+  $('who').textContent = AUTH.email();
+  AUTH.token().then(function (t) {
+    return fetch(EP, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SB.anonKey, Authorization: 'Bearer ' + t }, body: JSON.stringify({ business: 'harpatka', mode: 'script_admin', action: 'businesses' }) });
+  }).then(function (r) {
+    return r.json().catch(function () { return {}; }).then(function (d) { return { status: r.status, d: d }; });
+  }).then(function (x) {
+    if (x.status === 401) { $('gateMsg').textContent = 'ההתחברות לא תקפה. נא להיכנס שוב.'; return; }
+    if (x.status === 403) { $('gateMsg').textContent = 'לחשבון ' + (x.d.email || AUTH.email()) + ' אין הרשאה. ההרשאה רק למנהלים.'; $('signin').hidden = true; return; }
+    var list = x.d.businesses || [];
+    if (!list.length) { $('gateMsg').textContent = 'אין עסקים להצגה.'; return; }
+    $('gate').hidden = true; $('list').hidden = false;
+    list.forEach(function (b) {
+      var a = document.createElement('a'); a.className = 'card'; a.href = base + b.key + '/admin';
+      var n = document.createElement('strong'); n.textContent = b.title || b.key;
+      var u = document.createElement('span'); u.className = 'url'; u.textContent = location.host + (base === '/' ? '/' : base) + b.key;
+      var g = document.createElement('span'); g.className = 'go'; g.textContent = 'לעריכה';
+      a.appendChild(n); a.appendChild(u); a.appendChild(g); $('list').appendChild(a);
+    });
+  }).catch(function () { $('gateMsg').textContent = 'שגיאת רשת.'; });
+})();
+</script>
 </body>
 </html>

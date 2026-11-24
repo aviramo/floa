@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>עריכת הצ'אט</title>
+<link rel="stylesheet" href="editor/admin.css?v=9">
+</head>
+<body>
+<header class="top">
+  <h1>עריכת הצ'אט <span class="biz" id="bizName"></span></h1>
+  <div class="topr"><a class="back" href="admin/">כל העסקים</a><div class="who" id="who"></div></div>
+</header>
+
+<main id="app">
+  <section id="gate" class="gate">
+    <p id="gateMsg">כדי לערוך צריך להיכנס עם חשבון Google של מנהל.</p>
+    <button type="button" class="btn" id="signin">כניסה עם Google</button>
+  </section>
+
+  <section id="editor" hidden>
+    <div class="layout">
+    <aside class="side">
+      <input class="field" id="adq" type="search" placeholder="חיפוש מודעה לפי קוד או כותרת">
+      <div class="count" id="adcount"></div>
+      <div class="adlist" id="adlist" role="listbox" aria-label="מודעות"></div>
+      <button type="button" class="btn ghost" id="newAd">מודעה חדשה</button>
+    </aside>
+    <div class="mainc">
+    <div class="filters">
+      <div class="bar">
+        <div class="seg" id="genders" role="tablist" aria-label="מגדר">
+          <button type="button" data-g="female" class="on">אישה</button>
+          <button type="button" data-g="male">גבר</button>
+          <button type="button" data-g="both">שני המינים</button>
+        </div>
+        <div class="tools">
+          <button type="button" class="btn ghost" id="refreshStats" title="לחיצות והצגות מהצ'אט החי">רענן נתונים</button>
+          <button type="button" class="btn ghost" id="undo" disabled>בטל</button>
+          <button type="button" class="btn ghost" id="expandAll">פתח הכול</button>
+          <button type="button" class="btn ghost" id="collapseAll">סגור הכול</button>
+          <button type="button" class="btn ghost" id="copyUrl">העתק כתובת</button>
+          <a class="btn ghost" id="preview" target="_blank" rel="noopener">פתח לבדיקה</a>
+        </div>
+      </div>
+      <div class="adset">
+        <div><label class="lbl" for="adcode">קוד המודעה בכתובת</label><input class="field" id="adcode" type="text" dir="ltr" maxlength="30"></div>
+        <div><label class="lbl" for="adtextin">כותרת המודעה (לעצמנו)</label><input class="field" id="adtextin" type="text"></div>
+        <span class="opens" id="opens"></span>
+        <button type="button" class="btn ghost" id="delAd">מחק מודעה</button>
+      </div>
+    </div>
+
+    <details class="acc" id="general">
+      <summary><span class="sum"><span class="t">הגדרות כלליות</span><span class="kind" id="generalSum"></span></span></summary>
+      <div class="settings">
+        <div>
+          <label class="lbl" for="greeting">הברכה הראשונה (בועה נפרדת, משותפת לכל המודעות והמגדרים)</label>
+          <p class="hint">הכתובת: ad=קוד המודעה, ובנוסף gender=female או male. בלי gender מוצגת גרסת שני המינים.</p>
+          <input class="field" id="greeting" type="text">
+        </div>
+      </div>
+    </details>
+
+    <div class="draftbar" id="draftbar" hidden></div>
+
+    <div id="steps"></div>
+
+    <div class="savebar">
+      <input class="field note" id="note" type="text" placeholder="הערה לגרסה (לא חובה)">
+      <button type="button" class="btn ghost" id="saveDraft">שמור כטיוטה</button>
+      <button type="button" class="btn primary" id="save">שמור גרסה חדשה ופרסם</button>
+      <span class="status" id="status" role="status"></span>
+    </div>
+
+    <details class="acc">
+      <summary><span class="sum"><span class="t">גרסאות</span><span class="kind">שמירה יוצרת גרסה חדשה ומפרסמת מיד. אפשר להחזיר גרסה קודמת</span></span></summary>
+      <div class="body" id="versions"></div>
+    </details>
+    </div>
+    </div>
+  </section>
+</main>
+
+<dialog id="dlg" class="dlg"><p id="dlgMsg"></p><button type="button" class="btn primary" id="dlgOk">מחק</button></dialog>
+
+<script src="/supabase.js"></script>
+<script src="/auth.js"></script>
+<script src="editor/admin.js?v=15"></script>
+</body>
+</html>

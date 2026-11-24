@@ -19,6 +19,14 @@ const cors = (b: Business, o: string | null) => ({
 const json = (b: Business, o: string | null, body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors(b, o), 'Content-Type': 'application/json; charset=utf-8' } });
 const tx = (v: unknown) => String(v ?? '').trim();
+// A visitor of the chat taps a few times, so this only stops a loop: 300 records per ten minutes per address (approximate, every instance counts for itself).
+const hits = new Map<string, number[]>();
+const limited = (ip: string) => {
+  const now = Date.now(), list = (hits.get(ip) ?? []).filter((t) => now - t < 600000);
+  list.push(now); hits.set(ip, list);
+  if (hits.size > 5000) hits.clear();
+  return list.length > 300;
+};
 const rpc = (name: string, args: Record<string, unknown>) =>
   fetch(SB_URL + '/rest/v1/rpc/' + name, { method: 'POST', headers: { apikey: SB_SERVICE, Authorization: 'Bearer ' + SB_SERVICE, 'Content-Type': 'application/json' }, body: JSON.stringify(args) });
 
@@ -44,6 +52,17 @@ Deno.serve(async (req) => {
   if (!body) return json(b, origin, { error: 'body' }, 400);
   if (!SB_SERVICE || !SB_URL) return json(b, origin, { error: 'config' }, 503);
 
+  if (body.mode === 'click') {
+    // one tap or one shown message of the chat. Nothing identifies the visitor. Write only; a bad shape is dropped quietly.
+    const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || 'unknown';
+    if (limited(ip)) return json(b, origin, { ok: false }, 429);
+    const ad = tx(body.ad).slice(0, 40) || 'default', gender = tx(body.gender), kind = tx(body.kind);
+    const step = Number(body.step), opt = Number(body.opt);
+    if (!/^[a-z][a-z0-9_]{0,29}$|^default$/.test(ad) || !['female', 'male', 'both'].includes(gender) || !['open', 'shown', 'option', 'cta'].includes(kind) || !(step >= 0 && step <= 5) || !(opt >= 0 && opt <= 3)) return json(b, origin, { ok: false }, 400);
+    const r = await rpc('chatbot_click_add', { p_business: b.key, p_ad: ad, p_gender: gender, p_step: Math.floor(step), p_opt: Math.floor(opt), p_label: tx(body.label).slice(0, 200), p_kind: kind, p_visit: tx(body.visit).replace(/[^a-zA-Z0-9-]/g, '').slice(0, 40) });
+    return json(b, origin, { ok: r.ok });
+  }
+
   if (body.mode === 'script') {
     const rs = await rpc('chatbot_script', { p_business: b.key });
     const ds = rs.ok ? await rs.json() : null;
@@ -60,6 +79,8 @@ Deno.serve(async (req) => {
     const ra = await rpc('chatbot_is_admin', { p_email: email });
     if (!(ra.ok && (await ra.json()) === true)) return json(b, origin, { error: 'forbidden', email }, 403);
     const action = tx(body.action);
+    if (action === 'businesses') return json(b, origin, { businesses: Object.values(BUSINESSES).map((x) => ({ key: x.key, title: x.title })), email });
+    if (action === 'stats') { const r = await rpc('chatbot_click_stats', { p_business: b.key }); return json(b, origin, r.ok ? await r.json() : { opens: [], shown: [], clicks: [] }); }
     if (action === 'list') { const r = await rpc('chatbot_script_versions', { p_business: b.key }); return json(b, origin, { versions: r.ok ? await r.json() : [], email }); }
     if (action === 'get') {
       const v = Number(body.version);

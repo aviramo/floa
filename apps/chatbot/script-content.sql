@@ -92,3 +92,47 @@ create or replace function public.chatbot_script_draft_clear(p_business text) re
 $$;
 revoke all on function public.chatbot_script_draft_set(text, jsonb, text), public.chatbot_script_draft_get(text), public.chatbot_script_draft_clear(text) from public, anon, authenticated;
 grant execute on function public.chatbot_script_draft_set(text, jsonb, text), public.chatbot_script_draft_get(text), public.chatbot_script_draft_clear(text) to service_role;
+
+-- Every tap in the chat, one row each, so it can be asked about later: which ad, which version (gender shown), which message (1-5), which option (1-3).
+-- step 0 is the opening of the chat. Nothing identifies the visitor: "visit" is a random id of the tab, kept in that tab only.
+create table if not exists chatbot.clicks (
+  id bigserial primary key,
+  business text not null,
+  ad text not null,
+  gender text not null,
+  step int not null,
+  opt int not null,
+  label text,
+  kind text not null,
+  visit text,
+  at timestamptz not null default now()
+);
+create index if not exists clicks_by_ad on chatbot.clicks (business, ad, gender, step, opt);
+alter table chatbot.clicks enable row level security;
+revoke all on chatbot.clicks from anon, authenticated;
+
+create or replace function public.chatbot_click_add(p_business text, p_ad text, p_gender text, p_step int, p_opt int, p_label text, p_kind text, p_visit text)
+returns void language sql security definer set search_path = public, chatbot as $$
+  insert into chatbot.clicks(business, ad, gender, step, opt, label, kind, visit) values (p_business, p_ad, p_gender, p_step, p_opt, left(p_label, 200), p_kind, left(p_visit, 40));
+$$;
+
+-- Counts for the editor: how many opened the chat and how many tapped each option, per ad and version.
+create or replace function public.chatbot_click_stats(p_business text)
+returns jsonb language sql security definer set search_path = public, chatbot as $$
+  select jsonb_build_object(
+    'opens', coalesce((select jsonb_agg(jsonb_build_object('ad', ad, 'gender', gender, 'n', n)) from (select ad, gender, count(*) n from chatbot.clicks where business = p_business and step = 0 group by 1, 2) o), '[]'::jsonb),
+    'clicks', coalesce((select jsonb_agg(jsonb_build_object('ad', ad, 'gender', gender, 'step', step, 'opt', opt, 'n', n)) from (select ad, gender, step, opt, count(*) n from chatbot.clicks where business = p_business and step > 0 group by 1, 2, 3, 4) c), '[]'::jsonb)
+  );
+$$;
+revoke all on function public.chatbot_click_add(text, text, text, int, int, text, text, text), public.chatbot_click_stats(text) from public, anon, authenticated;
+grant execute on function public.chatbot_click_add(text, text, text, int, int, text, text, text), public.chatbot_click_stats(text) to service_role;
+
+-- A message shown to a visitor is recorded too (opt 0, kind 'shown'), so every message can show how many saw it and how many tapped each option.
+create or replace function public.chatbot_click_stats(p_business text)
+returns jsonb language sql security definer set search_path = public, chatbot as $$
+  select jsonb_build_object(
+    'opens', coalesce((select jsonb_agg(jsonb_build_object('ad', ad, 'gender', gender, 'n', n)) from (select ad, gender, count(*) n from chatbot.clicks where business = p_business and step = 0 group by 1, 2) o), '[]'::jsonb),
+    'shown', coalesce((select jsonb_agg(jsonb_build_object('ad', ad, 'gender', gender, 'step', step, 'n', n)) from (select ad, gender, step, count(*) n from chatbot.clicks where business = p_business and step > 0 and opt = 0 group by 1, 2, 3) s), '[]'::jsonb),
+    'clicks', coalesce((select jsonb_agg(jsonb_build_object('ad', ad, 'gender', gender, 'step', step, 'opt', opt, 'n', n)) from (select ad, gender, step, opt, count(*) n from chatbot.clicks where business = p_business and step > 0 and opt > 0 group by 1, 2, 3, 4) c), '[]'::jsonb)
+  );
+$$;

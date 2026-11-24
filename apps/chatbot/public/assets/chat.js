@@ -19,6 +19,8 @@
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
   const track = (name, data) => { try { if (window.fbq) fbq('trackCustom', name, data || {}); } catch (e) {} };
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // The memory of the taps: one small record per event (the ad, the version shown, the message, the option). Nothing identifies the visitor.
+  let visit = ''; try { visit = sessionStorage.getItem('floa_chat_visit') || ''; if (!visit) { visit = (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2) + Date.now()); sessionStorage.setItem('floa_chat_visit', visit); } } catch (e) {}
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
   async function init(opts) {
@@ -44,6 +46,7 @@
     const g = ad[gp] ? gp : ad.both ? 'both' : ad.female ? 'female' : 'male';
     const steps = ad[g];
 
+    const record = (kind, step, opt, label) => { try { fetch(ENDPOINT, { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json', apikey: SB.anonKey, Authorization: 'Bearer ' + SB.anonKey }, body: JSON.stringify({ business, mode: 'click', ad: cid || 'default', gender: g, kind, step, opt, label: label || '', visit }) }).catch(() => {}); } catch (e) {} };
     const SKEY = KEY + ':script2:' + (cid || 'default') + ':' + g;
     // the test page loads the chat with ?fresh=<time>: that always starts the conversation from the beginning
     if (q.get('fresh')) { try { sessionStorage.removeItem(SKEY); } catch (e) {} }
@@ -64,6 +67,7 @@
       scroll();
     }
 
+    let reshow = false;   // options drawn again after a refresh are not a new showing
     function showOptions(i) {
       clearRow();
       const step = steps[i], last = i === steps.length - 1;
@@ -72,7 +76,7 @@
         if (last && o.action) {
           const href = o.action === 'site' ? siteUrl() : o.action === 'updates' ? cfg.updatesLink : waUrl();
           const a = el('a', 'ch-chip', o.label); a.href = href; a.target = '_blank'; a.rel = 'noopener';
-          a.addEventListener('click', () => { track('ChatCTA', { kind: o.action, ad: cid || 'default' }); if (o.reply) { bubble('bot', o.reply); scroll(); } });
+          a.addEventListener('click', () => { track('ChatCTA', { kind: o.action, ad: cid || 'default' }); record('cta', i + 1, k + 1, o.label); if (o.reply) { bubble('bot', o.reply); scroll(); } });
           row.appendChild(a);
         } else {
           const b = el('button', 'ch-chip', o.label); b.type = 'button';
@@ -82,6 +86,7 @@
       });
       log.appendChild(row);
       scroll();
+      if (!reshow) record('shown', i + 1, 0, '');
     }
 
     // a tap: the visitor's bubble, the reply of that option, then the next message with its options
@@ -92,7 +97,7 @@
       clearRow();
       const o = steps[i].options[k];
       st.log.push({ r: 'user', t: o.label }); save();
-      track('ChatStep', { ad: cid || 'default', step: i + 1, option: k + 1 });
+      track('ChatStep', { ad: cid || 'default', step: i + 1, option: k + 1 }); record('option', i + 1, k + 1, o.label);
       await say('user', o.label, true);
       if (o.reply) { st.log.push({ r: 'bot', t: o.reply }); save(); await say('bot', o.reply); }
       const next = steps[i + 1];
@@ -105,9 +110,10 @@
 
     // start: the greeting is a bubble of its own, not one of the five
     track('ChatOpen', { ad: cid });
+    if (!st.log.length) record('open', 0, 0, '');
     if (st.log.length) {
       for (const m of st.log) bubble(m.r === 'user' ? 'user' : 'bot', m.t);
-      showOptions(Math.min(st.i, steps.length - 1));
+      reshow = true; showOptions(Math.min(st.i, steps.length - 1)); reshow = false;
     } else {
       const hello = data.greeting || 'היי';
       await say('bot', hello);

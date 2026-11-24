@@ -3,7 +3,7 @@
 html.pg-chat, html.pg-chat body { height: 100%; }
 html.pg-chat body { margin: 0; background: var(--cream); color: var(--ink); font-family: "Assistant", system-ui, sans-serif; display: flex; flex-direction: column; min-height: 100dvh; }
 .ch-app { flex: 1; min-height: 0; display: flex; flex-direction: column; width: 100%; max-width: 40rem; margin: 0 auto; }
-.ch-log { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 1.25rem 1rem .5rem; display: flex; flex-direction: column; gap: .6rem; scrollbar-width: none; }
+.ch-log { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 1.25rem 1rem calc(1.5rem + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: .6rem; scrollbar-width: none; }
 .ch-log::-webkit-scrollbar { display: none; }
 .ch-msg { max-width: 86%; padding: .7rem .95rem; border-radius: var(--r); font-size: 1.05rem; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
 .ch-msg.bot { align-self: flex-start; background: var(--paper); border: 1px solid rgba(44, 35, 29, .12); }
