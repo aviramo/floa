@@ -253,6 +253,7 @@ Deno.serve(async (req) => {
   const putsTheEveningOnTheTable = /\d{1,2}\.\d{1,2}/.test(reply) && /(בשעה|ש"ח)/.test(reply);
   // The link to the site appears only once the evening was actually put on the table (this reply or an earlier one), never before
   const eveningSeen = putsTheEveningOnTheTable || clean.some((m: any) => m.role === 'assistant' && /\d{1,2}\.\d{1,2}/.test(String(m.content)) && /(בשעה|ש"ח)/.test(String(m.content)));
+  const fbRaw: string[][] = [];   // test devices only
   if (next.action !== 'safety' && next.action !== 'end') {
     // The quick replies come from a short dedicated call that sees the visitor's words, the reply and the gender; the model's own are the fallback
     const keep = (arr: string[]) => arr.filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && chipOk(c) && (pitchOk || !mentionsEvening(c))).map((c) => genderChip(c, address));
@@ -261,7 +262,9 @@ Deno.serve(async (req) => {
       const recent = clean.slice(-6).map((m: any) => (m.role === 'user' ? 'האדם: ' : 'הבוט: ') + String(m.content).slice(0, 300)).join('\n');
       for (let k = 0; k < 2 && chips.length < 2; k++) {
         const have = chips.length ? '\nתשובה אחת כבר יש: "' + chips[0] + '". כתבו שתי תשובות שונות ממנה בכיוון, בגוף ראשון.' : '';
-        const more = keep(await chipsFallback(apiKey, model, { reply, lastUser, address, recent: recent + have }));
+        const fb = await chipsFallback(apiKey, model, { reply, lastUser, address, recent: recent + have });
+        fbRaw.push(fb);
+        const more = keep(fb);
         console.log(JSON.stringify({ chips_fallback: k, writer: parsed.chips, fallback: more }));
         chips = [...new Set([...chips, ...more])].slice(0, 2);
       }
@@ -280,6 +283,6 @@ Deno.serve(async (req) => {
   if (!cta && facts && putsTheEveningOnTheTable && !['end', 'safety'].includes(next.action) && next.readiness !== 'not_fit') cta = 'register';
 
   persist(b, session, src, campaignId, [...clean, { role: 'assistant', content: reply }], cta, next, diffEvents(prev, next));
-  return json(b, origin, { ...(device.startsWith('selftest') ? { dbg: { raw: parsed.chips } } : {}), reply, chips, cta, ctas: ctasOf(cta as any, b.siteOnly ? pitchOk : !!facts && eveningSeen), state: next, hasFacts: !!facts || !!b.siteOnly, hasMeeting: !!facts });
+  return json(b, origin, { ...(device.startsWith('selftest') ? { dbg: { raw: parsed.chips, fb: fbRaw } } : {}), reply, chips, cta, ctas: ctasOf(cta as any, b.siteOnly ? pitchOk : !!facts && eveningSeen), state: next, hasFacts: !!facts || !!b.siteOnly, hasMeeting: !!facts });
 });
 
