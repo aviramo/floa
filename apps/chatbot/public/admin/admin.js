@@ -117,7 +117,7 @@
     }
     var cut = function (t, n) { t = String(t || '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n) + '…' : t; };
     list.forEach(function (m, i) {
-      var id = S.ad + '|' + S.gender + '|' + i;
+      var id = i;   // the open and closed state belongs to the position of the message, so it stays when the ad or the gender changes
       var card = el('details', 'acc'); card.open = !!OPEN[id];
       card.addEventListener('toggle', function () { if (card.open) OPEN[id] = 1; else delete OPEN[id]; });
       var sm = el('summary'); var inner = el('span', 'sum');
