@@ -62,6 +62,8 @@ export interface JourneyBusiness<Ctx = unknown> {
   origins: string[];
   testOrigin?: string;
   ageRange: string;
+  painBriefs?: Record<string, string>;
+  bioBrief?: string;
   siteOnly?: boolean;                                // meeting details (date, place, price) are never given in the chat: the site has them
   flowPrompt?: string;                               // when set, the whole conversation flow of the business (free stages) replaces the milestone engine
   stageHints?: (turns: number) => string;

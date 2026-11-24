@@ -150,7 +150,8 @@ Deno.serve(async (req) => {
   const segment = parseSegment(body.segment ?? (body.gender ? { gender: body.gender } : {}));
   const campaignId = campaignKey(pain, segment.gender).slice(0, 60);   // a label for the saved conversation
   let ctx = await loadByParams(b, pain, segment) ?? await loadContext(b, campaignId);
-  if (!ctx.campaign.topic_id && legacyKey && legacyKey !== campaignId) ctx = await loadContext(b, legacyKey);   // not a campaign: maybe an old ad key
+  if (!ctx.campaign.topic_id && legacyKey && legacyKey !== campaignId) ctx = await loadContext(b, legacyKey);
+  (ctx as any).brief = b.painBriefs?.[pain] ?? b.painBriefs?.[legacyKey ?? ''];   // the pain's briefing, from the owner's research   // not a campaign: maybe an old ad key
   const journey = journeyOf(ctx.journey);
   const adText = tx(ctx.campaign.creative?.ad) || quoteSafe(tx(body.adText).slice(0, 300));
   const meta = { campaign: campaignId, journeyType: journey.type, topicId: ctx.campaign.topic_id, segment: ctx.campaign.segment_filters, contentVersionId: ctx.content_version_id, journeyVersion: journey.version };

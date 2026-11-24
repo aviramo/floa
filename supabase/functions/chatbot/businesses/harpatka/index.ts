@@ -1,6 +1,7 @@
 import { FLOW_PROMPT, stageHints, flowReminder } from './flow.ts';
 // Harpatka (יוצאים להרפתקה) as a business of the chatbot engine: everything that is true of this one business and not of the engine.
 import { AD_PAIN, AD_TEXTS } from './ads.ts';
+import { PAIN_BRIEFS, BIODANZA_BRIEF } from './briefs.ts';
 import { IDENTITY } from './persona.ts';
 import type { JourneyBusiness } from '../../types.ts';
 
@@ -93,6 +94,8 @@ export const harpatka: JourneyBusiness<MeetingInfo> = {
   flowReminder,
   adTexts: AD_TEXTS,
   adPain: AD_PAIN,
+  painBriefs: PAIN_BRIEFS,
+  bioBrief: BIODANZA_BRIEF,
   loadFacts: loadMeeting,
   factsBlock,
   rpc: { usage: 'harpatka_chat_usage_hit' },
