@@ -10,7 +10,7 @@
 
   async function run(c) {
     const { log, el, cfg, business, cid, segment, src, track, reduce, KEY, scroll, bubble, typing, wait, setBusy, endpoint, anonKey } = c;
-    const g = segment.gender === 'female' ? 'female' : 'male';
+    const gp = segment.gender === 'female' ? 'female' : segment.gender === 'male' ? 'male' : 'both';
 
     // no writing: the bar is removed
     const bar = log.parentElement && log.parentElement.querySelector('.ch-bar');
@@ -29,10 +29,13 @@
     if (!data) { try { const r = await fetch('businesses/' + business + '.script.json', { cache: 'no-cache' }); if (r.ok) { const d = await r.json(); if (d && d.ads) data = d; } } catch (e) { /* the fixed error below */ } }
     if (!data) { bubble('bot', cfg.errorText); return; }
 
-    const ad = data.ads[cid] || data.ads[data.defaultAd] || Object.values(data.ads)[0];
-    const steps = ad[g] || ad.female || ad.male;
+    // the name of the ad parameter is part of the content (default pain); no gender in the address means the version for both
+    const pid = data.param ? (new URLSearchParams(location.search).get(data.param) || cid) : cid;
+    const ad = data.ads[pid] || data.ads[data.defaultAd] || Object.values(data.ads)[0];
+    const g = ad[gp] ? gp : ad.both ? 'both' : ad.female ? 'female' : 'male';
+    const steps = ad[g];
 
-    const SKEY = KEY + ':script2:' + (cid || 'default') + ':' + g;
+    const SKEY = KEY + ':script2:' + (pid || 'default') + ':' + g;
     // the test page loads the chat with ?fresh=<time>: that always starts the conversation from the beginning
     if (new URLSearchParams(location.search).get('fresh')) { try { sessionStorage.removeItem(SKEY); } catch (e) {} }
     let st = null;

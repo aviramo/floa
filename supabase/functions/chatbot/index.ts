@@ -109,9 +109,13 @@ async function adminEmail(token: string): Promise<string> {
 function scriptProblem(c: any): string | null {
   if (!c || typeof c !== 'object' || !c.ads || typeof c.ads !== 'object') return 'ads missing';
   if (JSON.stringify(c).length > 400000) return 'too large';
+  if (c.param !== undefined && !(typeof c.param === 'string' && /^[a-z][a-z0-9_]{0,29}$/.test(c.param) && c.param !== 'gender')) return 'bad parameter name';
   for (const [key, ad] of Object.entries<any>(c.ads)) {
-    for (const g of ['female', 'male']) {
-      const steps = ad && ad[g];
+    if (!/^[a-z][a-z0-9_]{0,29}$/.test(key)) return key + ': bad ad code';
+    if (!ad || !(ad.both || (ad.female && ad.male))) return key + ': needs both genders or the version for both';
+    for (const g of ['female', 'male', 'both']) {
+      const steps = ad[g];
+      if (steps === undefined) continue;
       if (!Array.isArray(steps) || steps.length !== 5) return key + ' ' + g + ': five messages are needed';
       for (let i = 0; i < 5; i++) {
         const m = steps[i];

@@ -42,20 +42,35 @@
   function area(get, set, rows) { var t = el('textarea', 'field'); t.rows = rows || 3; t.value = get(); return bindField(t, get, set, false); }
   function line(get, set, label) { var t = el('input', 'field'); t.type = 'text'; t.value = get(); return bindField(t, get, set, label); }
 
-  function steps() { var a = S.content.ads[S.ad]; return a[S.gender]; }
+  function steps() { return S.content.ads[S.ad][S.gender] || null; }
+  var KEYRE = /^[a-z][a-z0-9_]{0,29}$/;
+  function pname() { return S.content.param || 'pain'; }
+  function pageUrl() { return location.origin + '/' + BIZ + '?' + pname() + '=' + encodeURIComponent(S.ad) + (S.gender === 'both' ? '' : '&gender=' + S.gender); }
+  function firstOther() { var a = S.content.ads[S.ad]; return ['female', 'male', 'both'].filter(function (g) { return g !== S.gender && a[g]; })[0] || null; }
+  var GN = { female: 'אישה', male: 'גבר', both: 'שני המינים' };
 
   function render() {
     var c = S.content;
     // the ad tabs
     var ads = $('ads'); ads.textContent = '';
-    Object.keys(c.ads).forEach(function (k) { var b = el('button', k === S.ad ? 'on' : '', k.replace(/_/g, ' ')); b.type = 'button'; b.addEventListener('click', function () { S.ad = k; render(); }); ads.appendChild(b); });
+    Object.keys(c.ads).forEach(function (k) { var b = el('button', k === S.ad ? 'on' : '', k); b.type = 'button'; b.addEventListener('click', function () { S.ad = k; render(); }); ads.appendChild(b); });
     Array.prototype.forEach.call($('genders').children, function (b) { b.className = b.getAttribute('data-g') === S.gender ? 'on' : ''; });
-    $('adtext').textContent = c.ads[S.ad].ad || ADS[S.ad] || '';
-    $('preview').href = '/harpatka?pain=' + encodeURIComponent(S.ad) + '&gender=' + S.gender + '&fresh=' + Date.now();
+    var cur = c.ads[S.ad];
+    $('adcode').value = S.ad; $('adtextin').value = cur.ad || ADS[S.ad] || '';
+    $('pname').value = pname();
+    $('preview').href = pageUrl() + '&fresh=' + Date.now();
     var g = $('greeting'); g.value = c.greeting || ''; g.oninput = function () { c.greeting = g.value; dirty(true); };
 
     var box = $('steps'); box.textContent = '';
-    steps().forEach(function (m, i) {
+    var list = steps();
+    if (!list) {
+      var em = el('section', 'card empty'); em.appendChild(el('p', '', 'אין עדיין גרסה של ' + GN[S.gender] + ' במודעה הזאת.'));
+      var mk = el('button', 'btn', 'צור אותה כעותק של ' + (firstOther() ? GN[firstOther()] : '')); mk.type = 'button';
+      mk.addEventListener('click', function () { var o = firstOther(); if (!o) return; cur[S.gender] = JSON.parse(JSON.stringify(cur[o])); render(); dirty(true); });
+      if (firstOther()) em.appendChild(mk);
+      box.appendChild(em); return;
+    }
+    list.forEach(function (m, i) {
       var card = el('section', 'card step');
       var h = el('h2'); h.appendChild(document.createTextNode('הודעה ' + (i + 1))); h.appendChild(el('small', '', i === 4 ? 'האחרונה: שלוש הפעולות' : 'שלוש אפשרויות ותגובה לכל אחת'));
       card.appendChild(h);
@@ -125,8 +140,8 @@
     call('publish', { version: version }).then(function (r) { if (r.ok && r.d.ok) { status('פורסמה גרסה ' + version, 'ok'); refresh(); } else status('לא פורסמה', 'err'); });
   }
   function copyOther() {
-    var other = S.gender === 'female' ? 'male' : 'female';
-    if (!confirm('להחליף את כל ההודעות של ' + (S.gender === 'female' ? 'אישה' : 'גבר') + ' במודעה הזאת בעותק מ' + (other === 'female' ? 'אישה' : 'גבר') + '?')) return;
+    var other = firstOther(); if (!other) return;
+    if (!confirm('להחליף את כל ההודעות של ' + GN[S.gender] + ' במודעה הזאת בעותק של ' + GN[other] + '?')) return;
     var a = S.content.ads[S.ad];
     a[S.gender] = JSON.parse(JSON.stringify(a[other]));
     render(); dirty(true);
@@ -137,6 +152,42 @@
     Array.prototype.forEach.call($('genders').children, function (b) { b.addEventListener('click', function () { S.gender = b.getAttribute('data-g'); render(); }); });
     $('save').addEventListener('click', save);
     $('copyOther').addEventListener('click', copyOther);
+    $('copyUrl').addEventListener('click', function () {
+      var u = pageUrl();
+      var done = function () { status('הכתובת הועתקה: ' + u, 'ok'); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(done, function () { prompt('העתק ידנית', u); });
+      else prompt('העתק ידנית', u);
+    });
+    $('adtextin').addEventListener('input', function () { S.content.ads[S.ad].ad = $('adtextin').value; dirty(true); });
+    $('adcode').addEventListener('change', function () {
+      var v = $('adcode').value.trim(), ads = S.content.ads;
+      if (v === S.ad) return;
+      if (!KEYRE.test(v)) { status('קוד: אותיות קטנות באנגלית, ספרות וקו תחתון, מתחיל באות', 'err'); $('adcode').value = S.ad; return; }
+      if (ads[v]) { status('כבר יש מודעה עם הקוד הזה', 'err'); $('adcode').value = S.ad; return; }
+      var next = {}; Object.keys(ads).forEach(function (k) { next[k === S.ad ? v : k] = ads[k]; });
+      if (S.content.defaultAd === S.ad) S.content.defaultAd = v;
+      S.content.ads = next; S.ad = v; render(); dirty(true);
+    });
+    $('pname').addEventListener('change', function () {
+      var v = $('pname').value.trim() || 'pain';
+      if (!KEYRE.test(v) || v === 'gender') { status('שם פרמטר: אותיות קטנות באנגלית, ספרות וקו תחתון, ולא gender', 'err'); $('pname').value = pname(); return; }
+      S.content.param = v === 'pain' ? undefined : v; render(); dirty(true);
+    });
+    $('newAd').addEventListener('click', function () {
+      var v = (prompt('קוד למודעה החדשה (אותיות קטנות באנגלית)') || '').trim();
+      if (!v) return;
+      if (!KEYRE.test(v) || S.content.ads[v]) { status('קוד לא תקין או שכבר קיים', 'err'); return; }
+      var src = JSON.parse(JSON.stringify(S.content.ads[S.ad])); src.ad = '';
+      S.content.ads[v] = src; S.ad = v; render(); dirty(true);
+    });
+    $('delAd').addEventListener('click', function () {
+      var ks = Object.keys(S.content.ads);
+      if (ks.length < 2) { status('אי אפשר למחוק את המודעה האחרונה', 'err'); return; }
+      if (!confirm('למחוק את המודעה ' + S.ad + ' עם כל ההודעות שלה? (אפשר להחזיר גרסה קודמת)')) return;
+      delete S.content.ads[S.ad];
+      if (S.content.defaultAd === S.ad) S.content.defaultAd = Object.keys(S.content.ads)[0];
+      S.ad = Object.keys(S.content.ads)[0]; render(); dirty(true);
+    });
     if (!AUTH.signedIn()) { $('who').textContent = ''; return; }
     $('who').textContent = AUTH.email();
     call('list').then(function (r) {
