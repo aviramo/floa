@@ -280,6 +280,7 @@
     Array.prototype.forEach.call($('genders').children, function (b) { b.addEventListener('click', function () { S.gender = b.getAttribute('data-g'); render(); }); });
     $('save').addEventListener('click', save);
     $('undo').addEventListener('click', undo);
+    $('statsBtn').addEventListener('click', function () { var T = {}; Object.keys(S.content.ads).forEach(function (k) { T[k] = S.content.ads[k].ad || ''; }); window.CHAT_STATS.open({ biz: BIZ, ad: S.ad, gender: S.gender, gn: GN, titles: T }); });
     $('refreshStats').addEventListener('click', function () { loadStats().then(function () { status('הנתונים עודכנו', 'ok'); }); });
     $('saveDraft').addEventListener('click', saveDraft);
     $('adq').addEventListener('input', function () { drawAds(); if ($('adq').value.trim()) { $('side').classList.add('open'); $('adToggle').setAttribute('aria-expanded', 'true'); } });
