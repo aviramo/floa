@@ -8,7 +8,7 @@ import { lastSentence, buildMessages, MAX_USER_TURNS, parse, parseOpening, quote
 import { BUSINESSES } from './businesses/index.ts';
 import { journeyOf } from './journey.ts';
 import { openingTask, sessionFacts, stableSystem, stateBlock, addressOf, turnReminder } from './prompt.ts';
-import { endOnQuestion, revealedGender, openingMeetingFix, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsOffer, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { stripReferrals, endOnQuestion, revealedGender, openingMeetingFix, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsOffer, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 import { ctaFor, ctasOf, diffEvents, extractState, initialState, linkGender, mergeState, stateFromClient } from './state.ts';
 import type { CampaignContext, JourneyBusiness, SessionState } from './types.ts';
 
@@ -274,6 +274,7 @@ Deno.serve(async (req) => {
 
   const next = { ...mergeState(prev, incoming, journey), meta };
   if (distress) next.action = 'safety';   // detected from the visitor's words, not left to the model
+  reply = stripReferrals(reply, distress, b.lexicon.crisisDoor, /הדר/);   // never a hotline, emergency services or a professional
   if (!distress && next.action !== 'safety' && next.action !== 'end') reply = endOnQuestion(reply);   // the reply always ends on its question
   if (!incoming) next.action = 'continue';      // a reply without a state block advances nothing
   if (distress) { next.action = 'safety'; next.readiness = 'concerned'; }
@@ -288,7 +289,7 @@ Deno.serve(async (req) => {
   const putsTheEveningOnTheTable = /\d{1,2}\.\d{1,2}/.test(reply) && /(בשעה|ש"ח)/.test(reply);
   // The link to the site appears only once the evening was actually put on the table (this reply or an earlier one), never before
   const eveningSeen = putsTheEveningOnTheTable || clean.some((m: any) => m.role === 'assistant' && /\d{1,2}\.\d{1,2}/.test(String(m.content)) && /(בשעה|ש"ח)/.test(String(m.content)));
-  chips = [];   // the second step makes them from the final message
+  if (next.action !== 'safety') chips = [];   // the second step makes them from the final message (the safety mode keeps its fixed ones)
   if (cta === 'register' && !(b.siteOnly ? pitchOk : eveningSeen)) cta = null;
   if (b.siteOnly && cta === 'whatsapp' && next.action !== 'safety' && !pitchOk) cta = null;   // a conversation with the facilitators is not offered before the meeting stage
   if (b.siteOnly && !cta && pitchOk && /(באתר|בקישור|\blink\b|website)/i.test(reply) && next.action !== 'safety') cta = 'register';   // the reply points at the site: the button is the way there

@@ -204,3 +204,15 @@ export function endOnQuestion(reply: string): string {
   const i = r.lastIndexOf('?');
   return i > 0 ? r.slice(0, i + 1).trim() : r;
 }
+
+// The owner's rule: the bot never points to a hotline, emergency services or a professional. The model does it out of habit even when told not to, so what it writes is cut.
+// In a crisis the one door that remains is a conversation with the people of the business, said in one fixed sentence when the model left it out.
+const REFERRAL = /(ער"ן|1201|1221|(?<!\d)(101|112|100)(?!\d)|מד"א|מגן דוד|שירותי (ה)?חירום|חדר מיון|מיון|משטרה|מוקד|איש מקצוע|אנשי מקצוע|מטפל|מטפלת|פסיכולוג|פסיכיאטר)/;
+export function stripReferrals(reply: string, crisis: boolean, doorSentence: string, doorWords: RegExp): string {
+  const r = String(reply ?? '');
+  if (!REFERRAL.test(r)) return r;
+  const parts = r.split(/(?<=[.!?])\s+/);
+  let out = parts.filter((s) => !REFERRAL.test(s)).join(' ').trim();
+  if (crisis && !doorWords.test(out)) out = (out ? out + ' ' : '') + doorSentence;
+  return out || r;
+}

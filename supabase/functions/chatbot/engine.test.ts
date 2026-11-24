@@ -78,7 +78,7 @@ Deno.test('opening task names the business bot and keeps the meeting out of the 
   if (!t.includes(harpatka.botName) || !t.includes('אסור להזכיר ערב, מפגש או תנועה')) throw new Error(t);
 });
 
-import { endOnQuestion, revealedGender, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsOffer, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { stripReferrals, endOnQuestion, revealedGender, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsOffer, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 Deno.test('distress net catches plain phrasings and not ordinary talk', () => {
   for (const t of ['אני חושבת על למות', 'לפעמים אני חושבת שעדיף שלא אהיה פה', 'רוצה למות', 'אין טעם לחיות']) if (!distressIn(t)) throw new Error('missed: ' + t);
   for (const t of ['הייתי רוצה להרגיש חלק ממשהו', 'מתי המפגש הקרוב?', 'מת מצחוק', 'עייפה ולא ישנה']) if (distressIn(t)) throw new Error('false alarm: ' + t);
@@ -385,4 +385,11 @@ Deno.test('round eleven: a question that asks whether they want to share is sent
 Deno.test('round eleven: the hard rules sit in one titled set', async () => {
   const { FLOW_PROMPT } = await import('./businesses/harpatka/flow.ts');
   for (const needle of ['כללים שאסור לעבור עליהם', 'שאלה אחת בלבד בכל הודעה', 'לא ממציאים דבר על חיי האדם', 'תאריך, שעה, מקום ומחיר לא נמסרים', 'הדר ואופיר']) if (!FLOW_PROMPT.includes(needle)) throw new Error('missing ' + needle);
+});
+
+Deno.test('round eleven: referrals to a hotline, emergency services or a professional are cut, the door to the team is added in a crisis', () => {
+  const door = 'אפשר לדבר עכשיו עם הדר ואופיר.';
+  eq(stripReferrals('שמעתי כמה כואב לך. ער"ן בטלפון 1201 זמין. מה קורה עכשיו?', false, door, /הדר/), 'שמעתי כמה כואב לך. מה קורה עכשיו?', 'cut in an ordinary reply');
+  eq(stripReferrals('שמעתי אותך. התקשרי למד"א 101 או למיון.', true, door, /הדר/), 'שמעתי אותך. אפשר לדבר עכשיו עם הדר ואופיר.', 'crisis: the door is added');
+  eq(stripReferrals('שמעתי אותך. הדר ואופיר כאן.', true, door, /הדר/), 'שמעתי אותך. הדר ואופיר כאן.', 'nothing to cut');
 });

@@ -62,6 +62,7 @@ export interface BusinessLexicon {
   busyMessage: string;       // shown when the usage limit is hit
   tooLongMessage: string;    // shown when a conversation passes its length limit
   fallbackReply: string;     // when the model sends nothing usable twice
+  crisisDoor: string;        // the one sentence a crisis reply must contain: the people of the business, a conversation now
 }
 
 export interface JourneyBusiness<Ctx = unknown> {
