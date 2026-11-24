@@ -1,14 +1,14 @@
 /* The scripted chat: no AI and no database at runtime. Pre-written messages and three buttons per message, five messages in the same order for every pain.
    It looks exactly like the live chat (a typing indicator, then the bubble; the buttons appear at once under the message).
    Content: businesses/<business>.script.json = { common, defaultPain, pains: { <pain>: { ad, s1, s2, s3, help } } }.
-   Texts carry {f:...|m:...} for a woman | a man. Typing a free message opens WhatsApp to the team with that message (wa.me).
+   Texts carry {f:...|m:...} for a woman | a man. There is no writing bar: buttons only.
    Nothing is sent to the server: the only measurement is the Facebook pixel (ChatStep). */
 (function () {
   'use strict';
   const pick = (t, g) => String(t == null ? '' : t).replace(/\{f:([^|}]*)\|m:([^}]*)\}/g, (_, f, m) => (g === 'female' ? f : m));
 
   async function run(c) {
-    const { log, el, cfg, business, cid, segment, src, track, reduce, KEY, scroll, bubble, who, typing, wait, setBusy, inp, grow } = c;
+    const { log, el, cfg, business, cid, segment, src, track, reduce, KEY, scroll, bubble, who, typing, wait, setBusy } = c;
     const g = segment.gender === 'female' ? 'female' : 'male';
     let data = null;
     try { const r = await fetch('businesses/' + business + '.script.json', { cache: 'no-cache' }); if (r.ok) data = await r.json(); } catch (e) { /* the page shows the fixed error below */ }
@@ -80,16 +80,9 @@
       busyNow = false;
     }
 
-    // a free message opens WhatsApp to the team with it (called straight from the send gesture, so the browser allows the new tab)
-    function onText(text) {
-      text = String(text || '').trim().slice(0, 600);
-      if (!text) return;
-      window.open(waUrl(text), '_blank', 'noopener');
-      inp.value = ''; grow();
-      track('ChatCTA', { kind: 'whatsapp_text', pain: cid || 'default' });
-      say('user', text, true).then(() => say('bot', 'פתחנו את הוואטסאפ של הדר ואופיר עם ההודעה שלך', true));
-    }
-    c.onText = onText;
+    // no writing: the scripted chat is buttons only, so the bar is removed (the visitor reaches the team through the last message)
+    const bar = log.parentElement && log.parentElement.querySelector('.ch-bar');
+    if (bar) bar.remove();
 
     // start: the greeting is a bubble of its own, not one of the five
     track('ChatOpen', { ad: cid, source: 'script' });

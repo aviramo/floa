@@ -45,7 +45,7 @@ html.pg-chat body { margin: 0; background: var(--cream); color: var(--ink); font
 /* בלי סרגל גלילה בתיבת הכתיבה עד שהטקסט באמת חורג מהגובה המרבי */
 .ch-in { overflow-y: hidden; }
 
-/* שתי התשובות המוכנות בתוך השיחה, מתחת להודעה שהן עונות לה: בולטות, ברוחב הטקסט שלהן */
-.ch-log .ch-chips { flex-direction: column; align-items: flex-start; gap: .5rem; padding: .2rem 0 .1rem; }
-.ch-log .ch-chip { width: fit-content; max-width: 92%; justify-content: flex-start; text-align: start; font-weight: 700; font-size: 1.02rem; line-height: 1.4; background: var(--paper); color: var(--ink); border: 2px solid var(--ink); box-shadow: 0 2px 0 rgba(44, 35, 29, .18); }
-.ch-log .ch-chip:active { background: var(--ink); color: var(--paper); box-shadow: none; transform: translateY(1px); }
+/* שלוש האפשרויות בתוך השיחה: גריד לרוחב, מיושר לימין, כפתורים כהים עם טקסט לבן וללא מסגרת */
+.ch-log .ch-chips { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: .5rem; width: 100%; padding: .2rem 0 .1rem; direction: rtl; }
+.ch-log .ch-chip { width: 100%; max-width: none; justify-content: flex-start; text-align: start; font-weight: 700; font-size: 1.02rem; line-height: 1.4; background: var(--ink); color: var(--paper); border: 0; box-shadow: none; }
+.ch-log .ch-chip:active { background: #4a3c33; transform: translateY(1px); }
