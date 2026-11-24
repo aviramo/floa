@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>עריכת הצ'אט</title>
-<link rel="stylesheet" href="admin.css?v=6">
+<link rel="stylesheet" href="admin.css?v=7">
 </head>
 <body>
 <header class="top">
@@ -61,10 +61,13 @@
       </div>
     </details>
 
+    <div class="draftbar" id="draftbar" hidden></div>
+
     <div id="steps"></div>
 
     <div class="savebar">
       <input class="field note" id="note" type="text" placeholder="הערה לגרסה (לא חובה)">
+      <button type="button" class="btn ghost" id="saveDraft">שמור כטיוטה</button>
       <button type="button" class="btn primary" id="save">שמור גרסה חדשה ופרסם</button>
       <span class="status" id="status" role="status"></span>
     </div>
@@ -82,6 +85,6 @@
 
 <script src="/supabase.js"></script>
 <script src="/auth.js"></script>
-<script src="admin.js?v=12"></script>
+<script src="admin.js?v=13"></script>
 </body>
 </html>

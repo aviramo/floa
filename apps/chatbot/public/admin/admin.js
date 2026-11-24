@@ -52,7 +52,40 @@
     d.onclick = function (e) { if (e.target === d) d.close(); };
     d.showModal();
   }
-  function dirty(v, now) { if (v && PENDING) { PENDING.target[PENDING.g] = PENDING.list; PENDING = null; } S.dirty = v; if (v) { status('יש שינויים שלא נשמרו'); commitSoon(now); } }
+  var dtm = null;
+  var DKEY = 'chatbot.draft.' + BIZ;
+  function keepLocal() { try { if (S.dirty && S.content) localStorage.setItem(DKEY, JSON.stringify({ at: Date.now(), content: S.content })); } catch (e) {} }
+  function dropLocal() { try { localStorage.removeItem(DKEY); } catch (e) {} }
+  function readLocal() { try { return JSON.parse(localStorage.getItem(DKEY) || 'null'); } catch (e) { return null; } }
+  function useDraft(content, text) {
+    commitNow(); HIST.push({ c: CUR, ad: CURV.ad, g: CURV.g });
+    S.content = content; CUR = JSON.stringify(content); CURV = { ad: S.ad, g: S.gender };
+    if (!content.ads[S.ad]) S.ad = Object.keys(content.ads)[0];
+    render(); S.dirty = true; updUndo(); status(text);
+  }
+  function showDraft(db) {
+    var bar = $('draftbar'), loc = readLocal(), pick = null;
+    var published = S.content ? JSON.stringify(S.content) : '';
+    if (db && db.content && JSON.stringify(db.content) !== published) pick = { kind: 'db', d: db };
+    else if (loc && loc.content && loc.content.ads && JSON.stringify(loc.content) !== published) pick = { kind: 'local', d: loc };
+    if (!pick) { bar.hidden = true; return; }
+    bar.textContent = '';
+    var when = new Date(pick.kind === 'db' ? pick.d.at : pick.d.at).toLocaleString('he-IL');
+    bar.appendChild(el('span', '', pick.kind === 'db' ? 'יש טיוטה שנשמרה ' + when + (pick.d.by ? ' על ידי ' + pick.d.by : '') : 'יש טיוטה במחשב הזה שלא נשמרה (' + when + ')'));
+    var use = el('button', 'btn', 'המשך מהטיוטה'); use.type = 'button';
+    use.addEventListener('click', function () { useDraft(pick.d.content, 'נטענה הטיוטה'); bar.hidden = true; });
+    var del = el('button', 'btn ghost', 'התעלם'); del.type = 'button';
+    del.addEventListener('click', function () { dropLocal(); bar.hidden = true; if (pick.kind === 'db') call('draft_clear'); });
+    bar.appendChild(use); bar.appendChild(del); bar.hidden = false;
+  }
+  function saveDraft() {
+    var b = $('saveDraft'); b.disabled = true; status('שומר טיוטה...');
+    call('draft_save', { content: S.content }).then(function (r) {
+      b.disabled = false;
+      if (r.ok && r.d.ok) status('הטיוטה נשמרה (לא מפורסמת). אפשר להמשיך ממנה מכל מחשב', 'ok'); else status('הטיוטה לא נשמרה', 'err');
+    }).catch(function () { b.disabled = false; status('שגיאת רשת', 'err'); });
+  }
+  function dirty(v, now) { if (v && PENDING) { PENDING.target[PENDING.g] = PENDING.list; PENDING = null; } S.dirty = v; if (v) { status('יש שינויים שלא נשמרו'); commitSoon(now); clearTimeout(dtm); dtm = setTimeout(keepLocal, 800); } }
   window.addEventListener('beforeunload', function (e) { if (S.dirty) { e.preventDefault(); e.returnValue = ''; } });
 
   // soft warnings only: the rules of the texts that reach the visitor (no dashes, no special characters, no full stop at the end)
@@ -204,7 +237,7 @@
     call('save', { content: S.content, note: $('note').value.trim() }).then(function (r) {
       b.disabled = false;
       if (!r.ok) { status('לא נשמר: ' + (r.d.message || r.d.error || r.status), 'err'); return; }
-      S.version = r.d.version; S.published = true; dirty(false); $('note').value = '';
+      S.version = r.d.version; S.published = true; dirty(false); $('note').value = ''; dropLocal(); $('draftbar').hidden = true;
       status('נשמרה גרסה ' + r.d.version + ' ומפורסמת. הצ׳אט יתעדכן תוך כחצי דקה', 'ok');
       refresh();
     }).catch(function () { b.disabled = false; status('שגיאת רשת', 'err'); });
@@ -224,6 +257,7 @@
     Array.prototype.forEach.call($('genders').children, function (b) { b.addEventListener('click', function () { S.gender = b.getAttribute('data-g'); render(); }); });
     $('save').addEventListener('click', save);
     $('undo').addEventListener('click', undo);
+    $('saveDraft').addEventListener('click', saveDraft);
     $('adq').addEventListener('input', drawAds);
     $('adq').addEventListener('keydown', function (e) { if (e.key === 'Enter') { var f = $('adlist').querySelector('.adi'); if (f) f.click(); } });
     $('expandAll').addEventListener('click', function () { document.querySelectorAll('#steps details').forEach(function (d) { d.open = true; }); });
@@ -269,7 +303,7 @@
       if (!r.ok) { $('gateMsg').textContent = 'לא ניתן לטעון כרגע.'; return; }
       $('gate').hidden = true; $('editor').hidden = false;
       renderVersions(r.d.versions || []);
-      load(null);
+      load(null).then(function () { return call('draft_get').then(function (x) { showDraft(x.ok ? x.d.draft : null); }); });
     }).catch(function () { $('gateMsg').textContent = 'שגיאת רשת.'; });
   }
   function topH() { var t = document.querySelector('.top'); if (t) document.documentElement.style.setProperty('--toph', t.offsetHeight + 'px'); }

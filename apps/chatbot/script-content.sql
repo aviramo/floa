@@ -73,3 +73,21 @@ end $$;
 
 revoke all on function public.chatbot_is_admin(text), public.chatbot_script_versions(text), public.chatbot_script_get(text, int), public.chatbot_script_save(text, jsonb, text), public.chatbot_script_publish(text, int) from public, anon, authenticated;
 grant execute on function public.chatbot_is_admin(text), public.chatbot_script_versions(text), public.chatbot_script_get(text, int), public.chatbot_script_save(text, jsonb, text), public.chatbot_script_publish(text, int) to service_role;
+
+-- The draft of the editor: one per business, shared by the editors, never shown to the visitors.
+create table if not exists chatbot.script_drafts (business text primary key, content jsonb not null, by_email text, at timestamptz not null default now());
+alter table chatbot.script_drafts enable row level security;
+revoke all on chatbot.script_drafts from anon, authenticated;
+
+create or replace function public.chatbot_script_draft_set(p_business text, p_content jsonb, p_by text) returns void language sql security definer set search_path = public, chatbot as $$
+  insert into chatbot.script_drafts(business, content, by_email, at) values (p_business, p_content, left(p_by, 200), now())
+  on conflict (business) do update set content = excluded.content, by_email = excluded.by_email, at = now();
+$$;
+create or replace function public.chatbot_script_draft_get(p_business text) returns jsonb language sql security definer set search_path = public, chatbot as $$
+  select jsonb_build_object('content', content, 'by', by_email, 'at', at) from chatbot.script_drafts where business = p_business;
+$$;
+create or replace function public.chatbot_script_draft_clear(p_business text) returns void language sql security definer set search_path = public, chatbot as $$
+  delete from chatbot.script_drafts where business = p_business;
+$$;
+revoke all on function public.chatbot_script_draft_set(text, jsonb, text), public.chatbot_script_draft_get(text), public.chatbot_script_draft_clear(text) from public, anon, authenticated;
+grant execute on function public.chatbot_script_draft_set(text, jsonb, text), public.chatbot_script_draft_get(text), public.chatbot_script_draft_clear(text) to service_role;

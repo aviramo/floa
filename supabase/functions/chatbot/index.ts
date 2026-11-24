@@ -298,8 +298,17 @@ Deno.serve(async (req) => {
       const problem = scriptProblem(body.content);
       if (problem) return json(b, origin, { error: 'invalid', message: problem }, 400);
       const r = await rpc('chatbot_script_save', { p_business: b.key, p_content: body.content, p_note: tx(body.note).slice(0, 200) + ' (' + email + ')' });
+      if (r.ok) await rpc('chatbot_script_draft_clear', { p_business: b.key });
       return r.ok ? json(b, origin, { version: await r.json() }) : json(b, origin, { error: 'save' }, 500);
     }
+    if (action === 'draft_get') { const r = await rpc('chatbot_script_draft_get', { p_business: b.key }); const d = r.ok ? await r.json() : null; return json(b, origin, { draft: d || null }); }
+    if (action === 'draft_save') {
+      const c = body.content;
+      if (!c || typeof c !== 'object' || !c.ads || typeof c.ads !== 'object' || JSON.stringify(c).length > 400000) return json(b, origin, { error: 'invalid' }, 400);
+      const r = await rpc('chatbot_script_draft_set', { p_business: b.key, p_content: c, p_by: email });
+      return json(b, origin, { ok: r.ok });
+    }
+    if (action === 'draft_clear') { const r = await rpc('chatbot_script_draft_clear', { p_business: b.key }); return json(b, origin, { ok: r.ok }); }
     if (action === 'publish') { const r = await rpc('chatbot_script_publish', { p_business: b.key, p_version: Number(body.version) }); return json(b, origin, { ok: r.ok ? await r.json() : false }); }
     return json(b, origin, { error: 'action' }, 400);
   }
