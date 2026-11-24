@@ -202,3 +202,12 @@ export function endOnQuestion(reply: string): string {
   const i = r.lastIndexOf('?');
   return i > 0 ? r.slice(0, i + 1).trim() : r;
 }
+
+// A quick reply is what the visitor says, so it never invents their life: a marriage, a divorce, children, a job, parents or a partner that nobody mentioned.
+// Each such word in a reply must already appear in the conversation, or the reply is dropped.
+const LIFE_WORDS = /(התגרשתי|גירושין|גרושה|גרוש|נישואין|נשואה|בעלי|אשתי|בן הזוג שלי|בת הזוג שלי|בן זוג|בת זוג|ילדים|הילדים|הילדה|הילד|עבודה|בעבודה|בוס|המנהל|אמא|אבא|ההורים|הורים|פרידה|התאלמנתי|אלמנה)/g;
+export function inventsLife(chip: string, conversation: string): boolean {
+  const said = String(conversation ?? '');
+  for (const m of String(chip ?? '').matchAll(LIFE_WORDS)) { if (!said.includes(m[0])) return true; }
+  return false;
+}
