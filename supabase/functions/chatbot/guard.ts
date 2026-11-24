@@ -140,7 +140,7 @@ export function styleFix(reply: string, lastUser = '', allUser = ''): string | n
   if (/(כדאי (להקדים|לשמור|לשריין|להירשם)|מקום מוקדם|המקומות נגמרים|הזדמנות אחרונה)/.test(r)) probs.push('בלי לחץ להזדרז: מחיר ומקומות הם מידע בלבד');
   if (/(לילה טוב|בוקר טוב|ערב טוב|צהריים טובים)/.test(r)) probs.push('בלי ברכת זמן: לא יודעים מתי האדם קורא');
   if (/["״“][א-ת ]{1,14}["״”]\s+(נשמע|זה נשמע|הוא סימן|אומר)|אפשר לומר רק|אני מציע לא|בוא נשמור על/.test(r)) probs.push('אסור לצטט מילה של האדם בגרשיים ולפרש אותה, ואסור לדבר על השיחה עצמה: מגיבים לתוכן ושואלים');
-  if (r.split(/[.!?]\s/).filter(Boolean).length > 4 || r.length > 520) probs.push('ארוך מדי: עד שלושה משפטים ושאלה אחת');
+  if (!distressIn(lastUser) && !distressIn(allUser) && !ENDS_OK.test(r) && (sentencesOf(r).length > 1 || r.length > 260)) probs.push('ארוך מדי: משפט אחד בלבד, והוא השאלה');
   return probs.length ? '## תיקון\nהטיוטה: ' + probs.join('; ') + '. כתבו שוב בלי זה, באותו תוכן.' : null;
 }
 
@@ -215,4 +215,16 @@ export function stripReferrals(reply: string, crisis: boolean, doorSentence: str
   let out = parts.filter((s) => !REFERRAL.test(s)).join(' ').trim();
   if (crisis && !doorWords.test(out)) out = (out ? out + ' ' : '') + doorSentence;
   return out || r;
+}
+
+// A message is one sentence (the owner's rule, 2026-11-24). When the writer still sent more, the last question stays: it is the sentence the visitor answers.
+// A crisis, a goodbye and the site invitation are left alone.
+export const sentencesOf = (s: string): string[] => String(s ?? '').trim().split(/(?<=[.!?])\s+/).filter(Boolean);
+export function oneSentence(reply: string): string {
+  const r = String(reply ?? '').trim();
+  if (!r || ENDS_OK.test(r)) return r;
+  const parts = sentencesOf(r);
+  if (parts.length <= 1) return r;
+  const questions = parts.filter((p) => /\?\s*$/.test(p));
+  return questions.length ? questions[questions.length - 1] : parts[0];
 }
