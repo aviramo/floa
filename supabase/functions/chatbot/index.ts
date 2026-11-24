@@ -178,18 +178,20 @@ Deno.serve(async (req) => {
     if (op) op.messages = op.messages.map((m) => fixAddress(neutralize(m), addressOf(fromLink)));
     if (op) {
       const okChip = (c: string) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && chipOk(c) && fullChip(c);
+      const rawOpenChips = [...op.chips];
       let oc = op.chips.filter(okChip).map((c) => genderChip(c, addressOf(fromLink)));
       if (oc.length < 2) {
         const addr = addressOf(fromLink);
         const more = (await chipsFallback(apiKey, model, { reply: op.messages[op.messages.length - 1], lastUser: '', address: addr, recent: op.messages.map((m) => 'הבוט: ' + m).join('\n') })).filter(okChip).map((c) => genderChip(c, addr));
         oc = [...new Set([...oc, ...more])];
+        (op as any).dbg = { raw: rawOpenChips, fallback: more };
       }
       op.chips = oc.slice(0, 2);
     }   // "לא יודע/ת" is gendered; the plain filter misses the slash form
     if (!op || !op.messages.length) return json(b, origin, { error: 'upstream' }, 502);
     const st: SessionState = { ...initialState(journey, fromLink), meta };
     persist(b, session, src, campaignId, op.messages.map((content) => ({ role: 'assistant', content })), null, st, []);
-    return json(b, origin, { messages: op.messages, chips: op.chips, state: st });
+    return json(b, origin, { ...(device.startsWith('selftest') && (op as any).dbg ? { dbg: (op as any).dbg } : {}), messages: op.messages, chips: op.chips, state: st });
   }
 
   const built = buildMessages(body.messages);
