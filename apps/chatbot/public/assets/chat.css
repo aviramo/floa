@@ -46,3 +46,5 @@ html.pg-chat body { margin: 0; background: var(--cream); color: var(--ink); font
 .ch-cta:active { background: rgba(44, 35, 29, .08); }
 /* הכפתורים ברוחב הטקסט שלהם, לא ברוחב מלא (טקסט ארוך יורד שורה בתוך הכפתור) */
 .ch-bar .ch-chip, .ch-ctas .ch-cta { width: fit-content; max-width: 100%; }
+/* בלי סרגל גלילה בתיבת הכתיבה עד שהטקסט באמת חורג מהגובה המרבי */
+.ch-in { overflow-y: hidden; }

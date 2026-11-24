@@ -130,7 +130,7 @@
       setBusy(false);
     }
 
-    function grow() { inp.style.height = 'auto'; inp.style.height = Math.min(inp.scrollHeight, 144) + 'px'; send.disabled = busy || !inp.value.trim(); }
+    function grow() { inp.style.height = 'auto'; inp.style.height = Math.min(inp.scrollHeight, 144) + 'px'; inp.style.overflowY = inp.scrollHeight > 144 ? 'auto' : 'hidden'; send.disabled = busy || !inp.value.trim(); }
     inp.addEventListener('input', grow);
     inp.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && matchMedia('(pointer: fine)').matches) { e.preventDefault(); submit(inp.value); } });
     form.addEventListener('submit', (e) => { e.preventDefault(); submit(inp.value); inp.focus(); });
