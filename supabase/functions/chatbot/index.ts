@@ -240,6 +240,7 @@ Deno.serve(async (req) => {
   const putsTheEveningOnTheTable = /\d{1,2}\.\d{1,2}/.test(reply) && /(בשעה|ש"ח)/.test(reply);
   // The link to the site appears only once the evening was actually put on the table (this reply or an earlier one), never before
   const eveningSeen = putsTheEveningOnTheTable || clean.some((m: any) => m.role === 'assistant' && /\d{1,2}\.\d{1,2}/.test(String(m.content)) && /(בשעה|ש"ח)/.test(String(m.content)));
+  let chipDbg: any = null;   // only returned to the test devices
   if (next.action !== 'safety' && next.action !== 'end') {
     // The quick replies come from a short dedicated call that sees the visitor's words, the reply and the gender; the model's own are the fallback
     const recent = clean.slice(-6).map((m: any) => (m.role === 'user' ? 'האדם: ' : 'הבוט: ') + String(m.content).slice(0, 300)).join('\n');
@@ -248,6 +249,7 @@ Deno.serve(async (req) => {
     let gen = keep(rawGen);
     if (gen.length < 2) { const raw2 = await chipsFor(apiKey, model, { reply, lastUser, address, pitchOk, recent }, true); gen = keep(raw2); console.log(JSON.stringify({ chips_retry: true, first: rawGen, second: raw2 })); rawGen = raw2; }
     if (gen.length < 2) console.log(JSON.stringify({ chips_rejected: rawGen, kept: gen, own: chips }));
+    chipDbg = { raw: rawGen, kept: gen, own: chips };
     chips = gen.length >= 2 ? gen.slice(0, 2) : [...new Set([...gen, ...chips])].slice(0, 2);
     // An "A or B" question is never answered by a bare yes or no, wherever the quick reply came from
     const eitherOr = /\sאו\s/.test(lastSentence(reply)) && /\?\s*$/.test(lastSentence(reply));
@@ -262,6 +264,6 @@ Deno.serve(async (req) => {
   if (!cta && facts && putsTheEveningOnTheTable && !['end', 'safety'].includes(next.action) && next.readiness !== 'not_fit') cta = 'register';
 
   persist(b, session, src, campaignId, [...clean, { role: 'assistant', content: reply }], cta, next, diffEvents(prev, next));
-  return json(b, origin, { reply, chips, cta, ctas: ctasOf(cta as any, b.siteOnly ? pitchOk : !!facts && eveningSeen), state: next, hasFacts: !!facts || !!b.siteOnly, hasMeeting: !!facts });
+  return json(b, origin, { ...(device.startsWith('selftest') ? { dbg: chipDbg } : {}), reply, chips, cta, ctas: ctasOf(cta as any, b.siteOnly ? pitchOk : !!facts && eveningSeen), state: next, hasFacts: !!facts || !!b.siteOnly, hasMeeting: !!facts });
 });
 
