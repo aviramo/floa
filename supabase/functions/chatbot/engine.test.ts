@@ -349,3 +349,8 @@ Deno.test('round eleven: no price or schedule in chat, no generic chips, no bot-
   if (chipOk('כן') || chipOk('קצת') || chipOk('אני אחזור אליך בקרוב')) throw new Error('bad chip allowed');
   if (!chipOk('אני רוצה לספר קצת על זה')) throw new Error('good chip blocked');
 });
+
+Deno.test('round eleven: a question that lists three options is sent back', () => {
+  if (!styleFix('נשמע כבד בערב. מה היה עושה לכם טוב? שיחה, אנשים סביב, או משהו אחר לגמרי?', 'קצת משניהם שלי')) throw new Error('list of options missed');
+  if (styleFix('מה היה עושה לכם טוב בערבים האלה?', 'קצת משניהם שלי')) throw new Error('false alarm on an open question');
+});
