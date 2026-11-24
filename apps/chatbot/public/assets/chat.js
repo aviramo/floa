@@ -156,7 +156,7 @@
         log.innerHTML = '';
         if (op && op.state) st.state = op.state;
         const msgs = op && op.messages.length ? op.messages : openerInfo.opening;
-        const chips = op && op.messages.length ? op.chips : openerInfo.chips;
+        const chips = op && op.messages.length && op.chips && op.chips.length >= 2 ? op.chips : openerInfo.chips;
         msgs.forEach((m, i) => { st.msgs.push({ role: 'assistant', content: m, opener: true, chips: i === msgs.length - 1 ? chips : [] }); });
         track('ChatOpen', { ad: cid, source: op ? 'agent' : 'fallback' });
       }

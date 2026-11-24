@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
   const journey = journeyOf(ctx.journey);
   const adText = tx(ctx.campaign.creative?.ad) || quoteSafe(tx(body.adText).slice(0, 300));
   const meta = { campaign: campaignId, journeyType: journey.type, topicId: ctx.campaign.topic_id, segment: ctx.campaign.segment_filters, contentVersionId: ctx.content_version_id, journeyVersion: journey.version };
-  const fromLink = linkGender(ctx.campaign.segment_filters);
+  const fromLink = linkGender(ctx.campaign.segment_filters) ?? linkGender(segment);   // the link itself says the gender even when no campaign row exists for it
   const stable = { type: 'text', text: b.flowPrompt ?? stableSystem(b, journey), cache_control: { type: 'ephemeral' } };
   const src = tx(body.src).slice(0, 20), session = tx(body.session);
   // Model comparison: only from the business test site, and only a model from the list. Everyone else gets the usual model.
