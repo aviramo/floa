@@ -421,3 +421,10 @@ Deno.test('round eleven: no full stop after the last sentence; a second question
   eq(stripFinalDot('אפשר לדבר עכשיו עם הדר ואופיר.'), 'אפשר לדבר עכשיו עם הדר ואופיר', 'also a statement');
   eq(needsQuestionRewrite('זה כואב. מה עבר בך כשהוא אמר את זה, והאם זה הפעם הראשונה?'), true, 'מה and והאם');
 });
+
+Deno.test('round eleven: the pain stages last four of the agent messages at most, the fifth is the warm-up', async () => {
+  const { stageHints, FLOW_PROMPT } = await import('./businesses/harpatka/flow.ts');
+  if (!FLOW_PROMPT.includes('ארבע הודעות שלכם לכל היותר')) throw new Error('four-message limit missing in the prompt');
+  if (!stageHints(5).includes('חימום') || !stageHints(5).includes('אסור עוד שאלה על הכאב')) throw new Error('the fifth message must be the warm-up');
+  if (stageHints(4).includes('חימום (שלב 3)')) throw new Error('the fourth message is still the pain stage');
+});
