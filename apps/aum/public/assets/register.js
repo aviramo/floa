@@ -196,7 +196,7 @@
     if (saved) return; saved = true;
     root.querySelectorAll(".su-fold:not(.su-after)").forEach(function (f) { f.classList.add("shut"); });
     btn.disabled = true; btn.classList.add("swap");
-    setTimeout(function () { btn.textContent = "ההרשמה נקלטה"; btn.classList.remove("swap"); btn.classList.add("saved"); }, 260);
+    setTimeout(function () { btn.classList.add("gone"); }, 260);   /* the button fades out and goes: the heading below ("קיבלנו את הפרטים") already says it was received */
     setTimeout(function () { q("after").classList.remove("shut"); }, 700);
     if (window.AUM_API) window.AUM_API.next().then(initPay).catch(function () {});
   }

@@ -33,6 +33,7 @@
 .su-send { width: 100%; margin-top: 1rem; white-space: nowrap; transition: opacity .25s ease, background-color .4s ease; }
 .su-send:disabled { opacity: .7; cursor: default; }
 .su-send.swap { opacity: 0; }
+.su-send.gone { display: none; }
 .su-send.saved, .su-send:disabled.saved { opacity: 1; background: #E9D9A8; border-color: #E9D9A8; color: #8A6A55; cursor: not-allowed; pointer-events: none; }
 
 /* אחרי ההרשמה: הטופס נסגר מלמעלה (קיפול), ואז נחשפים הטקסט ופתיחת שיחה עם טל */
