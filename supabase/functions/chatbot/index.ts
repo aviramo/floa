@@ -60,6 +60,15 @@ async function claude(apiKey: string, model: string, system: unknown[], messages
   } catch (e) { console.error('chat', e); return null; }
 }
 
+// The last resort when the writer of the reply gave no usable quick replies: people do not type, so a visitor is never left with none.
+// It sees the conversation and the last message, and answers only that.
+async function chipsFallback(apiKey: string, model: string, a: { reply: string; lastUser: string; address: 'female' | 'male' | 'plural'; recent: string }): Promise<string[]> {
+  const lang = a.address === 'female' ? 'נקבה' : a.address === 'male' ? 'זכר' : 'ניטרלית (בלי פעלים או תארים בגוף ראשון שמסמנים מגדר)';
+  const sys = 'כותבים שתי תשובות מוכנות לצ׳אט, בשורה אחת מופרדות ב-|. כל תשובה היא משפט טבעי של ארבע עד שבע מילים שהאדם עצמו אומר בגוף ראשון, כתשובה ישירה לשאלה בהודעה האחרונה של הבוט (ואם ההודעה היא הזמנה ולא שאלה, כל תשובה היא תחילת סיפור קונקרטי). שתיהן מקדמות את השיחה, בדרכים שונות, בלי סירוב ובלי ״לא יודע״. לא ניסוח של הבוט ולא שאלה אל הבוט. לשון האדם: ' + lang + '.';
+  const raw = await claude(apiKey, model, [{ type: 'text', text: sys }], [{ role: 'user', content: 'השיחה עד עכשיו:\n' + a.recent + '\n\nהודעת הבוט האחרונה (עליה עונים):\n' + a.reply }], 220);
+  return (raw ?? '').replace(/<[^>]*>/g, '').split(/[|\n]/).map((s) => s.trim().replace(/^[-•\d.\s]+/, '')).filter((s) => s && s.length <= 60);
+}
+
 const rpc = (name: string, args: Record<string, unknown>) =>
   fetch(SB_URL + '/rest/v1/rpc/' + name, { method: 'POST', headers: { apikey: SB_SERVICE, Authorization: 'Bearer ' + SB_SERVICE, 'Content-Type': 'application/json' }, body: JSON.stringify(args) });
 
@@ -239,8 +248,13 @@ Deno.serve(async (req) => {
   if (next.action !== 'safety' && next.action !== 'end') {
     // The quick replies come from a short dedicated call that sees the visitor's words, the reply and the gender; the model's own are the fallback
     const keep = (arr: string[]) => arr.filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && chipOk(c) && fullChip(c) && (pitchOk || !mentionsEvening(c))).map((c) => genderChip(c, address));
-    chips = keep(chips).slice(0, 2);   // the writer of the reply knows what it just asked, so its own quick replies are the only ones
-    if (chips.length < 2) console.log(JSON.stringify({ chips_short: parsed.chips }));
+    chips = keep(chips).slice(0, 2);   // the writer of the reply knows what it just asked, so its own quick replies come first
+    if (chips.length < 2) {
+      const recent = clean.slice(-6).map((m: any) => (m.role === 'user' ? 'האדם: ' : 'הבוט: ') + String(m.content).slice(0, 300)).join('\n');
+      const more = keep(await chipsFallback(apiKey, model, { reply, lastUser, address, recent }));
+      console.log(JSON.stringify({ chips_fallback: true, writer: parsed.chips, fallback: more }));
+      chips = [...new Set([...chips, ...more])].slice(0, 2);
+    }
     // An "A or B" question is never answered by a bare yes or no, wherever the quick reply came from
     const eitherOr = /\sאו\s/.test(lastSentence(reply)) && /\?\s*$/.test(lastSentence(reply));
     if (eitherOr) chips = chips.filter((c) => !/^(כן|לא)(,.*)?$/.test(c.trim()));
