@@ -218,7 +218,7 @@ Deno.serve(async (req) => {
   if (body.mode === 'react') {
     const textR = tx(body.text).slice(0, 600), questionR = tx(body.question).slice(0, 300);
     const viaText = body.source === 'text';
-    const firstAnswer = Number(body.step) === 0;   // only after the first question: a few words that this is common among many people
+    const firstAnswer = Number(body.step) === 0, thirdAnswer = Number(body.step) === 2;   // only after the first question: a few words that this is common among many people
     if (!textR) return json(b, origin, { reaction: null });
     if (distressIn(textR)) return json(b, origin, { safety: true, reaction: null });   // a crisis in the visitor's words: the page shows its fixed answer
     const segR = parseSegment(body.segment ?? (body.gender ? { gender: body.gender } : {}));
@@ -233,9 +233,10 @@ Deno.serve(async (req) => {
     const askLine = 'השאלה האחרונה של הבוט: ' + (questionR || '(פתיחה)') + '\nמה האדם ענה (' + (viaText ? 'בכתיבה חופשית' : 'בלחיצה על כפתור') + '): ' + textR;
     const rawR = await claude(apiKey, MODEL, [{ type: 'text', text: sysR }], [{ role: 'user', content: [genderLine, adLine, histLine, askLine].filter(Boolean).join('\n\n') }], 80);
     let reaction = cleanReaction(rawR, addressR, b, 6);
-    if (reaction && firstAnswer && !/(נפוץ|הרבה אנשים)/.test(reaction)) reaction += ', וזה נפוץ אצל הרבה אנשים';   // after the first question only, in all ads: a few words that it is common
+    if (reaction && firstAnswer && !/(נפוץ|הרבה אנשים)/.test(reaction)) reaction += ', וזה נפוץ אצל הרבה אנשים';
+    if (reaction && thirdAnswer && !/לעזור/.test(reaction)) reaction += ', ואולי יש משהו שיכול לעזור';   // after the answer to "what would help" only: a hedged lead-in to the next message   // after the first question only, in all ads: a few words that it is common
     if (!reaction) console.log(JSON.stringify({ react_dropped: true, raw: String(rawR ?? '').slice(0, 160) }));
-    return json(b, origin, { reaction });
+    return json(b, origin, { reaction, ...(device.startsWith('selftest') ? { dbg: String(rawR ?? '').slice(0, 200) } : {}) });
   }
 
   const use = await usageHit(b, device, ip === 'unknown' ? '' : ip, body.mode === 'opening' ? 'opening' : 'chat');
