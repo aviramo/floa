@@ -52,7 +52,7 @@
     d.onclick = function (e) { if (e.target === d) d.close(); };
     d.showModal();
   }
-  function dirty(v, now) { S.dirty = v; if (v) { status('יש שינויים שלא נשמרו'); commitSoon(now); } }
+  function dirty(v, now) { if (v && PENDING) { PENDING.target[PENDING.g] = PENDING.list; PENDING = null; } S.dirty = v; if (v) { status('יש שינויים שלא נשמרו'); commitSoon(now); } }
   window.addEventListener('beforeunload', function (e) { if (S.dirty) { e.preventDefault(); e.returnValue = ''; } });
 
   // soft warnings only: the rules of the texts that reach the visitor (no dashes, no special characters, no full stop at the end)
@@ -74,7 +74,7 @@
   function line(get, set, label) { var t = el('input', 'field'); t.type = 'text'; t.value = get(); return bindField(t, get, set, label); }
 
   function steps() { return S.content.ads[S.ad][S.gender] || null; }
-  var OPEN = {};
+  var OPEN = {}, PENDING = null, PH = null;
   var KEYRE = /^[a-z][a-z0-9_]{0,29}$/;
   function pageUrl() { return location.origin + '/' + BIZ + '?ad=' + encodeURIComponent(S.ad) + (S.gender === 'both' ? '' : '&gender=' + S.gender); }
   function firstOther() { var a = S.content.ads[S.ad]; return ['female', 'male', 'both'].filter(function (g) { return g !== S.gender && a[g]; })[0] || null; }
@@ -96,6 +96,11 @@
     $('adcount').textContent = (term ? shown + ' מתוך ' : '') + keys.length + ' מודעות';
   }
   function render() {
+    var y = window.scrollY;
+    renderNow();
+    window.scrollTo(0, y);
+  }
+  function renderNow() {
     var c = S.content;
     // the ad tabs
     drawAds();
@@ -107,13 +112,15 @@
     var g = $('greeting'); g.value = c.greeting || ''; g.oninput = function () { c.greeting = g.value; dirty(true); };
 
     var box = $('steps'); box.textContent = '';
-    var list = steps();
+    var list = steps(), blank = false;
+    PENDING = null; PH = null;
     if (!list) {
-      var em = el('section', 'card empty'); em.appendChild(el('p', '', 'אין עדיין גרסה של ' + GN[S.gender] + ' במודעה הזאת.'));
-      var mk = el('button', 'btn', 'צור אותה כעותק של ' + (firstOther() ? GN[firstOther()] : '')); mk.type = 'button';
-      mk.addEventListener('click', function () { var o = firstOther(); if (!o) return; cur[S.gender] = JSON.parse(JSON.stringify(cur[o])); render(); dirty(true, true); });
-      if (firstOther()) em.appendChild(mk);
-      box.appendChild(em); return;
+      blank = true;
+      list = [0, 1, 2, 3, 4].map(function (i) { return { say: '', options: [0, 1, 2].map(function (k) { var o = { label: '', reply: '' }; if (i === 4) o.action = ['site', 'updates', 'whatsapp'][k]; return o; }) }; });
+      PENDING = { target: cur, g: S.gender, list: list };
+      var oth = firstOther(), flat = [];
+      if (oth) cur[oth].forEach(function (m) { flat.push(m.say); m.options.forEach(function (o) { flat.push(o.label, o.reply || ''); }); });
+      PH = flat;
     }
     var cut = function (t, n) { t = String(t || '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n) + '…' : t; };
     list.forEach(function (m, i) {
@@ -149,6 +156,7 @@
       body.appendChild(cols); card.appendChild(body);
       box.appendChild(card);
     });
+    if (PH) Array.prototype.forEach.call(box.querySelectorAll('textarea, input'), function (f, n) { if (PH[n]) f.placeholder = PH[n]; });
   }
 
   function renderVersions(list) {
@@ -178,7 +186,20 @@
       render(); dirty(false); status('נטענה גרסה ' + r.d.version + (r.d.published ? ' (מפורסמת)' : ''));
     });
   }
+  function unfinished() {
+    var ads = S.content.ads, ks = Object.keys(ads);
+    for (var x = 0; x < ks.length; x++) for (var g in GN) {
+      var st = ads[ks[x]][g]; if (!st) continue;
+      for (var i = 0; i < st.length; i++) {
+        var empty = !String(st[i].say || '').trim() || st[i].options.some(function (o) { return !String(o.label || '').trim(); });
+        if (empty) return { ad: ks[x], g: g, i: i };
+      }
+    }
+    return null;
+  }
   function save() {
+    var u = unfinished();
+    if (u) { S.ad = u.ad; S.gender = u.g; OPEN[u.i] = 1; render(); status('לא נשמר: ' + u.ad + ', ' + GN[u.g] + ', הודעה ' + (u.i + 1) + ' לא מלאה', 'err'); return; }
     var b = $('save'); b.disabled = true; status('שומר...');
     call('save', { content: S.content, note: $('note').value.trim() }).then(function (r) {
       b.disabled = false;
