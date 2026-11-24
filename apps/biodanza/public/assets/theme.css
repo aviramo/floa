@@ -54,3 +54,23 @@ dialog.rsheet .sheet:has(> .sheet-body > .rlist > .rrow) > .sheet-head { padding
 /* the popup of a song's exercises: its rows and its card grids pad themselves (--gap each side), so the popup does not pad the sides a second time */
 #mpDlg .sheet { padding-inline: 0; }
 #mpDlg .sheet-head { padding-inline: var(--gap); }
+
+/* a page header (not a popup's) has no line under it: the standard soft edge shows under it while its list is scrolled, like a popup's title */
+.rhead.rhead:not(dialog *) { border-bottom: 0; position: relative; z-index: 2 }
+.rhead.rhead:not(dialog *)::after { content: ""; position: absolute; inset-inline: 0; top: 100%; height: var(--gap-tight); background: linear-gradient(color-mix(in srgb, var(--scrim) 25%, transparent), transparent); opacity: 0; transition: opacity .18s ease; pointer-events: none }
+.rhead.rhead[data-scrolled]:not(dialog *)::after { opacity: 1 }
+@media (prefers-reduced-motion: reduce) { .rhead.rhead:not(dialog *)::after { transition: none }
+}
+
+/* the main part of a row that is a button: no button look */
+button.rrow__main { background: none; border: 0; padding: 0; text-align: start; cursor: pointer; font: inherit; color: inherit; }
+
+/* a short popup (a name, a confirmation): its title, its field and its button stand against each other, no gap between the parts (owner); the popup pads around them */
+dialog.rsheet[data-size="s"] .sheet { gap: 0; }
+
+/* a card whose song plays stays white, and so does everything on it: what shows the sound is the kit's picture (sound.js, kit.css .req) */
+/* the exercise tabs of a phone keep room for the ring round the number (above it, and between it and the name, a small gap left under the ring), so nothing moves when a song starts */
+@media (width < 760px) {
+.bio-ihead--m > .bio-tabs.bio-tabs { padding-block-start: var(--ring-over); }
+.bio-tabs .bio-tab { gap: calc(var(--ring-over) + var(--gap-tight)); }
+}

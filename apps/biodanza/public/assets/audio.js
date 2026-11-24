@@ -262,6 +262,20 @@
     toggle(b.dataset.audio);
   }, true);
 
+  /* THE EQUALIZER (the kit's /sound.js): what shows that a song plays — a curve on the card that plays, a ring round the number of the exercise that plays (the tab on a phone, the button to it in the header of a vivencia on a computer) */
+  if (window.FLOA_SOUND) window.FLOA_SOUND.attach({
+    analyse: false,   /* OFF while the owner hears clicks: nothing listens to the song, no second element, no AudioContext; the picture only breathes. Switch to true to follow the music again. */
+    player: function () { return el; }, bus: hub,
+    targets: function () {
+      var t = [];
+      document.querySelectorAll('.bio-card.is-play, .bio-card:has([data-audio][data-st="pause"])').forEach(function (c) { t.push({ host: c, kind: "curve" }); });
+      document.querySelectorAll(".bio-tab.is-play > .bio-tab__n").forEach(function (n) { t.push({ host: n, kind: "ring" }); });
+      var g = document.querySelector("#vgo:not([hidden]) #vgon"); if (g) t.push({ host: g, kind: "ring" });
+      document.querySelectorAll(".bio-vsym > .bio-vsym__n").forEach(function (n) { if (n.textContent) t.push({ host: n, kind: "ring" }); });   /* the number on the row of the vivencia that plays */
+      return t;
+    }
+  });
+
   window.BioAudio = {
     /* the button of a song that has a file: the same round icon button as the YouTube one */
     button: function (name, trail, lg) {

@@ -86,6 +86,7 @@
 @media (prefers-reduced-motion: reduce) { .rbtn--text[aria-busy="true"] { animation: none; opacity: var(--busy-breath-low); } }
 .rbtn--icon::after { content: ""; position: absolute; top: 50%; left: 50%; width: var(--ctl); height: var(--ctl); transform: translate(-50%, -50%); }
 .rbtn--icon.rbtn--primary { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.rbtn--icon.rbtn--muted { color: var(--text-muted); }   /* an icon button that is not the main thing of its row: the muted colour of the text beside it */
 .rbtn--icon[aria-busy="true"] { pointer-events: none; }
 /* waiting: an icon never rotates or moves; the glyph of a busy icon button BREATHES (opacity only, law 7) */
 .rbtn--icon[aria-busy="true"] > svg { animation: rk-breath var(--busy-breath-t) ease-in-out infinite; }
@@ -99,6 +100,18 @@
 .rchip { display: inline-flex; align-items: center; justify-content: center; gap: var(--gap-tight); box-sizing: border-box; height: var(--chip-h, var(--chip)); min-width: 0; padding: 0 var(--gap); border: 1px solid transparent; border-radius: var(--r-round); background: var(--surface); color: var(--text-muted); font: var(--fw-bold) var(--fs-m)/1 var(--font); font-variant-numeric: tabular-nums; white-space: nowrap; vertical-align: middle; }
 .rchip--s { font-size: var(--fs-s); }   .rchip--l { --chip-h: var(--ctl); }
 .rchip--info { color: var(--primary); }
+.rchip--ink { color: var(--text); }   .rchip--solid { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.rchip--empty { background: transparent; border: 2px dashed var(--border); color: var(--text-muted); font-weight: var(--fw-regular); }
+.rchip { max-width: 100%; }   .rchip__t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rflow { display: flex; align-items: center; gap: var(--gap); flex-wrap: wrap; }   /* chips and arrows in one line that wraps: song, arrow, destination */
+/* THE MAIN ACTION IN THE MIDDLE: the first child (a big icon) stands exactly in the horizontal middle; the second child (a small action) stands beside it, --gap away. */
+.rmid { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; column-gap: var(--gap); }
+.rmid > :first-child { grid-column: 2; }   .rmid > :nth-child(2) { grid-column: 3; justify-self: start; }
+/* THE CHOICE ROW: a row to pick from. aria-pressed marks the chosen one; --sub for a level below, --bold for a heading of a group. */
+.rpick { display: flex; align-items: center; gap: var(--gap); width: 100%; box-sizing: border-box; padding: var(--gap); border: 0; border-radius: var(--r); background: transparent; color: var(--text); text-align: start; cursor: pointer; font: var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font); }
+.rpick[aria-pressed="true"] { background: var(--surface); }   .rpick--bold { font-weight: var(--fw-bold); }   .rpick--sub { padding-inline-start: calc(var(--gap) * 2); }
+.rpick__t { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }   .rpick__n { flex: none; min-width: var(--icon); color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.rchip:is(button, a, [role="button"]) { cursor: pointer; }   /* a chip that can be pressed shows the hand */
 .rchip--button { background: transparent; border-color: var(--border-strong); color: var(--text); cursor: pointer; }
 .rchip--button[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
 .rchip > svg { display: block; flex: none; width: var(--icon); height: var(--icon); margin: 0; stroke-width: var(--icon-w); }
@@ -139,7 +152,7 @@ html:has(.rfab:not(.rfab--in, [hidden])) .rlist[data-fab-room] { padding-bottom:
 .rcard--link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
 .rcard--link .rcard__foot, .rcard--link .rcard__head .rbtn { position: relative; z-index: var(--z-raised); }
 /* THE CARD (law 4): a grid of two columns, the lead spanning two rows and the body of two rows; each row is its text then its buttons.
-   Row height --ctl, text centred in it, no vertical padding, --gap at both sides, --gap between lead, text and buttons, --gap-section between adjacent icon buttons. Markup: cardSlots() in biodanza app.js. */
+   Row height --ctl, text centred in it, no vertical padding, --gap at both sides, --gap between lead, text and buttons, --gap between adjacent icon buttons. Markup: cardSlots() in biodanza app.js. */
 .bio-c { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-auto-rows: minmax(var(--icon), auto); align-items: center; column-gap: var(--gap); row-gap: var(--gap-tight); min-width: 0; margin: 0; padding: var(--gap); cursor: pointer; position: relative; border: var(--bw) solid var(--border); border-radius: var(--r); background: var(--page); box-shadow: var(--shadow); }
 .bio-c:not(:has(> .bio-c__lead)) { grid-template-columns: minmax(0, 1fr) auto; }
 .bio-c__lead { grid-column: 1; grid-row: 1 / span 2; display: flex; align-items: center; justify-content: center; overflow: visible; color: var(--text); font: var(--fw-bold) var(--fs-xl)/1 var(--font);   /* line-height 1: the number's box is as tall as the font size and, centred over both rows, may stand taller than the rows without growing the card */ font-variant-numeric: tabular-nums; }
@@ -193,6 +206,9 @@ button.bio-c__tx { flex: 0 1 auto; margin: 0; padding: 0; border: 0; background:
 .rhead .rbtn--icon:active, .rhead .rbtn--icon[aria-expanded="true"] { opacity: .7; }
 .rgroup { display: flex; align-items: center; gap: var(--gap-section); flex: none; }   /* adjacent icon buttons: --gap-section so their touch areas touch and never overlap */
 .rhead__sub { display: block; color: var(--text-muted); font: var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font); }
+.rhead__text--row { flex-direction: row; align-items: center; justify-content: flex-start; gap: var(--gap); }   /* the title block as one line (title, then a tag), not stacked */
+.rhead__title--clip { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.4; text-box: normal; }   /* a title that is cut with dots instead of wrapping; the box keeps the line height so the letters are not clipped */
+.rbtn--icon.rbtn--accent { color: var(--primary); }   /* an icon button in the role colour, where its neighbours are plain text colour */
 /* ONE header on every page (owner 2026-11-13, "identical, colour, page colour and all"): the same surface as the filter block of the participants page (--page), a 2px --border under it, no shadow, no rounded corners; the icon button is a 44px tile in --surface, 16px from the top and the side; a subtitle is part of the title block, which is centred on the tile. The ground under the header is --surface (see manager.css). */
 .rhead.rhead, .wrap > .rhead.top { background: var(--page); border-bottom: 2px solid var(--border); border-radius: 0; box-shadow: none; }   /* a header is as tall as its tallest item (the 44 box): no vertical padding, the icon box already holds the room (law 5) */
 .rhead .rbtn--icon { margin: 0; background: transparent; color: var(--text); }
@@ -224,9 +240,34 @@ button.bio-c__tx { flex: 0 1 auto; margin: 0; padding: 0; border: 0; background:
 .ricon-lg, .rfab { position: relative; display: grid; place-items: center; flex: none; box-sizing: border-box; width: var(--fab); height: var(--fab); padding: 0; border: 1px solid var(--primary); border-radius: var(--r-round); background: var(--primary); color: var(--on-primary);
   box-shadow: var(--shadow-lg); cursor: pointer; transition: transform var(--t-base) var(--ease), opacity var(--t-base) var(--ease); }
 .rfab { position: fixed; left: max(var(--gap), var(--inset-l)); bottom: calc(var(--gap) + var(--inset-b)); z-index: var(--z-sticky); }
+/* THE SOUND PICTURE (sound.js): a canvas in a span that sound.js puts inside what plays. "curve": stands on the bottom edge of the host, up to half its height, behind the host's content. "ring": a thin ring round a number, a little bigger than the number (--ring-over on every side) and never narrower than tall. It is laid over its host and takes no room. */
+:has(> .req) { position: relative; isolation: isolate; }
+.req { position: absolute; z-index: -1; pointer-events: none; direction: ltr; }
+.req > canvas { display: block; width: 100%; height: 100%; }
+.req--curve { inset-inline: 0; inset-block-end: 0; height: 50%; border-radius: inherit; overflow: hidden; }
+.req--ring { left: 50%; top: 50%; transform: translate(-50%, -50%); min-width: calc(1lh + var(--ring-over) * 2); width: calc(100% + var(--ring-over) * 2); height: calc(100% + var(--ring-over) * 2); }
+/* THE FOLDING SECTION: a head (title, then --chev at the end) that opens its body. aria-expanded on the head turns the chevron; data-closed on the body folds it (grid rows 0fr). The body is whole and sits on its bottom edge: opening pulls it down, its last line shows first. */
+.racc__bar { display: flex; align-items: center; justify-content: space-between; }
+.racc__head { display: flex; align-items: center; gap: var(--gap); min-width: 0; min-height: var(--ctl); padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: start; cursor: pointer; }
+.racc__chev { display: grid; flex: none; width: var(--icon); height: var(--icon); transition: transform var(--t-base) var(--ease); }
+.racc__chev > svg { width: 100%; height: 100%; stroke-width: var(--icon-w); }
+[aria-expanded="true"] > .racc__chev { transform: rotate(180deg); }
+.racc__row { padding-block: var(--gap); min-height: 0; }   /* a row whose whole face folds a group: title at the start, count then chevron at the end */
+.racc__row > .rrow__main { flex: 1 1 0; flex-direction: row; align-items: center; gap: var(--gap); }
+.racc__title { flex: 1 1 auto; min-width: 0; }
+.racc__count { flex: none; color: var(--text-muted); font: var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font); font-variant-numeric: tabular-nums; }
+.racc__body { display: grid; grid-template-rows: 1fr; transition: grid-template-rows var(--t-base) var(--ease); }
+.racc__body > div { overflow: hidden; min-height: 0; display: flex; flex-direction: column; justify-content: flex-end; }
+.racc__body > div > * { flex: none; }
+.racc__body[data-closed] { grid-template-rows: 0fr; }
+.racc__body[data-closed] > div { visibility: hidden; transition: visibility 0s linear var(--t-base); }
+@media (prefers-reduced-motion: reduce) { .racc__chev, .racc__body { transition: none; } }
 /* THE CARD GRID: cards side by side, as many columns as fit (--card-min), --gap between. --pad when the grid itself is the padded level. */
 .rgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(var(--card-min), 100%), 1fr)); gap: var(--gap); align-items: stretch; }
 .rgrid--pad { padding: var(--gap); }
+/* A FORM CONTAINER: its fields and button, --gap between; nested, a group of fields is one child of the page's column. __row puts two fields on one line. */
+.rfields { display: flex; flex-direction: column; gap: var(--gap); }
+.rfields__row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
 /* THE SLIDER (type: range): a round thumb of --icon on a --gap-tight track, filled up to --p in --c. --c is the filled colour (role colour), --track the empty part. One skin for the song bar, the volume and every other range input. */
 input[type=range].rrange { -webkit-appearance: none; appearance: none; box-sizing: border-box; background: transparent; height: var(--icon); margin: 0; padding: 0; cursor: pointer; direction: ltr; touch-action: none; --p: 0%; --c: var(--primary); }
 input[type=range].rrange::-webkit-slider-runnable-track { height: var(--gap-tight); border-radius: calc(var(--gap-tight) / 2); background: linear-gradient(to right, var(--c) var(--p), var(--track, var(--surface)) var(--p)); }
@@ -306,7 +347,7 @@ button.rrow__main { appearance: none; border: 0; background: none; padding: 0; t
    Extensions are chosen by the control itself (select, textarea, input[type]) or by a modifier on the same element:
             rfield--switch, rfield--check (row with a switch or a checkbox), rfield--ltr (value written left to right).
    Needs the page tokens --page --border-strong --text --text-muted --danger --font. */
-:root { --row-card: calc(var(--icon) + var(--gap-tight)); /* the pitch of a card's two rows (an icon row plus the gap under it): the touch area of an icon button inside a card is --ctl wide and this tall, so two buttons' areas touch and never overlap */ --field-max-h: calc(var(--ctl) * 6); /* the tallest a text area grows before it scrolls */ --rf-label-top: var(--gap-tight); --rf-line-h: calc(var(--fs-m) * var(--lh-tight)); /* the one line of a field: the label's line and the control's text line */ --rf-scale: .75; /* how much the label shrinks when it floats */ --rf-label-h: calc(var(--rf-line-h) * var(--rf-scale)); /* the floated label's real rendered height */ --rf-pad-top: calc(var(--rf-label-top) + var(--rf-label-h)); /* the control text starts under the floated label: its top offset plus the label's real height, so the text never overlaps it */ --rf-line: var(--border-strong); --rf-ink: var(--text); --rf-ink-2: var(--text-muted); --rf-red: var(--danger); }
+:root { --ring-over: calc(var(--gap-tight) * 2); /* the room a ring of the sound picture keeps round a number */ --row-card: calc(var(--icon) + var(--gap-tight)); /* the pitch of a card's two rows (an icon row plus the gap under it): the touch area of an icon button inside a card is --ctl wide and this tall, so two buttons' areas touch and never overlap */ --field-max-h: calc(var(--ctl) * 6); /* the tallest a text area grows before it scrolls */ --rf-label-top: var(--gap-tight); --rf-line-h: calc(var(--fs-m) * var(--lh-tight)); /* the one line of a field: the label's line and the control's text line */ --rf-scale: .75; /* how much the label shrinks when it floats */ --rf-label-h: calc(var(--rf-line-h) * var(--rf-scale)); /* the floated label's real rendered height */ --rf-pad-top: calc(var(--rf-label-top) + var(--rf-label-h)); /* the control text starts under the floated label: its top offset plus the label's real height, so the text never overlaps it */ --rf-line: var(--border-strong); --rf-ink: var(--text); --rf-ink-2: var(--text-muted); --rf-red: var(--danger); }
 
 .rfield[hidden], .rfield > [hidden] { display: none !important; }
 .rfield { overflow-x: clip; }   /* the floating label's box is 133% wide (it is scaled to fit); its overflow must never make a scrollbar appear when the field is focused */
@@ -484,6 +525,7 @@ dialog.rsheet .sheet { flex: 1 1 auto; min-height: 0; display: flex; flex-direct
 dialog.rsheet[data-from="top"] .sheet { padding-bottom: var(--gap); }
 dialog.rsheet .sheet-head { flex: 0 0 auto; display: flex; align-items: center; gap: var(--gap); min-height: var(--fab); }
 dialog.rsheet .sheet-head { position: relative; z-index: 1; }   /* law 3: the sheet's one side padding holds the header's content at --gap, no bleed, no per-edge padding */
+dialog.rsheet[data-size="s"] .sheet-head, dialog.rsheet[data-size="sm"] .sheet-head { min-height: var(--ctl); }   /* a short window (a name, a confirmation) has a short header: --ctl, not --fab */
 dialog.rsheet .sheet-head::before { content: ""; position: absolute; z-index: -1; inset: 0; background: var(--page); pointer-events: none; }   /* the header is solid, edge to edge: whatever scrolls under it is hidden, never seen through it */
 dialog.rsheet .sheet-head::after { content: ""; position: absolute; inset-inline: 0; top: 100%; height: var(--gap-tight); background: linear-gradient(color-mix(in srgb, var(--scrim) 25%, transparent), transparent); opacity: 0; transition: opacity .18s ease; pointer-events: none; }
 dialog.rsheet[data-scrolled] .sheet-head::after { opacity: 1; }

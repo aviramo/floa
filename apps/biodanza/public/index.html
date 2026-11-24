@@ -19,7 +19,7 @@
 <meta name="twitter:title" content="ויונסיות">
 <meta name="twitter:description" content="כלי למאפשרי ביודנסה: יוצרים ויונסיות מקטלוג התרגילים. בוחרים מוסיקה, משתפים עם מאפשרים נוספים ובזמן הויונסיה מנגנים ללא אינטרנט">
 <meta name="twitter:image" content="https://biodanza.floa.co.il/og-logo.png">
-<script>document.write('<base href="' + (/^(localhost|127[.])/.test(location.hostname) ? '/biodanza/' : '/') + '">');</script>
+<script>document.write('<base href="' + (/^(localhost|127[.]|192[.]168[.]|10[.])/.test(location.hostname) ? '/biodanza/' : '/') + '">');</script>
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -60,12 +60,13 @@ dialog.rsheet .pad { padding: 0; }   /* a popup pads its content itself (law 2):
 <script src="/supabase.js"></script>
 <script src="/auth.js"></script>
 <script src="/sheet.js"></script>
+<script src="/sound.js"></script>
 <!-- The two scripts are written by a script, like the base tag above: the browser looks ahead in the page for scripts and fetches them before that tag exists, from the wrong folder on an address like /<vivencia>/<exercise> (a 404 in the console). -->
 <script>document.write('<script src="assets/audio.js"><\/script><script src="assets/offline.js"><\/script><script src="assets/app.js"><\/script>')</script>
 <script>
 /* The app opens with no internet: a worker keeps the shell (sw.js, at the host's root on biodanza.floa.co.il, under /biodanza/ on localhost). */
 if ("serviceWorker" in navigator) window.addEventListener("load", function () {
-  navigator.serviceWorker.register((/^(localhost|127[.])/.test(location.hostname) ? "/biodanza/" : "/") + "sw.js").catch(function () { /* no offline shell this time */ });
+  navigator.serviceWorker.register((/^(localhost|127[.]|192[.]168[.]|10[.])/.test(location.hostname) ? "/biodanza/" : "/") + "sw.js").catch(function () { /* no offline shell this time */ });
 });
 </script>
 </body>

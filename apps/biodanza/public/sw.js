@@ -12,7 +12,7 @@
    Served at the host's root on biodanza.floa.co.il (scope "/"), and under /biodanza/ on localhost. */
 var CACHE = "biodanza-shell-v1";
 var SCOPE = self.registration.scope;   /* "https://biodanza.floa.co.il/" or "http://localhost:5173/biodanza/" */
-var FIXED = ["kit.css", "sheet.js", "auth.js", "supabase.js", "favicon.ico", "favicon.png", "apple-touch-icon.png"];
+var FIXED = ["kit.css", "sheet.js", "auth.js", "supabase.js", "sound.js", "favicon.ico", "favicon.png", "apple-touch-icon.png"];
 /* the domain's files live at the root of the host, the app's own files under the scope */
 function rootUrl(name) { return new URL("/" + name, SCOPE).href; }
 

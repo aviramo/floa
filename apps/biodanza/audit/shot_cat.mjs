@@ -17,5 +17,5 @@ try {
   await b.ev("(function(){var e=document.querySelector('#list [data-ex]'); e&&e.click()})()"); await b.sleep(1500);
   await b.shot("C:/tmp/bio/cat_" + W + "_c.png");
   console.log(await b.ev(`JSON.stringify([].map.call(document.querySelectorAll('header.rhead').length?document.querySelector('header.rhead').querySelectorAll(':scope, :scope > *'):[],function(e){var r=e.getBoundingClientRect();return e.tagName+'.'+e.className+' x'+Math.round(r.left)+' y'+Math.round(r.top)+' '+Math.round(r.width)+'x'+Math.round(r.height)}))`));
-  console.log(await b.ev(`JSON.stringify([].map.call(document.querySelectorAll('.bio-search,.bio-fold,[data-cat]'),function(e){var r=e.getBoundingClientRect();return e.className+" "+Math.round(r.width)+"x"+Math.round(r.height)}).slice(0,6))`));
+  console.log(await b.ev(`JSON.stringify([].map.call(document.querySelectorAll('.bio-search,.racc__row,[data-cat]'),function(e){var r=e.getBoundingClientRect();return e.className+" "+Math.round(r.width)+"x"+Math.round(r.height)}).slice(0,6))`));
 } catch (e) { console.log("FATAL", e.stack); } finally { b.close(); srv.close(); process.exit(0); }
