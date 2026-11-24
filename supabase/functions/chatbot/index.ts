@@ -62,27 +62,28 @@ async function claude(apiKey: string, model: string, system: unknown[], messages
 
 // The last resort when the writer of the reply gave no usable quick replies: people do not type, so a visitor is never left with none.
 // It sees the conversation and the last message, and answers only that.
-async function chipsFallback(apiKey: string, model: string, a: { reply: string; lastUser: string; address: 'female' | 'male' | 'plural'; recent: string }): Promise<string[]> {
+async function chipsFallback(apiKey: string, model: string, a: { reply: string; lastUser: string; address: 'female' | 'male' | 'plural'; recent: string; trace?: unknown[] }): Promise<string[]> {
   const lang = a.address === 'female' ? 'נקבה' : a.address === 'male' ? 'זכר' : 'ניטרלית (בלי פעלים או תארים בגוף ראשון שמסמנים מגדר)';
   const sys = 'כותבים שתי תשובות מוכנות לצ׳אט. עונים בשתי שורות בלבד. שורה ראשונה: "סוג: X", כשהסוג הוא סוג השאלה בסוף ההודעה האחרונה של הבוט (מה, מתי, כמה, איך, למה, כן או לא, בחירה, או הזמנה). שורה שנייה: "תשובות: א|ב". כל תשובה היא משפט טבעי שהאדם עצמו אומר בגוף ראשון, כתשובה ישירה לשאלה, ומאותו סוג שלה: שאלה על מה נענית במה, על מתי בזמן, על כמה בדרגה, על איך באופן, על למה בסיבה. אם ההודעה היא הזמנה ולא שאלה, כל תשובה היא תחילת סיפור קונקרטי. שתי התשובות מקדמות את השיחה בדרכים שונות, בלי סירוב ובלי ״לא יודע״, בלי להמציא פרטים על חיי האדם, ולא על ״מישהו״. לא ניסוח של הבוט ולא שאלה אל הבוט. לשון האדם: ' + lang + '.';
   const raw = await claude(apiKey, model, [{ type: 'text', text: sys }], [{ role: 'user', content: 'השיחה עד עכשיו:\n' + a.recent + '\n\nהודעת הבוט האחרונה (עליה עונים):\n' + a.reply }], 260);
+  a.trace?.push({ raw });
   const line = ((raw ?? '').match(/תשובות\s*:\s*(.*)/) ?? [])[1] ?? raw ?? '';
   return line.replace(/<[^>]*>/g, '').split(/[|\n]/).map((s) => s.trim().replace(/^[-•\d.\s]+/, '')).filter((s) => s && s.length <= 100);
 }
 
 // The second step of a turn: the quick replies are made from the FINAL message the visitor sees (the first step already sent it), checked once, written again once if they fail.
-async function makeChips(apiKey: string, model: string, a: { reply: string; lastUser: string; address: 'female' | 'male' | 'plural'; recent: string; pitchOk: boolean }): Promise<string[]> {
+async function makeChips(apiKey: string, model: string, a: { reply: string; lastUser: string; address: 'female' | 'male' | 'plural'; recent: string; pitchOk: boolean; trace?: unknown[] }): Promise<string[]> {
   const keep = (arr: string[]) => arr.filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && chipOk(c) && (a.pitchOk || !mentionsEvening(c))).map((c) => genderChip(c, a.address));
   let chips: string[] = [];
   const pool: string[] = [];   // everything that passed the form checks, so a vetoed reply can still fill a missing place
   for (let k = 0; k < 3 && chips.length < 2; k++) {
     const have = chips.length ? '\nתשובה אחת כבר יש: "' + chips[0] + '". כתבו תשובה אחרת ממנה, מאותו סוג של השאלה.' : (k ? '\nהניסיון הקודם נפסל. כתבו שתי תשובות שמתאימות לסוג השאלה.' : '');
-    const made = keep(await chipsFallback(apiKey, model, { reply: a.reply, lastUser: a.lastUser, address: a.address, recent: a.recent + have }));
+    const made = keep(await chipsFallback(apiKey, model, { reply: a.reply, lastUser: a.lastUser, address: a.address, recent: a.recent + have, trace: a.trace }));
     pool.push(...made);
     chips = [...new Set([...chips, ...made])].slice(0, 2);
     if (chips.length === 2 && k < 2) {
       const verdict = await chipsCheck(apiKey, a.reply, chips);
-      if (verdict.some((v) => !v)) { console.log(JSON.stringify({ chips_vetoed: chips, verdict })); chips = chips.filter((_, i) => verdict[i]); }
+      if (verdict.some((v) => !v)) { a.trace?.push({ vetoed: chips, verdict }); console.log(JSON.stringify({ chips_vetoed: chips, verdict })); chips = chips.filter((_, i) => verdict[i]); }
     }
   }
   if (chips.length < 2) chips = [...new Set([...chips, ...pool])].slice(0, 2);
@@ -179,8 +180,9 @@ Deno.serve(async (req) => {
     const addressC = addressOf(revealedGender(userTexts) ?? linkGender(segC));
     const pitchC = pitchAllowed({ turns: userTexts.length, lastUser: lastUserC, prevDone: [], prevReadiness: '' });
     const recentC = msgsC.slice(-6).map((m) => (m.role === 'user' ? 'האדם: ' : 'הבוט: ') + m.content.slice(0, 300)).join('\n');
-    const chipsC = await makeChips(apiKey, MODEL, { reply: lastBot.content, lastUser: lastUserC, address: addressC, recent: recentC, pitchOk: pitchC });
-    return json(b, origin, { chips: chipsC });
+    const traceC: unknown[] = [];
+    const chipsC = await makeChips(apiKey, MODEL, { reply: lastBot.content, lastUser: lastUserC, address: addressC, recent: recentC, pitchOk: pitchC, trace: traceC });
+    return json(b, origin, { chips: chipsC, ...(device.startsWith('selftest') ? { dbg: traceC } : {}) });
   }
 
   const use = await usageHit(b, device, ip === 'unknown' ? '' : ip, body.mode === 'opening' ? 'opening' : 'chat');
