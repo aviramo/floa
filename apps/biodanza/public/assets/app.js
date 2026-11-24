@@ -3446,7 +3446,7 @@
     return '<input id="' + id + '" type="hidden">';
   }
   /* the catalog is two catalogs, chosen from the menu of the catalog button (pk.tab: "ex" the exercises', "mu" the music's): one page each, no tabs */
-  function catTitle() { return exFilter ? "התרגילים של " + exFilter.name : pk.tab === "mu" ? "קטלוג מוזיקות" : "קטלוג תרגילים"; }
+  function catTitle() { return exFilter ? "התרגילים של " + exFilter.name : pk.tab === "mu" ? "חיפוש במוזיקה" : "חיפוש בקטלוג"; }   /* the header IS the search: what the field says while it is empty */
   /* what the music tab filters by: the three tag columns of the music table. Values stay in English (they are the keys); a value with no entry here shows as it is. */
   var MU_LINE = [["Affectivity", "affectivity", "חיבתיות"], ["Creativity", "creativity", "יצירתיות"], ["Vitality", "vitality", "חיוניות"], ["Sexuality", "sexuality", "מיניות"], ["Trance", "transcendence", "התעלות"], ["Maze", "", "מבוך"]];   /* the app's own line names are used when it has them */
   var MU_CHAR = { "Rhythmic": "קצבי", "Melodic": "מלודי", "Other": "אחר" }, MU_SPEED = { "Slow": "איטי", "Medium": "בינוני", "Fast": "מהיר" };   /* the two new columns: character and speed, fixed order */
