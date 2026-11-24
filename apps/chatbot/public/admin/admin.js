@@ -148,5 +148,7 @@
       load(null);
     }).catch(function () { $('gateMsg').textContent = 'שגיאת רשת.'; });
   }
+  function topH() { var t = document.querySelector('.top'); if (t) document.documentElement.style.setProperty('--toph', t.offsetHeight + 'px'); }
+  topH(); window.addEventListener('resize', topH);
   start();
 })();
