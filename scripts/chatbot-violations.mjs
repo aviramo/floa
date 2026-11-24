@@ -6,7 +6,12 @@ import { execFileSync } from 'node:child_process';
 const days = Math.max(1, Math.min(90, Number(process.argv[2]) || 7));
 const business = (process.argv[3] || '').replace(/[^a-z0-9_-]/gi, '');
 const where = `at > now() - interval '${days} days'` + (business ? ` and business = '${business}'` : '');
-const q = (sql) => JSON.parse(execFileSync('node', ['scripts/sql.mjs', sql], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).replace(/^[^\[]*/, ''));
+// scripts/sql.mjs prints the rows and then exits with a Windows handle assertion: the rows are read from stdout whatever the exit code is.
+const q = (sql) => {
+  let out;
+  try { out = execFileSync('node', ['scripts/sql.mjs', sql], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }); } catch (e) { out = e.stdout ? String(e.stdout) : ''; }
+  return JSON.parse(out.replace(/^[^\[]*/, '') || '[]');
+};
 
 const rows = q(`select business, rule, count(*)::int n, count(*) filter (where fixed)::int fixed, max(at) last from chatbot.violations where ${where} group by 1,2 order by n desc`);
 if (!rows.length) { console.log(`No violations in the last ${days} days.`); process.exit(0); }
