@@ -51,7 +51,7 @@
     var here = ' (' + ctx.ad + ', ' + ctx.gn[ctx.gender] + ')';
     if (!vs.length) {
       var em = el('div', 'empty');
-      em.appendChild(el('strong', '', 'אין עדיין נתונים למודעה הזאת'));
+      em.appendChild(el('strong', '', 'אין עדיין נתונים ל-' + ctx.ad + ', ' + ctx.gn[ctx.gender]));
       em.appendChild(el('p', 'hint', 'נספרים רק ביקורים שהגיעו ממודעה בפייסבוק או באינסטגרם, בגרסה ' + ctx.gn[ctx.gender] + '.'));
       body.appendChild(em); return;
     }
@@ -96,14 +96,15 @@
   // 0. the ads side by side: visits, how many got to the end, how many tapped a link; each gender under its ad
   function compare(body, rows) {
     var by = {};
+    Object.keys(ctx.titles || {}).forEach(function (k) { by[k] = { ad: k, n: 0, end: 0, cta: 0, g: {} }; });
     rows.forEach(function (r) {
       var v = shape(r), a = by[r.ad] = by[r.ad] || { ad: r.ad, n: 0, end: 0, cta: 0, g: {} };
       var g = a.g[r.gender] = a.g[r.gender] || { n: 0, cta: 0 };
       a.n++; g.n++; if (v.far >= 5) a.end++; if (v.cta) { a.cta++; g.cta++; }
     });
-    var list = Object.keys(by).map(function (k) { return by[k]; }).sort(function (x, y) { return y.n - x.n; });
-    var sec = section('השוואה בין המודעות', 'כל המגדרים יחד. הפס הוא אחוז הביקורים שהסתיימו בלחיצה על קישור.');
-    if (!list.length) { sec.appendChild(el('p', 'hint', 'אין עדיין נתונים. נספרים רק ביקורים שהגיעו ממודעה בפייסבוק או באינסטגרם.')); body.appendChild(sec); return; }
+    var list = Object.keys(by).map(function (k) { return by[k]; }).sort(function (x, y) { return y.n - x.n || (x.ad < y.ad ? -1 : 1); });
+    var sec = section('השוואה בין המודעות', 'סקירה של כל המודעות, כל המגדרים יחד. הפס הוא אחוז הביקורים שהסתיימו בלחיצה על קישור.');
+    if (!rows.length) { sec.appendChild(el('p', 'hint', 'אין עדיין נתונים. נספרים רק ביקורים שהגיעו ממודעה בפייסבוק או באינסטגרם.')); body.appendChild(sec); return; }
     list.forEach(function (a) {
       var r = el('div', 'prow' + (a.ad === ctx.ad ? ' cur' : ''));
       var t = el('div', 'frow'); var name = el('b', 'code', a.ad); if (ctx.titles && ctx.titles[a.ad]) name.title = ctx.titles[a.ad];
@@ -126,7 +127,7 @@
 
   function open(c) {
     ctx = c; var d = $('statsDlg'), my = ++seq;
-    $('statsSub').textContent = c.ad + ' · ' + c.gn[c.gender];
+    $('statsSub').textContent = 'כל המודעות, ומתחת המודעה הפתוחה בעורך';
     skeleton();
     if (!d.open) { d.showModal(); requestAnimationFrame(function () { requestAnimationFrame(function () { d.classList.add('in'); }); }); }
     fetchJourneys(c.biz).then(function (rows) { if (my === seq) draw(rows); }, function () {
