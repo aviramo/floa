@@ -219,6 +219,8 @@ Deno.serve(async (req) => {
   if (address !== 'plural' && wrongSingular(parsed.reply, address)) replyFixes.push({ type: 'text', text: genderFix(address) });
   if (!parsed.reply) replyFixes.push({ type: 'text', text: '## חסר טקסט\nהתשובה הקודמת הייתה רק סימונים. כתבו הודעה קצרה לאדם לפני הסימונים.' });
   { const sf = styleFix(parsed.reply, lastUser, clean.filter((m: any) => m.role === 'user').map((m: any) => String(m.content)).join(' ')); if (sf) replyFixes.push({ type: 'text', text: sf }); }
+  { const okc = parsed.chips.filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && chipOk(c) && fullChip(c)); if (!distress && okc.length < 2) replyFixes.push({ type: 'text', text: `## תשובות מוכנות
+בסוף ההודעה חייבות להיות בדיוק שתי תשובות מוכנות בתגית chips, מופרדות ב-|. כל אחת משפט טבעי של ארבע עד שבע מילים שהאדם אומר, בלשונו, כתשובה ישירה לשאלה שכתבתם עכשיו, ושתיהן מקדמות את השיחה. בלי תשובות של מילה או שתיים.` }); }   // the writer of the reply writes its quick replies, so they fit its own question
   if (replyFixes.length) {
     const raw2 = await claude(apiKey, model, [...system, ...replyFixes], merged, 1400);
     if (raw2) { const o2 = extractState(raw2), p2 = parse(o2.text); if (p2.reply) { text = o2.text; incoming = o2.state; parsed = p2; parsed.reply = scrub(parsed.reply); } }
