@@ -10,11 +10,11 @@
   const pick = (t, g) => String(t == null ? '' : t).replace(/\{f:([^|}]*)\|m:([^}]*)\}/g, (_, f, m) => (g === 'female' ? f : m));
 
   async function run(c) {
-    const { log, el, cfg, business, cid, segment, src, track, reduce, KEY, scroll, bubble, who, typing, wait, setBusy, inp, grow, endpoint, anonKey, device } = c;
+    const { log, el, cfg, business, cid, segment, src, track, reduce, KEY, scroll, bubble, typing, wait, setBusy, inp, grow, endpoint, anonKey, device } = c;
     const g = segment.gender === 'female' ? 'female' : 'male';
     let data = null;
     try { const r = await fetch('businesses/' + business + '.script.json', { cache: 'no-cache' }); if (r.ok) data = await r.json(); } catch (e) { /* the page shows the fixed error below */ }
-    if (!data || !data.pains) { who(); bubble('bot', cfg.errorText); return; }
+    if (!data || !data.pains) { bubble('bot', cfg.errorText); return; }
     const pain = data.pains[cid] || data.pains[data.defaultPain] || Object.values(data.pains)[0];
     const T = (t) => pick(t, g);
 
@@ -122,13 +122,11 @@
     // start: the greeting is a bubble of its own, not one of the five
     track('ChatOpen', { ad: cid, source: 'script' });
     if (st.log.length) {
-      who();
       for (const m of st.log) bubble(m.r === 'user' ? 'user' : 'bot', m.t);
       showOptions(Math.min(st.i, steps.length - 1));
       setBusy(false);
       return;
     }
-    who();
     const hello = 'היי, אני הבוט של "יוצאים להרפתקה" 🙂';
     await say('bot', hello);
     const first = T(steps[0].say);
