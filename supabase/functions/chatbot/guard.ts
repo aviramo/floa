@@ -156,7 +156,7 @@ export function genderChip(c: string, a: 'female' | 'male' | 'plural'): string {
 const ONE_WORD_OK = /^(כן|לא|קצת|אולי|בטח|מעניין|בבקשה|תודה|בסדר|סתם|נשמע|ברור|מתי|בערב|בבוקר|לבד|פחד|מבוכה|עייפות|לחץ|שקט|הגוף|הראש|שניהם|בעבודה|בבית)$/;
 export const chipOk = (c: string) => {
   const w = c.trim().split(/\s+/);
-  if (c.trim().length < 2 || /[:,]$/.test(c.trim()) || w.length > 7 || /ככה זה נשמע/.test(c)) return false;
+  if (c.trim().length < 2 || /[:,]$/.test(c.trim()) || w.length > 8 || /ככה זה נשמע/.test(c)) return false;
   if (w[w.length - 1].length < 2 && w.length > 1) return false;      // cut in the middle ("משהו ש")
   if (w.length === 1 && !ONE_WORD_OK.test(w[0])) return false;        // "האם" and the like
   return true;
