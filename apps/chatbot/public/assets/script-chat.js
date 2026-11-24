@@ -44,14 +44,14 @@
     }
 
     // the agent's one sentence: the ad text, the gender and the conversation go along; a failure, a delay or a rule it broke returns null
-    async function react(text, source, question) {
+    async function react(text, source, question, step) {
       if (!endpoint) return { reaction: null };
       const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 4500);
       try {
         const r = await fetch(endpoint, {
           method: 'POST', signal: ctl.signal,
           headers: { 'Content-Type': 'application/json', apikey: anonKey, Authorization: 'Bearer ' + anonKey },
-          body: JSON.stringify({ business, mode: 'react', pain: cid, segment, device, text, source, question, ad: pain.ad, history: st.log.slice(-10) }),
+          body: JSON.stringify({ business, mode: 'react', pain: cid, segment, device, text, source, question, step, ad: pain.ad, history: st.log.slice(-10) }),
         });
         const d = await r.json().catch(() => ({}));
         return r.ok ? { reaction: d.reaction || null, safety: !!d.safety } : { reaction: null };
@@ -106,7 +106,7 @@
       track('ChatStep', { pain: cid || 'default', step: i + 1, source });
       await say('user', text, true);
       const t = typing();
-      const [res] = await Promise.all([react(text, source, question), wait(reduce ? 0 : 900)]);
+      const [res] = await Promise.all([react(text, source, question, i), wait(reduce ? 0 : 900)]);
       t.remove();
       if (res.safety) { st.log.push({ r: 'bot', t: data.common.crisis.say }); save(); await say('bot', data.common.crisis.say, true); crisis(); busyNow = false; return; }
       const ack = res.reaction || staticAck || T(data.common.fallbackAck);

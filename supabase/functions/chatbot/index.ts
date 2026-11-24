@@ -83,14 +83,14 @@ async function forceQuestion(apiKey: string, model: string, a: { reply: string; 
 
 // The first bubble of a scripted turn: ONE short sentence that reflects what the visitor tapped or wrote. It is not a question and it leads nowhere: the next bubble is pre-written.
 // Anything that breaks a rule returns null and the page shows the pre-written reaction instead. Nothing is saved.
-function cleanReaction(raw: string | null, address: 'female' | 'male' | 'plural', b: JourneyBusiness): string | null {
+function cleanReaction(raw: string | null, address: 'female' | 'male' | 'plural', b: JourneyBusiness, maxWords = 6): string | null {
   let r = String(raw ?? '').replace(/<[^>]*>/g, '').replace(/\s*\n+\s*/g, ' ').trim().replace(/^["״“]+|["״”]+$/g, '');
   r = fixAddress(neutralize(r), address);
   r = r.replace(/^(מבינה|מבין|שומעת|שומע) ש/, 'נשמע ש');   // the bot has no gender: an opening verb about itself becomes "it sounds that"
   if (/^(מבינה|מבין|שומעת|שומע|רואה|מרגישה|מרגיש)(\s|$)/.test(r)) return null;
   const first = sentencesOf(r).find((p) => !/\?/.test(p)) ?? '';
   r = stripFinalDot(first);
-  if (!r || r.split(/\s+/).length > 6 || /(מוכר|אמיתי|אותי|הרבה זמן|כל הזמן|תמיד|לאורך|בגלל|כנראה|בטח|נשמע כמו משהו|מלווה|קשור ל|אופי|דפוס)/.test(r) || r.length > 140 || /[—–]/.test(r) || mentionsOffer(r, b.lexicon.offerWords) || hasReferral(r)) return null;
+  if (!r || r.split(/\s+/).length > maxWords || /(מוכר|אמיתי|אותי|הרבה זמן|כל הזמן|תמיד|לאורך|בגלל|כנראה|בטח|נשמע כמו משהו|מלווה|קשור ל|אופי|דפוס)/.test(r) || r.length > 140 || /[—–]/.test(r) || mentionsOffer(r, b.lexicon.offerWords) || hasReferral(r)) return null;
   return r;
 }
 
@@ -218,12 +218,13 @@ Deno.serve(async (req) => {
   if (body.mode === 'react') {
     const textR = tx(body.text).slice(0, 600), questionR = tx(body.question).slice(0, 300);
     const viaText = body.source === 'text';
+    const firstAnswer = Number(body.step) === 0;   // only after the first question: a few words that this is common among many people
     if (!textR) return json(b, origin, { reaction: null });
     if (distressIn(textR)) return json(b, origin, { safety: true, reaction: null });   // a crisis in the visitor's words: the page shows its fixed answer
     const segR = parseSegment(body.segment ?? (body.gender ? { gender: body.gender } : {}));
     const addressR = addressOf(revealedGender([textR]) ?? linkGender(segR));
     const langR = addressR === 'female' ? 'נקבה' : addressR === 'male' ? 'זכר' : 'רבים';
-    const sysR = 'כותבים תגובה אמפתית קצרה בצ׳אט של "יוצאים להרפתקה". התפקיד היחיד הוא אמפתיה: משפט אחד קצר, עד שש מילים, שמראה שהקשבת, למשל "זה נשמע לא פשוט", "תודה ששיתפת", "זה מובן". אסור: לפרש, להסביר, לאפיין את האדם או את מצבו, לומר שזה מוכר או אמיתי, להתייחס אל עצמך ("אותי"), להשלים רעיונות שכתב, לחזור על מה שכתב במילים אחרות, להזכיר משך זמן או סיבה, לייעץ או לשאול. אם האדם שאל שאלה, כותבים רק "שאלה טובה, נגיע לזה בהמשך". בלי נקודה בסוף. הבוט עצמו בלי מגדר. פונים אל האדם בלשון ' + langR + ' אם צריך. מחזירים את המשפט בלבד.';
+    const sysR = 'כותבים תגובה אמפתית קצרה בצ׳אט של "יוצאים להרפתקה". התפקיד היחיד הוא אמפתיה: משפט אחד קצר, עד שש מילים, שמראה שהקשבת, למשל "זה נשמע לא פשוט", "תודה ששיתפת", "זה מובן". אסור: לפרש, להסביר, לאפיין את האדם או את מצבו, לומר שזה מוכר או אמיתי, להתייחס אל עצמך ("אותי"), להשלים רעיונות שכתב, לחזור על מה שכתב במילים אחרות, להזכיר משך זמן או סיבה, לייעץ או לשאול. אם האדם שאל שאלה, כותבים רק "שאלה טובה, נגיע לזה בהמשך". בלי נקודה בסוף. ' + (firstAnswer ? 'בתגובה הזאת בלבד מוסיפים כמה מילים שזו תופעה נפוצה אצל הרבה אנשים, למשל "זה מובן, וזה נפוץ אצל הרבה אנשים" (עד תשע מילים). ' : '') + 'הבוט עצמו בלי מגדר. פונים אל האדם בלשון ' + langR + ' אם צריך. מחזירים את המשפט בלבד.';
     const adR = tx(body.ad).slice(0, 300);
     const histR = (Array.isArray(body.history) ? body.history : []).slice(-10).map((h: any) => (h && h.r === 'user' ? 'האדם: ' : 'הבוט: ') + tx(h && h.t).slice(0, 300)).join('\n');
     const genderLine = 'מגדר האדם: ' + (addressR === 'female' ? 'אישה' : addressR === 'male' ? 'גבר' : 'לא ידוע');
@@ -231,7 +232,7 @@ Deno.serve(async (req) => {
     const histLine = histR ? 'השיחה עד עכשיו:\n' + histR : '';
     const askLine = 'השאלה האחרונה של הבוט: ' + (questionR || '(פתיחה)') + '\nמה האדם ענה (' + (viaText ? 'בכתיבה חופשית' : 'בלחיצה על כפתור') + '): ' + textR;
     const rawR = await claude(apiKey, MODEL, [{ type: 'text', text: sysR }], [{ role: 'user', content: [genderLine, adLine, histLine, askLine].filter(Boolean).join('\n\n') }], 80);
-    const reaction = cleanReaction(rawR, addressR, b);
+    const reaction = cleanReaction(rawR, addressR, b, firstAnswer ? 9 : 6);
     if (!reaction) console.log(JSON.stringify({ react_dropped: true, raw: String(rawR ?? '').slice(0, 160) }));
     return json(b, origin, { reaction });
   }
