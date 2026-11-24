@@ -78,7 +78,7 @@ Deno.test('opening task names the business bot and keeps the meeting out of the 
   if (!t.includes(harpatka.botName) || !t.includes('אסור להזכיר ערב, מפגש או תנועה')) throw new Error(t);
 });
 
-import { inventsLife, endOnQuestion, revealedGender, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsOffer, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { endOnQuestion, revealedGender, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsOffer, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 Deno.test('distress net catches plain phrasings and not ordinary talk', () => {
   for (const t of ['אני חושבת על למות', 'לפעמים אני חושבת שעדיף שלא אהיה פה', 'רוצה למות', 'אין טעם לחיות']) if (!distressIn(t)) throw new Error('missed: ' + t);
   for (const t of ['הייתי רוצה להרגיש חלק ממשהו', 'מתי המפגש הקרוב?', 'מת מצחוק', 'עייפה ולא ישנה']) if (distressIn(t)) throw new Error('false alarm: ' + t);
@@ -371,11 +371,4 @@ Deno.test('round eleven: a reply is cut after its last question, goodbyes and th
 Deno.test('round eleven: talk about the conversation itself is sent back', () => {
   if (!styleFix('זה נשמע מתיש. לפני שאני שואל עוד, את רוצה לספר מה קורה?', 'הרגע שאחרי')) throw new Error('process talk missed');
   if (styleFix('זה נשמע מתיש. מה קורה בדיוק ברגע שבו זה נסגר?', 'הרגע שאחרי')) throw new Error('false alarm');
-});
-
-
-Deno.test('round eleven: a quick reply never invents the visitor life', () => {
-  eq(inventsLife('זה התחיל אחרי שהתגרשתי לפני כמה שנים', 'האדם: הרגע שאחרי, משהו בי נסגר'), true, 'divorce nobody mentioned');
-  eq(inventsLife('זה קורה לי בעבודה', 'האדם: אני עובדת הרבה. הבוט: איך זה בעבודה?'), false, 'said in the conversation');
-  eq(inventsLife('אני מרגישה לחץ בחזה', 'האדם: אני נסגרת מיד'), false, 'no life word');
 });

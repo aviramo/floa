@@ -8,7 +8,7 @@ import { lastSentence, buildMessages, MAX_USER_TURNS, parse, parseOpening, quote
 import { BUSINESSES } from './businesses/index.ts';
 import { journeyOf } from './journey.ts';
 import { openingTask, sessionFacts, stableSystem, stateBlock, addressOf, turnReminder } from './prompt.ts';
-import { inventsLife, endOnQuestion, revealedGender, openingMeetingFix, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsOffer, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { endOnQuestion, revealedGender, openingMeetingFix, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsOffer, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 import { ctaFor, ctasOf, diffEvents, extractState, initialState, linkGender, mergeState, stateFromClient } from './state.ts';
 import type { CampaignContext, JourneyBusiness, SessionState } from './types.ts';
 
@@ -73,7 +73,7 @@ async function chipsFallback(apiKey: string, model: string, a: { reply: string; 
 
 // The second step of a turn: the quick replies are made from the FINAL message the visitor sees (the first step already sent it), checked once, written again once if they fail.
 async function makeChips(apiKey: string, model: string, a: { reply: string; lastUser: string; address: 'female' | 'male' | 'plural'; recent: string; pitchOk: boolean; offerWords: RegExp; trace?: unknown[] }): Promise<string[]> {
-  const keep = (arr: string[]) => arr.filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && chipOk(c) && !inventsLife(c, a.recent + ' ' + a.reply) && (a.pitchOk || !mentionsOffer(c, a.offerWords))).map((c) => genderChip(c, a.address));
+  const keep = (arr: string[]) => arr.filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && chipOk(c) && (a.pitchOk || !mentionsOffer(c, a.offerWords))).map((c) => genderChip(c, a.address));
   let chips: string[] = [];
   const pool: string[] = [];   // everything that passed the form checks, so a vetoed reply can still fill a missing place
   for (let k = 0; k < 3 && chips.length < 2; k++) {
