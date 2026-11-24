@@ -64,7 +64,7 @@ async function claude(apiKey: string, model: string, system: unknown[], messages
 // It sees the conversation and the last message, and answers only that.
 async function chipsFallback(apiKey: string, model: string, a: { reply: string; lastUser: string; address: 'female' | 'male' | 'plural'; recent: string }): Promise<string[]> {
   const lang = a.address === 'female' ? 'נקבה' : a.address === 'male' ? 'זכר' : 'ניטרלית (בלי פעלים או תארים בגוף ראשון שמסמנים מגדר)';
-  const sys = 'כותבים שתי תשובות מוכנות לצ׳אט, בשורה אחת מופרדות ב-|. כל תשובה היא משפט טבעי של ארבע עד שבע מילים שהאדם עצמו אומר בגוף ראשון, כתשובה ישירה לשאלה בהודעה האחרונה של הבוט (ואם ההודעה היא הזמנה ולא שאלה, כל תשובה היא תחילת סיפור קונקרטי). שתיהן מקדמות את השיחה, בדרכים שונות, בלי סירוב ובלי ״לא יודע״. לא ניסוח של הבוט ולא שאלה אל הבוט. לשון האדם: ' + lang + '.';
+  const sys = 'כותבים שתי תשובות מוכנות לצ׳אט, בשורה אחת מופרדות ב-|. כל תשובה היא משפט טבעי של ארבע עד שבע מילים שהאדם עצמו אומר בגוף ראשון, כתשובה ישירה לשאלה בהודעה האחרונה של הבוט (ואם ההודעה היא הזמנה ולא שאלה, כל תשובה היא תחילת סיפור קונקרטי). שתיהן מקדמות את השיחה, בדרכים שונות, בלי סירוב ובלי ״לא יודע״. בלי להמציא פרטים על חיי האדם (עבודה, בוס, משפחה): רק מה שנאמר בשיחה. לא ניסוח של הבוט ולא שאלה אל הבוט. לשון האדם: ' + lang + '.';
   const raw = await claude(apiKey, model, [{ type: 'text', text: sys }], [{ role: 'user', content: 'השיחה עד עכשיו:\n' + a.recent + '\n\nהודעת הבוט האחרונה (עליה עונים):\n' + a.reply }], 220);
   return (raw ?? '').replace(/<[^>]*>/g, '').split(/[|\n]/).map((s) => s.trim().replace(/^[-•\d.\s]+/, '')).filter((s) => s && s.length <= 60);
 }
