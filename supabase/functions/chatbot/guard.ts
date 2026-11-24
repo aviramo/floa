@@ -111,21 +111,11 @@ export function pitchAllowed(a: { turns: number; lastUser: string; prevDone: str
 }
 export const earlyPitchFix = '## הצעה מוקדמת מדי\nהטיוטה הזכירה את הערב או המפגש לפני שהושלם החיבור. כתבו שוב בלי להזכיר את הערב, המפגש, תאריך, מחיר או קישור: התייחסות קצרה למה שהאדם אמר ושאלה אחת קלה על הנושא עצמו.';
 
-// Never one quick reply or none: at least three, topped up from a neutral pool without repeating what the model already offered.
-export function padChips(chips: string[], pool: string[], min = 3): string[] {
-  const out = [...chips];
-  for (const c of pool) { if (out.length >= min) break; if (!out.includes(c)) out.push(c); }
-  return out;
-}
-export const OPENING_POOL = ['בא לי לספר קצת על זה', 'אני רוצה להבין על מה מדובר'];
-export const CHAT_POOL = ['אפשר לשמוע עוד על זה', 'איך אפשר להצטרף'];
 // "I have a question" is a dead end: it asks the visitor to type, and the bot answers with a menu about the offer
 export const deadEndChip = (c: string) => /^(יש לי שאלה|שאלה|אני רוצה לשאול|רוצה לשאול)/.test(c.trim());
-// Before the offer is on the table the pool answers a plain question about the topic, never "more details" about something not yet presented
-export const TOPIC_POOL = ['זה מוכר לי מאוד', 'אני רוצה לספר קצת על זה'];
 
 // Any word about the evening itself (not only date and price): before the bridge it is a skipped milestone.
-export const mentionsEvening = (reply: string) => /(הדר ואופיר|המנחים|הערב|ערב (תנועה|כזה|שבו|התנסות)|מפגש|מפגשים|מפגשי|במוזיקה ובתנועה|בלי לדעת לרקוד|לא צריך לדעת לרקוד|להתנסות איתם)/.test(String(reply ?? ''));
+export const mentionsOffer = (reply: string, offerWords: RegExp) => offerWords.test(String(reply ?? ''));
 
 // The reply offers the updates group in words: the button must be there too, whatever action the model reported.
 export const offersUpdates = (reply: string) => /קבוצת (ה)?עדכונים/.test(String(reply ?? ''));
@@ -179,9 +169,9 @@ export function wrongSingular(reply: string, a: 'female' | 'male' | 'plural'): b
 }
 
 // Last resort when the model still names the meeting before its stage: keep the sentences that do not, if a question is left
-export function stripMeeting(reply: string): string {
+export function stripMeeting(reply: string, offerWords: RegExp): string {
   const parts = String(reply ?? '').split(/(?<=[.!?])\s+/);
-  const kept = parts.filter((s) => !mentionsEvening(s));
+  const kept = parts.filter((s) => !mentionsOffer(s, offerWords));
   const out = kept.join(' ').trim();
   return /\?/.test(out) ? out : reply;
 }

@@ -8,7 +8,7 @@ import { lastSentence, buildMessages, MAX_USER_TURNS, parse, parseOpening, quote
 import { BUSINESSES } from './businesses/index.ts';
 import { journeyOf } from './journey.ts';
 import { openingTask, sessionFacts, stableSystem, stateBlock, addressOf, turnReminder } from './prompt.ts';
-import { endOnQuestion, revealedGender, openingMeetingFix, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, TOPIC_POOL, offersUpdates, mentionsEvening, CHAT_POOL, OPENING_POOL, padChips, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { endOnQuestion, revealedGender, openingMeetingFix, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsOffer, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 import { ctaFor, ctasOf, diffEvents, extractState, initialState, linkGender, mergeState, stateFromClient } from './state.ts';
 import type { CampaignContext, JourneyBusiness, SessionState } from './types.ts';
 
@@ -72,8 +72,8 @@ async function chipsFallback(apiKey: string, model: string, a: { reply: string; 
 }
 
 // The second step of a turn: the quick replies are made from the FINAL message the visitor sees (the first step already sent it), checked once, written again once if they fail.
-async function makeChips(apiKey: string, model: string, a: { reply: string; lastUser: string; address: 'female' | 'male' | 'plural'; recent: string; pitchOk: boolean; trace?: unknown[] }): Promise<string[]> {
-  const keep = (arr: string[]) => arr.filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && chipOk(c) && (a.pitchOk || !mentionsEvening(c))).map((c) => genderChip(c, a.address));
+async function makeChips(apiKey: string, model: string, a: { reply: string; lastUser: string; address: 'female' | 'male' | 'plural'; recent: string; pitchOk: boolean; offerWords: RegExp; trace?: unknown[] }): Promise<string[]> {
+  const keep = (arr: string[]) => arr.filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && chipOk(c) && (a.pitchOk || !mentionsOffer(c, a.offerWords))).map((c) => genderChip(c, a.address));
   let chips: string[] = [];
   const pool: string[] = [];   // everything that passed the form checks, so a vetoed reply can still fill a missing place
   for (let k = 0; k < 3 && chips.length < 2; k++) {
@@ -181,14 +181,14 @@ Deno.serve(async (req) => {
     const pitchC = pitchAllowed({ turns: userTexts.length, lastUser: lastUserC, prevDone: [], prevReadiness: '' });
     const recentC = msgsC.slice(-6).map((m) => (m.role === 'user' ? 'האדם: ' : 'הבוט: ') + m.content.slice(0, 300)).join('\n');
     const traceC: unknown[] = [];
-    const chipsC = await makeChips(apiKey, MODEL, { reply: lastBot.content, lastUser: lastUserC, address: addressC, recent: recentC, pitchOk: pitchC, trace: traceC });
+    const chipsC = await makeChips(apiKey, MODEL, { reply: lastBot.content, lastUser: lastUserC, address: addressC, recent: recentC, pitchOk: pitchC, offerWords: b.lexicon.offerWords, trace: traceC });
     return json(b, origin, { chips: chipsC, ...(device.startsWith('selftest') ? { dbg: traceC } : {}) });
   }
 
   const use = await usageHit(b, device, ip === 'unknown' ? '' : ip, body.mode === 'opening' ? 'opening' : 'chat');
   if (use && (use.device > DEVICE_DAY || use.ip > IP_DAY || use.total > TOTAL_DAY)) {
     if (body.mode === 'opening') return json(b, origin, { error: 'limit' }, 429);
-    return json(b, origin, { error: 'limit', reply: 'השיחה עמוסה כרגע. הכי נוח לכתוב להדר ולאופיר בוואטסאפ', chips: [], cta: 'whatsapp' });
+    return json(b, origin, { error: 'limit', reply: b.lexicon.busyMessage, chips: [], cta: 'whatsapp' });
   }
 
   const legacyKey = tx(body.campaign ?? body.ad).slice(0, 40);   // an old link with the single parameter ?pain=touch
@@ -216,7 +216,7 @@ Deno.serve(async (req) => {
     const fixes: { type: string; text: string }[] = [];
     if (fromLink && op && op.messages.some(pluralAddress)) fixes.push({ type: 'text', text: genderFix(fromLink) });   // a woman or a man was addressed in the plural
     if (op && op.messages.some(assertsCondition)) fixes.push({ type: 'text', text: conditionFix });
-    if (op && op.messages.some(mentionsEvening)) fixes.push({ type: 'text', text: openingMeetingFix });   // the opening must not describe the activity                   // the opening stated the visitor's condition
+    if (op && op.messages.some((m: string) => mentionsOffer(m, b.lexicon.offerWords))) fixes.push({ type: 'text', text: openingMeetingFix });   // the opening must not describe the activity                   // the opening stated the visitor's condition
     if (op && fixes.length) {   // one more try, told exactly why
       const raw2 = await claude(apiKey, model, [...openSystem, ...fixes], [{ role: 'user', content: 'התחילו.' }], 800);
       const op2 = raw2 ? parseOpening(raw2) : null;
@@ -233,7 +233,7 @@ Deno.serve(async (req) => {
   const built = buildMessages(body.messages);
   if (!built) return json(b, origin, { error: 'messages' }, 400);
   const { clean, merged, turns } = built;
-  if (turns > MAX_USER_TURNS) return json(b, origin, { error: 'limit', reply: 'זו כבר שיחה ארוכה. כדי להמשיך, הכי נוח לכתוב להדר ולאופיר בוואטסאפ', chips: [], cta: 'whatsapp' });
+  if (turns > MAX_USER_TURNS) return json(b, origin, { error: 'limit', reply: b.lexicon.tooLongMessage, chips: [], cta: 'whatsapp' });
 
   const prev = stateFromClient(body.state, journey, fromLink);
   const address = addressOf(revealedGender(clean.filter((m: any) => m.role === 'user').map((m: any) => String(m.content))) ?? prev.gender);   // what the visitor says about themselves wins over the link   // the saved gender parameter, not the link again
@@ -254,7 +254,7 @@ Deno.serve(async (req) => {
   // One more try, told exactly why, when the reply still speaks to a woman or a man in the plural, or offers the evening before the visitor reacted to the bridge
   const replyFixes: { type: string; text: string }[] = [];
   if (address !== 'plural' && pluralAddress(parsed.reply)) replyFixes.push({ type: 'text', text: genderFix(address) });
-  if (!distress && (putsEveningOnTable(parsed.reply) || mentionsEvening(parsed.reply)) && !pitchAllowed({ turns, lastUser, prevDone: prev.done, prevReadiness: prev.readiness })) replyFixes.push({ type: 'text', text: earlyPitchFix });
+  if (!distress && (putsEveningOnTable(parsed.reply) || mentionsOffer(parsed.reply, b.lexicon.offerWords)) && !pitchAllowed({ turns, lastUser, prevDone: prev.done, prevReadiness: prev.readiness })) replyFixes.push({ type: 'text', text: earlyPitchFix });
   if (address !== 'plural' && wrongSingular(parsed.reply, address)) replyFixes.push({ type: 'text', text: genderFix(address) });
   if (!parsed.reply) replyFixes.push({ type: 'text', text: '## חסר טקסט\nהתשובה הקודמת הייתה רק סימונים. כתבו הודעה קצרה לאדם לפני הסימונים.' });
   { const sf = styleFix(parsed.reply, lastUser, clean.filter((m: any) => m.role === 'user').map((m: any) => String(m.content)).join(' ')); if (sf) replyFixes.push({ type: 'text', text: sf }); }
@@ -264,11 +264,11 @@ Deno.serve(async (req) => {
   }
   const pitchOk = pitchAllowed({ turns, lastUser, prevDone: prev.done, prevReadiness: prev.readiness });
   // Quick replies never name the evening or its people before the visitor may hear about them, and never offer "I have a question"
-  let chips = parsed.chips.filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && (pitchOk || !mentionsEvening(c)) && chipOk(c)).map((c) => genderChip(c, address));
+  let chips = parsed.chips.filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && (pitchOk || !mentionsOffer(c, b.lexicon.offerWords)) && chipOk(c)).map((c) => genderChip(c, address));
   let replyText = parsed.reply;
-  if (!distress && !pitchAllowed({ turns, lastUser, prevDone: prev.done, prevReadiness: prev.readiness }) && mentionsEvening(replyText)) replyText = stripMeeting(replyText);   // told once already
+  if (!distress && !pitchAllowed({ turns, lastUser, prevDone: prev.done, prevReadiness: prev.readiness }) && mentionsOffer(replyText, b.lexicon.offerWords)) replyText = stripMeeting(replyText, b.lexicon.offerWords);   // told once already
   let reply = fixAddress(stripGreeting(neutralize(replyText)), address);
-  if (!reply) return json(b, origin, { reply: 'מובן. אם בא לך להמשיך, אני כאן', chips: ['קצת עוד', 'איך זה נראה בפועל', 'לא כרגע'], cta: null, ctas: [], state: prev, hasFacts: !!b.siteOnly, hasMeeting: false });   // the model sent only marks twice: a short human line, never an error page
+  if (!reply) return json(b, origin, { reply: b.lexicon.fallbackReply, chips: ['קצת עוד', 'איך זה נראה בפועל', 'לא כרגע'], cta: null, ctas: [], state: prev, hasFacts: !!b.siteOnly, hasMeeting: false });   // the model sent only marks twice: a short human line, never an error page
   // A question that offers a choice ("A or B") is not answered by a bare yes or no
   if (/\sאו\s/.test(lastSentence(reply))) chips = chips.filter((c) => !/^(כן|לא)(,.*)?$/.test(c.trim()));
 

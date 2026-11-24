@@ -56,6 +56,7 @@ description: חוקי הזרימה של מנוע הצ'אטבוט (chatbot.floa.c
 ## כשמשנים את הזרימה
 
 - משנים במנוע רק מה שנכון לכל עסק. מה שנכון לעסק אחד נכנס ל-`businesses/<key>/`.
-- ההצעה נקראת במנוע "הערב" ו"המפגש" כי הרפתקה הייתה הראשונה. **זה חוב:** `mentionsEvening`, `putsEveningOnTable`, `offersUpdates`, `OPENING_POOL`, `CHAT_POOL` ושורות ב-`prompt.ts` נושאים מילים של הרפתקה. עסק שני צריך להעביר אותן להגדרת העסק (שם ההצעה, מילות זיהוי, תשובות ברירת מחדל) לפני שעולה.
+- **אוצר המילים של עסק יושב ב-`businesses/<key>/lexicon.ts` ונקרא דרך `b.lexicon`** (`BusinessLexicon` ב-`types.ts`): `offerWords` (מילים שמזכירות את ההצעה, שלפני שלבה הודעה נשאלת מחדש), `busyMessage`, `tooLongMessage`, `fallbackReply`. עסק חדש מגדיר אותם, והמנוע לא כותב אף אחד מהם. פונקציות ב-`guard.ts` (`mentionsOffer`, `stripMeeting`) מקבלות את הביטוי מהעסק.
+- **חוב שנשאר במנוע** (מילים של הרפתקה, "הערב" ו"המפגש", שעוד לא עברו ל-lexicon): `ASKS_ABOUT_IT` ו-`asksDetails` (חלק מהמילים: "המפגש", "הערב", "המנחים"), `putsEveningOnTable`, `offersUpdates`, `earlyPitchFix` ו-`openingMeetingFix` (נוסחי תיקון), `DISTRESS`, והטקסטים של `stableSystem` ב-`prompt.ts` (מסלול אבני הדרך, בשימוש רק בעסק בלי `flowPrompt`). לפני עסק שני מעבירים אותם ל-`BusinessLexicon` כשדות (`askWords`, `earlyFix`, `openingFix`) ובודקים ש-`engine.test.ts` ממשיך לעבור.
 - מריצים: `cd supabase/functions/chatbot && deno test --allow-env` ו-`node apps/chatbot/test/engine-lib.test.mjs`. בדיקות חיות עולות כסף: שיחה אחת ממוקדת, לא מטאטא.
 - פריסה: `supabase functions deploy chatbot --no-verify-jwt --project-ref aexmnaxvahblveejsbup`, ואז קומיט ופוש ל-main.

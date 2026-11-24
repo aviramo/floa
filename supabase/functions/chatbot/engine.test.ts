@@ -78,7 +78,7 @@ Deno.test('opening task names the business bot and keeps the meeting out of the 
   if (!t.includes(harpatka.botName) || !t.includes('אסור להזכיר ערב, מפגש או תנועה')) throw new Error(t);
 });
 
-import { endOnQuestion, revealedGender, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsEvening, padChips, CHAT_POOL, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { endOnQuestion, revealedGender, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsOffer, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 Deno.test('distress net catches plain phrasings and not ordinary talk', () => {
   for (const t of ['אני חושבת על למות', 'לפעמים אני חושבת שעדיף שלא אהיה פה', 'רוצה למות', 'אין טעם לחיות']) if (!distressIn(t)) throw new Error('missed: ' + t);
   for (const t of ['הייתי רוצה להרגיש חלק ממשהו', 'מתי המפגש הקרוב?', 'מת מצחוק', 'עייפה ולא ישנה']) if (distressIn(t)) throw new Error('false alarm: ' + t);
@@ -205,9 +205,9 @@ Deno.test('the evening is offered after a bridge the visitor reacted to, never s
   eq(pitchAllowed({ ...base, turns: 4 }), false, 'four messages alone are not enough');
   eq(pitchAllowed({ ...base, lastUser: 'מתי זה ובכמה?' }), true, 'asked');
   eq(pitchAllowed({ ...base, lastUser: 'קשה לי לדבר על זה' }), false, 'rather not talk: still no evening before the bridge');
-  eq(mentionsEvening('יש ערב שבו לא צריך לדעת לרקוד'), true, 'evening mentioned');
-  eq(mentionsEvening('הדר ואופיר מוכנים לענות'), true, 'names before the offer');
-  eq(mentionsEvening('לפעמים יש רצון לקשר. איך זה נראה אצלך?'), false, 'topic only');
+  eq(mentionsOffer('יש ערב שבו לא צריך לדעת לרקוד', OFFER), true, 'evening mentioned');
+  eq(mentionsOffer('הדר ואופיר מוכנים לענות', OFFER), true, 'names before the offer');
+  eq(mentionsOffer('לפעמים יש רצון לקשר. איך זה נראה אצלך?', OFFER), false, 'topic only');
   eq(pitchAllowed({ ...base, turns: 5 }), true, 'a long conversation');
   eq(putsEveningOnTable('יש מפגש ביום רביעי, 2.12, בשעה 20:30. המחיר 80 ש"ח'), true, 'date and price');
   eq(putsEveningOnTable('שקט זה בדיוק מה שמחפשים, ואיך זה נשמע לך?'), false, 'a bridge');
@@ -216,11 +216,7 @@ Deno.test('the evening is offered after a bridge the visitor reacted to, never s
   for (const needle of ['לא קופצים להצעה', 'הודעה אחת מחברת', 'אסור בהודעה אחת גם לחבר']) if (!s.includes(needle)) throw new Error('missing ' + needle);
 });
 
-Deno.test('quick replies are topped up from the pool without repeats (two now)', () => {
-  eq(padChips([], CHAT_POOL, 2).length, 2, 'none');
-  eq(padChips(['אפשר לשמוע עוד על זה'], CHAT_POOL, 2), ['אפשר לשמוע עוד על זה', 'איך אפשר להצטרף'], 'one, no repeat');
-  eq(padChips(['א', 'ב', 'ג', 'ד'], CHAT_POOL, 2).length, 4, 'four stay');
-});
+const OFFER = harpatka.lexicon.offerWords;
 
 Deno.test('a reply that offers the updates group always carries the button', () => {
   eq(offersUpdates('אם תרצי, הנה קבוצת העדכונים, ואפשר להצטרף בלי להתחייב'), true, 'offered');
@@ -234,7 +230,6 @@ Deno.test('quick replies answer the last question of the message', () => {
 Deno.test('no dead-end quick reply', () => {
   for (const s of ['יש לי שאלה', 'שאלה קטנה']) if (!deadEndChip(s)) throw new Error('missed ' + s);
   for (const s of ['קצת', 'בעיקר בערבים']) if (deadEndChip(s)) throw new Error('false alarm ' + s);
-  if (CHAT_POOL.some(deadEndChip)) throw new Error('pool has a dead end');
 });
 
 Deno.test('a bare "glad that" is not a gender of the bot', () => {
@@ -257,7 +252,7 @@ Deno.test('round one of the live conversations: no machinery, no pressure, chips
   eq(chipOk('ככה זה נשמע לי קצת:'), false, 'cut chip');
   eq(chipOk('בסופי שבוע'), true, 'good chip');
   eq(neutralize('נשמח שהגעת. אני לא יודע עדיין מה נכון לך'), 'שמחים שהגעת. לא ברור עדיין מה נכון לך', 'grammar and bot gender');
-  eq(stripMeeting('זה נשמע מתיש. יש מפגש ביום רביעי. מה הכי חסר לך?'), 'זה נשמע מתיש. מה הכי חסר לך?', 'strip');
+  eq(stripMeeting('זה נשמע מתיש. יש מפגש ביום רביעי. מה הכי חסר לך?', OFFER), 'זה נשמע מתיש. מה הכי חסר לך?', 'strip');
 });
 
 Deno.test('the chat gives no meeting details: the site link does', async () => {
@@ -318,7 +313,7 @@ Deno.test('round eight: the visitor own words about gender win over the link; th
   eq(revealedGender(['אני מרגישה לבד']), 'female', 'מרגישה');
   eq(revealedGender(['אני מרגישה לבד', 'אני גבר בעצם']), 'male', 'last one counts');
   eq(revealedGender(['הכול מתנהל אבל שום דבר לא מרגש']), null, 'nothing said');
-  if (!mentionsEvening('מפגשי תנועה קבועים, עם הנחיה, לגברים ונשים')) throw new Error('opening intro not caught');
+  if (!mentionsOffer('מפגשי תנועה קבועים, עם הנחיה, לגברים ונשים', OFFER)) throw new Error('opening intro not caught');
 });
 
 Deno.test('round ten: no "what you wrote" after a few words or a tap', () => {

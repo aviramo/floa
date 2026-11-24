@@ -56,6 +56,14 @@ export interface CampaignContext {
   hypothesis?: string;        // for a campaign that exists only as a legacy ad key
 }
 
+// What differs from business to business in the guards and the fixed lines. Everything here is read from `b.lexicon`, never written in the engine.
+export interface BusinessLexicon {
+  offerWords: RegExp;        // words that mention the offer itself (before its stage the reply is asked again)
+  busyMessage: string;       // shown when the usage limit is hit
+  tooLongMessage: string;    // shown when a conversation passes its length limit
+  fallbackReply: string;     // when the model sends nothing usable twice
+}
+
 export interface JourneyBusiness<Ctx = unknown> {
   key: string;
   botName: string;
@@ -64,6 +72,7 @@ export interface JourneyBusiness<Ctx = unknown> {
   ageRange: string;
   painBriefs?: Record<string, string>;
   bioBrief?: string;
+  lexicon: BusinessLexicon;
   siteOnly?: boolean;                                // meeting details (date, place, price) are never given in the chat: the site has them
   flowPrompt?: string;                               // when set, the whole conversation flow of the business (free stages) replaces the milestone engine
   stageHints?: (turns: number) => string;
