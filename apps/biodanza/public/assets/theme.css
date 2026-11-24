@@ -40,3 +40,13 @@
 /* law 15: a window's or pane's header is one row, --fab tall (the kit's is --ctl; this app follows the law) */
 dialog.rsheet .sheet-head { min-height: var(--fab); }
 .rhead { min-height: calc(var(--fab) + var(--safe-t)); }
+
+/* the page itself never pans or flings: a sideways drag that the app takes for its own would otherwise end as a browser fling, and the next tap would only stop that fling instead of clicking. Lists and fields scroll on their own touch-action */
+html, body { touch-action: none; }
+
+/* a popup whose body is rows with their own background: the rows pad themselves (--gap each side), so the popup does not pad the sides a second time; its header keeps its own gap */
+dialog.rsheet .sheet:has(> .sheet-body > .rlist > .rrow) { padding-inline: 0; }
+dialog.rsheet .sheet:has(> .sheet-body > .rlist > .rrow) > .sheet-head { padding-inline: var(--gap); }
+
+/* adjacent icon buttons stand --gap apart everywhere (law 3, by the owner): a header pair, a section group */
+.rgroup { gap: var(--gap); }
