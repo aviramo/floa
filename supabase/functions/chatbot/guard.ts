@@ -236,7 +236,7 @@ export const oneMessage = (reply: string): string => ENDS_OK.test(String(reply ?
 
 // The one-sentence rule asks for one question at the end. A reply that is only a statement, or that packs two questions into one sentence ("מה קורה בגוף, מתי את מרגישה"),
 // or that talks about the question itself ("בתור שאלה אחת"), is rewritten once by a short call. A crisis, a goodbye and the site line are never rewritten.
-const INTERROGATIVE = /(^|[\s,.;:!?"(])(מה|מתי|איך|למה|איפה|האם|כמה|מי|איזה|איזו|אילו|באיזה|באילו)(?=[\s,.;:!?")]|$)/g;
+const INTERROGATIVE = /(^|[\s,.;:!?"(])ו?(מה|מתי|איך|למה|איפה|האם|כמה|מי|איזה|איזו|אילו|באיזה|באילו)(?=[\s,.;:!?")]|$)/g;
 export function needsQuestionRewrite(reply: string): boolean {
   const r = String(reply ?? '').trim();
   if (!r || ENDS_OK.test(r)) return false;
@@ -246,3 +246,6 @@ export function needsQuestionRewrite(reply: string): boolean {
   if ((last.match(INTERROGATIVE) ?? []).length > 1) return true;
   return /(בתור שאלה|שאלה אחת|שאלה ראשונה|אשאל|אשאל אותך|לפני ש(אני )?שואל)/.test(r);
 }
+
+// No full stop after the last sentence of a message or a quick reply (the owner's rule). A question mark stays.
+export const stripFinalDot = (s: string): string => String(s ?? '').replace(/[.\s]+$/, '').trim();

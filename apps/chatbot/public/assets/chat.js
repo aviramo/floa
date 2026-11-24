@@ -58,7 +58,7 @@
       if (chipRow) { chipRow.remove(); chipRow = null; }
       if (!chips || !chips.length) return;
       chipRow = el('div', 'ch-chips');
-      chips.slice(0, 2).forEach((t) => { const b = el('button', 'ch-chip', t); b.type = 'button'; b.addEventListener('click', () => submit(t, true)); chipRow.appendChild(b); });
+      chips.slice(0, 2).forEach((t) => { const tt = String(t).replace(/[.\s]+$/, ''); const b = el('button', 'ch-chip', tt); b.type = 'button'; b.addEventListener('click', () => submit(tt, true)); chipRow.appendChild(b); });
       log.appendChild(chipRow);
     };
     let chipSeq = 0;

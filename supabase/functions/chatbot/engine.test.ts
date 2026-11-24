@@ -78,7 +78,7 @@ Deno.test('opening task names the business bot and keeps the meeting out of the 
   if (!t.includes(harpatka.botName) || !t.includes('אסור להזכיר ערב, מפגש או תנועה')) throw new Error(t);
 });
 
-import { needsQuestionRewrite, oneMessage, oneSentence, stripReferrals, endOnQuestion, revealedGender, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsOffer, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { stripFinalDot, needsQuestionRewrite, oneMessage, oneSentence, stripReferrals, endOnQuestion, revealedGender, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsOffer, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 Deno.test('distress net catches plain phrasings and not ordinary talk', () => {
   for (const t of ['אני חושבת על למות', 'לפעמים אני חושבת שעדיף שלא אהיה פה', 'רוצה למות', 'אין טעם לחיות']) if (!distressIn(t)) throw new Error('missed: ' + t);
   for (const t of ['הייתי רוצה להרגיש חלק ממשהו', 'מתי המפגש הקרוב?', 'מת מצחוק', 'עייפה ולא ישנה']) if (distressIn(t)) throw new Error('false alarm: ' + t);
@@ -413,4 +413,11 @@ Deno.test('round eleven: a statement, two questions in a sentence, or talk about
   eq(needsQuestionRewrite('בתור שאלה אחת: מה קורה בגוף שלך באותו רגע, מתי את מרגישה את הרצון לברוח?'), true, 'two questions and process talk');
   eq(needsQuestionRewrite('זה נשמע כבד. מה קורה בגוף שלך באותו רגע?'), false, 'a statement and one question');
   eq(needsQuestionRewrite('הכול כתוב באתר, אפשר להציץ שם.'), false, 'site line');
+});
+
+Deno.test('round eleven: no full stop after the last sentence; a second question behind a prefix letter is caught', () => {
+  eq(stripFinalDot('זה נשמע כבד. מה קורה בגוף?'), 'זה נשמע כבד. מה קורה בגוף?', 'a question mark stays');
+  eq(stripFinalDot('הרגשתי שהוא צודק, ונשברתי.'), 'הרגשתי שהוא צודק, ונשברתי', 'a full stop goes');
+  eq(stripFinalDot('אפשר לדבר עכשיו עם הדר ואופיר.'), 'אפשר לדבר עכשיו עם הדר ואופיר', 'also a statement');
+  eq(needsQuestionRewrite('זה כואב. מה עבר בך כשהוא אמר את זה, והאם זה הפעם הראשונה?'), true, 'מה and והאם');
 });

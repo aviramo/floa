@@ -8,7 +8,7 @@ import { lastSentence, buildMessages, MAX_USER_TURNS, parse, parseOpening, quote
 import { BUSINESSES } from './businesses/index.ts';
 import { journeyOf } from './journey.ts';
 import { openingTask, sessionFacts, stableSystem, stateBlock, addressOf, turnReminder } from './prompt.ts';
-import { needsQuestionRewrite, oneMessage, oneSentence, stripReferrals, endOnQuestion, revealedGender, openingMeetingFix, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsOffer, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { stripFinalDot, needsQuestionRewrite, oneMessage, oneSentence, stripReferrals, endOnQuestion, revealedGender, openingMeetingFix, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsOffer, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 import { ctaFor, ctasOf, diffEvents, extractState, initialState, linkGender, mergeState, stateFromClient } from './state.ts';
 import type { CampaignContext, JourneyBusiness, SessionState } from './types.ts';
 
@@ -97,7 +97,7 @@ async function makeChips(apiKey: string, model: string, a: { reply: string; last
     }
   }
   if (chips.length < 2) chips = [...new Set([...chips, ...pool])].slice(0, 2);
-  return chips;
+  return chips.map(stripFinalDot);
 }
 
 // A quick reply is checked by a model before the visitor sees it: does it answer the kind of question asked (what, when, how, how much, why), is it said in the first person,
@@ -239,7 +239,7 @@ Deno.serve(async (req) => {
       const op2 = raw2 ? parseOpening(raw2) : null;
       if (op2 && op2.messages.length) op = op2;
     }
-    if (op) op.messages = op.messages.map((m) => fixAddress(neutralize(m), addressOf(fromLink)));
+    if (op) op.messages = op.messages.map((m) => stripFinalDot(fixAddress(neutralize(m), addressOf(fromLink))));
     if (op) op.chips = [];   // the second step makes them from the message as it is shown
     if (!op || !op.messages.length) return json(b, origin, { error: 'upstream' }, 502);
     const st: SessionState = { ...initialState(journey, fromLink), meta };
@@ -329,6 +329,7 @@ Deno.serve(async (req) => {
   if (b.siteOnly && cta === 'register' && !/(באתר|אתר)/.test(reply)) reply = reply.replace(/\s*$/, '') + ' אשמח להפנות אותך לאתר, שם אפשר לקרוא עוד.';
   if (!cta && facts && putsTheEveningOnTheTable && !['end', 'safety'].includes(next.action) && next.readiness !== 'not_fit') cta = 'register';
 
+  reply = stripFinalDot(reply);   // no full stop after the last sentence
   persist(b, session, src, campaignId, [...clean, { role: 'assistant', content: reply }], cta, next, diffEvents(prev, next));
   return json(b, origin, { reply, chips, chipsPending: next.action !== 'safety' && next.action !== 'end', cta, ctas: ctasOf(cta as any, b.siteOnly ? pitchOk : !!facts && eveningSeen), state: next, hasFacts: !!facts || !!b.siteOnly, hasMeeting: !!facts });
 });
