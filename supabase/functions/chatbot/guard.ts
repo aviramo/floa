@@ -203,3 +203,13 @@ export const openingMeetingFix = '## תיקון: הפתיחה בלי מפגש\n�
 
 // A quick reply reads like a normal message: at least three words (the one-word and two-word ones were the weak ones).
 export const fullChip = (c: string) => String(c ?? '').trim().split(/\s+/).length >= 3;
+
+// Every reply ends in a question (people do not type, the quick replies answer it). When the writer tacked a statement or an invitation after its question, cut it off:
+// the text up to the last question mark stays. A goodbye or the site invitation is left alone, and a reply without any question mark is left to the retry.
+const ENDS_OK = /(באתר|בקישור|אתר|ביי|להתראות|יום טוב|שיהיה|בהצלחה|תודה|1201|101)/;
+export function endOnQuestion(reply: string): string {
+  const r = String(reply ?? '').trim();
+  if (!r || /\?\s*$/.test(r) || ENDS_OK.test(r)) return r;
+  const i = r.lastIndexOf('?');
+  return i > 0 ? r.slice(0, i + 1).trim() : r;
+}

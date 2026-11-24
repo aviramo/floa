@@ -8,7 +8,7 @@ import { lastSentence, buildMessages, MAX_USER_TURNS, parse, parseOpening, quote
 import { BUSINESSES } from './businesses/index.ts';
 import { journeyOf } from './journey.ts';
 import { openingTask, sessionFacts, stableSystem, stateBlock, addressOf, turnReminder } from './prompt.ts';
-import { fullChip, revealedGender, openingMeetingFix, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, TOPIC_POOL, offersUpdates, mentionsEvening, CHAT_POOL, OPENING_POOL, padChips, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { endOnQuestion, fullChip, revealedGender, openingMeetingFix, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, TOPIC_POOL, offersUpdates, mentionsEvening, CHAT_POOL, OPENING_POOL, padChips, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 import { ctaFor, ctasOf, diffEvents, extractState, initialState, linkGender, mergeState, stateFromClient } from './state.ts';
 import type { CampaignContext, JourneyBusiness, SessionState } from './types.ts';
 
@@ -179,6 +179,11 @@ Deno.serve(async (req) => {
     if (op) {
       const okChip = (c: string) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && chipOk(c) && fullChip(c);
       let oc = op.chips.filter(okChip).map((c) => genderChip(c, addressOf(fromLink)));
+      if (oc.length < 2) {
+        const addr = addressOf(fromLink);
+        const more = (await chipsFallback(apiKey, model, { reply: op.messages[op.messages.length - 1], lastUser: '', address: addr, recent: op.messages.map((m) => 'הבוט: ' + m).join('\n') })).filter(okChip).map((c) => genderChip(c, addr));
+        oc = [...new Set([...oc, ...more])];
+      }
       op.chips = oc.slice(0, 2);
     }   // "לא יודע/ת" is gendered; the plain filter misses the slash form
     if (!op || !op.messages.length) return json(b, origin, { error: 'upstream' }, 502);
@@ -232,6 +237,7 @@ Deno.serve(async (req) => {
   if (/\sאו\s/.test(lastSentence(reply))) chips = chips.filter((c) => !/^(כן|לא)(,.*)?$/.test(c.trim()));
 
   const next = { ...mergeState(prev, incoming, journey), meta };
+  if (!distress && next.action !== 'safety' && next.action !== 'end') reply = endOnQuestion(reply);   // the reply always ends on its question
   if (!incoming) next.action = 'continue';      // a reply without a state block advances nothing
   if (distress) { next.action = 'safety'; next.readiness = 'concerned'; }
   let cta: 'register' | 'whatsapp' | 'updates' | null = b.flowPrompt ? ((['register', 'whatsapp', 'updates'] as const).find((c) => c === parsed.cta) ?? null) : ctaFor(next.action, !!facts);

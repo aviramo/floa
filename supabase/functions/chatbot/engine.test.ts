@@ -78,7 +78,7 @@ Deno.test('opening task names the business bot and keeps the meeting out of the 
   if (!t.includes(harpatka.botName) || !t.includes('אסור להזכיר ערב, מפגש או תנועה')) throw new Error(t);
 });
 
-import { revealedGender, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsEvening, padChips, CHAT_POOL, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { endOnQuestion, revealedGender, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsEvening, padChips, CHAT_POOL, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 Deno.test('distress net catches plain phrasings and not ordinary talk', () => {
   for (const t of ['אני חושבת על למות', 'לפעמים אני חושבת שעדיף שלא אהיה פה', 'רוצה למות', 'אין טעם לחיות']) if (!distressIn(t)) throw new Error('missed: ' + t);
   for (const t of ['הייתי רוצה להרגיש חלק ממשהו', 'מתי המפגש הקרוב?', 'מת מצחוק', 'עייפה ולא ישנה']) if (distressIn(t)) throw new Error('false alarm: ' + t);
@@ -364,4 +364,11 @@ Deno.test('round eleven: a reply must end in a question, except a goodbye or the
 Deno.test('round eleven: asking what is offered opens the door at once', () => {
   for (const q of ['מה אתם מציעים בעצם?', 'איך זה עובד', 'ספרי לי על זה', 'מה קורה שם']) eq(pitchAllowed({ turns: 2, lastUser: q, prevDone: [], prevReadiness: '' }), true, q);
   eq(pitchAllowed({ turns: 2, lastUser: 'הבית שקט מדי בערב', prevDone: [], prevReadiness: '' }), false, 'a pain is not a request');
+});
+
+Deno.test('round eleven: a reply is cut after its last question, goodbyes and the site line stay', () => {
+  eq(endOnQuestion('שמחים שזה מוכר. על מה זה מזכיר לך? אם זה משהו אחר, אפשר לדבר על זה'), 'שמחים שזה מוכר. על מה זה מזכיר לך?', 'cut');
+  eq(endOnQuestion('מה עולה לך מזה?'), 'מה עולה לך מזה?', 'already a question');
+  eq(endOnQuestion('הכול כתוב באתר, אפשר להציץ שם.'), 'הכול כתוב באתר, אפשר להציץ שם.', 'site line');
+  eq(endOnQuestion('אפשר לספר לי על זה'), 'אפשר לספר לי על זה', 'no question mark: left to the retry');
 });
