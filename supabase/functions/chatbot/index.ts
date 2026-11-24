@@ -60,17 +60,6 @@ async function claude(apiKey: string, model: string, system: unknown[], messages
   } catch (e) { console.error('chat', e); return null; }
 }
 
-// The model gave fewer than three quick replies: ask once, in a short call, for answers to the last question of this very message.
-// A fixed list can never fit every question, so it is only the last resort.
-async function chipsFor(apiKey: string, model: string, a: { reply: string; lastUser: string; address: 'female' | 'male' | 'plural'; pitchOk: boolean; recent?: string }, strict = false): Promise<string[]> {
-  const lang = a.address === 'female' ? 'נקבה' : a.address === 'male' ? 'זכר' : 'ניטרלית (בלי פעלים או תארים בגוף ראשון שמסמנים מגדר)';
-  const sys = 'כותבים תשובות מוכנות לצ׳אט. עונים בשורה אחת בלבד: שתי תשובות בדיוק, מופרדות ב-|. כל תשובה היא משפט שלם וטבעי (ארבע עד שבע מילים, לא מילה אחת או שתיים) שהאדם עצמו אומר, כמו הודעה רגילה שהיה כותב, בגוף ראשון, כתשובה בדיוק לשאלה האחרונה בהודעת הבוט. לא ניסוח של הבוט ולא שאלה אל הבוט (חוץ מ״איך זה נראה בפועל״ ו״איך נרשמים״), לא נקטע באמצע, בלי נקודתיים ובלי ״יש לי שאלה״. לשון האדם: ' + lang + '. בשאלת בחירה (א או ב) התשובות הן א, ב ועוד אחת. ' +
-    'שתי התשובות מקדמות את השיחה לצעד הבא, כל אחת בדרך אחרת (לשתף עוד, לשאול, לרצות להמשיך). בלי סירוב, בלי ״לא כרגע״ ובלי ״לא יודע״. ' + (a.pitchOk ? 'אחת התשובות מקדמת בעדינות: ״רוצה לשמוע עוד״ או ״איך נרשמים״.' : 'אסור תשובה שמזכירה מפגש, ערב או מנחים.') +
-    ' אם המשפט האחרון של הבוט הוא הזמנה ולא שאלה (״אם תרצו, אפשר לספר...״), התשובות הן תחילת סיפור קונקרטי של האדם (״זה קורה לי בעיקר בערב״, ״זה היה לפני כמה ימים״). כל תשובה חייבת להיות קשורה ישירות למה שהבוט כתב ולא כללית.' + (strict ? ' הניסיון הקודם נפסל כי לא הייתה בו תשובה שקשורה לטקסט: כתבו שתי תשובות שמתייחסות למילים של הבוט עצמו.' : '');
-  const raw = await claude(apiKey, model, [{ type: 'text', text: sys }], [{ role: 'user', content: (a.recent ? 'השיחה עד עכשיו:\n' + a.recent + '\n\n' : '') + 'מה שהאדם כתב: ' + a.lastUser.slice(0, 200) + '\nהודעת הבוט האחרונה (עליה עונים):\n' + a.reply }], 220);
-  return (raw ?? '').replace(/<[^>]*>/g, '').split(/[|\n]/).map((s) => s.trim().replace(/^[-•\d.\s]+/, '')).filter((s) => s && s.length <= 60);
-}
-
 const rpc = (name: string, args: Record<string, unknown>) =>
   fetch(SB_URL + '/rest/v1/rpc/' + name, { method: 'POST', headers: { apikey: SB_SERVICE, Authorization: 'Bearer ' + SB_SERVICE, 'Content-Type': 'application/json' }, body: JSON.stringify(args) });
 
@@ -182,7 +171,6 @@ Deno.serve(async (req) => {
     if (op) {
       const okChip = (c: string) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && chipOk(c) && fullChip(c);
       let oc = op.chips.filter(okChip).map((c) => genderChip(c, addressOf(fromLink)));
-      if (oc.length < 2) { const g2 = (await chipsFor(apiKey, model, { reply: op.messages[op.messages.length - 1], lastUser: '', address: addressOf(fromLink), pitchOk: false })).filter(okChip).map((c) => genderChip(c, addressOf(fromLink))); oc = [...new Set([...oc, ...g2])]; }
       op.chips = oc.slice(0, 2);
     }   // "לא יודע/ת" is gendered; the plain filter misses the slash form
     if (!op || !op.messages.length) return json(b, origin, { error: 'upstream' }, 502);
@@ -249,20 +237,11 @@ Deno.serve(async (req) => {
   const putsTheEveningOnTheTable = /\d{1,2}\.\d{1,2}/.test(reply) && /(בשעה|ש"ח)/.test(reply);
   // The link to the site appears only once the evening was actually put on the table (this reply or an earlier one), never before
   const eveningSeen = putsTheEveningOnTheTable || clean.some((m: any) => m.role === 'assistant' && /\d{1,2}\.\d{1,2}/.test(String(m.content)) && /(בשעה|ש"ח)/.test(String(m.content)));
-  let chipDbg: any = null;   // only returned to the test devices
   if (next.action !== 'safety' && next.action !== 'end') {
     // The quick replies come from a short dedicated call that sees the visitor's words, the reply and the gender; the model's own are the fallback
-    const recent = clean.slice(-6).map((m: any) => (m.role === 'user' ? 'האדם: ' : 'הבוט: ') + String(m.content).slice(0, 300)).join('\n');
     const keep = (arr: string[]) => arr.filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && chipOk(c) && fullChip(c) && (pitchOk || !mentionsEvening(c))).map((c) => genderChip(c, address));
-    // The writer of the reply knows what it just asked, so its own quick replies come first; the dedicated call only fills in when they do not pass
-    const own = keep(chips);
-    let rawGen: string[] = [];
-    let gen = own;
-    if (own.length < 2) { rawGen = await chipsFor(apiKey, model, { reply, lastUser, address, pitchOk, recent }); gen = keep(rawGen); }
-    if (gen.length < 2) { const raw2 = await chipsFor(apiKey, model, { reply, lastUser, address, pitchOk, recent }, true); gen = keep(raw2); console.log(JSON.stringify({ chips_retry: true, first: rawGen, second: raw2 })); rawGen = raw2; }
-    if (gen.length < 2) console.log(JSON.stringify({ chips_rejected: rawGen, kept: gen, own: chips }));
-    chipDbg = { raw: rawGen, kept: gen, own: chips };
-    chips = gen.length >= 2 ? gen.slice(0, 2) : [...new Set([...gen, ...own])].slice(0, 2);
+    chips = keep(chips).slice(0, 2);   // the writer of the reply knows what it just asked, so its own quick replies are the only ones
+    if (chips.length < 2) console.log(JSON.stringify({ chips_short: parsed.chips }));
     // An "A or B" question is never answered by a bare yes or no, wherever the quick reply came from
     const eitherOr = /\sאו\s/.test(lastSentence(reply)) && /\?\s*$/.test(lastSentence(reply));
     if (eitherOr) chips = chips.filter((c) => !/^(כן|לא)(,.*)?$/.test(c.trim()));
@@ -276,6 +255,6 @@ Deno.serve(async (req) => {
   if (!cta && facts && putsTheEveningOnTheTable && !['end', 'safety'].includes(next.action) && next.readiness !== 'not_fit') cta = 'register';
 
   persist(b, session, src, campaignId, [...clean, { role: 'assistant', content: reply }], cta, next, diffEvents(prev, next));
-  return json(b, origin, { ...(device.startsWith('selftest') ? { dbg: chipDbg } : {}), reply, chips, cta, ctas: ctasOf(cta as any, b.siteOnly ? pitchOk : !!facts && eveningSeen), state: next, hasFacts: !!facts || !!b.siteOnly, hasMeeting: !!facts });
+  return json(b, origin, { reply, chips, cta, ctas: ctasOf(cta as any, b.siteOnly ? pitchOk : !!facts && eveningSeen), state: next, hasFacts: !!facts || !!b.siteOnly, hasMeeting: !!facts });
 });
 
