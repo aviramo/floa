@@ -264,7 +264,7 @@
 
   /* THE EQUALIZER (the kit's /sound.js): what shows that a song plays — a curve on the card that plays, a ring round the number of the exercise that plays (the tab on a phone, the button to it in the header of a vivencia on a computer) */
   if (window.FLOA_SOUND) window.FLOA_SOUND.attach({
-    analyse: false,   /* OFF while the owner hears clicks: nothing listens to the song, no second element, no AudioContext; the picture only breathes. Switch to true to follow the music again. */
+    analyse: true,   /* the picture follows the music (a silent twin of the song is listened to). false: nothing listens, the picture only breathes */
     player: function () { return el; }, bus: hub,
     targets: function () {
       var t = [];
