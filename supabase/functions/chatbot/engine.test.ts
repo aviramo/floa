@@ -333,3 +333,8 @@ Deno.test('round eleven: "בעיקר" does not count as asking about price', () 
 Deno.test('round eleven: never comment on a short answer', () => {
   if (!styleFix('רואה שהמשפט שלך קצר, ולא ברור עדיין מה בדיוק התכוונת', 'קצת')) throw new Error('missed');
 });
+
+Deno.test('round eleven: no hotline for silence or a bare question mark', () => {
+  if (!styleFix('אני כאן. אם קשה, אפשר להתקשר לער"ן 1201', '?')) throw new Error('missed');
+  if (styleFix('אני כאן. אפשר להתקשר לער"ן 1201 בכל שעה', 'אני רוצה למות')) throw new Error('blocked a real crisis');
+});

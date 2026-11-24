@@ -243,7 +243,7 @@ Deno.serve(async (req) => {
     const gen = (await chipsFor(apiKey, model, { reply, lastUser, address, pitchOk })).filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && chipOk(c) && (pitchOk || !mentionsEvening(c))).map((c) => genderChip(c, address));
     chips = gen.length >= 2 ? gen.slice(0, 2) : [...new Set([...gen, ...chips])].slice(0, 2);
     // An "A or B" question is never answered by a bare yes or no, wherever the quick reply came from
-    const eitherOr = /\sאו\s/.test(lastSentence(reply));
+    const eitherOr = /\sאו\s/.test(lastSentence(reply)) && /\?\s*$/.test(lastSentence(reply));
     if (eitherOr) chips = chips.filter((c) => !/^(כן|לא)(,.*)?$/.test(c.trim()));
     chips = padChips(chips, eitherOr ? ['קצת משניהם', 'משהו אחר', 'לא בטוח עדיין'] : (b.siteOnly ? pitchOk : eveningSeen) ? CHAT_POOL : TOPIC_POOL, 2).map((c) => genderChip(c, address)).slice(0, 2);   // last resort only
   }
