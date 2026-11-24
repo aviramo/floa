@@ -180,7 +180,7 @@
 
     (async () => {
       if (scripted) {
-        Object.assign(scriptCtx, { log, el, cfg, business, cid, segment, src, track, reduce, KEY, scroll, bubble: (role, text) => bubble(role === 'user' ? 'user' : 'bot', text), who, typing, wait, setBusy, inp, grow });
+        Object.assign(scriptCtx, { log, el, cfg, business, cid, segment, src, track, reduce, KEY, scroll, bubble: (role, text) => bubble(role === 'user' ? 'user' : 'bot', text), who, typing, wait, setBusy, inp, grow, endpoint: ENDPOINT, anonKey: SB.anonKey, device });
         await window.FloaScriptChat.run(scriptCtx);
         log.scrollTop = log.scrollHeight;
         return;

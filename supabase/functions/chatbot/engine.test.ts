@@ -78,7 +78,7 @@ Deno.test('opening task names the business bot and keeps the meeting out of the 
   if (!t.includes(harpatka.botName) || !t.includes('אסור להזכיר ערב, מפגש או תנועה')) throw new Error(t);
 });
 
-import { stripFinalDot, needsQuestionRewrite, oneMessage, oneSentence, stripReferrals, endOnQuestion, revealedGender, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsOffer, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { hasReferral, sentencesOf, stripFinalDot, needsQuestionRewrite, oneMessage, oneSentence, stripReferrals, endOnQuestion, revealedGender, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsOffer, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 Deno.test('distress net catches plain phrasings and not ordinary talk', () => {
   for (const t of ['אני חושבת על למות', 'לפעמים אני חושבת שעדיף שלא אהיה פה', 'רוצה למות', 'אין טעם לחיות']) if (!distressIn(t)) throw new Error('missed: ' + t);
   for (const t of ['הייתי רוצה להרגיש חלק ממשהו', 'מתי המפגש הקרוב?', 'מת מצחוק', 'עייפה ולא ישנה']) if (distressIn(t)) throw new Error('false alarm: ' + t);
@@ -427,4 +427,11 @@ Deno.test('round eleven: the pain stages last four of the agent messages at most
   if (!FLOW_PROMPT.includes('ארבע הודעות שלכם לכל היותר')) throw new Error('four-message limit missing in the prompt');
   if (!stageHints(5).includes('חימום') || !stageHints(5).includes('אסור עוד שאלה על הכאב')) throw new Error('the fifth message must be the warm-up');
   if (stageHints(4).includes('חימום (שלב 3)')) throw new Error('the fourth message is still the pain stage');
+});
+
+Deno.test('round eleven: the scripted reaction is one sentence, never a question, never an offer word or a referral', () => {
+  // the cleaning itself lives in index.ts next to the model call; its parts are tested here
+  eq(stripFinalDot(sentencesOf('זה נשמע כבד. מה קורה?').find((p) => !/\?/.test(p)) ?? ''), 'זה נשמע כבד', 'first non-question sentence, no full stop');
+  eq(hasReferral('כדאי לפנות לער"ן'), true, 'a referral drops the reaction');
+  eq(hasReferral('זה נשמע כבד'), false, 'a plain reaction passes');
 });

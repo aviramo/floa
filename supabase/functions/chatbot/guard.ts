@@ -249,3 +249,5 @@ export function needsQuestionRewrite(reply: string): boolean {
 
 // No full stop after the last sentence of a message or a quick reply (the owner's rule). A question mark stays.
 export const stripFinalDot = (s: string): string => String(s ?? '').replace(/[.\s]+$/, '').trim();
+
+export const hasReferral = (s: string): boolean => REFERRAL.test(String(s ?? ''));

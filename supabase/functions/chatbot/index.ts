@@ -8,7 +8,7 @@ import { lastSentence, buildMessages, MAX_USER_TURNS, parse, parseOpening, quote
 import { BUSINESSES } from './businesses/index.ts';
 import { journeyOf } from './journey.ts';
 import { openingTask, sessionFacts, stableSystem, stateBlock, addressOf, turnReminder } from './prompt.ts';
-import { stripFinalDot, needsQuestionRewrite, oneMessage, oneSentence, stripReferrals, endOnQuestion, revealedGender, openingMeetingFix, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsOffer, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { stripFinalDot, needsQuestionRewrite, oneMessage, oneSentence, stripReferrals, endOnQuestion, revealedGender, openingMeetingFix, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsOffer, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular, sentencesOf, hasReferral } from './guard.ts';
 import { ctaFor, ctasOf, diffEvents, extractState, initialState, linkGender, mergeState, stateFromClient } from './state.ts';
 import type { CampaignContext, JourneyBusiness, SessionState } from './types.ts';
 
@@ -79,6 +79,17 @@ async function forceQuestion(apiKey: string, model: string, a: { reply: string; 
   const raw = await claude(apiKey, model, [{ type: 'text', text: sys }], [{ role: 'user', content: 'השיחה עד עכשיו:\n' + a.recent + '\n\nהטיוטה שצריך לשכתב:\n' + a.reply }], 160);
   const out = (raw ?? '').replace(/<[^>]*>/g, '').replace(/\s*\n+\s*/g, ' ').trim();
   return out && /\?\s*$/.test(out) ? out : null;
+}
+
+// The first bubble of a scripted turn: ONE short sentence that reflects what the visitor tapped or wrote. It is not a question and it leads nowhere: the next bubble is pre-written.
+// Anything that breaks a rule returns null and the page shows the pre-written reaction instead. Nothing is saved.
+function cleanReaction(raw: string | null, address: 'female' | 'male' | 'plural', b: JourneyBusiness): string | null {
+  let r = String(raw ?? '').replace(/<[^>]*>/g, '').replace(/\s*\n+\s*/g, ' ').trim().replace(/^["״“]+|["״”]+$/g, '');
+  r = fixAddress(neutralize(r), address);
+  const first = sentencesOf(r).find((p) => !/\?/.test(p)) ?? '';
+  r = stripFinalDot(first);
+  if (!r || r.length > 140 || /[—–]/.test(r) || mentionsOffer(r, b.lexicon.offerWords) || hasReferral(r)) return null;
+  return r;
 }
 
 // The second step of a turn: the quick replies are made from the FINAL message the visitor sees (the first step already sent it), checked once, written again once if they fail.
@@ -200,6 +211,27 @@ Deno.serve(async (req) => {
     const chipsC = await makeChips(apiKey, MODEL, { reply: lastBot.content, lastUser: lastUserC, address: addressC, recent: recentC, pitchOk: pitchC, offerWords: b.lexicon.offerWords, trace: traceC });
     for (const t of traceC as any[]) if (t && t.vetoed) logViolation(b, /^[0-9a-f-]{36}$/i.test(tx(body.session)) ? tx(body.session) : '', 'chips_vetoed', JSON.stringify(t.vetoed), JSON.stringify(chipsC));
     return json(b, origin, { chips: chipsC, ...(device.startsWith('selftest') ? { dbg: traceC } : {}) });
+  }
+
+  if (body.mode === 'react') {
+    const textR = tx(body.text).slice(0, 600), questionR = tx(body.question).slice(0, 300);
+    const viaText = body.source === 'text';
+    if (!textR) return json(b, origin, { reaction: null });
+    if (distressIn(textR)) return json(b, origin, { safety: true, reaction: null });   // a crisis in the visitor's words: the page shows its fixed answer
+    const segR = parseSegment(body.segment ?? (body.gender ? { gender: body.gender } : {}));
+    const addressR = addressOf(revealedGender([textR]) ?? linkGender(segR));
+    const langR = addressR === 'female' ? 'נקבה' : addressR === 'male' ? 'זכר' : 'רבים';
+    const sysR = 'כותבים תגובה קצרה בצ׳אט של "יוצאים להרפתקה" למה שהאדם בחר או כתב. כללים: משפט אחד בלבד, עד ארבע עשרה מילים. לא שאלה. בלי נקודה בסוף. התגובה משקפת את מה שהאדם אמר במילים שלו ואינה מעריכה אותו ("זה נשמע כבד", לא "יפה מאוד"). בלי לייעץ ובלי להמציא דבר על חיי האדם. בלי להפנות לאיש מקצוע או לגורם אחר. לא מזכירים מפגש, ערב, מנחים או ביודנסה. אם האדם שאל שאלה, מכירים בה בקצרה בלי לענות עליה ("שאלה טובה, נגיע לזה בהמשך"). הבוט עצמו בלי מגדר. פונים אל האדם בלשון ' + langR + '. מחזירים את המשפט בלבד.';
+    const adR = tx(body.ad).slice(0, 300);
+    const histR = (Array.isArray(body.history) ? body.history : []).slice(-10).map((h: any) => (h && h.r === 'user' ? 'האדם: ' : 'הבוט: ') + tx(h && h.t).slice(0, 300)).join('\n');
+    const genderLine = 'מגדר האדם: ' + (addressR === 'female' ? 'אישה' : addressR === 'male' ? 'גבר' : 'לא ידוע');
+    const adLine = adR ? 'האדם ראה מודעה בפייסבוק עם הטקסט הזה: "' + adR + '"' : '';
+    const histLine = histR ? 'השיחה עד עכשיו:\n' + histR : '';
+    const askLine = 'השאלה האחרונה של הבוט: ' + (questionR || '(פתיחה)') + '\nמה האדם ענה (' + (viaText ? 'בכתיבה חופשית' : 'בלחיצה על כפתור') + '): ' + textR;
+    const rawR = await claude(apiKey, MODEL, [{ type: 'text', text: sysR }], [{ role: 'user', content: [genderLine, adLine, histLine, askLine].filter(Boolean).join('\n\n') }], 80);
+    const reaction = cleanReaction(rawR, addressR, b);
+    if (!reaction) console.log(JSON.stringify({ react_dropped: true, raw: String(rawR ?? '').slice(0, 160) }));
+    return json(b, origin, { reaction });
   }
 
   const use = await usageHit(b, device, ip === 'unknown' ? '' : ip, body.mode === 'opening' ? 'opening' : 'chat');
