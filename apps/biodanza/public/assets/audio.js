@@ -11,10 +11,16 @@
   var API = "https://api.floa.co.il/biodanza/audio/";
   var FADE_MS = 2000;   /* THE one number: how long every change of sound takes (play, pause, a new place in the song, a new song). The old goes down while the new comes up over exactly this time. */
   var ICON = {
-    sound: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true" style="width:calc(var(--icon-l) * 1.3);height:calc(var(--icon-l) * 1.3)"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>',
-    pause: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true" style="width:calc(var(--icon-l) * 1.3);height:calc(var(--icon-l) * 1.3)"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>',
-    wait: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true" style="width:calc(var(--icon-l) * 1.3);height:calc(var(--icon-l) * 1.3)"><circle cx="12" cy="12" r="8" stroke-dasharray="14 36"/></svg>'
+    sound: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true" style="width:var(--icon);height:var(--icon)"><circle cx="12" cy="12" r="12"/><path d="M10 7.5v9l6.5-4.5z" style="fill:var(--play-in,var(--page))"/></svg>',
+    pause: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true" style="width:var(--icon);height:var(--icon)"><circle cx="12" cy="12" r="12"/><g style="fill:var(--play-in,var(--page))"><rect x="8.5" y="8" width="2.5" height="8" rx=".5"/><rect x="13" y="8" width="2.5" height="8" rx=".5"/></g></svg>',
+    wait: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true" style="width:var(--icon);height:var(--icon)"><circle cx="12" cy="12" r="8" stroke-dasharray="14 36"/></svg>'
   };
+  /* the glyphs of a LARGE icon (kit .ricon-lg: the circle is the button, the glyph is only the sign inside it, in the role colour) */
+  var ICON_LG = {
+    sound: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true" style="width:var(--icon-lg);height:var(--icon-lg)"><path d="M8 5v14l11-7z"/></svg>',
+    pause: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true" style="width:var(--icon-lg);height:var(--icon-lg)"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>'
+  };
+  ICON_LG.wait = ICON_LG.sound;   /* waiting: the glyph stays, the circle shows the wait (aria-busy, kit.css) */
 
   /* ---- kept in the browser ---- */
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) { /* the browser decides */ }   /* the songs are asked to stay when the phone runs short of room */
@@ -85,7 +91,7 @@
   adopt(el);
   function fresh(src) { var n = new Audio(); n.preload = "auto"; n.volume = 0; adopt(n); n.src = src; return n; }
   function dropPending() { if (!pend) return; var n = pend; pend = null; try { n.pause(); n.removeAttribute("src"); } catch (e) { /* gone */ } }
-  function wideNow() { return !window.matchMedia || window.matchMedia("(min-width: 1024px)").matches; }
+  function wideNow() { return !window.matchMedia || window.matchMedia("(min-width: 760px)").matches; }
   var seekWant = 0, loadingSeek = "";
   var vol = 1;
   try { var sv = parseFloat(localStorage.getItem("biodanza.volume")); if (sv >= 0 && sv <= 1) vol = sv; } catch (e) { /* the default */ }
@@ -153,13 +159,19 @@
   function paint() {
     document.querySelectorAll("[data-audio]").forEach(function (b) {
       var me = b.dataset.audio, st = busy === me ? "wait" : (now === me && !el.paused && !fadingOut ? "pause" : "sound");
+      var card = b.closest(".bio-c, .bio-card, .rrow, .rcard");   /* law 7: the card of a song that waits for its file shows it (kit.css, aria-busy) */
+      if (card && !!card.__aw !== (st === "wait")) { card.__aw = st === "wait"; if (card.__aw) card.setAttribute("aria-busy", "true"); else if (!card.__busy) card.removeAttribute("aria-busy"); }   /* __busy: app.js is holding it for a request too */
       if (haveOnly) { var no = !haveOnly[me]; if (b.disabled !== no) { b.disabled = no; b.style.opacity = no ? ".45" : ""; } }
       if (b.dataset.st === st) return;
-      b.dataset.st = st; b.innerHTML = ICON[st];
+      var lg = b.hasAttribute("data-lg");
+      if (lg) { if (st === "wait") b.setAttribute("aria-busy", "true"); else b.removeAttribute("aria-busy"); }
+      b.dataset.st = st; var tl = b.querySelector(":scope > .rbtn__tail"); b.innerHTML = (lg ? ICON_LG : ICON)[st]; if (tl) b.appendChild(tl);   /* law 10: the count on the button is the button's tail, it survives the glyph change */
       b.setAttribute("aria-label", st === "pause" ? "עצירה" : "השמעה"); b.title = st === "pause" ? "עצירה" : "השמעה";
-      b.style.color = st === "sound" ? "var(--text-3)" : "var(--danger)";
+      if (!lg) b.style.color = st === "sound" ? "var(--text-muted)" : "var(--danger)";
     });
+    if (busy !== lastBusy) { lastBusy = busy; document.dispatchEvent(new CustomEvent("biobusy", { detail: { on: !!busy } })); }   /* the player's own wait, told to the page: the dock's large icon shows it (app.js); no other button is lent it */
   }
+  var lastBusy = "";
   hub.addEventListener("pause", paint); hub.addEventListener("play", paint); hub.addEventListener("ended", paint);
   /* the time left of the song that plays, told to the page (app.js counts it down under the song's button) */
   function tell(name, t, d) { document.dispatchEvent(new CustomEvent("bioaudio", { detail: { name: name, t: t, d: d, playing: !el.paused && !el.ended && !fadingOut, title: (infos[name] || {}).title || "", artist: (infos[name] || {}).artist || "" } })); }
@@ -252,8 +264,9 @@
 
   window.BioAudio = {
     /* the button of a song that has a file: the same round icon button as the YouTube one */
-    button: function (name, trail) {
-      return '<button type="button" class="rbtn rbtn--icon' + (trail ? ' rrow__trail' : '') + '" data-audio="' + name + '" data-st="sound" aria-label="השמעה" title="השמעה" style="width:var(--fab);height:var(--fab);min-height:var(--fab);color:var(--text-3)">' + ICON.sound + '</button>';
+    button: function (name, trail, lg) {
+      if (lg) return '<button type="button" class="ricon-lg" data-lg data-audio="' + name + '" data-st="sound" aria-label="השמעה" title="השמעה">' + ICON_LG.sound + '</button>';   /* a large icon: the one type for a big action (kit.css) */
+      return '<button type="button" class="rbtn rbtn--icon' + (trail ? ' rrow__trail' : '') + '" data-audio="' + name + '" data-st="sound" aria-label="השמעה" title="השמעה" style="color:var(--text-muted)">' + ICON.sound + '</button>';
     },
     /* move the playing song to a place in it: a fraction from 0 to 1 */
     /* the volume, kept in this browser: a step up or down (in fractions of 1), the new level back */
@@ -262,18 +275,8 @@
     /* move the playing song by seconds (negative: back) */
     skip: function (sec) { if (el.duration) { pendT = null; clearTimeout(pendTimer); crossTo(el.currentTime + sec); } },   /* a key press moves at once: the bar shows it, and each press is its own crossfade */
     commitSeek: function () { commitSeek(); },
-    pause: function () { fadeOut(); },
     /* the player's one button: the loaded song plays or pauses */
-    /* the player's X: the song stops and is let go, so the pill has nothing loaded */
-    /* play these songs one after the other, without a pause, round again from the first */
-    playList: function (names) {
-      queue = (names || []).filter(Boolean); dropNext(); if (!queue.length) return;
-      if (now === queue[0] && url) { el.currentTime = 0; fadeIn(); preloadNext(); } else toggle(queue[0]);
-    },
     setLists: function (o) { lists = o || {}; },
-    queueNames: function () { return queue.slice(); },   /* the songs of the list that is playing, if one is */
-    stopList: function () { dropPending(); killGhosts(); queue = []; dropNext(); clearInterval(fadeT); fadeT = 0; fadingOut = false; el.pause(); el.volume = target(); },   /* the list is switched off: what plays is paused and nothing follows it */
-    stop: function () { dropPending(); killGhosts(); queue = []; dropNext(); clearInterval(fadeT); fadeT = 0; fadingOut = false; el.pause(); el.volume = target(); now = ""; try { el.removeAttribute("src"); el.load(); } catch (e) { /* nothing to let go */ } if (url) { URL.revokeObjectURL(url); url = ""; } tell("", 0, 0); paint(); },
     playPause: function () { if (now && url) playToggle(); },
     seek: function (f) { if (el.duration) wantSeek(Math.max(0, Math.min(1, f)) * el.duration); },
     /* move a song to a place in it, also one that is not playing: its file is loaded (not played) and put there; play then goes on from that place */
@@ -333,7 +336,6 @@
   hub.addEventListener("pause", function () { if (!el.ended) remember(true); });
   window.addEventListener("pagehide", function () { remember(true); });
   hub.addEventListener("ended", forget);
-  var origStop = window.BioAudio.stop; window.BioAudio.stop = function () { forget(); return origStop(); };
   (function restore() {
     var last = null; try { last = JSON.parse(localStorage.getItem(LAST) || "null"); } catch (e) { last = null; }
     if (!last || !last.name || now) return;

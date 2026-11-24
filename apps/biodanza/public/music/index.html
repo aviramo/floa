@@ -9,34 +9,36 @@
 <link rel="icon" href="../favicon.ico" sizes="any">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="/kit.css">
+<script>document.write('<link rel="stylesheet" href="' + (/^(localhost|127[.])/.test(location.hostname) ? '/biodanza/' : '/') + 'assets/theme.css">')</script>
 <style>
 /* The page is the window's height and never scrolls: the header and the search stay, only the list scrolls (kit elements only, tokens only). */
 html, body { height: 100%; }
-body { margin: 0; display: flex; flex-direction: column; height: 100dvh; background: var(--bg); color: var(--text); font: var(--fw-regular) var(--fs-m)/var(--lh-body) var(--font); }
+body { margin: 0; display: flex; flex-direction: column; height: 100dvh; background: var(--page); color: var(--text); font: var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font); }
 #app { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; width: 100%; }
 #app > .rlist { flex: 1 1 auto; }
 #out, #out * { user-select: text; -webkit-user-select: text; }   /* the text can be selected and copied */
-.pad { padding: var(--gutter); display: flex; flex-direction: column; gap: var(--gap-field); }
-#out { display: grid; grid-template-columns: repeat(auto-fill, minmax(21rem, 1fr)); gap: var(--sp-1); padding: 0 var(--gutter) var(--gutter); align-content: start; align-items: stretch; }   /* the cards of a row are one height, so every gap is the same */
+.pad { padding: var(--gap); display: flex; flex-direction: column; gap: var(--gap); }
+dialog.rsheet .pad { padding: 0; }   /* a popup pads its content itself (law 2): the block inside it adds nothing */
+#out { display: grid; grid-template-columns: repeat(auto-fill, minmax(21rem, 1fr)); gap: var(--gap); padding: 0 var(--gap) var(--gap); align-content: start; align-items: stretch; }   /* the cards of a row are one height, so every gap is the same */
 #out > .rempty, #out > .rhint, #out > .rskel { grid-column: 1 / -1; }
 #out > .rcard { cursor: pointer; background: var(--on-primary); margin: 0;   /* white, lying on the page with the kit's card shadow (no white surface token yet: awaiting the owner's approval) */ min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .song__t, .song__a { direction: ltr; text-align: left; overflow-wrap: anywhere; }   /* every title is in a Latin script: it reads left to right and sits against the left edge */
-.song__t { font: var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font); }
-.song__a { color: var(--text-2); font: var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font); }
-.song__d { color: var(--text-2); font: var(--fw-medium) var(--fs-s)/1 var(--font); font-variant-numeric: tabular-nums; }   /* the time: plain text, no chip */
+.song__t { font: var(--fw-bold) var(--fs-m)/var(--lh-tight) var(--font); }
+.song__a { color: var(--text-muted); font: var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font); }
+.song__d { color: var(--text-muted); font: var(--fw-regular) var(--fs-m)/1 var(--font); font-variant-numeric: tabular-nums; }   /* the time: plain text, no chip */
 .song__f { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: var(--gap-tight); }   /* the foot sits at the bottom of every card; the play button on the right, the time on the left */
-#out [data-audio] { background: var(--surface-2); border-color: var(--surface-2); width: 46px; min-height: var(--tag-s); height: var(--tag-s); padding: 0; border-radius: 999px; }   /* the size of the time chip */
+#out [data-audio] { background: var(--surface); border-color: var(--surface); width: 46px; min-height: var(--chip); height: var(--chip); padding: 0; border-radius: 999px; }   /* the size of the time chip */
 #out [data-audio][data-st="sound"] svg { display: none; }
-#out [data-audio][data-st="sound"]::before { content: ""; width: var(--icon-s); height: var(--icon-s); background: currentColor; clip-path: polygon(22% 10%, 22% 90%, 92% 50%); }
-#out [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important; }
+#out [data-audio][data-st="sound"]::before { content: ""; width: var(--icon); height: var(--icon); background: currentColor; clip-path: polygon(22% 10%, 22% 90%, 92% 50%); }
+#out [data-audio] svg { width: var(--icon) !important; height: var(--icon) !important; }
 #out > * { flex-shrink: 0; }
-#pw { flex: none; padding: 0; position: relative; z-index: var(--z-raised); box-shadow: 0 -4px 14px -4px rgba(0, 0, 0, .16); }   /* the kit card shadow, cast upward over the list */   /* the player is a footer under the list: the list ends above it */
-#pl { flex-wrap: nowrap; background: var(--surface-2); border: 0; border-top: 1px solid var(--line); border-radius: 0; box-shadow: none; margin: 0; padding: var(--gap-button) var(--gutter) calc(var(--gap-button) + var(--inset-b)); }   /* a full-width footer: square, tinted, a line on top */
+#pw { flex: none; padding: 0; position: relative; z-index: var(--z-raised); }   /* the player is a footer under the list: the list ends above it */
+#pl { flex-wrap: nowrap; background: var(--surface); border: 0; border-top: var(--bw) solid var(--border); border-radius: 0; box-shadow: none; margin: 0; padding: var(--gap) var(--gap) calc(var(--gap) + var(--inset-b)); }   /* a full-width footer: square, tinted, a line on top */
 #pl .rrow__main { flex: 0 1 28rem; direction: ltr; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#pl #pa { color: var(--text-2); font-weight: var(--fw-regular); }
+#pl #pa { color: var(--text-muted); font-weight: var(--fw-regular); }
 #pl #pa:not(:empty)::before { content: "· "; }
 #pl .bio-bar { flex: 1 1 8rem; min-width: 0; padding: 0; }
-@media (max-width: 700px) { #pl { flex-wrap: wrap; } #pl .rrow__main { flex: 1 1 100%; order: 4; } #pl .bio-bar { flex: 0 0 100%; order: 3; } }   /* the list is a column that scrolls: its rows keep their height (a row with a bar was squeezed to the minimum and the bar cut off) */
+@media (width < 760px) { #pl { flex-wrap: wrap; } #pl .rrow__main { flex: 1 1 100%; order: 4; } #pl .bio-bar { flex: 0 0 100%; order: 3; } }   /* the list is a column that scrolls: its rows keep their height (a row with a bar was squeezed to the minimum and the bar cut off) */
 /* the song's bar, as in the app: a thin track filled up to the place, a round thumb, red on hover */
 .bio-bar input { -webkit-appearance: none; appearance: none; background: transparent; height: 20px; margin: 0; cursor: pointer; --p: 0%; --c: var(--primary); touch-action: none }
 .bio-bar input:hover { --c: var(--danger) }
@@ -196,9 +198,9 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
   /* ONE player, fixed above the search: play or pause, a bar to any place in the song, the place and the length in time, the song's name and performer.
      The song's buttons in the rows start it; audio.js tells this page (event "bioaudio") what plays and where it is. */
   var cur = { name: "", t: 0, d: 0, playing: false }, dragging = false;
-  var ICO = { copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:var(--icon-m);height:var(--icon-m)"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>', done: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:var(--icon-m);height:var(--icon-m)"><path d="M5 12.5l4.5 4.5L19 7"/></svg>', play: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="width:var(--icon-l);height:var(--icon-l)"><path d="M7 4.5v15l13-7.5z"/></svg>', pause: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="width:var(--icon-l);height:var(--icon-l)"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>' };
+  var ICO = { copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:var(--icon);height:var(--icon)"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>', done: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:var(--icon);height:var(--icon)"><path d="M5 12.5l4.5 4.5L19 7"/></svg>', play: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="width:var(--icon);height:var(--icon)"><path d="M7 4.5v15l13-7.5z"/></svg>', pause: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="width:var(--icon);height:var(--icon)"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>' };
   function playerHtml() {
-    return '<div class="rrow" id="pl" style="gap:var(--gap-button)"><button type="button" class="rbtn rbtn--icon" id="pp" aria-label="השמעה" disabled>' + ICO.play + '</button>' +
+    return '<div class="rrow" id="pl" style="gap:var(--gap)"><button type="button" class="rbtn rbtn--icon" id="pp" aria-label="השמעה" disabled>' + ICO.play + '</button>' +
       '<span class="rchip rchip--s" id="pc" style="direction:ltr;font-variant-numeric:tabular-nums">0:00 / 0:00</span>' +
       '<div class="bio-bar"><input type="range" id="pb" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר" disabled style="display:block;width:100%;margin:0;direction:ltr;accent-color:var(--primary)"></div>' +
       '<div class="rrow__main" id="pn"><b id="pt">לא נבחר שיר</b> <span id="pa"></span></div></div>';

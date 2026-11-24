@@ -1,9 +1,9 @@
-// Spacing audit: opens the app at a phone/desktop width with stubbed data and lists every padding, margin and gap that is not on the scale (0, 4, 8, 16, 24).
+// Spacing audit: opens the app at a phone/desktop width with stubbed data and lists every padding, margin and gap that is not on the scale (0, 4, 12, 24).
 // Run: node apps/biodanza/audit/server.mjs (serves dist on :5191), then node apps/biodanza/audit/audit.mjs 430   (or 1300). Sizes that clear a button (44, 76, 92) and the safe-area floor are expected; anything else is a spacing someone invented.
 import fs from "fs"; import { launch } from "./lib.mjs";
 const W = +process.argv[2] || 430, H = 900;
 const b = await launch(W, H);
-const SCALE = [0, 4, 8, 16, 24];
+const SCALE = [0, 4, 12, 24];
 const click = (js) => b.ev(`(function(){var e=${js}; if(!e) return 'none'; e.click(); return 'ok'})()`);
 const probe = `(function(){
   var SC=${JSON.stringify(SCALE)}, out={}, vis=function(e){var r=e.getBoundingClientRect();return r.width>0&&r.height>0&&getComputedStyle(e).visibility!=="hidden"};

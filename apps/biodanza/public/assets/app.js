@@ -19,7 +19,7 @@
     if (rep) history.replaceState({ d: curD() }, "", u); else history.pushState({ d: curD() + 1 }, "", u);
   }
   function startJump(n, render) {   /* leave n entries in one step; the popstate that follows renders the screen only if render */
-    var j = jump = { render: render, then: null };
+    var j = jump = { render: render, then: null, at: performance.now() };
     setTimeout(function () { if (jump === j) { jump = null; if (j.then) j.then(); } }, 1500);   /* safety: never stay waiting */
     history.go(-n);
   }
@@ -54,7 +54,7 @@
   function inSub() { return !!(history.state && history.state.sub); }
   function leaveAll() { unwind((history.state && history.state.sub) || 0); }   /* out of every level at once, to the screen of the address */
   function syncLayers() {   /* a popup or menu opened or closed, by the user or by code: its marker entry follows */
-    var live = [].slice.call(document.querySelectorAll("dialog[open], #moreMenu"));
+    var live = [].slice.call(document.querySelectorAll("dialog[open], #moreMenu")).concat(window.__leftLive ? window.__leftLive() : []);   /* the side layers (history, lists, pickers) are layers too */
     var gone = layers.filter(function (l) { return live.indexOf(l.el) < 0; });
     var fresh = live.filter(function (el) { return !layers.some(function (l) { return l.el === el; }); });
     if (!gone.length && !fresh.length) return;
@@ -66,10 +66,20 @@
     if (!jump) for (var i = 0; i < marked.length - pairs; i++) history.pushState({ d: curD(), bk: 1 }, "", location.href);
     if (lost - pairs > 0) startJump(lost - pairs, false);
   }
-  function closeLayer(el) { if (el.id === "moreMenu") el.remove(); else slideClose(el); }
+  function closeLayer(el) { if (el.classList && el.classList.contains("bio-left")) { window.__leftClose(el); return; } if (el.id === "moreMenu") el.remove(); else slideClose(el); }
   function parseUrl() { var seg = location.pathname.slice(BASE.length).split("/").filter(Boolean); return { viv: seg[0] || "", item: seg[1] || "" }; }
-  function wide() { return window.matchMedia("(min-width: 1024px)").matches; }
-  var api = function (p, o) {
+  function wide() { return window.matchMedia("(min-width: 760px)").matches; }
+  /* LAW 7 (declared waits only): an action whose result is on the element itself calls busy(el, promise) at the one place that performs it. The element shows aria-busy (drawn in
+     kit.css by its kind) until the promise answers or fails. Nothing is guessed by time or by "what was pressed": opening a window, a menu, a setting or a screen never calls it
+     (the content inside shows its own skeleton, rskel). */
+  function busy(el, p) {
+    if (!el || !p || !p.then) return p;
+    el.__busy = (el.__busy || 0) + 1; el.setAttribute("aria-busy", "true");
+    var done = false, rel = function () { if (done) return; done = true; if (--el.__busy <= 0) { el.__busy = 0; if (!el.__aw) el.removeAttribute("aria-busy"); } };
+    p.then(rel, rel); return p;
+  }
+  var api = function (p, o) { return rawApi(p, o); };
+  var rawApi = function (p, o) {
     if (state.offline) return offlineApi(p, o);
     var r = FLOA_AUTH.api(p, o);
     if (o && o.method && o.method !== "GET" && /\/rest\/v1\/(vivenc|rpc\/(leave_vivencia|vivencia))/.test(p)) r.then(function () { localSoon(); }, function () { /* nothing was written */ });
@@ -110,7 +120,7 @@
   var I = {
     back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>',
     plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
-    inbox: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v6"/><path d="M4 13h4.5a3.5 3.5 0 0 0 7 0H20v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg>',
+    search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>',
     catalog: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5 2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M9 7.5h7M9 11.5h5"/></svg>',
     play: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg>',
     heart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.500s-7.500-4.600-9.500-9.200A5.300 5.300 0 0 1 12 6.200a5.300 5.300 0 0 1 9.500 5.100c-2 4.600-9.500 9.200-9.500 9.200z"/></svg>',
@@ -124,8 +134,7 @@
     fwd: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>',
     curve: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path pathLength="1" d="M2 16c2.5-9 5-9 7.5-1s5 8 7.5 0c1-3 2.500-5 5-6"/></svg>',
     list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"/></svg>',
-    grip: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>',
-    yt: '<svg viewBox="0 0 24 24" stroke="none" aria-hidden="true" style="width:calc(var(--icon-l) * 1.6);height:calc(var(--icon-l) * 1.6)"><rect x="1" y="5" width="22" height="14" rx="4.500" fill="currentColor"/><path d="M10 9l5.500 3-5.500 3z" style="fill:var(--bg)"/></svg>',   /* the YouTube mark: a song with no file of its own opens on YouTube, and the tile says so */
+    yt: '<svg viewBox="0 0 24 24" stroke="none" aria-hidden="true" style="width:var(--icon-brand);height:var(--icon-brand)"><rect x="1" y="5" width="22" height="14" rx="4.500" fill="currentColor"/><path d="M10 9l5.500 3-5.500 3z" style="fill:var(--page)"/></svg>',   /* the YouTube mark: a song with no file of its own opens on YouTube, and the tile says so */
     dots: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>',
     copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>',
     share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.3 10.8l7.4-3.6M8.3 13.2l7.4 3.6"/></svg>',
@@ -180,7 +189,7 @@
     el.addEventListener("input", function () { el._typed = Date.now(); });
     function mark() { if (el.parentElement) el.parentElement.dataset.rf = el.textContent ? "v" : "e"; }
     Object.defineProperty(el, "value", { configurable: true, get: function () { return rtWalk(el, true); }, set: function (v) { el.innerHTML = rtHtml(v); mark(); } });
-    mark();
+    (function () { var lb = el.parentElement && el.parentElement.firstElementChild; if (lb && lb !== el) lb.style.transition = "none"; mark(); if (lb && lb !== el) requestAnimationFrame(function () { requestAnimationFrame(function () { lb.style.transition = ""; }); }); })();   /* the first state is set without motion: a label that is drawn must not slide into place */
     el.addEventListener("input", mark);
     el.addEventListener("beforeinput", function (e) { if (e.inputType === "insertParagraph") { e.preventDefault(); document.execCommand("insertLineBreak"); } });
     el.addEventListener("paste", function (e) { e.preventDefault(); document.execCommand("insertText", false, (e.clipboardData || window.clipboardData).getData("text/plain")); });
@@ -197,7 +206,7 @@
       var r = sel.getRangeAt(0).getBoundingClientRect(); if (!r.width && !r.height) return hide();
       if (!btn) {
         btn = document.createElement("button"); btn.type = "button"; btn.className = "rbtn rbtn--icon"; btn.setAttribute("aria-label", "הדגשה"); btn.title = "הדגשה";
-        btn.style.cssText = "position:fixed;z-index:var(--z-menu);width:var(--tag-s);height:var(--tag-s);min-height:var(--tag-s);padding:0;border-radius:999px;background:var(--primary);border-color:var(--primary);color:var(--on-primary);font:var(--fw-black) var(--fs-m)/1 var(--font)";
+        btn.style.cssText = "position:fixed;z-index:var(--z-menu);width:var(--ctl);height:var(--ctl);min-height:var(--ctl);padding:0;border-radius:999px;background:var(--primary);border-color:var(--primary);color:var(--on-primary);font:var(--fw-bold) var(--fs-m)/1 var(--font)";
         btn.textContent = "B";
         btn.addEventListener("pointerdown", function (e) { e.preventDefault(); });   /* the selection stays */
         btn.addEventListener("click", function (e) { e.preventDefault(); document.execCommand("bold"); box.dispatchEvent(new Event("input", { bubbles: true })); show(); });
@@ -261,7 +270,6 @@
   }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   function name(e) { return e.title_he || e.title_en || ""; }
-  function phaseName(k) { var p = state.phases.filter(function (x) { return x.key === k; })[0]; return p ? p.name_he : ""; }
   function catName(k) { var c = (state.cats || []).filter(function (x) { return x.key === k; })[0]; return c ? c.name_he : ""; }
   /* under the name of a catalog exercise: the catalog it comes from (one; the older first), HEB when it is in Hebrew there, and the note with how many songs are linked */
   /* on a song of the catalog: the curve sign and, at its right, how many catalog exercises the song is linked to (read once, page by page) */
@@ -274,37 +282,40 @@
     return exCntP;
   }
   function paintExCnt() { if (!exCnt) return; [].forEach.call(document.querySelectorAll("[data-exn]"), function (n) { var v = exCnt[n.dataset.exn] || 0; if (n.textContent !== String(v)) n.textContent = v; if (v === 0) n.setAttribute("data-zero", ""); else n.removeAttribute("data-zero"); n.closest("button").setAttribute("aria-label", v + " תרגילים"); }); }
+  /* law 6, ONE place: a SHORT window (a confirm, or a size "s" popup) opens next to the control that opened it. The last pressed control is remembered here, and every short RosterSheet.render
+     that was not given an anchor gets it; a long window (size "l", editors, the catalog) is left as it is. A press inside a menu keeps the control that opened the menu as the opener (the menu itself is gone when the window opens). A caller may still pass its own anchor. */
+  var lastPress = null;
+  document.addEventListener("pointerdown", function (e) { if (e.target.closest && e.target.closest(".rmenu")) return; var t = e.target && e.target.closest ? e.target.closest("button, a, [role=button], [data-audio], .bio-card, .rrow, input") : null; if (t) lastPress = t; }, true);
+  document.addEventListener("click", function (e) { if (e.target.closest && e.target.closest(".rmenu")) return; var t = e.target && e.target.closest ? e.target.closest("button, a, [role=button], [data-audio], .bio-card, .rrow, input") : null; if (t) lastPress = t; }, true);   /* a key press or a script click is a click too */
+  (function () {
+    var R = window.RosterSheet; if (!R || R.__anchored) return; var render = R.render;
+    R.render = function (dlg, o) { if (o && !o.anchor && (o.kind === "confirm" || o.size === "s") && lastPress && lastPress.isConnected) o.anchor = lastPress; return render.apply(this, arguments); };
+    R.__anchored = true;
+  })();
+  function btnTail(content, attrs) {   /* law 10, the ONE builder: a counter (text) or a status mark (a svg) as the tail of an icon button; nothing to say, nothing rendered */
+    return content === "" || content == null ? "" : '<span class="rbtn__tail"' + (attrs ? " " + attrs : "") + '>' + content + '</span>';
+  }
   function exBtnInner(mid) {
     ensureExCnt();
-    return '<span style="display:inline-flex;align-items:center;gap:var(--gap-tight);direction:ltr"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.curve.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span><span data-exn="' + esc(mid) + '"' + (exCnt && !exCnt[mid] ? ' data-zero' : '') + ' style="font-variant-numeric:tabular-nums">' + (exCnt ? (exCnt[mid] || 0) : "") + '</span></span>';
+    return I.curve + '<span class="rbtn__tail" data-exn="' + esc(mid) + '"' + (exCnt && !exCnt[mid] ? ' data-zero' : '') + '>' + (exCnt ? (exCnt[mid] || 0) : "") + '</span>';   /* filled in by paintExCnt; empty (unknown yet) or zero: the button is not shown */
   }
   function exBtnG(m) {   /* the curve sign and the count, on any song card: it narrows the catalog's exercises to the song's */
     if (!m || !m.id || /^h[0-9]/.test(m.id)) return "";
-    return '<button type="button" class="rbtn rbtn--ghost" data-mfxg="' + esc(m.id) + '" data-mfxn="' + esc(songName(m)) + '" aria-label="התרגילים של המוזיקה" title="התרגילים של המוזיקה בקטלוג" style="margin-inline-end:var(--sp-1);background:none !important;box-shadow:none !important;border:0 !important;padding:0;min-width:0;min-height:var(--tag-s);color:var(--pick-ink, var(--primary)) !important;font:var(--fw-bold) var(--fs-s)/1 var(--font)">' + exBtnInner(m.id) + '</button>';
+    return '<button type="button" class="rbtn rbtn--icon" data-mfxg="' + esc(m.id) + '" data-mfxn="' + esc(songName(m)) + '" aria-label="התרגילים של המוזיקה" title="התרגילים של המוזיקה בקטלוג" style="color:var(--pick-ink, var(--primary)) !important">' + exBtnInner(m.id) + '</button>';
   }
   document.addEventListener("click", function (ev) {
     var b = ev.target.closest && ev.target.closest("[data-mfxg]"); if (!b) return;
     ev.stopPropagation(); ev.preventDefault();
     setExFilter({ id: b.dataset.mfxg, title: b.dataset.mfxn || "", name: b.dataset.mfxn || "" });
   }, true);
-  var catTot = null;
-  function catTotals() {   /* how many songs and how many exercises the catalog holds, read once */
-    if (catTot) return Promise.resolve(catTot);
-    var cnt = function (path) { var n = 0; function page(off) { return api(path + "&limit=1000&offset=" + off).then(function (rows) { rows = rows || []; n += rows.length; return rows.length === 1000 ? page(off + 1000) : n; }); } return page(0); };
-    return Promise.all([cnt("/rest/v1/music?select=id&in_catalog=not.is.false&order=id"), cnt("/rest/v1/exercises?select=id&order=id")]).then(function (r) { return (catTot = { music: r[0], ex: r[1] }); }, function () { return null; });
-  }
   function exSubHtml(e) {
     var src = String(e.source || ""), y = (src.match(/(d{4})/) || [])[1], label = y || src.toUpperCase();
     var heb = (e.exercise_texts || []).some(function (t) { return t.lang === "he" && t.source === "catalog"; });
     var c = e && e.exercise_music && e.exercise_music[0] ? e.exercise_music[0].count : null;
-    var note = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>';
-    return '<span style="display:inline-flex;align-items:center;gap:var(--sp-1);font-variant-numeric:tabular-nums">' + (label ? '<span dir="ltr">' + esc(label) + (heb ? ' HEB' : '') + '</span>' : '') + (!c ? '' : '<span style="display:inline-flex;align-items:center;gap:var(--gap-tight)" aria-label="' + c + ' מוסיקות">' + note + '<span>' + c + '</span></span>') + '</span>';
+    var note = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;width:var(--icon);height:var(--icon);stroke-width:var(--icon-w)"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>';
+    if (!label && !c) return "";   /* nothing to say: the second row is not written */
+    return '<span style="display:inline-flex;align-items:center;gap:var(--gap);font-variant-numeric:tabular-nums">' + (label ? '<span dir="ltr">' + esc(label) + (heb ? ' HEB' : '') + '</span>' : '') + (!c ? '' : '<span style="display:inline-flex;align-items:center;gap:var(--gap-tight)" aria-label="' + c + ' מוסיקות">' + note + '<span>' + c + '</span></span>') + '</span>';
   }
-  function musCount(e) {   /* how many songs are linked to a catalog exercise */
-    var c = e && e.exercise_music && e.exercise_music[0] ? e.exercise_music[0].count : null;
-    return c == null ? "" : c === 0 ? "בלי מוסיקה" : c === 1 ? "מוסיקה אחת" : c + " מוסיקות";
-  }
-  function lineName(k) { var l = state.lines.filter(function (x) { return x.key === k; })[0]; return l ? l.name_he : k; }
   /* a song is two things: its name and who plays it */
   function songName(m) { return m ? (m.title || m.name || "") : ""; }
   function songBy(m) { return m ? (m.artist || "") : ""; }
@@ -312,9 +323,9 @@
   /* the same button wherever a song is shown: it searches the song and its artist on YouTube, in a new tab */
   /* the YouTube button of the song played last is red, the others are muted (kept in this browser, so it is still marked tomorrow) */
   var played = (function () { try { return localStorage.getItem("biodanza.played") || ""; } catch (e) { return ""; } })();
-  function ytColor(id) { return id && id === played ? "var(--danger)" : "var(--text-3)"; }
+  function ytColor(id) { return id && id === played ? "var(--danger)" : "var(--text-muted)"; }
   function ytLink(m, trail) {
-    return '<a class="rbtn rbtn--icon' + (trail ? ' rrow__trail' : '') + '" data-yt="' + esc(m.id || "") + '" href="https://www.youtube.com/results?search_query=' + encodeURIComponent((songName(m) + " " + songBy(m)).trim()) + '" target="_blank" rel="noopener" aria-label="ניגון ביוטיוב" title="ניגון ביוטיוב" style="width:var(--fab);height:var(--fab);min-height:var(--fab);color:' + ytColor(m.id) + '">' + I.yt + '</a>';
+    return '<a class="rbtn rbtn--icon' + (trail ? ' rrow__trail' : '') + '" data-yt="' + esc(m.id || "") + '" href="https://www.youtube.com/results?search_query=' + encodeURIComponent((songName(m) + " " + songBy(m)).trim()) + '" target="_blank" rel="noopener" aria-label="ניגון ביוטיוב" title="ניגון ביוטיוב" style="color:' + ytColor(m.id) + '">' + I.yt + '</a>';
   }
   /* a song with a file in the bucket gets the sound button (assets/audio.js); one without keeps the YouTube button */
   var songInfo = {};   /* every song's name and performer by its file, as the lists have shown them: the footer player reads its title here */
@@ -326,7 +337,7 @@
     if (m.in_catalog === false || m.owner_id || state.offline || !m.id) return ytLink(m, trail);   /* only a song of the catalog can be given a file */
     /* the upload button, to the right of the YouTube one: a file from this device takes the YouTube button's place for everybody */
     return '<span data-upl-wrap="' + esc(m.id) + '" style="display:flex;gap:var(--gap-tight);align-items:center">' +
-      '<button type="button" class="rbtn rbtn--icon' + (trail ? ' rrow__trail' : '') + '" data-upl="' + esc(m.id) + '" aria-label="העלאת קובץ" title="העלאת קובץ שיחליף את היוטיוב" style="width:var(--fab);height:var(--fab);min-height:var(--fab);color:var(--text-3);font:var(--fw-bold) var(--fs-xs)/1 var(--font)">' + I.upload + '</button>' + ytLink(m, trail) + '</span>';
+      '<button type="button" class="rbtn rbtn--icon' + (trail ? ' rrow__trail' : '') + '" data-upl="' + esc(m.id) + '" aria-label="העלאת קובץ" title="העלאת קובץ שיחליף את היוטיוב" style="color:var(--text-muted)">' + I.upload + '</button>' + ytLink(m, trail) + '</span>';
   }
   var songReg = {};
   var UPL_FORMATS = { mp3: 1, flac: 1, wav: 1, aiff: 1, aif: 1, m4a: 1 };
@@ -364,8 +375,8 @@
   }, true);
   /* ONE way to show a song, in the exercise list and in the exercise's own card: the song's name (up to two lines) and the performer on the left of the text, and at the left the play tile (the size of the number tile) with the song's time under it */
   function songLines(m) {
-    return '<span style="display:block;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;margin-top:var(--gap-tight);color:var(--text-2);font:var(--fw-medium) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(songName(m)) + '</span>' +
-      (songBy(m) ? '<span style="display:block;margin-top:var(--gap-tight);color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(songBy(m)) + '</span>' : '');
+    return '<span style="display:block;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;color:var(--text-muted);font:var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font)">' + esc(songName(m)) + '</span>' +
+      (songBy(m) ? '<span style="display:block;color:var(--text-muted);font:var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(songBy(m)) + '</span>' : '');
   }
   /* while a song plays, the time under its button counts down to 0 (audio.js tells the page); the others show their whole length */
   document.addEventListener("bioaudio", function (ev) {
@@ -378,10 +389,6 @@
     });
   });
   /* the song's bar: ONE element everywhere. A song with a file keeps its room for it, the bar shows while that song plays, follows it, and a drag moves the song. */
-  function songBar(m, extra, always) {
-    if (!m || !m.audio_object) return "";
-    return '<div class="bio-bar" data-for="' + esc(m.audio_object) + '"' + (always ? ' data-always="1"' : '') + ' style="' + (always ? '' : 'visibility:hidden;') + (extra || "flex:0 0 100%;order:3;padding-top:var(--sp-1)") + ';position:relative;z-index:var(--z-raised)"><input type="range" min="0" max="1000" value="0" step="1" aria-label="מקום במוסיקה" style="display:block;width:100%;margin:0;direction:ltr;accent-color:var(--primary)"></div>';
-  }
   /* a song's length: the catalog's, else what its own file told the player the first time (kept in this browser) */
   var durKnown = {};
   try { durKnown = JSON.parse(localStorage.getItem("biodanza.dur") || "{}") || {}; } catch (x) { durKnown = {}; }
@@ -410,19 +417,17 @@
   /* the player: ONE pill at the bottom right, always there once signed in. Play/pause, the time left and the song's bar are one thing; with no song loaded it says so. It lives in the top layer and is never hidden: a popup that opens is put under it. */
   (function () {
     var st = document.createElement("style");
-    st.textContent = ".bio-acc { display: flex; align-items: center; gap: var(--sp-1); min-width: 0; min-height: var(--ctl); padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: start; cursor: pointer } .bio-accb { display: grid; grid-template-rows: 1fr; transition: grid-template-rows .25s var(--ease) } .bio-accb > div { overflow: hidden; min-height: 0 } .bio-accb[data-closed] { grid-template-rows: 0fr } .bio-accb[data-closed] > div { visibility: hidden; transition: visibility 0s linear .25s } #songInfoDlg .sheet-foot { flex-direction: column; align-items: stretch } #songInfoDlg .sheet-foot > .rbtn { width: 100%; flex: 0 0 auto } #songInfoDlg #sisim { background: transparent; border-color: transparent; color: var(--mus-solid) } :root { --bar-top: var(--sp-1); --bar-gap: var(--sp-1); --dockfull: calc(var(--fab) + var(--gap-button) * 2 + var(--inset-b)); --dockh: var(--inset-b) } html.bio-docked { --dockh: var(--dockfull) } html.bio-docked body { box-sizing: border-box; padding-bottom: var(--dockh) } html.bio-docked .rfab:not(.rfab--in) { bottom: calc(var(--gutter) + var(--dockh)) } html.bio-docked .rmsg--toast { bottom: calc(var(--gutter) + var(--dockh)) !important } " +
-      ".bio-dock { position: fixed; top: auto; left: 0; right: 0; bottom: 0; height: auto; max-height: none; inset: auto 0 0 0; align-content: flex-start; margin: 0; width: auto; max-width: none; box-sizing: border-box; min-height: calc(var(--fab) + var(--gap-button) * 2 + var(--inset-b)); display: flex; align-items: center; gap: var(--gap-button); padding: var(--gap-button) var(--gutter) calc(var(--gap-button) + var(--inset-b)); overflow: visible; color: var(--text); background: var(--surface-2); border: 0; border-top: 1px solid var(--line); border-radius: 0; box-shadow: 0 -4px 14px -4px rgba(0, 0, 0, .16); z-index: var(--z-sticky); } " +   /* a square footer across the bottom: the page ends above it, the add button and the toasts sit above it */
-      "@media (min-width: 1024px) { .rfab[data-act=\"swap\"] { left: auto !important; right: calc(var(--listw) + var(--gutter)) !important; bottom: calc(var(--gutter) + var(--dockh)) !important } } html.bio-docked dialog:not(:has(.sheet-foot)) .sheet-body { padding-bottom: calc(var(--dockfull) + var(--gutter)) } .bio-dock:not(.on), .bio-dock.closed { display: none } .bio-dock.away { opacity: 0; pointer-events: none } " +
-      ".bio-dock__btn { flex: none; display: grid; place-items: center; width: var(--fab); height: var(--fab); padding: 0; border: 0; border-radius: var(--r-fab); background: var(--danger); color: var(--on-primary); cursor: pointer } " +
-      ".bio-dock__btn[data-st=\"paused\"] { background: var(--surface-2); color: var(--text) } .bio-dock__btn:disabled { background: var(--surface-2); color: var(--text-3); cursor: default } " +
-      ".bio-bar input, .bio-dock__bar { -webkit-appearance: none; appearance: none; background: transparent; height: 20px; margin: 0; cursor: pointer; --p: 0%; --c: var(--primary) } .bio-bar input:hover { --c: var(--danger) } .bio-bar input::-webkit-slider-runnable-track, .bio-dock__bar::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--c) var(--p), var(--track, var(--surface-2)) var(--p)) } .bio-bar input::-webkit-slider-thumb, .bio-dock__bar::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border: 0; border-radius: 50%; background: var(--c) } .bio-bar input::-moz-range-track, .bio-dock__bar::-moz-range-track { height: 4px; border-radius: 2px; background: var(--track, var(--surface-2)) } .bio-bar input::-moz-range-progress, .bio-dock__bar::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--c) } .bio-bar input::-moz-range-thumb, .bio-dock__bar::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: var(--c) } .bio-bar input:focus, .bio-bar input:focus-visible, .bio-dock__bar:focus, .bio-dock__bar:focus-visible, .bio-dock__btn:focus, .bio-dock__btn:focus-visible, .bio-dock__x:focus, .bio-dock__x:focus-visible { outline: none } .bio-dock .bio-vol { margin: 0 } @media (max-width: 1023px) { .bio-dock .bio-vol, .bio-dock .bio-volume { display: none !important } } .bio-volume { flex: none; display: flex; align-items: center; gap: var(--gap-tight); --c: var(--primary) } .bio-volume input { -webkit-appearance: none; appearance: none; background: transparent; width: 7rem; height: 20px; margin: 0; cursor: pointer; direction: ltr; --p: 0% } .bio-volume { direction: ltr; margin-left: var(--sp-3) } .bio-volume input::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--c) var(--p), var(--track, var(--on-primary)) var(--p)) } .bio-volume input::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border: 0; border-radius: 50%; background: var(--c) } .bio-volume input::-moz-range-track { height: 4px; border-radius: 2px; background: var(--track, var(--on-primary)) } .bio-volume input::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--c) } .bio-volume input::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: var(--c) } .bio-volume input:focus, .bio-volume input:focus-visible { outline: none } .bio-volume > .rbtn > svg { width: var(--icon-m); height: var(--icon-m) } .bio-dock__x { flex: none; display: grid; place-items: center; width: var(--icon-m, 20px); height: var(--ctl); padding: 0; border: 0; border-radius: var(--r-ctl); background: transparent; color: var(--text-2); cursor: pointer } .bio-dock__x > svg { width: var(--icon-m, 20px); height: var(--icon-m, 20px); stroke-width: var(--icon-w) } .bio-dock.idle .bio-dock__x { display: none } " +
-      "@media (min-width: 701px) { .bio-dock > .bio-volume { order: 1 } .bio-dock > .bio-dock__time { order: 2 } .bio-dock > .rbtn:first-child { order: 3; margin-inline-end: var(--sp-1) } .bio-dock > .bio-dockbar, .bio-dock > .bio-dock__name, .bio-dock > .bio-dock__sync, .bio-dock > [data-hist] { order: 4 } } .bio-dock [data-addcur][hidden], .bio-dock .bio-dock__sync[hidden] { display: none } .bio-dock > .bio-dock__cat { display: none !important }  .bio-dock .bio-dock__sync { position: absolute; top: var(--sp-hair); left: var(--gutter); margin: 0; pointer-events: none } @media (min-width: 701px) { .bio-dock .bio-dock__sync { left: calc(var(--gutter) + var(--ib) + var(--gap-button)) } } .bio-dock .rbtn > svg { width: var(--icon-l); height: var(--icon-l) } @media (min-width: 760px) { html.bio-docked #addMusDlg, html.bio-docked #histDlg { inset-block-end: var(--dockfull); max-height: calc(100dvh - var(--dockfull) - 48px) } html.bio-docked #addMusDlg #amlist { padding-bottom: var(--gutter) } html.bio-docked #histDlg .sheet-body { padding-bottom: var(--gutter) } } .bio-card [data-fac] { font-size: var(--fs-xs); min-height: 0; padding-block: 0 } .bio-card [data-fac][aria-pressed=\"true\"] { background: var(--surface-2); color: var(--text); border-color: var(--surface-2) } #pl { position: relative } #pl:has(> .bio-banner) { padding-inline-start: var(--ctl) } .bio-banner { position: absolute; inset-block: 0; inset-inline-start: 0; width: 44px; height: 100%; border: 0; border-radius: 0; background: var(--primary); color: var(--on-primary); writing-mode: vertical-rl; font: var(--fw-bold) var(--fs-l)/1 var(--font); letter-spacing: .12em; cursor: pointer; z-index: 3 } .bio-banner:hover { filter: brightness(1.1) } #pd { position: relative } #pd::after { content: \"\"; position: absolute; inset: 0; z-index: 5; background: var(--pp-scrim, rgba(16, 20, 26, .55)); opacity: 0; pointer-events: none; transition: opacity .25s var(--ease) } #pd.bio-dim::after { opacity: 1; pointer-events: auto } @media (prefers-reduced-motion: reduce) { #pd::after { transition: none } } * { scrollbar-width: none } *::-webkit-scrollbar { display: none } .bio-card[aria-current=\"true\"] { border-color: var(--ex-solid); box-shadow: inset 0 0 0 1px var(--ex-solid), var(--sh-card) } @media (max-width: 1023.98px) { .bio-card[aria-current=\"true\"]:not([data-opt]) { border-color: var(--line); box-shadow: var(--sh-card) } } .rrow[aria-current=\"true\"] { box-shadow: inset 3px 0 0 var(--ex-solid) } .bio-card:has([data-audio][data-st=\"pause\"])[aria-current] { box-shadow: var(--sh-card) } .bio-card [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important } [data-opt] [data-audio] svg, [data-am] [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important } .bio-dock > .rbtn:first-child:not(:disabled) { background: var(--primary); border-color: var(--primary); color: var(--on-primary) } .bio-dock.playing > .rbtn:first-child:not(:disabled) { color: var(--mus-solid) } .bio-dock.playing { --primary: #FFFFFF; --text: #FFFFFF; --text-2: #FFFFFF; --text-3: #FFFFFF; --surface-2: var(--mus-solid); --line: oklch(60% .15 255); --track: oklch(75% .09 255); background: var(--mus-solid) }  " +
+    st.textContent = ".rskel { margin: 0 } :is(.rlist, #pkl, #pks):has(> .rskel) { display: flex; flex-direction: column; gap: var(--gap); padding-inline: var(--gap) } .rempty:only-child { margin: 0 } :is(#pd, .catprev):has(> .rempty:only-child) { justify-content: center } .rhead .rbtn--icon.rbtn--primary, dialog .sheet-head .rbtn--icon.rbtn--primary { background: transparent; border-color: transparent; color: var(--primary) }   /* law 15: a header holds icon buttons only, the primary action is one in the role colour, not a filled one */ .bio-fold { padding-block: var(--gap); min-height: 0 } .bio-fold > .rrow__main { flex: 1 1 0; flex-direction: row; align-items: center; gap: var(--gap) } .bio-fold__t { flex: 1 1 auto; min-width: 0 } .bio-fold__n { flex: none; color: var(--text-muted); font: var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font); font-variant-numeric: tabular-nums } .bio-fold__c { display: grid; flex: none; width: var(--icon); height: var(--icon); transition: transform var(--t-base) var(--ease) } .bio-fold__c svg { width: 100%; height: 100%; stroke-width: var(--icon-w) } .bio-fold > .rrow__main[aria-expanded=true] > .bio-fold__c { transform: rotate(180deg) } .bio-acc { display: flex; align-items: center; gap: var(--gap); min-width: 0; min-height: var(--ctl); padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: start; cursor: pointer } .bio-accb { display: grid; grid-template-rows: 1fr; transition: grid-template-rows .25s var(--ease) } .bio-accb > div { overflow: hidden; min-height: 0; display: flex; flex-direction: column; justify-content: flex-end } .bio-accb > div > * { flex: none }   /* the content is whole and sits on the bottom edge: opening pulls it down, its last line shows first */ .bio-accb[data-closed] { grid-template-rows: 0fr } .bio-accb[data-closed] > div { visibility: hidden; transition: visibility 0s linear .25s } #songInfoDlg .sheet-foot { flex-direction: column; align-items: stretch } #songInfoDlg .sheet-foot > .rbtn { width: 100%; flex: 0 0 auto } #songInfoDlg #sisim { background: transparent; border-color: transparent; color: var(--primary) } :root { --bar-top: var(--gap); --bar-gap: var(--gap); --dockfull: calc(var(--fab) + var(--gap) * 2 + var(--inset-b)); --dockh: var(--inset-b) } html.bio-docked { --dockh: var(--dockfull) } html.bio-docked body { box-sizing: border-box; padding-bottom: var(--dockh) } html.bio-docked .rfab:not(.rfab--in) { bottom: calc(var(--gap) + var(--dockh)) } html.bio-docked .rmsg--toast { bottom: calc(var(--gap) + var(--dockh)) !important } " +
+      ".bio-dock { position: fixed; top: auto; left: 0; right: 0; bottom: 0; height: auto; max-height: none; inset: auto 0 0 0; align-content: flex-start; margin: 0; width: auto; max-width: none; box-sizing: border-box; min-height: calc(var(--fab) + var(--gap) * 2 + var(--inset-b)); display: flex; align-items: center; gap: var(--gap); padding: var(--gap) var(--gap) calc(var(--gap) + var(--inset-b)); overflow: visible; color: var(--text); background: var(--surface); border: 0; border-top: var(--bw) solid var(--border); border-radius: 0; z-index: var(--z-sticky); } " +   /* a square footer across the bottom: the page ends above it, the add button and the toasts sit above it */
+      "@media (min-width: 760px) { .rfab[data-act=\"swap\"] { left: auto !important; right: calc(var(--listw) + var(--gap)) !important; bottom: calc(var(--gap) + var(--dockh)) !important } } .bio-dock:not(.on), .bio-dock.closed { display: none } .bio-dock.away { opacity: 0; pointer-events: none } " +
+      ".bio-bar input, .bio-dock__bar { -webkit-appearance: none; appearance: none; background: transparent; height: var(--icon); margin: 0; cursor: pointer; --p: 0%; --c: var(--primary) } .bio-bar input:hover { --c: var(--danger) } .bio-bar input::-webkit-slider-runnable-track, .bio-dock__bar::-webkit-slider-runnable-track { height: var(--gap-tight); border-radius: 2px; background: linear-gradient(to right, var(--c) var(--p), var(--track, var(--surface)) var(--p)) } .bio-bar input::-webkit-slider-thumb, .bio-dock__bar::-webkit-slider-thumb { -webkit-appearance: none; width: var(--icon); height: var(--icon); margin-top: -8px; border: 0; border-radius: 50%; background: var(--c) } .bio-bar input::-moz-range-track, .bio-dock__bar::-moz-range-track { height: var(--gap-tight); border-radius: 2px; background: var(--track, var(--surface)) } .bio-bar input::-moz-range-progress, .bio-dock__bar::-moz-range-progress { height: var(--gap-tight); border-radius: 2px; background: var(--c) } .bio-bar input::-moz-range-thumb, .bio-dock__bar::-moz-range-thumb { width: var(--icon); height: var(--icon); border: 0; border-radius: 50%; background: var(--c) } .bio-bar input:focus, .bio-bar input:focus-visible, .bio-dock__bar:focus, .bio-dock__bar:focus-visible, .bio-dock__x:focus, .bio-dock__x:focus-visible { outline: none } .bio-dock .bio-vol { margin: 0 } @media (width < 760px) { .bio-dock .bio-vol, .bio-dock .bio-volume { display: none !important } } .bio-volume { flex: none; display: flex; align-items: center; gap: var(--gap-tight); --c: var(--primary) } .bio-volume input { -webkit-appearance: none; appearance: none; background: transparent; width: var(--volume-w); height: var(--icon); margin: 0; cursor: pointer; direction: ltr; --p: 0% } .bio-volume { direction: ltr } .bio-volume input::-webkit-slider-runnable-track { height: var(--gap-tight); border-radius: 2px; background: linear-gradient(to right, var(--c) var(--p), var(--track, var(--on-primary)) var(--p)) } .bio-volume input::-webkit-slider-thumb { -webkit-appearance: none; width: var(--icon); height: var(--icon); margin-top: -8px; border: 0; border-radius: 50%; background: var(--c) } .bio-volume input::-moz-range-track { height: var(--gap-tight); border-radius: 2px; background: var(--track, var(--on-primary)) } .bio-volume input::-moz-range-progress { height: var(--gap-tight); border-radius: 2px; background: var(--c) } .bio-volume input::-moz-range-thumb { width: var(--icon); height: var(--icon); border: 0; border-radius: 50%; background: var(--c) } .bio-volume input:focus, .bio-volume input:focus-visible { outline: none } .bio-volume > .rbtn > svg { width: var(--icon); height: var(--icon) } .bio-dock__x { flex: none; display: grid; place-items: center; width: var(--icon); height: var(--ctl); padding: 0; border: 0; border-radius: var(--r); background: transparent; color: var(--text-muted); cursor: pointer } .bio-dock__x > svg { width: var(--icon); height: var(--icon); stroke-width: var(--icon-w) } .bio-dock.idle .bio-dock__x { display: none } " +
+      "@media (min-width: 760px) { .bio-dock > .bio-volume { order: 1 } .bio-dock > .bio-dock__time { order: 2 } .bio-dock > .ricon-lg:first-child { order: 3 } .bio-dock > .bio-dockbar, .bio-dock > .bio-dock__name, .bio-dock > .bio-dock__sync, .bio-dock > [data-hist] { order: 4 } } .bio-dock [data-addcur][hidden], .bio-dock .bio-dock__sync[hidden] { display: none } .bio-dock > .bio-dock__cat { display: none !important }  .bio-dock .rbtn > svg { width: var(--icon); height: var(--icon) } @media (min-width: 760px) { html.bio-docked #addMusDlg, html.bio-docked #histDlg { inset-block-end: var(--dockfull); max-height: calc(100dvh - var(--dockfull) - 48px) } html.bio-docked #addMusDlg #amlist { padding-bottom: var(--gap) } html.bio-docked #histDlg .sheet-body { padding-bottom: var(--gap) } } .bio-card .rchip[data-fac] { font-size: var(--fs-s); min-height: 0; padding-block: 0 } .bio-card .rchip[data-fac][aria-pressed=\"true\"] { background: var(--surface); color: var(--text); border-color: var(--surface) } #pl { position: relative } #pl:has(> .bio-banner) { padding-inline-start: var(--ctl) } .bio-banner { position: absolute; inset-block: 0; inset-inline-start: 0; width: var(--ctl); height: 100%; border: 0; border-radius: 0; background: var(--primary); color: var(--on-primary); writing-mode: vertical-rl; font: var(--fw-bold) var(--fs-l)/1 var(--font); letter-spacing: .12em; cursor: pointer; z-index: 3 } .bio-banner:hover { filter: brightness(1.1) } #pd { position: relative } #pd::after { content: \"\"; position: absolute; inset: 0; z-index: 5; background: var(--scrim); opacity: 0; pointer-events: none; transition: opacity .25s var(--ease) } #pd.bio-dim::after { opacity: 1; pointer-events: auto } @media (prefers-reduced-motion: reduce) { #pd::after { transition: none } } * { scrollbar-width: none } *::-webkit-scrollbar { display: none } .bio-card[aria-current=\"true\"] { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary), var(--shadow) } @media (width < 760px) { .bio-card[aria-current=\"true\"]:not([data-opt]) { border-color: var(--border); box-shadow: var(--shadow) } } .rrow[aria-current=\"true\"] { box-shadow: inset 3px 0 0 var(--primary) } .bio-card:has([data-audio][data-st=\"pause\"])[aria-current] { box-shadow: var(--shadow) } .bio-card [data-audio] svg { width: var(--icon) !important; height: var(--icon) !important } [data-opt] [data-audio] svg, [data-am] [data-audio] svg { width: var(--icon) !important; height: var(--icon) !important } .bio-dock > .rbtn:first-child:not(:disabled) { background: var(--primary); border-color: var(--primary); color: var(--on-primary) } .bio-dock.playing > .rbtn:first-child:not(:disabled) { color: var(--surface) }  " +
       ".bio-dock .bio-dockbar { flex: 1 1 8rem; min-width: 0; padding: 0; touch-action: none } .bio-dock .bio-dockbar .bio-dock__bar { width: 100%; display: block; direction: ltr } .bio-dock .bio-dockbar input::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--c) var(--p), var(--track, var(--on-primary)) var(--p)) } .bio-dock .bio-dockbar input::-moz-range-track { background: var(--track, var(--on-primary)) } " +
-      ".bio-dock { --surface-2: var(--mus-ink); --text: #FFFFFF; --text-2: oklch(90% .03 255); --text-3: oklch(82% .045 255); --line: oklch(42% .09 255); --track: oklch(60% .1 255); --primary: #FFFFFF; --on-primary: var(--mus-ink); --danger: oklch(85% .08 255); --ghost: rgba(255, 255, 255, .14) } .bio-dock .bio-dock__time { color: #FFFFFF !important } .bio-dock__name { cursor: pointer; flex: 0 1 28rem; min-width: 8rem; direction: ltr; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis } .bio-dock__name span { color: var(--text-2) } .bio-dock__name[data-edit] { cursor: pointer } .bio-dock .bio-dock__cat { background: var(--surface-2); color: var(--text); border-color: var(--surface-2) } .bio-dock .bio-dock__cat[aria-pressed=\"true\"] { background: var(--primary); color: var(--on-primary); border-color: var(--primary) } @media (min-width: 701px) and (max-width: 1023px) { .bio-dock__cat { display: none } } .bio-dock__name { display: flex; flex-direction: column; gap: var(--gap-tight); line-height: 1.25 } .bio-dock__name b, .bio-dock__name span { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis } " +
-      "@media (max-width: 700px) { .bio-dock { flex-wrap: wrap } .bio-dock__name { flex: 1 1 100%; order: 4 } .bio-dock .bio-dockbar { flex: 0 0 100%; order: 3 } .bio-dock [data-hist] { margin-inline-end: calc((var(--ib) - 22px) / -2) } } " +
-      ".bio-dock .bio-dock__rst { flex: none; width: var(--tag-s); height: var(--tag-s); min-height: var(--tag-s); padding: 0; background: transparent; border-color: transparent; color: var(--text-2); box-shadow: none } .bio-dock .bio-dock__rst > svg { width: var(--icon-m); height: var(--icon-m) } .bio-dock__time { flex: none; min-width: 2.6em; text-align: center; font: var(--fw-bold) var(--fs-xs)/1 var(--font); font-variant-numeric: tabular-nums } " +
+      ".bio-dock .bio-dock__time { color: var(--text) !important } .bio-dock__name { cursor: pointer; flex: 0 1 auto; min-width: 0; max-width: var(--w); direction: ltr; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis } .bio-dock__name span { color: var(--text-muted) } .bio-dock__name[data-edit] { cursor: pointer } .bio-dock .bio-dock__cat { background: var(--surface); color: var(--text); border-color: var(--surface) } .bio-dock .bio-dock__cat[aria-pressed=\"true\"] { background: var(--primary); color: var(--on-primary); border-color: var(--primary) } .bio-dock__name { display: flex; flex-direction: column; gap: var(--gap-tight); line-height: 1.25 } .bio-dock__name b, .bio-dock__name span { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis } " +
+      "@media (width < 760px) { .bio-dock { flex-wrap: wrap } .bio-dock__name { flex: 1 1 100%; order: 4 } .bio-dock .bio-dockbar { flex: 0 0 100%; order: 3 }  } " +
+      ".bio-dock .bio-dock__rst { flex: none; padding: 0; background: transparent; border-color: transparent; color: var(--text-muted); box-shadow: none } .bio-dock__time { flex: none; text-align: center; font: var(--fw-bold) var(--fs-s)/1 var(--font); font-variant-numeric: tabular-nums } " +
       ".bio-dock__bar { flex: 1 1 0; width: auto; max-width: none; min-width: 0; display: block; margin: 0; padding: 0; direction: ltr; accent-color: var(--primary); touch-action: none } " +
-      ".bio-dock__none { flex: 1 1 auto; min-width: 0; text-align: center; color: var(--text-2); font: var(--fw-regular) var(--fs-xs)/1.2 var(--font) } " +
+      ".bio-dock__none { flex: 1 1 auto; min-width: 0; text-align: center; color: var(--text-muted); font: var(--fw-regular) var(--fs-s)/1.2 var(--font) } " +
       ".bio-dock:not(.idle) .bio-dock__none, .bio-dock.idle .bio-dock__time { display: none } .bio-dock.idle .bio-dock__bar { opacity: .6; cursor: default } " +
       "";
     document.head.appendChild(st);
@@ -450,16 +455,27 @@
       histName = name; histSave(name, title, artist);
       try { var h = (JSON.parse(localStorage.getItem("biodanza.history") || "[]") || []).filter(function (e) { return e && e.n !== name; }); h.unshift({ n: name, t: title || "", a: artist || "", at: Date.now() }); localStorage.setItem("biodanza.history", JSON.stringify(h.slice(0, 300))); } catch (x) { /* not kept */ }
     }
-    /* the play button inside a history card says pause while that song plays */
-    function hpOn(n) { return !!(n && window.__bioNow && window.__bioNow.playing && window.__bioNow.name === n); }
-    function hpPaint() { document.querySelectorAll("[data-hp]").forEach(function (b) { var on = hpOn(b.dataset.hn), k = on ? "1" : "0"; var hc = b.closest("[data-hi]"); if (hc) hc.classList.toggle("is-play", on); if (b.dataset.pl === k) return;   /* the card of the song that plays is red, like every playing card */ b.dataset.pl = k; b.innerHTML = on ? PAUSE : PLAY; b.setAttribute("aria-label", on ? "עצירה" : "השמעה"); b.title = on ? "עצירה" : "השמעה"; }); }
-    document.addEventListener("bioaudio", function () { setTimeout(hpPaint, 0); });
     function playName(n, t, a) {   /* a song of the history plays as its own button would play it */
       if (!n) return;
       if (window.BioAudio && BioAudio.info) BioAudio.info(n, t, a);
       var tb = document.createElement("button"); tb.dataset.audio = n; tb.style.display = "none"; document.body.appendChild(tb); tb.click(); tb.remove();
     }
+    function histSkeleton() {   /* law 7: the history opens at once, with a skeleton where the songs will be; the songs come in when they have arrived */
+      var sk = '<div class="rlist"><div class="rskel rskel--title"></div></div>';
+      if (wide()) {
+        if (leftStack.length) closeLeftAll();
+        var el = openLeft(); el._rows = []; el._skel = true;
+        el.innerHTML = head("היסטוריית האזנה", "", true, "") + sk;
+        var hb = el.querySelector('[data-act="back"]'); if (hb) { hb.innerHTML = I.x; hb.setAttribute("aria-label", "סגירה"); hb.title = "סגירה"; hb.addEventListener("click", closeHist); }
+        showLeftEl(el);
+      } else {
+        var dlg = document.getElementById("histDlg");
+        if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "histDlg"; document.body.appendChild(dlg); }
+        RosterSheet.render(dlg, { title: "היסטוריית האזנה", from: "bottom", size: "l", body: sk });
+      }
+    }
     function openHistory() {
+      histSkeleton();
       var local = function () { try { return JSON.parse(localStorage.getItem("biodanza.history") || "[]") || []; } catch (x) { return []; } };
       var fromDb = api("/rest/v1/listen_history?select=audio_object,title,artist,played_at&order=played_at.desc&limit=120").then(function (rows) {
         return (rows || []).map(function (r) { return { n: r.audio_object, t: r.title, a: r.artist, at: Date.parse(r.played_at) }; });
@@ -468,56 +484,75 @@
       Promise.race([fromDb, waited]).then(function (rows) { renderHistory(rows || local()); }, function () { renderHistory(local()); });
     }
     /* wide screen: the history is a layer that comes in from the left, as the catalog comes in from the right; its songs are cards in the same grid as any music */
-    var histLayer = null, histOpen = false;
-    (function () { var st = document.createElement("style"); st.textContent = "#histLayer { position: fixed; z-index: 20; display: flex; flex-direction: column; min-height: 0; visibility: hidden; transform: translateX(-100%); transition: transform .25s var(--ease), visibility 0s linear .25s; box-shadow: 1px 0 0 var(--line) } #histLayer.is-open { visibility: visible; transform: none; transition: transform .25s var(--ease), visibility 0s } #histLayer > .rlist { flex: 1 1 auto; min-height: 0 } #pl::after { content: \"\"; position: absolute; inset: 0; z-index: 5; background: var(--pp-scrim, rgba(16, 20, 26, .55)); opacity: 0; pointer-events: none; transition: opacity .25s var(--ease) } #pl.bio-dim::after { opacity: 1; pointer-events: auto } @media (prefers-reduced-motion: reduce) { #histLayer, #pl::after { transition: none } }"; document.head.appendChild(st); })();
-    function placeHist() { if (!histLayer) return; var a = pd.getBoundingClientRect(); histLayer.style.top = a.top + "px"; histLayer.style.height = a.height + "px"; histLayer.style.left = a.left + "px"; histLayer.style.width = a.width + "px"; }
-    function closeHist() { if (!histLayer || !histOpen) return; histOpen = false; histLayer.classList.remove("is-open"); pl.classList.remove("bio-dim"); }
-    window.__closeHist = closeHist;
-    window.__showLeft = function (html, wire) {   /* any list on the left side as a popup: the same layer as the history, the right side goes dark */
-      if (!histLayer) {
-        histLayer = document.createElement("div"); histLayer.id = "histLayer"; histLayer.style.background = getComputedStyle(document.body).backgroundColor;
-        document.body.appendChild(histLayer);
-        window.addEventListener("resize", placeHist); if (window.ResizeObserver) new ResizeObserver(placeHist).observe(pd);
-        histLayer.addEventListener("click", function (ev) {
-          var c = ev.target.closest && ev.target.closest("[data-hi]"); if (!c) return;
-          var e = histLayer._rows && histLayer._rows[+c.dataset.hi]; if (!e) return;
-          histLayer.querySelectorAll("[data-hi][aria-current]").forEach(function (x) { x.removeAttribute("aria-current"); });
-          c.setAttribute("aria-current", "true"); playName(e.n, e.t, e.a);
-        });
-        pl.addEventListener("click", function () { if (histOpen && pl.classList.contains("bio-dim")) closeHist(); });
+    var histLayer = null, histOpen = false, leftStack = [];   /* leftStack: the open side layers, the top last */
+    (function () { var st = document.createElement("style"); st.textContent = ".bio-left { position: fixed; z-index: 20; display: flex; flex-direction: column; min-height: 0; visibility: hidden; transform: translateX(-100%); transition: transform var(--t-base) var(--ease), visibility 0s linear var(--t-base); box-shadow: 1px 0 0 var(--border) } .bio-left.is-open { visibility: visible; transform: none; transition: transform var(--t-base) var(--ease), visibility 0s } .bio-left > .rlist { flex: 1 1 auto; min-height: 0 } .bio-left.bio-under, #catLayer.bio-under { opacity: 0; transition: none; pointer-events: none } #pl::after { content: \"\"; position: absolute; inset: 0; z-index: 5; background: var(--scrim); opacity: 0; pointer-events: none; transition: opacity .25s var(--ease) } #pl.bio-dim::after { opacity: 1; pointer-events: auto } @media (prefers-reduced-motion: reduce) { .bio-left, #pl::after { transition: none } }"; document.head.appendChild(st); })();
+    function placeHist() { var a = pd.getBoundingClientRect(); [histLayer].concat(leftStack).forEach(function (el) { if (!el) return; el.style.top = a.top + "px"; el.style.height = a.height + "px"; el.style.left = a.left + "px"; el.style.width = a.width + "px"; }); }
+    /* THE SIDE LAYERS (law 8): ONE stack. A layer opened from a layer goes on top of it, same place and size; the one under is kept exactly as it is (its DOM, scroll, search, mark), only hidden and inert. Closing the top one shows the one under. The first layer is #histLayer; the catalog, when it is open, is covered the same way. */
+    var catCovered = false;
+    function under(el, on) { el.classList.toggle("bio-under", on); if (on) el.setAttribute("inert", ""); else el.removeAttribute("inert"); }
+    function ensureLeft() {
+      if (histLayer) return;
+      histLayer = document.createElement("div"); histLayer.id = "histLayer"; histLayer.className = "bio-left"; histLayer.style.background = getComputedStyle(document.body).backgroundColor;
+      document.body.appendChild(histLayer);
+      window.addEventListener("resize", placeHist); if (window.ResizeObserver) new ResizeObserver(placeHist).observe(pd);
+      histLayer.addEventListener("click", function (ev) {
+        var c = ev.target.closest && ev.target.closest("[data-hi]"); if (!c) return;
+        var e = histLayer._rows && histLayer._rows[+c.dataset.hi]; if (!e) return;
+        histLayer.querySelectorAll("[data-hi][aria-current]").forEach(function (x) { x.removeAttribute("aria-current"); });   /* it stays open: the song that plays is the marked one */
+        c.setAttribute("aria-current", "true"); playName(e.n, e.t, e.a);
+      });
+      pl.addEventListener("click", function () { if (histOpen && pl.classList.contains("bio-dim")) closeHist(); });   /* a tap on the dark side closes the top layer */
+      document.addEventListener("keydown", function (e) {   /* Escape closes the top layer only; a popup or a menu over it takes the key first */
+        if (e.key !== "Escape" || e.defaultPrevented || !leftStack.length || document.querySelector("dialog[open], #moreMenu")) return;
+        e.preventDefault(); closeHist();
+      }, true);
+    }
+    function openLeft() {   /* the layer to draw into: the first one, or a new one on top of the open ones */
+      ensureLeft(); var el;
+      if (!leftStack.length) {
+        el = histLayer; under(el, false); leftStack = [el]; histOpen = true; pl.classList.add("bio-dim");
+        if (catPanel && catLayer) { under(catLayer, true); catCovered = true; }
+      } else {
+        under(leftStack[leftStack.length - 1], true);
+        el = document.createElement("div"); el.className = "bio-left"; el.style.background = histLayer.style.background; document.body.appendChild(el); leftStack.push(el);
       }
-      if (catPanel) closeCatPanel(true);
-      histLayer._rows = [];
-      histLayer.innerHTML = html; placeHist(); histOpen = true; pl.classList.add("bio-dim");
-      var bk = histLayer.querySelector('[data-act="back"]'); if (bk) { bk.innerHTML = I.x; bk.setAttribute("aria-label", "סגירה"); bk.title = "סגירה"; }   /* a popup that comes from the left closes with a cross, not an arrow */
-      requestAnimationFrame(function () { histLayer.classList.add("is-open"); });
-      if (wire) wire(histLayer);
-      return histLayer;
+      return el;
+    }
+    function showLeftEl(el) { placeHist(); requestAnimationFrame(function () { el.classList.add("is-open"); }); syncLayers(); }
+    function popLeft(quiet) {
+      var el = leftStack.pop(); if (!el) return;
+      el.classList.remove("is-open");
+      if (el !== histLayer) setTimeout(function () { el.remove(); }, 400);
+      if (leftStack.length) under(leftStack[leftStack.length - 1], false);
+      else { histOpen = false; pl.classList.remove("bio-dim"); under(el, false); if (catCovered) { catCovered = false; if (catLayer) under(catLayer, false); } }
+      if (!quiet) syncLayers();
+    }
+    function closeHist() { popLeft(); }
+    function closeLeftAll() { if (!leftStack.length) return; while (leftStack.length) popLeft(true); syncLayers(); }
+    window.__closeHist = closeHist; window.__closeLeftAll = closeLeftAll;
+    window.__leftLive = function () { return leftStack.slice(); };
+    window.__leftClose = function (el) { var i = leftStack.indexOf(el); if (i < 0) return; while (leftStack.length > i) popLeft(true); syncLayers(); };
+    window.__showLeft = function (html, wire) {   /* any list on the left side as a popup: from a layer it opens on top of it, never in its place */
+      var el = openLeft();
+      el._rows = []; el.innerHTML = html;
+      var bk = el.querySelector('[data-act="back"]'); if (bk) { bk.innerHTML = I.x; bk.setAttribute("aria-label", "סגירה"); bk.title = "סגירה"; }   /* a popup that comes from the left closes with a cross, not an arrow */
+      showLeftEl(el);
+      if (wire) wire(el);
+      return el;
     };
     function showHistLayer(rows, when) {
-      if (!histLayer) {
-        histLayer = document.createElement("div"); histLayer.id = "histLayer"; histLayer.style.background = getComputedStyle(document.body).backgroundColor;
-        document.body.appendChild(histLayer);
-        window.addEventListener("resize", placeHist); if (window.ResizeObserver) new ResizeObserver(placeHist).observe(pd);
-        histLayer.addEventListener("click", function (ev) {
-          var c = ev.target.closest && ev.target.closest("[data-hi]"); if (!c) return;
-          var e = histLayer._rows[+c.dataset.hi]; if (!e) return;
-          histLayer.querySelectorAll("[data-hi][aria-current]").forEach(function (x) { x.removeAttribute("aria-current"); });   /* it stays open: the song that plays is the marked one */
-          c.setAttribute("aria-current", "true"); playName(e.n, e.t, e.a);
-        });
-        pl.addEventListener("click", function () { if (histOpen && pl.classList.contains("bio-dim")) closeHist(); });   /* a tap on the dark side closes it */
-      }
-      if (catPanel) closeCatPanel(true);   /* one layer at a time */
-      histLayer._rows = rows;
+      var el;
+      if (leftStack.length === 1 && leftStack[0]._skel) { el = leftStack[0]; el._skel = false; }   /* the skeleton that opened at the press is filled */
+      else { closeLeftAll(); el = openLeft(); }   /* the history is drawn again from the start */
+      el._rows = rows;
       var nw = window.__bioNow || {};
       var cards = rows.map(function (e, i) {
         var rid = histIds[e.n], m = { id: rid || "h" + i, audio_object: e.n, title: e.t, name: e.t, artist: e.a };
-        return songCardUi(m, { act: exBtnG(m) + (rid ? '<button type="button" class="rbtn rbtn--icon bio-act" data-addto="' + esc(rid) + '" aria-label="הוספה" title="הוספה לוויוונסיה או לתרגיל">' + I.plus + '</button>' : ''), attrs: 'data-hi="' + i + '" role="button" tabindex="0"', selected: !!(nw.name && nw.name === e.n), title: e.t || "מוסיקה", by: [e.a || "", when(e.at)].filter(Boolean).join(" \u00b7 "), pill: cardPill(m) });
+        return songCardUi(m, { act: exBtnG(m) + (rid ? '<button type="button" class="rbtn rbtn--icon bio-act" data-addto="' + esc(rid) + '" aria-label="הוספה" title="הוספה לוויוונסיה או לתרגיל">' + I.plus + '</button>' : ''), attrs: 'data-hi="' + i + '" role="button" tabindex="0"', selected: !!(nw.name && nw.name === e.n), title: e.t || "מוסיקה", by: [e.a || "", when(e.at)].filter(Boolean).join(" · "), pill: cardPill(m) });
       }).join("");
-      histLayer.innerHTML = head("היסטוריית האזנה", "", true, "") + '<div class="rlist">' + (rows.length ? cardGrid(cards) : ph("אין עדיין היסטוריה", "מוסיקה שהתחלתם להשמיע תופיע כאן")) + '</div>';
-      var hb = histLayer.querySelector('[data-act="back"]'); if (hb) { hb.innerHTML = I.x; hb.setAttribute("aria-label", "סגירה"); hb.title = "סגירה"; hb.addEventListener("click", closeHist); }
-      placeHist(); histOpen = true; pl.classList.add("bio-dim");
-      requestAnimationFrame(function () { histLayer.classList.add("is-open"); });
+      el.innerHTML = head("היסטוריית האזנה", "", true, "") + '<div class="rlist">' + (rows.length ? cardGrid(cards) : ph("אין עדיין היסטוריה", "מוסיקה שהתחלתם להשמיע תופיע כאן")) + '</div>';
+      var hb = el.querySelector('[data-act="back"]'); if (hb) { hb.innerHTML = I.x; hb.setAttribute("aria-label", "סגירה"); hb.title = "סגירה"; hb.addEventListener("click", closeHist); }
+      showLeftEl(el);
     }
     var histIds = {};   /* the music row of each song in the history, by its file: the heart and the plus need it */
     function renderHistory(h) {
@@ -549,7 +584,7 @@
         return songCardUi(m, { act: exBtnG(m) + (rid ? '<button type="button" class="rbtn rbtn--icon bio-act" data-addto="' + esc(rid) + '" aria-label="הוספה" title="הוספה לוויוונסיה או לתרגיל">' + I.plus + '</button>' : ''), attrs: 'data-hi="' + i + '" role="button" tabindex="0"', selected: !!(nw.name && nw.name === e.n), title: e.t || "מוסיקה", by: [e.a || "", when(e.at)].filter(Boolean).join(" · "), pill: cardPill(m) });
       }).join("");
       RosterSheet.render(dlg, { title: "היסטוריית האזנה", from: "bottom", size: "l",
-        body: '<div style="padding:0 0 var(--gutter)">' + (rows.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);align-items:stretch">' + cards + '</div>' : ph("אין עדיין היסטוריה", "מוסיקה שהתחילה להתנגן תופיע כאן")) + '</div>' });
+        body: '<div style="padding:0 0 var(--gap)">' + (rows.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--gap);align-items:stretch">' + cards + '</div>' : ph("אין עדיין היסטוריה", "מוסיקה שהתחילה להתנגן תופיע כאן")) + '</div>' });
       dlg.onclick = function (ev) {
         var c = ev.target.closest && ev.target.closest("[data-hi]"); if (!c) return;
         var e = rows[+c.dataset.hi]; if (!e) return;
@@ -557,13 +592,13 @@
         c.setAttribute("aria-current", "true"); playName(e.n, e.t, e.a);
       };
     }
-    document.addEventListener("click", function (ev) { var b = ev.target.closest && ev.target.closest("[data-hist]"); if (b) { if (wide() && histOpen) closeHist(); else openHistory(); } });
+    document.addEventListener("click", function (ev) { var b = ev.target.closest && ev.target.closest("[data-hist]"); if (b) { if (wide() && histOpen) closeLeftAll(); else openHistory(); } });
     document.addEventListener("click", function (ev) {   /* a tap on the name in the player: a popup with the whole name and the performer; a song outside the catalog can be edited from it */
       var nmEl = ev.target.closest && ev.target.closest(".bio-dock__name"); if (!nmEl) return;
       var who = nmEl.dataset.who, ttl = loaded ? curTitle : (last && last.t) || "", art = loaded ? curArtist : (last && last.a) || "", eid = nmEl.getAttribute("data-edit");
       if (!ttl && !art) return;
       var acb = dock.querySelector("[data-addcur]"), canAdd = !!acb && !acb.hidden, addTo = canAdd ? ((acb.querySelector("[data-addcur-label]") || {}).textContent || "") : "";   /* a phone: adding the song that plays is here, not in the player */
-      var headH = '<div style="padding:var(--sp-2) var(--sp-3);max-width:28rem"><div dir="auto" style="font:var(--fw-black) var(--fs-m)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(ttl) + '</div>' + (art ? '<div dir="auto" style="margin-top:0;color:var(--text-2);font:var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(art) + '</div>' : '') + '</div>';
+      var headH = '<div class="rmenu__head"><div dir="auto" style="font:var(--fw-bold) var(--fs-m)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(ttl) + '</div>' + (art ? '<div dir="auto" style="margin-top:0;color:var(--text-muted);font:var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(art) + '</div>' : '') + '</div>';
       if (wide()) {   /* a computer: a menu that comes out of the name, upwards */
         var openMenu = function (sn) {
         var mi = (who ? [{ label: simLabel(sn), ghost: true, disabled: sn === 0, fn: function () { if (sn !== 0) similarToPlaying(who); } }] : []).concat(eid ? [{ label: "עריכת שם ומבצע", fn: function () { editFromDock(); } }] : []).concat(canAdd ? [{ label: "הוספה", primary: true, fn: function () { acb.click(); } }] : []);
@@ -575,7 +610,7 @@
       var idlg = document.getElementById("songInfoDlg");
       if (!idlg) { idlg = document.createElement("dialog"); idlg.id = "songInfoDlg"; document.body.appendChild(idlg); }
       RosterSheet.render(idlg, { title: "המוסיקה שמתנגנת", from: "bottom", size: "s",
-        body: '<div class="pad" style="gap:0"><div dir="auto" style="font:var(--fw-black) var(--fs-l)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(ttl) + '</div>' + (art ? '<div dir="auto" style="margin-top:0;color:var(--text-2);font:var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(art) + '</div>' : '') + '</div>',
+        body: '<div class="pad" style="gap:0"><div dir="auto" style="font:var(--fw-bold) var(--fs-l)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(ttl) + '</div>' + (art ? '<div dir="auto" style="margin-top:0;color:var(--text-muted);font:var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(art) + '</div>' : '') + '</div>',
         foot: (canAdd || eid || who) ? (who ? '<button class="rbtn rbtn--block" type="button" id="sisim">' + simLabel(null) + '</button>' : '') + (eid ? '<button class="rbtn rbtn--block" type="button" id="siedit">עריכת שם ומבצע</button>' : '') + (canAdd ? '<button class="rbtn rbtn--block rbtn--primary" type="button" id="siadd">הוספה</button>' : '') : undefined });
       if (who) api("/rest/v1/music?audio_object=eq." + encodeURIComponent(who) + "&select=id&limit=1").then(function (rows) {   /* the heart of the song that plays: loved or not, at the left of the header */
         var mr = rows && rows[0], hd = idlg.querySelector(".sheet-head"); if (!mr || !hd || hd.querySelector("[data-like]")) return;
@@ -629,8 +664,9 @@
     function clk(s) { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2); }
     function make(cls) {
       var d = document.createElement("div"); d.className = cls + " idle";
-      d.innerHTML = '<button type="button" class="rbtn rbtn--icon" disabled aria-label="השמעה">' + PLAY + '</button><button type="button" class="rbtn bio-dock__cat" data-catopen aria-pressed="false" aria-label="קטלוג התרגילים" title="קטלוג התרגילים" style="flex:none;order:-1">קטלוג</button><span class="rchip rchip--s bio-dock__time" style="direction:ltr;font-variant-numeric:tabular-nums;display:inline-flex;align-items:center;gap:var(--gap-tight)"><button type="button" class="rbtn rbtn--icon bio-dock__rst" data-rst aria-label="חזרה להתחלת השיר" title="חזרה להתחלת השיר" disabled><svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M6 5h2v14H6zM19 5.5v13a.8.8 0 0 1-1.25.66L9.5 12.66a.8.8 0 0 1 0-1.32l8.25-6.5A.8.8 0 0 1 19 5.5z"/></svg></button><span class="bio-dock__tt">0:00 / 0:00</span></span>' + volDock() + '<button type="button" class="rbtn rbtn--ghost" data-addcur hidden title="הוספת המוסיקה שבנגן לתרגיל הפתוח" style="flex:none;gap:var(--sp-1)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span><span data-addcur-label style="max-width:14rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">הוספה לתרגיל</span></button>' +
-        '<div class="bio-dockbar"><input class="bio-dock__bar" type="range" min="0" max="1000" value="0" step="1" aria-label="מקום במוסיקה" disabled></div><div class="rrow__main bio-dock__name"><b>לא נבחרה מוסיקה</b> <span></span></div><span class="rchip rchip--s bio-dock__sync" hidden></span><button type="button" class="rbtn rbtn--icon" data-hist aria-label="היסטוריית האזנה" title="היסטוריית האזנה">' + HIST + '</button>';
+      d.innerHTML = '<button type="button" class="ricon-lg" disabled aria-label="השמעה">' + PLAY + '</button><button type="button" class="rbtn bio-dock__cat" data-catopen aria-pressed="false" aria-label="קטלוג התרגילים" title="קטלוג התרגילים" style="flex:none;order:-1">קטלוג</button><span class="rchip rchip--s bio-dock__time" style="direction:ltr;font-variant-numeric:tabular-nums;display:inline-flex;align-items:center;gap:var(--gap-tight)"><button type="button" class="rbtn rbtn--icon bio-dock__rst" data-rst aria-label="חזרה להתחלת השיר" title="חזרה להתחלת השיר" disabled><svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M6 5h2v14H6zM19 5.5v13a.8.8 0 0 1-1.25.66L9.5 12.66a.8.8 0 0 1 0-1.32l8.25-6.5A.8.8 0 0 1 19 5.5z"/></svg></button><span class="bio-dock__tt">0:00 / 0:00</span></span>' + volDock() + '<button type="button" class="rbtn rbtn--ghost" data-addcur hidden title="הוספת המוסיקה שבנגן לתרגיל הפתוח" style="flex:none;gap:var(--gap)"><span aria-hidden="true" style="display:grid;width:var(--icon);height:var(--icon)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span><span data-addcur-label style="max-width:var(--w);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">הוספה לתרגיל</span></button>' +
+        '<div class="bio-dockbar"><input class="bio-dock__bar" type="range" min="0" max="1000" value="0" step="1" aria-label="מקום במוסיקה" disabled></div><div class="rrow__main bio-dock__name"><b>לא נבחרה מוסיקה</b> <span></span></div><button type="button" class="rbtn rbtn--icon" data-hist aria-label="היסטוריית האזנה" title="היסטוריית האזנה">' + HIST + '</button>';
+      document.addEventListener("biobusy", function (ev) { var pb = d.querySelector(".ricon-lg"); if (!pb) return; if (ev.detail.on) pb.setAttribute("aria-busy", "true"); else if (!pb.__busy) pb.removeAttribute("aria-busy"); });   /* law 7 on the large icon: the song waits for its file, the play button shows it */
       d.querySelector("[data-rst]").addEventListener("click", function () { if (window.BioAudio && BioAudio.seek) { BioAudio.seek(0); if (BioAudio.commitSeek) BioAudio.commitSeek(); } });   /* the small button beside the time: back to the start of the song */
       d.querySelector("button").addEventListener("click", function () {
         if (loaded) { if (window.BioAudio && BioAudio.playPause) BioAudio.playPause(); return; }
@@ -641,15 +677,10 @@
         var nm = loaded ? curName : (last && last.n), id = liveItem && liveItem.id, it = id && state.items && state.items.filter(function (x) { return x.id === id; })[0];
         var exOpen = !!(it && document.querySelector("#imus [data-addm]"));
         if (!nm || (!exOpen && !state.viv)) return;
-        api("/rest/v1/music?audio_object=eq." + encodeURIComponent(nm) + "&select=id,name,title,artist,duration_sec,audio_object,in_catalog&limit=1").then(function (rows) {
-          var m = rows && rows[0]; if (!m) { toast("המוסיקה לא נמצאה"); return; }
-          var go = function () {
-          if (exOpen) return addOpt(it, m).then(function () { var im = document.getElementById("imus"); if (im) im.innerHTML = musCards(it); if (wide()) paint(); toast("נוסף לתרגיל"); });
-          var pos = (state.items || []).reduce(function (x, k) { return Math.max(x, k.position); }, 0) + 1;   /* no exercise is open: a new exercise with no name and this song, in "נוספים" */
-          return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=minimal", json: { vivencia_id: state.viv.id, position: pos, backlog: true, exercise_id: null, music_id: m.id } }).then(function () { return loadItems(); }).then(function () { paint(); toast("נוסף לוויוונסיה"); });
-          };
-          chooseDest(songName(m), { vivId: state.viv && state.viv.id, itemId: exOpen && it ? it.id : null }, function (d) { addMusicTo(m, d); });
-        }).then(null, fail);
+        var mp = api("/rest/v1/music?audio_object=eq." + encodeURIComponent(nm) + "&select=id,name,title,artist,duration_sec,audio_object,in_catalog&limit=1");   /* the picker opens at once (law 7); the song's row is asked for meanwhile */
+        chooseDest((songInfo[nm] && songInfo[nm].t) || curTitle || "המוסיקה", { vivId: state.viv && state.viv.id, itemId: exOpen && it ? it.id : null }, function (d) {
+          return mp.then(function (rows) { var m = rows && rows[0]; if (!m) { toast("המוסיקה לא נמצאה"); return; } return addMusicTo(m, d); }).then(null, fail);
+        });
       });
       var r = d.querySelector(".bio-dock__bar");
       r.addEventListener("pointerdown", function () { seekDrag = true; });
@@ -710,7 +741,7 @@
           timerToggle(tmE, tOn);
         }
         document.documentElement.classList.toggle("bio-docked", on);   /* the page ends above the footer */
-        var b = d.querySelector("button"), t = d.querySelector(".bio-dock__tt"), r = d.querySelector(".bio-dock__bar"), dd0 = loaded ? curD : (last ? last.d : 0), s = window.matchMedia("(max-width: 700px)").matches ? clk(Math.max(0, Math.ceil(dd0 - curT))) : clk(curT) + " / " + clk(dd0), nm = d.querySelector(".bio-dock__name");
+        var b = d.querySelector("button"), t = d.querySelector(".bio-dock__tt"), r = d.querySelector(".bio-dock__bar"), dd0 = loaded ? curD : (last ? last.d : 0), s = window.matchMedia("(width < 760px)").matches ? clk(Math.max(0, Math.ceil(dd0 - curT))) : clk(curT) + " / " + clk(dd0), nm = d.querySelector(".bio-dock__name");
         b.disabled = !loaded && !last; r.disabled = !loaded || !(curD > 0); var rs = d.querySelector("[data-rst]"); if (rs) rs.disabled = r.disabled; b.dataset.st = playing ? "playing" : "paused";
         var lab = playing ? "השהיית המוסיקה" : "השמעה"; if (b.getAttribute("aria-label") !== lab) { b.setAttribute("aria-label", lab); b.title = lab; b.innerHTML = playing ? PAUSE : PLAY; }
         if (t.textContent !== s) t.textContent = s;
@@ -737,9 +768,9 @@
     /* the up and down arrow keys are the volume, always (outside a field, a menu or a popup, where they keep their own job); Shift for steps of five */
     document.addEventListener("keydown", function (e) {
       if ((e.key !== "ArrowUp" && e.key !== "ArrowDown") || e.ctrlKey || e.metaKey || e.altKey) return;
-      var tg = e.target, onSeek = tg && tg.type === "range" && !(tg.closest && tg.closest(".bio-vol"));   /* a seek bar that kept focus after a click must not take the arrows: up and down are the volume */
+      var tg = e.target, onSeek = tg && tg.type === "range";   /* a seek bar that kept focus after a click must not take the arrows: up and down are the volume */
       if (tg && !onSeek && (tg.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName))) return;
-      if (document.querySelector("dialog[open], #moreMenu") || !window.BioAudio || !BioAudio.volume || !window.matchMedia("(min-width: 1024px)").matches) return;
+      if (document.querySelector("dialog[open], #moreMenu") || !window.BioAudio || !BioAudio.volume || !window.matchMedia("(min-width: 760px)").matches) return;
       e.preventDefault();
       volState.v = BioAudio.volume((e.key === "ArrowUp" ? 1 : -1) * (e.shiftKey ? 0.05 : 0.01)); paintVol();   /* the sound and the gauge in the header are the answer: no message */
     });
@@ -747,7 +778,7 @@
     document.addEventListener("keydown", function (e) {
       if (!loaded || (e.key !== "ArrowRight" && e.key !== "ArrowLeft") || e.ctrlKey || e.metaKey || e.altKey) return;
       var tg = e.target, onBar = tg && tg.closest && tg.closest(".bio-dock__bar");   /* the player's own bar keeps no arrow job of its own: they skip, as everywhere */
-      if (tg && !onBar && (tg.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName) || (tg.closest && tg.closest(".bio-vol")))) return;
+      if (tg && !onBar && (tg.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName))) return;
       if (document.querySelector("#moreMenu") || !window.BioAudio || !BioAudio.skip) return;
       e.preventDefault(); BioAudio.skip((e.key === "ArrowRight" ? 1 : -1) * (e.shiftKey ? 15 : 5));
     });
@@ -797,14 +828,14 @@
   document.addEventListener("input", paintBars, true);
   setInterval(paintBars, 250);
   function playCol(m, trail) {
-    var tile = songBtn(m, trail).replace(/width:var\(--fab\);height:var\(--fab\);min-height:var\(--fab\);/g, "width:var(--ctl);height:var(--ctl);min-height:var(--ctl);border-radius:var(--r-ctl);background:var(--surface-2);");
-    return '<div style="flex:none;display:flex;flex-direction:column;align-items:center;gap:var(--gap-button)">' + tile +
-      (durOf(m) || m.audio_object ? '<span class="bio-time" data-dur="' + (m.duration_sec || "") + '"' + (m.audio_object ? ' data-for="' + esc(m.audio_object) + '"' : '') + ' style="display:block;min-height:1em;color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/1 var(--font);font-variant-numeric:tabular-nums">' + (durOf(m) ? clock(durOf(m)) : '') + '</span>' : '') + '</div>';
+    var tile = songBtn(m, trail);
+    return '<div style="flex:none;display:flex;flex-direction:column;align-items:center;gap:var(--gap)">' + tile +
+      (durOf(m) || m.audio_object ? '<span class="bio-time" data-dur="' + (m.duration_sec || "") + '"' + (m.audio_object ? ' data-for="' + esc(m.audio_object) + '"' : '') + ' style="display:block;min-height:1em;color:var(--text-muted);font:var(--fw-regular) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + (durOf(m) ? clock(durOf(m)) : '') + '</span>' : '') + '</div>';
   }
   /* the heart: the songs I loved. At the right edge of a song's row, in line with the play tile and with the back button above. */
   function heartBtn(m) {
     var on = !!likes[m.id];
-    return '<button type="button" class="rbtn rbtn--icon rrow__trail" data-like="' + m.id + '" aria-pressed="' + on + '" aria-label="' + (on ? "הסרה מהמוסיקה שאהבתי" : "מוסיקה שאהבתי") + '" title="' + (on ? "הסרה מהמוסיקה שאהבתי" : "מוסיקה שאהבתי") + '" style="flex:none;width:var(--ctl);height:var(--ctl);min-height:var(--ctl);color:' + (on ? "var(--danger)" : "var(--primary)") + '">' + (on ? I.heart.replace('fill="none"', 'fill="currentColor"') : I.heart) + '</button>';
+    return '<button type="button" class="rbtn rbtn--icon rrow__trail" data-like="' + m.id + '" aria-pressed="' + on + '" aria-label="' + (on ? "הסרה מהמוסיקה שאהבתי" : "מוסיקה שאהבתי") + '" title="' + (on ? "הסרה מהמוסיקה שאהבתי" : "מוסיקה שאהבתי") + '" style="flex:none;color:' + (on ? "var(--danger)" : "var(--primary)") + '">' + (on ? I.heart.replace('fill="none"', 'fill="currentColor"') : I.heart) + '</button>';
   }
   function paintHearts(id) {
     document.querySelectorAll('[data-like="' + id + '"]').forEach(function (b) {
@@ -817,17 +848,18 @@
     var was = !!likes[id];
     if (was) delete likes[id]; else likes[id] = true;
     paintHearts(id);
-    (was ? api("/rest/v1/song_likes?music_id=eq." + id, { method: "DELETE" })
+    var req = (was ? api("/rest/v1/song_likes?music_id=eq." + id, { method: "DELETE" })
          : api("/rest/v1/song_likes", { method: "POST", json: { music_id: id }, prefer: "resolution=ignore-duplicates,return=minimal" })).catch(function () {
       if (was) likes[id] = true; else delete likes[id]; paintHearts(id); toast("אי אפשר לשמור עכשיו");   /* it did not reach the server: back as it was */
     });
+    document.querySelectorAll('[data-like="' + id + '"]').forEach(function (b) { busy(b, req); });   /* law 7: the heart shows the wait until the server answers */
   }
   /* the heart of a song card: a loved song that is not playing is unmarked only after the kit's confirm popup (closing it is the cancel); on the red card of the song that plays it toggles freely */
   var RED_CARD = '.is-play, :has([data-audio][data-st="pause"])';
-  function confirmUnlike(id, card) {
+  function confirmUnlike(id, card, anchor) {
     var dlg = document.getElementById("confirmDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
-    RosterSheet.render(dlg, { kind: "confirm", title: "הסרת סימון אהבתי", from: "bottom", size: "s",
+    RosterSheet.render(dlg, { kind: "confirm", title: "הסרת סימון אהבתי", from: "bottom", size: "s", anchor: anchor,
       body: '<div class="pad"><span>להסיר את הסימון אהבתי מהשיר?</span></div>',
       foot: '<button class="rbtn rbtn--danger rbtn--block" type="button" id="cunlk">הסרת הסימון</button>' });
     dlg.querySelector("#cunlk").addEventListener("click", function () {
@@ -840,15 +872,15 @@
     var b = e.target.closest && e.target.closest("[data-like]"); if (!b) return;
     e.preventDefault(); e.stopPropagation();
     var id = b.dataset.like, card = b.classList.contains("bio-lk") ? b.closest(".bio-card") : null;
-    if (card && likes[id] && !card.matches(RED_CARD)) { confirmUnlike(id, card); return; }
+    if (card && likes[id] && !card.matches(RED_CARD)) { confirmUnlike(id, card, b); return; }
     toggleLike(id);
   }, true);
   /* the heart on a song card: the same button, only placed in the card's bottom right corner (see .bio-lk) */
   function cardHeart(m) {
-    return m && m.id ? heartBtn(m).replace(" rrow__trail", " bio-lk").replace('style="flex:none;width:var(--ctl);height:var(--ctl);min-height:var(--ctl);', 'style="') : "";
+    return m && m.id ? heartBtn(m).replace(" rrow__trail", " bio-lk").replace('style="flex:none;', 'style="') : "";
   }
   /* a grid of cards: the history's and my loved music's */
-  function cardGrid(cards) { return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);padding:var(--gutter)">' + cards + '</div>'; }
+  function cardGrid(cards) { return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--gap);padding:var(--gap)">' + cards + '</div>'; }
   /* the heart of an exercise: in the exercise page's header, and in my list of loved exercises */
   function heartBtnEx(exId, cls) {
     var on = !!likesEx[exId];
@@ -868,10 +900,11 @@
     if (was) delete likesEx[id]; else likesEx[id] = true;
     paintHeartsEx(id);
     var isIt = id.indexOf("item:") === 0, rid = isIt ? id.slice(5) : id;   /* an exercise of a vivencia that is no catalog exercise: the heart belongs to the item */
-    (was ? api("/rest/v1/" + (isIt ? "item_likes?item_id=eq." : "exercise_likes?exercise_id=eq.") + rid, { method: "DELETE" })
+    var req = (was ? api("/rest/v1/" + (isIt ? "item_likes?item_id=eq." : "exercise_likes?exercise_id=eq.") + rid, { method: "DELETE" })
          : api("/rest/v1/" + (isIt ? "item_likes" : "exercise_likes"), { method: "POST", json: isIt ? { item_id: rid } : { exercise_id: rid }, prefer: "resolution=ignore-duplicates,return=minimal" })).catch(function () {
       if (was) likesEx[id] = true; else delete likesEx[id]; paintHeartsEx(id); toast("אי אפשר לשמור עכשיו");
     });
+    document.querySelectorAll('[data-likex="' + id + '"]').forEach(function (x) { busy(x, req); });
   }, true);
   /* the red button beside the countdown: to the exercise of this vivencia that holds the song now playing (or to the start or the end music) */
   document.addEventListener("click", function (e) {
@@ -891,7 +924,7 @@
   /* the heart of a vivencia: at the right edge of its row, in line with the logo above */
   function heartBtnViv(id, cls) {
     var on = !!likesViv[id], tt = on ? "הסרה מהוויוונסיות שאהבתי" : "ויוונסיה שאהבתי";
-    return '<button type="button" class="rbtn rbtn--icon ' + (cls || "") + '" data-likev="' + id + '" aria-pressed="' + on + '" aria-label="' + tt + '" title="' + tt + '" style="flex:none;width:var(--ctl);height:var(--ctl);min-height:var(--ctl);color:' + (on ? "var(--danger)" : "var(--primary)") + '">' + (on ? I.heart.replace('fill="none"', 'fill="currentColor"') : I.heart) + '</button>';
+    return '<button type="button" class="rbtn rbtn--icon ' + (cls || "") + '" data-likev="' + id + '" aria-pressed="' + on + '" aria-label="' + tt + '" title="' + tt + '" style="flex:none;color:' + (on ? "var(--danger)" : "var(--primary)") + '">' + (on ? I.heart.replace('fill="none"', 'fill="currentColor"') : I.heart) + '</button>';
   }
   function paintHeartsViv(id) {
     document.querySelectorAll('[data-likev="' + id + '"]').forEach(function (b) {
@@ -906,14 +939,15 @@
     var id = b.dataset.likev, was = !!likesViv[id];
     if (was) delete likesViv[id]; else likesViv[id] = true;
     paintHeartsViv(id);
-    (was ? api("/rest/v1/vivencia_likes?vivencia_id=eq." + id, { method: "DELETE" })
+    var req = (was ? api("/rest/v1/vivencia_likes?vivencia_id=eq." + id, { method: "DELETE" })
          : api("/rest/v1/vivencia_likes", { method: "POST", json: { vivencia_id: id }, prefer: "resolution=ignore-duplicates,return=minimal" })).catch(function () {
       if (was) likesViv[id] = true; else delete likesViv[id]; paintHeartsViv(id); toast("אי אפשר לשמור עכשיו");
     });
+    document.querySelectorAll('[data-likev="' + id + '"]').forEach(function (x) { busy(x, req); });
   }, true);
   /* a song as a row to choose from: the same element, a row of its own */
   function songRow(m, cur, attr, extra) {
-    return '<div class="rrow rrow--link" style="direction:ltr;padding-inline:var(--gutter);padding-block:var(--sp-2);flex-wrap:wrap"' + (cur ? ' aria-current="true"' : '') + '>' + heartBtn(m) + '<button type="button" class="rrow__main" ' + attr + '="' + m.id + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:left;direction:ltr;cursor:pointer;font:inherit;color:inherit">' + songLines(m) + '</button>' + (extra || '') + playCol(m, true) + '</div>';   /* the text takes what is left, so a long name never pushes the play tile to a line of its own */
+    return '<div class="rrow rrow--link" style="direction:ltr;padding-inline:var(--gap);padding-block:var(--gap);flex-wrap:wrap"' + (cur ? ' aria-current="true"' : '') + '>' + heartBtn(m) + '<button type="button" class="rrow__main" ' + attr + '="' + m.id + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:left;direction:ltr;cursor:pointer;font:inherit;color:inherit">' + songLines(m) + '</button>' + (extra || '') + playCol(m, true) + '</div>';   /* the text takes what is left, so a long name never pushes the play tile to a line of its own */
   }
   window.toast = window.toast || toast;
   document.addEventListener("click", function (e) {
@@ -941,13 +975,12 @@
     return !!t && (t.source === "draft" || t.source === "translation");
   }
   /* a draft in a field: the text and the writing area are yellow, the label above it stays on the page's own colour */
-  var DRAFT_FIELD = ' style="color:var(--warn);background:linear-gradient(var(--warn-bg), var(--warn-bg)) 0 19px / 100% calc(100% - 19px) no-repeat" title="טיוטה: תרגום או טקסט שנכתב מהשם, ולא נבדק"';
+  var DRAFT_FIELD = ' style="color:var(--warn);background:linear-gradient(var(--warn-bg), var(--warn-bg)) 0 var(--rf-pad-top) / 100% calc(100% - var(--rf-pad-top)) no-repeat" title="טיוטה: תרגום או טקסט שנכתב מהשם, ולא נבדק"';
   var DRAFT = ' style="color:var(--warn);background:var(--warn-bg)" title="טיוטה: תרגום או טקסט שנכתב מהשם, ולא נבדק"';
-  function grow(t) { t.style.height = "auto"; t.style.height = (t.scrollHeight + t.offsetHeight - t.clientHeight) + "px"; var mh = parseFloat(getComputedStyle(t).maxHeight); t.style.overflowY = mh && t.scrollHeight > mh ? "auto" : "hidden"; }   /* rows=1: the height is the text's own, plus the line under it */
   /* the placeholder of an empty list or pane: the curve icon, a title and one line */
   function ph(title, text) { return '<div class="rempty">' + I.curve + '<b>' + esc(title) + '</b>' + (text ? '<span>' + esc(text) + '</span>' : '') + '</div>'; }
   function phPick(title, text, noCat) {   /* the empty side of a computer: choose an exercise, or open the catalog from here (inside the catalog there is no catalog button) */
-    return '<div class="rempty">' + I.curve + '<b>' + esc(title) + '</b><span>' + esc(text) + '</span>' + (noCat ? '</div>' : '<button type="button" class="rbtn" data-catopen aria-pressed="false" style="margin-top:var(--sp-3);gap:var(--sp-1)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.catalog.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span><span>קטלוג</span></button></div>');
+    return '<div class="rempty">' + I.curve + '<b>' + esc(title) + '</b><span>' + esc(text) + '</span>' + (noCat ? '</div>' : '<button type="button" class="rbtn" data-catopen aria-pressed="false" style="gap:var(--gap)"><span aria-hidden="true" style="display:grid;width:var(--icon);height:var(--icon)">' + I.catalog.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span><span>קטלוג</span></button></div>');
   }
   function uuid() { return crypto.randomUUID(); }
   var volState = { on: true, v: 1 };   /* the volume gauge in the headers: always shown */
@@ -958,10 +991,6 @@
       if (String(r.value) !== String(pc)) r.value = pc; g.style.setProperty("--p", pc + "%");
       var mu = volState.v === 0; if (b.dataset.mu !== (mu ? "1" : "0")) { b.dataset.mu = mu ? "1" : "0"; b.innerHTML = mu ? SPK0 : SPK; b.setAttribute("aria-label", mu ? "ביטול השתקה" : "השתקה"); b.title = b.getAttribute("aria-label"); }
     });
-    document.querySelectorAll(".bio-vol").forEach(function (g) {
-      g.classList.toggle("on", volState.on); g.style.setProperty("--v", volState.v); g.setAttribute("aria-valuenow", Math.round(volState.v * 100));
-      var n = g.querySelector("b"); if (n) n.textContent = Math.round(volState.v * 100);
-    });
   }
   /* the gauge moves with a drag or a click (mouse or finger) along it, and with the arrow keys when it has focus */
   function setVol(v) {
@@ -971,27 +1000,6 @@
   }
   document.addEventListener("input", function (e) { var r = e.target; if (r && r.type === "range" && r.closest && r.closest(".bio-volume")) { var v = r.value / 100; if (v > 0) volBack = v; setVol(v); } });
   document.addEventListener("click", function (e) { var b = e.target.closest && e.target.closest("[data-vmute]"); if (!b) return; if (volState.v > 0) { volBack = volState.v; setVol(0); } else setVol(volBack || 0.5); });
-  var volDrag = null;   /* { g, y0, v0 } */
-  document.addEventListener("pointerdown", function (e) {
-    var g = e.target.closest && e.target.closest(".bio-vol"); if (!g || e.button > 0) return;
-    e.preventDefault(); volDrag = { g: g, y0: e.clientY, v0: volState.v }; try { g.setPointerCapture(e.pointerId); } catch (x) { /* none */ }
-  });
-  document.addEventListener("pointermove", function (e) { if (volDrag) setVol(volDrag.v0 + (volDrag.y0 - e.clientY) / 120); });   /* up is louder: 120px is the whole range */
-  ["pointerup", "pointercancel"].forEach(function (n) { document.addEventListener(n, function () { volDrag = null; }); });
-  document.addEventListener("wheel", function (e) {
-    var g = e.target.closest && e.target.closest(".bio-vol"); if (!g) return;
-    e.preventDefault(); setVol(volState.v + (e.deltaY < 0 ? 1 : -1) * (e.shiftKey ? 0.05 : 0.01));
-  }, { passive: false });
-  document.addEventListener("keydown", function (e) {
-    var g = e.target.closest && e.target.closest(".bio-vol"); if (!g || e.ctrlKey || e.metaKey || e.altKey) return;
-    var d = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1 }[e.key]; if (!d) return;
-    e.preventDefault(); setVol(volState.v + d * (e.shiftKey ? 0.05 : 0.01));
-  });
-  /* the volume tile: the numbered button that moves the volume, on a wide screen only (a phone's own volume cannot be read by a page: its keys do it) */
-  function volTile() {
-    if (!wide()) return "";
-    return '<div class="bio-vol' + (volState.on ? ' on' : '') + '" role="slider" tabindex="0" aria-label="עוצמת שמע" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.round(volState.v * 100) + '" style="--v:' + volState.v + '"><i></i><b>' + Math.round(volState.v * 100) + '</b></div>';
-  }
   /* on a wide screen the volume lives in the player pill, between the bar and the X */
   var SPK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
   var SPK0 = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m16 9 5 6"/><path d="m21 9-5 6"/></svg>';
@@ -1000,34 +1008,34 @@
   /* the volume of the player: a speaker (press it to mute and to unmute) and a slider, on a wide screen only */
   function volDock() { var v = typeof volState === "object" ? volState.v : 1; return '<div class="bio-volume" style="--p:' + Math.round(v * 100) + '%"><button type="button" class="rbtn rbtn--icon" data-vmute aria-label="השתקה" title="השתקה">' + (v ? SPK : SPK0) + '</button><input type="range" min="0" max="100" step="1" value="' + Math.round(v * 100) + '" aria-label="עוצמת שמע"></div>'; }
   function head(title, sub, back, trail, lead) {
-    return '<header class="rhead">' + (lead || '') + (back ? '<button class="rbtn rbtn--icon rbtn--edge-start" data-act="back" aria-label="חזרה" title="חזרה">' + I.back + '</button>' : '') +
+    return '<header class="rhead">' + (lead || '') + (back ? '<button class="rbtn rbtn--icon" data-act="back" aria-label="חזרה" title="חזרה">' + I.back + '</button>' : '') +
       '<div class="rhead__text"><h1 class="rhead__title">' + esc(title) + '</h1>' + (sub ? '<span class="rhead__sub">' + esc(sub) + '</span>' : '') + '</div>' +
       (trail || '') + '</header>';   /* the volume, while a song plays: a bar across the free room of the header */
   }
   /* the header that walks a sequence: previous on the right, next on the left, the name centred between them */
   function walkHead(title, hasPrev, hasNext, withList) {
-    return '<header class="rhead"><button class="rbtn rbtn--icon rbtn--edge-start" data-act="prevW" aria-label="הקודם" title="הקודם"' + (hasPrev ? "" : " disabled") + '>' + I.back + '</button>' +
+    return '<header class="rhead"><button class="rbtn rbtn--icon" data-act="prevW" aria-label="הקודם" title="הקודם"' + (hasPrev ? "" : " disabled") + '>' + I.back + '</button>' +
       (withList ? '<button class="rbtn rbtn--icon" data-act="list" aria-label="לרשימת התרגילים" title="לרשימת התרגילים">' + I.list + '</button>' : '') +
       '<div class="rhead__text"><h1 class="rhead__title" style="text-align:center">' + esc(title) + '</h1></div>' +
       (withList ? '<span aria-hidden="true" style="flex:none;width:var(--ctl)"></span>' : '') +
-      '<button class="rbtn rbtn--icon rbtn--edge-end" data-act="nextW" aria-label="הבא" title="הבא"' + (hasNext ? "" : " disabled") + '>' + I.fwd + '</button></header>';
+      '<button class="rbtn rbtn--icon" data-act="nextW" aria-label="הבא" title="הבא"' + (hasNext ? "" : " disabled") + '>' + I.fwd + '</button></header>';
   }
   /* the header of one exercise: buttons only, each with its word. Previous and the list on the right, next on the left. The name is the field below. */
   function itemHead(hasPrev, hasNext, where, exId, nameText, ro, roLabel, inBack, numText, roPlus, tabs, playM) {
     var nav = !wide() && !ro;   /* beside the list there are no previous and next buttons: the list is the way around */
     if (nav && tabs) {   /* a phone: no arrows and no name here, only the number and the countdown, and under them the tabs of the exercises around it (the name is the first field of the page) */
-      return '<header class="rhead bio-ihead bio-ihead--m"><nav class="bio-tabs" aria-label="התרגילים"><div class="bio-tabs__track">' + tabs.map(function (t, i) { return '<span class="bio-tab' + (i === 2 ? ' is-cur' : '') + (playsIn(t && t.a) ? ' is-play' : '') + '"' + (i === 0 || i === 4 ? ' data-far' : '') + (t && t.a ? ' data-aud="' + esc(t.a) + '"' : '') + '><b class="bio-tab__n">' + esc((t && t.n) || "") + '</b>' + (i === 2 ? '<span class="bio-tab__t" data-t="' + esc((t && t.t) || "ללא שם") + '" data-nameedit role="button" tabindex="0" aria-label="שם התרגיל: לחיצה לעריכה">' + (esc((t && t.t) || "") || "ללא שם") + '</span><input id="ina" type="text" hidden aria-hidden="true" tabindex="-1" value="' + esc((t && t.t) || "") + '">' : '<span class="bio-tab__t" data-t="' + esc((t && t.t) || "") + '">' + esc((t && t.t) || "") + '</span>') + (i === 2 && t && t.id && t.f ? (function () { var cur = state.items.filter(function (x) { return x.id === t.id; })[0]; return cur ? facChip(cur, " rchip--s bio-tab__f") : ""; })() : t && t.f ? (t.fh ? '<span class="rchip rchip--s bio-tab__f" data-fac-label="x">' + esc(t.f) + '</span>' : '<span class="rchip rchip--s bio-tab__f" style="background:transparent;border:1px solid var(--ppl-solid);color:var(--ppl-solid)">' + esc(t.f) + '</span>') : '') + '</span>'; }).join("") + '</div></nav></header>';
+      return '<header class="rhead bio-ihead bio-ihead--m"><nav class="bio-tabs" aria-label="התרגילים"><div class="bio-tabs__track">' + tabs.map(function (t, i) { return '<span class="bio-tab' + (i === 2 ? ' is-cur' : '') + (playsIn(t && t.a) ? ' is-play' : '') + '"' + (i === 0 || i === 4 ? ' data-far' : '') + (t && t.a ? ' data-aud="' + esc(t.a) + '"' : '') + '><b class="bio-tab__n">' + esc((t && t.n) || "") + '</b><span class="bio-tab__g">' + (i === 2 ? '<span class="bio-tab__t" data-t="' + esc((t && t.t) || "ללא שם") + '" data-nameedit role="button" tabindex="0" aria-label="שם התרגיל: לחיצה לעריכה">' + (esc((t && t.t) || "") || "ללא שם") + '</span><input id="ina" type="text" hidden aria-hidden="true" tabindex="-1" value="' + esc((t && t.t) || "") + '">' : '<span class="bio-tab__t" data-t="' + esc((t && t.t) || "") + '">' + esc((t && t.t) || "") + '</span>') + (i === 2 && t && t.id && t.f ? (function () { var cur = state.items.filter(function (x) { return x.id === t.id; })[0]; return cur ? facChip(cur, " bio-tab__f", true) : ""; })() : t && t.f ? '<button type="button" class="rbtn--text bio-tab__f" disabled tabindex="-1" data-fac-label="x">' + esc(t.f) + '</button>' : '') + '</span></span>'; }).join("") + '</div></nav></header>';
     }
     var arrow = function (act, ico, label, off) { return '<button class="rbtn rbtn--icon" data-act="' + act + '" aria-label="' + label + '" title="' + label + '"' + (off ? " disabled" : "") + '>' + ico + '</button>'; };
     return '<header class="rhead' + (ro ? '' : ' bio-ihead') + '">' + (nav ? arrow("prevW", I.back, "הקודם", !hasPrev) : "") + "" +   /* the add button is after the exercise's name, toward the left */
-      '<div class="rhead__text" style="flex-direction:row;align-items:center;gap:var(--sp-2);padding-inline-start:0;justify-content:flex-start">' + (numText ? '<span aria-hidden="true" style="flex:none;font:var(--fw-black) calc(2.75 * var(--fs-m))/.95 var(--font);font-variant-numeric:tabular-nums">' + esc(numText) + '</span>' : "") + '<input id="ina" class="rhead__title" placeholder="ללא שם" autocomplete="off" aria-label="שם התרגיל"' + (ro ? ' readonly' : '') + ' value="' + esc(nameText || "") + '" style="flex:1 1 0;width:auto;min-width:0;border:0;background:transparent;padding-inline:0;margin:0;color:inherit;text-align:start;outline:0;text-overflow:ellipsis;text-box:normal;line-height:1.4;padding-block:0"></div>' +
-      (ro && roLabel ? '<button type="button" class="rbtn" style="flex:none;gap:var(--sp-1)" data-act="doswap"' + (roPlus ? ' aria-label="הוספה לוויוונסיה ' + esc(roLabel) + '" title="הוספה לוויוונסיה"' : '') + '>' + (roPlus ? '<span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span><span style="max-width:14rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(roLabel) + '</span>' : esc(roLabel)) + '</button>' : "") +
+      '<div class="rhead__text" style="flex-direction:row;align-items:center;gap:var(--gap);padding-inline-start:0;justify-content:flex-start">' + (numText ? '<span aria-hidden="true" style="flex:none;font:var(--fw-bold) var(--fs-l)/var(--lh-tight) var(--font);font-variant-numeric:tabular-nums">' + esc(numText) + '</span>' : "") + '<input id="ina" class="rhead__title" placeholder="ללא שם" autocomplete="off" aria-label="שם התרגיל"' + (ro ? ' readonly' : '') + ' value="' + esc(nameText || "") + '" style="flex:1 1 0;width:auto;min-width:0;border:0;background:transparent;padding-inline:0;margin:0;color:inherit;text-align:start;outline:0;text-overflow:ellipsis;text-box:normal;line-height:1.4;padding-block:0"></div>' +
+      (ro && roLabel ? '<button type="button" class="rbtn rbtn--icon rbtn--primary" data-act="doswap" aria-label="' + esc(roLabel) + '" title="' + esc(roPlus ? "הוספה לוויוונסיה" : roLabel) + '">' + (roPlus ? I.plus : I.swap) + '</button>' : "") +
       "" +   /* the heart of a catalog exercise is on its card in the catalog, on hover */
-      "" + "" + (ro || wide() ? "" : '<span id="itimer" hidden aria-live="off" style="flex:none;font:var(--fw-black) calc(2.75 * var(--fs-m))/.95 var(--font);font-variant-numeric:tabular-nums;color:var(--text);direction:ltr"></span>') + (nav ? arrow("nextW", I.fwd, "הבא", !hasNext) : "") + (wide() && !ro ? (playM && playM.audio_object ? '<span class="bio-hplay">' + songBtn(playM, false) + '</span>' : '') + (exId ? heartBtnEx(exId, "bio-flat") : "") + '<button type="button" class="rbtn rbtn--icon bio-flat" data-act="closeIt" aria-label="סגירת התרגיל" title="סגירת התרגיל">' + I.x + '</button>' : "") + '</header>';
+      "" + "" + (ro || wide() ? "" : '<span id="itimer" hidden aria-live="off" style="flex:none;font:var(--fw-bold) var(--fs-l)/var(--lh-tight) var(--font);font-variant-numeric:tabular-nums;color:var(--text);direction:ltr"></span>') + (nav ? arrow("nextW", I.fwd, "הבא", !hasNext) : "") + (wide() && !ro ? '<span class="rgroup">' + (exId ? heartBtnEx(exId, "bio-flat") : "") + '<button type="button" class="rbtn rbtn--icon bio-flat" data-act="closeIt" aria-label="סגירת התרגיל" title="סגירת התרגיל">' + I.x + '</button></span>' : "") + '</header>';
   }
   (function () {
     var st = document.createElement("style");
-    st.textContent = ":root { --viv-bg: var(--ex-bg); --viv-surf: var(--ex-surf); --viv-tint: var(--ex-tint); --viv-line: var(--ex-line); --viv-solid: var(--ex-solid); --viv-ink: var(--ex-ink); --ex-bg: oklch(97.5% .006 255); --ex-surf: oklch(99.2% .003 255); --ex-tint: oklch(94% .025 255); --ex-line: oklch(90% .012 255); --ex-solid: oklch(46% .13 255); --ex-ink: oklch(24% .02 255); --mus-bg: oklch(97.5% .006 255); --mus-surf: oklch(99.2% .003 255); --mus-tint: oklch(94% .025 255); --mus-line: oklch(90% .012 255); --mus-solid: oklch(46% .13 255); --mus-ink: oklch(24% .02 255); --ppl-bg: var(--cat-bg); --ppl-surf: var(--cat-surf); --ppl-tint: var(--cat-tint); --ppl-line: var(--cat-line); --ppl-solid: var(--cat-solid); --ppl-ink: var(--cat-ink); --cat-bg: oklch(97.5% .006 255); --cat-surf: oklch(99.2% .003 255); --cat-tint: oklch(94% .025 255); --cat-line: oklch(90% .012 255); --cat-solid: oklch(46% .13 255); --cat-ink: oklch(24% .02 255); --primary: var(--ex-solid); --on-primary: #FFFFFF; --bg: var(--viv-bg); --surface: var(--viv-tint); --surface-2: oklch(94% .02 255); --line: oklch(90% .012 255); --text: var(--viv-ink); --text-2: oklch(40% .03 255); --text-3: oklch(46% .03 255); --sh-card: 0 2px 10px -3px rgba(0, 0, 0, .14), 0 1px 2px rgba(0, 0, 0, .06); --accent: var(--ex-solid); --line-strong: oklch(62% .03 255); --success: var(--ex-solid); --success-bg: var(--ex-tint); --warn: var(--ex-ink); --warn-bg: var(--ex-tint); --info: var(--ex-solid); --info-bg: var(--ex-tint); --danger-bg: var(--ex-tint); --scrim: rgba(10, 20, 40, .5); --danger: var(--mus-solid); } .bio-card, .bio-icard { background: var(--ex-surf); border: 0 !important } .bio-card:is([data-opt], [data-am], [data-sgc], [data-liked], [data-hi]), [data-recv] .bio-card { background: var(--mus-surf); border-color: var(--mus-line) } .rhead [data-act=\"vmore\"] { margin-right: auto !important } .rhead:has(#vtimer:not([hidden])) [data-act=\"vmore\"] { margin-right: 0 !important } .rhead #vtimer:not([hidden]) { margin-right: auto !important } .rhead:has(#vgo:not([hidden])) #vtimer { margin-right: 0 !important } .rhead #vgo:not([hidden]) { margin-right: auto !important } .rhead #vtimer { cursor: pointer } .bio-hplay { flex: none; display: inline-flex; margin-inline-end: var(--sp-2) } .bio-hplay [data-audio] { width: 48px !important; height: 48px !important; min-height: 48px !important; border-radius: 999px !important; background: var(--primary) !important; color: var(--on-primary, #FFFFFF) !important } .bio-hplay [data-audio] svg { width: var(--icon-l) !important; height: var(--icon-l) !important } .rrow[data-vrow] { padding-block: var(--sp-1) !important; min-height: 0 !important } .bio-card[aria-current=true]:is([data-opt], [data-am], [data-sgc], [data-liked], [data-hi]) { border-color: var(--mus-solid); box-shadow: inset 0 0 0 1px var(--mus-solid), var(--sh-card) } [data-catopen]:not(.bio-dock__cat) { background: transparent !important; border-color: transparent !important; box-shadow: none !important; color: var(--cat-solid) !important } .bio-dock .bio-dock__cat[aria-pressed=\"true\"] { background: var(--cat-solid) !important; border-color: var(--cat-solid) !important; color: #FFFFFF !important } :root { --sh-card: 0 2px 10px -3px rgba(0, 0, 0, .14), 0 1px 2px rgba(0, 0, 0, .06) } .rfield:has(> .rf-rich[contenteditable=true]), .rfield:has(> .rf-rich[contenteditable=true]) > *, .rf-rich[contenteditable=true], .rf-rich[contenteditable=true] * { cursor: text !important } .rf-rich [data-mention] { cursor: default !important } @keyframes bioTin { from { opacity: 0; transform: translateY(-8px) } to { opacity: 1; transform: none } } @keyframes bioTout { from { opacity: 1; transform: none } to { opacity: 0; transform: translateY(-8px) } } #vtimer.is-in, #itimer.is-in { animation: bioTin .24s var(--ease) both } #vtimer.is-out, #itimer.is-out { animation: bioTout .18s ease-in both } @media (prefers-reduced-motion: reduce) { #vtimer.is-in, #itimer.is-in, #vtimer.is-out, #itimer.is-out { animation: none } } .bio-card.is-play, .bio-card:has([data-audio][data-st=\"pause\"]) { --pick-ink: #FFFFFF } .bio-card.is-play .bio-cnt2, .bio-card:has([data-audio][data-st=\"pause\"]) .bio-cnt2 { background: none !important; color: #FFFFFF !important } .bio-card.is-play[aria-current], .bio-card.is-play[aria-current=\"true\"], .bio-card:has([data-audio][data-st=\"pause\"])[aria-current] { border-color: transparent !important; box-shadow: var(--sh-card) !important; outline: 0 !important } .bio-divl { display: flex; align-items: center; gap: var(--sp-2) } .bio-divl::before, .bio-divl::after { content: \"\"; flex: 1 1 auto; height: 1px; background: var(--line) } @keyframes bioWave { 0% { stroke-dashoffset: 1.05 } 45% { stroke-dashoffset: 0 } 70% { stroke-dashoffset: 0 } 100% { stroke-dashoffset: -1.05 } } #vgo svg path, .bio-vsym__c svg path { stroke-dasharray: 1 1.1; animation: bioWave 2.6s ease-in-out infinite } @media (prefers-reduced-motion: reduce) { #vgo svg path, .bio-vsym__c svg path { animation: none; stroke-dasharray: none } } [data-opening] [data-sech-row], [data-opening] [data-sech-row] * { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent } [data-opening] [data-sech-row] { touch-action: pan-y } .rrow[data-vrow] { position: relative } .bio-vsym { position: absolute; inset-inline-end: calc(var(--ctl) + var(--sp-3)); top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; color: var(--mus-solid); pointer-events: none } .bio-vsym__n { font: var(--fw-black) var(--fs-s)/1 var(--font); font-variant-numeric: tabular-nums } .bio-vsym__n:empty { display: none } .bio-vsym__c { display: block; width: 18px; height: 18px } .bio-vsym__c svg { width: 100%; height: 100%; display: block } @keyframes bio-wait { from { background-position: 100% 0 } to { background-position: -100% 0 } } .bio-card:has([data-audio][data-st=\"wait\"]) { background-image: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--mus-solid) 22%, transparent) 50%, transparent 70%) !important; background-size: 200% 100% !important; background-repeat: no-repeat !important; animation: bio-wait 1.1s linear infinite } @media (prefers-reduced-motion: reduce) { .bio-card:has([data-audio][data-st=\"wait\"]) { animation: none; background-image: linear-gradient(color-mix(in srgb, var(--mus-solid) 14%, transparent), color-mix(in srgb, var(--mus-solid) 14%, transparent)) !important } } .bio-icard[aria-current=true]:not(.is-play) { background: var(--ex-tint) !important; border-color: var(--ex-solid) !important; box-shadow: var(--sh-card) !important } #pd:has(#ipg) { --bg: var(--ex-bg); background: var(--ex-bg) } .rf-rich b, .rf-rich strong, .rcard__body b, .rhint__tx b { color: var(--text) !important } [data-opening] .bio-chipb { display: inline-flex; flex: none; justify-content: space-between; align-items: center; gap: var(--sp-1); min-height: var(--tag-s); padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--primary); font: var(--fw-bold) var(--fs-s)/1 var(--font); cursor: pointer } [data-opening] .bio-chipb::after { content: \"|\"; margin-inline-start: var(--sp-1); color: var(--text-3); font-weight: var(--fw-regular) } [data-opening] .bio-chipb[aria-expanded=true]::after { content: none } [data-opening] .bio-chipb > span:first-child { flex: none; white-space: nowrap } [data-opening] .bio-secf { margin-inline-start: var(--sp-3) !important; margin-top: calc(-1 * var(--sp-2)) !important } [data-opening] .rfield > span:first-child { transform: translateY(16px) !important; inset-inline-end: 0 !important; pointer-events: none; transition: opacity .12s ease } [data-opening] .rfield[data-rf=\"v\"] > span:first-child { opacity: 0 } .bio-card [data-upl-wrap] { gap: var(--sp-1) !important } .bio-card [data-yt], .bio-card [data-upl] { display: grid; place-items: center; width: var(--tag-s) !important; height: var(--tag-s) !important; min-height: var(--tag-s) !important; padding: 0 !important; border-radius: 999px !important; background: var(--surface-2) !important; border-color: var(--surface-2) !important } .bio-card [data-yt] svg { width: 62%; height: auto } .bio-card [data-upl] svg { width: 54%; height: 54% } .bio-card.is-play-opt { border-color: transparent !important; box-shadow: var(--sh-card) !important } .bio-mcard[aria-current], .bio-mcard[aria-current=\"true\"] { border-color: transparent !important; outline: 0 !important; box-shadow: var(--sh-card) !important } [data-recv] [data-audio] { display: none !important } .bio-tab.is-play .bio-tab__n, .bio-tab.is-play .bio-tab__t { color: var(--mus-solid) !important } .bio-tab.is-play .rchip[data-fac-label] { background: var(--mus-solid) !important; color: #FFFFFF !important } .bio-tab.is-play .rchip:not([data-fac-label]) { border-color: var(--mus-solid) !important; color: var(--mus-solid) !important } .bio-card:has([data-choose]) { --text: rgba(24, 32, 48, .5); --text-2: rgba(24, 32, 48, .42); --text-3: rgba(24, 32, 48, .38); background: rgba(255, 255, 255, .55) !important; border-color: rgba(24, 32, 48, .1) } .bio-card:has([data-choose]) [data-audio] { opacity: .55 } button.rchip { background: transparent !important; border: 1px solid var(--ex-solid) !important; color: var(--ex-solid) !important } button.rchip[aria-pressed=\"true\"]:not([data-fac]) { background: var(--ex-solid) !important; color: #FFFFFF !important } button.rchip[data-fac][aria-pressed=\"true\"], .rchip[data-fac-label] { background: var(--ppl-solid) !important; color: #FFFFFF !important; border: 0 !important } button.rchip[data-fac][aria-pressed=\"false\"] { background: transparent !important; color: var(--ppl-solid) !important; border: 1px solid var(--ppl-solid) !important } [data-audio] { background: var(--danger) !important; border-color: var(--danger) !important; color: #FFFFFF !important } .bio-card, .bio-card * { user-select: none; -webkit-user-select: none } .bio-card.is-play, .bio-card:has([data-audio][data-st=\"pause\"]) { background: var(--mus-solid) !important; border-color: transparent !important; color: #FFFFFF; --text: #FFFFFF; --text-2: #FFFFFF; --text-3: #FFFFFF; --danger: #FFFFFF } .bio-card.is-play [data-audio], .bio-card.is-play [data-hp], .bio-card:has([data-audio][data-st=\"pause\"]) [data-audio] { background: #FFFFFF !important; border-color: transparent !important; color: var(--mus-solid) !important } .bio-card.is-play button.rchip, .bio-card:has([data-audio][data-st=\"pause\"]) button.rchip { background: transparent !important; color: #FFFFFF !important; border-color: #FFFFFF !important } .bio-card.is-play button.rchip[data-fac][aria-pressed], .bio-card.is-play .rchip[data-fac-label], .bio-card:has([data-audio][data-st=\"pause\"]) button.rchip[data-fac][aria-pressed], .bio-card:has([data-audio][data-st=\"pause\"]) .rchip[data-fac-label] { background: transparent !important; color: #FFFFFF !important; border: 1px solid #FFFFFF !important } .bio-pair > .rbtn, .bio-pair > .bio-flat { min-width: 0; padding-inline: var(--sp-1) } .bio-flat, .rhead .bio-flat, .rhead .bio-flat:hover, .rhead .bio-flat:active, .rhead .bio-flat[aria-expanded] { background: transparent; border-color: transparent } @keyframes bioNum { from { opacity: 0; transform: translateX(var(--nx, 0)) } to { opacity: 1; transform: none } } @media (prefers-reduced-motion: reduce) { .bio-num { animation: none !important } } .bio-bar, .bio-bar * { touch-action: none } .bio-vol { display: none; position: relative; flex: none; place-items: center; width: var(--ctl); height: var(--ctl); border-radius: var(--r-ctl); background: var(--surface-2); overflow: hidden; touch-action: none; cursor: ns-resize; user-select: none; margin-inline-end: var(--sp-1) } .bio-vol.on { display: grid } @media (max-width: 1023px) { .bio-vol { display: none } } .bio-vol > i { position: absolute; inset: auto 0 0 0; height: calc(var(--v) * 100%); background: color-mix(in srgb, var(--primary) 32%, transparent); transition: height var(--t-fast) var(--ease) } .bio-vol > b { position: relative; font: var(--fw-bold) var(--fs-s)/1 var(--font); font-variant-numeric: tabular-nums; color: var(--text) } #pd .bio-vol { display: none !important } /* the volume button is in the list's header, once */ .bio-vol:focus { outline: none } .bio-vol:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px } /* a page header (not a popup's) has no line under it: the standard soft edge shows under it while its list is scrolled, like a popup's title */ .rhead.rhead:not(dialog *) { border-bottom: 0; position: relative; z-index: 2 } .rhead.rhead:not(dialog *)::after { content: \"\"; position: absolute; inset-inline: 0; top: 100%; height: var(--edge-shadow-h, 6px); background: var(--edge-shadow, linear-gradient(rgba(0, 0, 0, .12), rgba(0, 0, 0, 0))); opacity: 0; transition: opacity .18s ease; pointer-events: none } .rhead.rhead[data-scrolled]:not(dialog *)::after { opacity: 1 } @media (prefers-reduced-motion: reduce) { .rhead.rhead:not(dialog *)::after { transition: none } } .bio-dock, .bio-dock * { transition: background-color .45s var(--ease), color .45s var(--ease), border-color .45s var(--ease), fill .45s var(--ease), stroke .45s var(--ease) } @media (prefers-reduced-motion: reduce) { .bio-dock, .bio-dock * { transition: none } } .rbtn--danger { background: var(--ex-solid) !important; border-color: var(--ex-solid) !important; color: #FFFFFF !important } .rbtn--ghost.rbtn--danger { background: transparent !important; color: var(--ex-solid) !important } .bio-card.bio-mcard, .bio-card.bio-mcard[aria-current], .bio-card.bio-mcard.is-play, .bio-card.bio-mcard.is-play-opt, [data-recv] .bio-card { border: 0 !important; outline: 0 !important; box-shadow: var(--sh-card) !important } .bio-card.bio-mcard[aria-current=true]:not(.is-play):not(:has([data-audio][data-st=\"pause\"])), [data-recv] .bio-card[aria-current=true]:not(.is-play):not(:has([data-audio][data-st=\"pause\"])) { background: var(--mus-tint) !important } .bio-mcard [data-orm] { opacity: 1 !important } .bio-card .bio-act { flex: none; width: var(--tag-s); height: var(--tag-s); min-height: var(--tag-s); padding: 0; background: transparent; border-color: transparent; color: var(--text-2) } .bio-card .bio-act > svg { width: var(--icon-m); height: var(--icon-m) } html .bio-card.bio-mcard .bio-lk { position: relative !important; inset: auto !important; display: grid !important; flex: none } .bio-icard:not(.is-play):not(:has([data-audio][data-st=\"pause\"])) { --text: var(--ex-ink); --text-2: oklch(40% .07 255); color: var(--ex-ink) } .bio-card.bio-mcard:not(.is-play):not(:has([data-audio][data-st=\"pause\"])), [data-recv] .bio-card:not(.is-play):not(:has([data-audio][data-st=\"pause\"])) { --text: var(--mus-ink); --text-2: oklch(40% .08 255); color: var(--mus-ink) } #pd:has(#ipg) { --text: var(--ex-ink); --text-2: oklch(40% .07 255); --text-3: oklch(46% .07 255); color: var(--ex-ink) } #catLayer { --text: var(--cat-ink); --text-2: oklch(40% .07 305); --text-3: oklch(46% .07 305); color: var(--cat-ink) } .rmenu, .rmenu--fixed { background: #FFFFFF !important; --bg: #FFFFFF; --surface: oklch(96% .01 255); --text: var(--ex-ink); --text-2: oklch(40% .03 255); --text-3: oklch(46% .03 255) } #catLayer { --bg: var(--cat-bg); --primary: var(--cat-solid); --accent: var(--cat-solid); --surface: var(--cat-tint); --surface-2: var(--cat-tint); --line: var(--cat-line) } #catLayer, #catLayer .catmain, #catLayer .catbody { background: var(--cat-bg) } #catLayer .catprev { --bg: var(--ex-bg); --primary: var(--ex-solid); --accent: var(--ex-solid); background: var(--ex-bg) }";
+    st.textContent = ".bio-card, .bio-icard { background: var(--on-primary); border: 0 !important } .bio-card:is([data-opt], [data-am], [data-sgc], [data-liked], [data-hi]), [data-recv] .bio-card { background: var(--on-primary); border-color: var(--border) } .rhead [data-act=\"vmore\"] { margin-right: auto !important } .rhead:has(#vtimer:not([hidden])) [data-act=\"vmore\"] { margin-right: 0 !important } .rhead #vtimer:not([hidden]) { margin-right: auto !important } .rhead:has(#vgo:not([hidden])) #vtimer { margin-right: 0 !important } .rhead #vgo:not([hidden]) { margin-right: auto !important } .rhead #vtimer { cursor: pointer } .bio-hplay { flex: none; display: inline-flex } .bio-hplay [data-audio] { width: var(--icon) !important; height: var(--icon) !important; min-height: 0 !important; background: transparent !important; color: var(--primary) !important; --play-in: var(--on-primary) } .bio-hplay [data-audio] svg { width: var(--icon) !important; height: var(--icon) !important } .rrow[data-vrow] { padding-block: var(--gap) !important; min-height: 0 !important } .bio-card[aria-current=true]:is([data-opt], [data-am], [data-sgc], [data-liked], [data-hi]) { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary), var(--shadow) } [data-catopen]:not(.bio-dock__cat) { background: transparent !important; border-color: transparent !important; box-shadow: none !important; color: var(--primary) !important } .bio-dock .bio-dock__cat[aria-pressed=\"true\"] { background: var(--primary) !important; border-color: var(--primary) !important; color: var(--on-primary) !important } .rfield:has(> .rf-rich[contenteditable=true]), .rfield:has(> .rf-rich[contenteditable=true]) > *, .rf-rich[contenteditable=true], .rf-rich[contenteditable=true] * { cursor: text !important } .rf-rich [data-mention] { cursor: default !important } @keyframes bioTin { from { opacity: 0; transform: translateY(-8px) } to { opacity: 1; transform: none } } @keyframes bioTout { from { opacity: 1; transform: none } to { opacity: 0; transform: translateY(-8px) } } #vtimer.is-in, #itimer.is-in { animation: bioTin .24s var(--ease) both } #vtimer.is-out, #itimer.is-out { animation: bioTout .18s ease-in both } @media (prefers-reduced-motion: reduce) { #vtimer.is-in, #itimer.is-in, #vtimer.is-out, #itimer.is-out { animation: none } } .bio-card.is-play, .bio-card:has([data-audio][data-st=\"pause\"]) { --pick-ink: var(--on-primary) } .bio-card.is-play .bio-cnt2, .bio-card:has([data-audio][data-st=\"pause\"]) .bio-cnt2 { background: none !important; color: var(--on-primary) !important } .bio-card.is-play[aria-current], .bio-card.is-play[aria-current=\"true\"], .bio-card:has([data-audio][data-st=\"pause\"])[aria-current] { border-color: transparent !important; box-shadow: var(--shadow) !important; outline: 0 !important } .bio-divl { display: flex; align-items: center; gap: var(--gap) } .bio-divl::before, .bio-divl::after { content: \"\"; flex: 1 1 auto; height: var(--bw); background: var(--border) } @keyframes bioWave { 0% { stroke-dashoffset: 1.05 } 45% { stroke-dashoffset: 0 } 70% { stroke-dashoffset: 0 } 100% { stroke-dashoffset: -1.05 } } #vgo svg path, .bio-vsym__c svg path { stroke-dasharray: 1 1.1; animation: bioWave 2.6s ease-in-out infinite } @media (prefers-reduced-motion: reduce) { #vgo svg path, .bio-vsym__c svg path { animation: none; stroke-dasharray: none } } [data-opening] [data-sech-row], [data-opening] [data-sech-row] * { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent } [data-opening] [data-sech-row] { touch-action: pan-y } .rrow[data-vrow] { position: relative } .bio-vsym { position: absolute; inset-inline-end: calc(var(--ctl) + var(--gap-section)); top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; color: var(--primary); pointer-events: none } .bio-vsym__n { font: var(--fw-bold) var(--fs-m)/1 var(--font); font-variant-numeric: tabular-nums } .bio-vsym__n:empty { display: none } .bio-vsym__c { display: block; width: var(--icon); height: var(--icon) } .bio-vsym__c svg { width: 100%; height: 100%; display: block } @keyframes bio-wait { from { background-position: 100% 0 } to { background-position: -100% 0 } } .bio-card:has([data-audio][data-st=\"wait\"]) { background-image: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--primary) 22%, transparent) 50%, transparent 70%) !important; background-size: 200% 100% !important; background-repeat: no-repeat !important; animation: bio-wait 1.1s linear infinite } @media (prefers-reduced-motion: reduce) { .bio-card:has([data-audio][data-st=\"wait\"]) { animation: none; background-image: linear-gradient(color-mix(in srgb, var(--primary) 14%, transparent), color-mix(in srgb, var(--primary) 14%, transparent)) !important } } .bio-icard[aria-current=true]:not(.is-play) { background: var(--surface) !important; border-color: var(--primary) !important; box-shadow: var(--shadow) !important } .rf-rich b, .rf-rich strong, .rcard__body b, .rhint__tx b { color: var(--text) !important } [data-opening] .bio-chipb { flex: none; gap: var(--gap-tight) } [data-sech-row] > .rtitle { flex: 1 1 auto } [data-opening] .bio-chipb > span:first-child { flex: none; white-space: nowrap } [data-opening] .rfield > span:first-child { transform: translateY(16px) !important; inset-inline-end: 0 !important; pointer-events: none; transition: opacity .12s ease } [data-opening] .rfield[data-rf=\"v\"] > span:first-child { opacity: 0 } .bio-card [data-upl-wrap] { gap: var(--gap) !important } .bio-card [data-yt], .bio-card [data-upl] { display: grid; place-items: center; width: var(--icon) !important; height: var(--icon) !important; min-height: 0 !important; padding: 0 !important; border-radius: 999px !important; background: transparent !important; border-color: transparent !important } .bio-card.is-play-opt { border-color: transparent !important; box-shadow: var(--shadow) !important } .bio-mcard[aria-current], .bio-mcard[aria-current=\"true\"] { border-color: transparent !important; outline: 0 !important; box-shadow: var(--shadow) !important } [data-recv] [data-audio] { display: none !important } .bio-tab.is-play .bio-tab__n, .bio-tab.is-play .bio-tab__t { color: var(--primary) !important } .bio-tab.is-play .rchip[data-fac-label] { background: var(--primary) !important; color: var(--on-primary) !important } .bio-tab.is-play .rchip:not([data-fac-label]) { border-color: var(--primary) !important; color: var(--primary) !important } .bio-card:has([data-choose]) { --text: color-mix(in srgb, var(--warn) 50%, transparent); --text-muted: color-mix(in srgb, var(--warn) 42%, transparent); background: color-mix(in srgb, var(--on-primary) 55%, transparent) !important; border-color: color-mix(in srgb, var(--warn) 10%, transparent) } .bio-card:has([data-choose]) [data-audio] { opacity: .55 } button.rchip { background: transparent !important; border: 1px solid var(--primary) !important; color: var(--primary) !important } button.rchip[aria-pressed=\"true\"]:not([data-fac]) { background: var(--primary) !important; color: var(--on-primary) !important } button.rchip[data-fac][aria-pressed=\"true\"], .rchip[data-fac-label] { background: var(--primary) !important; color: var(--on-primary) !important; border: 0 !important } button.rchip[data-fac][aria-pressed=\"false\"] { background: transparent !important; color: var(--primary) !important; border: 1px solid var(--primary) !important } [data-audio]:not(.ricon-lg) { background: transparent !important; border-color: transparent !important; box-shadow: none !important; color: var(--danger) !important; --play-in: var(--on-primary) } .bio-card, .bio-card * { user-select: none; -webkit-user-select: none } .bio-card.is-play, .bio-card:has([data-audio][data-st=\"pause\"]) { background: var(--primary) !important; border-color: transparent !important; color: var(--on-primary); --text: var(--on-primary); --text-muted: var(--on-primary);  --danger: var(--on-primary) } .bio-card.is-play [data-audio], .bio-card.is-play [data-hp], .bio-card:has([data-audio][data-st=\"pause\"]) [data-audio] { background: transparent !important; border-color: transparent !important; color: var(--on-primary) !important; --play-in: var(--primary) } .bio-card.is-play button.rchip, .bio-card:has([data-audio][data-st=\"pause\"]) button.rchip { background: transparent !important; color: var(--on-primary) !important; border-color: var(--on-primary) !important } .bio-card.is-play button.rchip[data-fac][aria-pressed], .bio-card.is-play .rchip[data-fac-label], .bio-card:has([data-audio][data-st=\"pause\"]) button.rchip[data-fac][aria-pressed], .bio-card:has([data-audio][data-st=\"pause\"]) .rchip[data-fac-label] { background: transparent !important; color: var(--on-primary) !important; border: 1px solid var(--on-primary) !important } .bio-card.is-play .rbtn--text, .bio-card:has([data-audio][data-st=\"pause\"]) .rbtn--text { color: var(--on-primary) !important } .bio-pair > .rbtn, .bio-pair > .bio-flat { min-width: 0; padding-inline: var(--gap) } .bio-flat, .rhead .bio-flat, .rhead .bio-flat:hover, .rhead .bio-flat:active, .rhead .bio-flat[aria-expanded] { background: transparent; border-color: transparent } .bio-bar, .bio-bar * { touch-action: none } /* a page header (not a popup's) has no line under it: the standard soft edge shows under it while its list is scrolled, like a popup's title */ .rhead.rhead:not(dialog *) { border-bottom: 0; position: relative; z-index: 2 } .rhead.rhead:not(dialog *)::after { content: \"\"; position: absolute; inset-inline: 0; top: 100%; height: var(--gap-tight); background: linear-gradient(color-mix(in srgb, var(--scrim) 25%, transparent), transparent); opacity: 0; transition: opacity .18s ease; pointer-events: none } .rhead.rhead[data-scrolled]:not(dialog *)::after { opacity: 1 } @media (prefers-reduced-motion: reduce) { .rhead.rhead:not(dialog *)::after { transition: none } } .bio-dock, .bio-dock * { transition: background-color .45s var(--ease), color .45s var(--ease), border-color .45s var(--ease), fill .45s var(--ease), stroke .45s var(--ease) } @media (prefers-reduced-motion: reduce) { .bio-dock, .bio-dock * { transition: none } } .rbtn--danger { background: var(--primary) !important; border-color: var(--primary) !important; color: var(--on-primary) !important } .rbtn--ghost.rbtn--danger { background: transparent !important; color: var(--primary) !important } .bio-card.bio-mcard, .bio-card.bio-mcard[aria-current], .bio-card.bio-mcard.is-play, .bio-card.bio-mcard.is-play-opt, [data-recv] .bio-card { border: 0 !important; outline: 0 !important; box-shadow: var(--shadow) !important } .bio-card.bio-mcard[aria-current=true]:not(.is-play):not(:has([data-audio][data-st=\"pause\"])), [data-recv] .bio-card[aria-current=true]:not(.is-play):not(:has([data-audio][data-st=\"pause\"])) { background: var(--surface) !important } .bio-mcard [data-orm] { opacity: 1 !important } .rbtn--icon > svg, .rbtn--icon > span > svg { width: var(--icon); height: var(--icon) } .bio-card .bio-act { flex: none; padding: 0; background: transparent; border-color: transparent; color: var(--text-muted) } html .bio-card.bio-mcard .bio-lk { position: relative !important; inset: auto !important; display: grid !important; flex: none } .bio-icard:not(.is-play):not(:has([data-audio][data-st=\"pause\"])) { --text-muted: oklch(40% .07 255); color: var(--text) } .bio-card.bio-mcard:not(.is-play):not(:has([data-audio][data-st=\"pause\"])), [data-recv] .bio-card:not(.is-play):not(:has([data-audio][data-st=\"pause\"])) { --text-muted: oklch(40% .08 255); color: var(--text) } #catLayer, #catLayer .catmain, #catLayer .catbody { background: var(--page) } #catLayer .catprev { background: var(--page) }";
     document.head.appendChild(st);
     /* the same edge from the header's side: a scroller under a page header (outside any popup) sets data-scrolled on that header while it is scrolled away from its top, same 2px threshold as sheet.js */
     (function () {
@@ -1088,10 +1096,9 @@
     syncSt = { m: mode, t: text };
     if (!syncEl) {
       var st = document.createElement("style");
-      st.textContent = "@keyframes bioDl { 0% { transform: translateY(-3px); opacity: 0 } 40% { opacity: 1 } 100% { transform: translateY(4px); opacity: 0 } } .bio-sync { position: absolute; top: 2px; right: -7px; display: grid; place-items: center; width: 16px; height: 16px; color: var(--danger); pointer-events: none } .bio-sync[hidden] { display: none } .bio-sync svg { width: 14px; height: 14px; overflow: visible } .bio-sync[data-m=\"run\"] .bio-sync__a { animation: bioDl 1.1s ease-in infinite } .bio-sync[data-m=\"stop\"] { color: var(--danger) } @media (prefers-reduced-motion: reduce) { .bio-sync[data-m=\"run\"] .bio-sync__a { animation: none } }";
+      st.textContent = "@keyframes bioDl { 0% { transform: translateY(-3px); opacity: 0 } 40% { opacity: 1 } 100% { transform: translateY(4px); opacity: 0 } } .bio-sync { color: var(--danger) } .bio-sync[data-m=\"run\"] .bio-sync__a { animation: bioDl 1.1s ease-in infinite } .bio-sync[data-m=\"stop\"] { color: var(--danger) } @media (prefers-reduced-motion: reduce) { .bio-sync[data-m=\"run\"] .bio-sync__a { animation: none } }";
       document.head.appendChild(st);
-      syncEl = document.createElement("span"); syncEl.className = "bio-sync"; syncEl.hidden = true;
-      syncEl.addEventListener("click", function () { if (syncSt.t) toast(syncSt.t); });
+      syncEl = document.createElement("span"); syncEl.className = "rbtn__tail bio-sync"; syncEl.hidden = true;
     }
     syncEl.dataset.m = mode; syncEl.hidden = !mode; syncEl.setAttribute("aria-label", text || "הורדה למכשיר"); syncEl.title = text || "";
     syncEl.innerHTML = mode === "done" ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
@@ -1102,9 +1109,9 @@
   function syncPlace(root) {
     if (!syncEl) return;
     var h = (root || document).querySelector(".rhead"); if (!h) return;
-    var last = h.querySelector(":scope > button:last-of-type") || h.lastElementChild;   /* a mark at the upper right corner of the last button of the header (the three dots), not a button of its own */
+    var bs = h.querySelectorAll(":scope > button, :scope > .rgroup > button"), last = bs[bs.length - 1] || h.lastElementChild;   /* a mark at the upper right corner of the last button of the header (the three dots), not a button of its own */
     if (!last || last.contains(syncEl)) return;
-    last.style.position = "relative"; last.appendChild(syncEl);
+    last.appendChild(syncEl);   /* law 10: the status mark is the tail of that button (kit.css .rbtn__tail), not an element laid over it */
   }
   function show(html, wire, pane) { if (!wide() && pane === "d") return itemSheet(html, wire);   /* narrow: the exercise is a popup from the bottom, not a page */
     var isPrev = html.indexOf('data-act="doswap"') >= 0;   /* a catalog exercise (it has the add button) is the one thing on the left that stays lit while the catalog is open */
@@ -1121,12 +1128,12 @@
     }
     if (wire) wire(t); }
   var catPanel = null, catLayer = null, catPreview = false;
-  (function () { var st = document.createElement("style"); st.textContent = "#catLayer { position: fixed; z-index: 20; transform: translateX(100%); transition: transform .25s var(--ease); display: flex; flex-direction: column; min-height: 0 } #catLayer[hidden] { display: none } #catLayer.is-open { transform: none } #catLayer > .bio-banner { position: absolute; inset-block: 0; inset-inline-start: auto; left: calc(var(--ctl) * -1); width: 44px; height: 100% } #catLayer > .catbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; box-shadow: -1px 0 0 var(--line) } #catLayer > .catbody > .rlist { flex: 1 1 auto; min-height: 0 } @media (prefers-reduced-motion: reduce) { #catLayer { transition: none } }"; document.head.appendChild(st); })();
+  (function () { var st = document.createElement("style"); st.textContent = "#catLayer { position: fixed; z-index: 20; transform: translateX(100%); transition: transform var(--t-base) var(--ease); display: flex; flex-direction: column; min-height: 0 } #catLayer[hidden] { display: none } #catLayer.is-open { transform: none } #catLayer > .bio-banner { position: absolute; inset-block: 0; inset-inline-start: auto; left: calc(var(--ctl) * -1); width: var(--ctl); height: 100% } #catLayer > .catbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; box-shadow: -1px 0 0 var(--border) } #catLayer > .catbody > .rlist { flex: 1 1 auto; min-height: 0 } @media (prefers-reduced-motion: reduce) { #catLayer { transition: none } }"; document.head.appendChild(st); })();
   /* The catalog is ONE popup, a single body that slides as a whole: it is as wide as the left and the right sides together; its right part is the catalog's list, its left part is the exercise opened from it. Closing moves the whole body; the left part only slides out from under the right one when an exercise is chosen. */
   /* the on-screen keyboard: while it is up, the player (hidden behind it anyway) keeps no room at the bottom of a popup, so the list reaches the keyboard */
   (function () {
     var st = document.createElement("style");
-    st.textContent = "@media (max-width: 700px) { * { scrollbar-width: none } #ibtns { height: var(--sp-2) !important } html.bio-docked #itemDlg .sheet { padding-bottom: var(--dockfull) !important } html.bio-docked #itemDlg .sheet-body { padding-bottom: 0 !important } #ibtns { height: var(--gutter) !important } *::-webkit-scrollbar { display: none } .rhead { --rh-pad: 4px } .rhead__title, .rhead__title input { font-size: var(--fs-m) !important } dialog.rsheet .sheet-head > :first-child:not(.hicon) { font-size: var(--fs-m) !important } .rhead.rhead { padding-block: var(--safe-t) 0 } dialog.rsheet .sheet-head { min-height: 0; margin-bottom: var(--gap-tight) } dialog.rsheet .sheet-head:has(> h2:not(:empty)) { padding-bottom: var(--pp-head-gap, var(--sp-2)) } .bio-sech { padding-top: var(--sp-1) !important } [data-recv] .bio-accb > div > div { padding-block: var(--sp-1) !important } [data-recv] .bio-accb > div > div:empty { padding: 0 !important } [data-recv] + .bio-sech { padding-top: 0 !important } #plist { padding-block: var(--sp-1) !important } [data-recv=end] { margin-top: 0 !important } #plist > [data-div] { padding: var(--sp-1) 0 0 !important; margin-top: 0 !important; min-height: 0 !important } dialog.rsheet .sheet-head { margin-bottom: var(--gap-tight) } .bio-sech { padding-top: var(--sp-1) !important } dialog.rsheet[data-from=\"bottom\"] > .rs-grab, dialog.rsheet:not([data-from]) > .rs-grab { height: calc(var(--bar-top) + 4px + var(--bar-gap)) !important; align-content: start; margin-bottom: 0 } dialog.rsheet > .rs-grab::before { margin-top: var(--bar-top) } html.bio-docked dialog.rsheet:not(:has(.sheet-foot)) .sheet { padding-bottom: 0 !important } html.bio-docked dialog.rsheet:not(:has(.sheet-foot)) .sheet-body { padding-bottom: var(--dockfull) !important } .bio-ihead--m { display: block; touch-action: pan-y } .bio-ihead--m > .bio-tabs { overflow: hidden; direction: ltr; margin-inline: calc(var(--gutter) * -1); padding-block: 0 } .bio-tabs__track { display: flex; width: max-content; visibility: hidden; transform: translateX(var(--tx, 0px)); transition: transform .22s cubic-bezier(.2, .8, .2, 1) } .bio-tabs__track.is-ready { visibility: visible } .bio-tabs__track.is-drag, .bio-tabs__track.is-drag .bio-tab { transition: none !important } .bio-tab { cursor: pointer; flex: none; display: flex; flex-direction: column; align-items: center; gap: var(--gap-tight); padding-inline: var(--sp-3); white-space: nowrap; color: var(--text); direction: rtl; opacity: calc(.4 + .6 * max(0, 1 - abs(var(--cx, 0px) + var(--tx, 0px) - var(--cw, 360px) / 2) / (var(--cw, 360px) * .6))); transition: opacity .22s cubic-bezier(.2, .8, .2, 1) } .bio-tab__f { margin-top: var(--gap-tight); transform: translateX(calc(var(--nb, 0) * (clamp(var(--cw, 360px) * .13, var(--cx, 0px) + var(--tx, 0px), var(--cw, 360px) * .87) - (var(--cx, 0px) + var(--tx, 0px))))) } .bio-tab__n { --nx: calc(clamp(var(--cw, 360px) * .13, var(--cx, 0px) + var(--tx, 0px), var(--cw, 360px) * .87) - (var(--cx, 0px) + var(--tx, 0px))); transform: translateX(calc(var(--nb, 0) * var(--nx))); opacity: calc(1 - var(--nb, 0) * min(1, abs(var(--nx)) / (var(--cw, 360px) * .45))); font: var(--fw-black) calc(2.75 * var(--fs-m))/.95 var(--font); font-variant-numeric: tabular-nums } .bio-tab__t { font: var(--fw-medium) var(--fs-s)/var(--lh-tight) var(--font); color: var(--text-2) } .bio-tab.is-cur .bio-tab__t { color: var(--text); font-weight: var(--fw-bold) } .bio-ihead { flex-wrap: wrap; row-gap: 0 } .bio-ihead > .rhead__text { display: contents } .bio-ihead #ina { order: 10; flex: 1 1 100% !important; width: 100% !important; margin-top: var(--sp-1) !important } .bio-ihead #itimer { margin-inline-start: auto } :root { --dockfull: calc(var(--ctl) * 2 + 20px + var(--sp-1) * 3 + var(--inset-b)) } .bio-dock { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; column-gap: var(--sp-1); row-gap: var(--sp-1); min-height: 0; padding-block: var(--sp-1) calc(var(--sp-1) + var(--inset-b)) } .bio-dock > .bio-dockbar { grid-column: 1 / -1; grid-row: 1 } .bio-dock > .rbtn:first-child { grid-column: 1; grid-row: 2; order: 0; margin-inline-end: 0; width: var(--ctl) !important; height: var(--ctl) !important; min-height: var(--ctl) !important } .bio-dock > .bio-dock__time { grid-column: 2; grid-row: 2; order: 0; font: var(--fw-black) var(--fs-l)/1 var(--font) !important; background: transparent !important; padding: 0 !important; min-width: 4.4ch !important; text-align: center; font-variant-numeric: tabular-nums } .bio-dock > .bio-dock__name { grid-column: 3; grid-row: 2; order: 0; min-width: 0 } .bio-dock > [data-hist] { grid-column: 4; grid-row: 2; order: 0 } .bio-dock > .bio-dock__cat { text-decoration: underline; text-underline-offset: 4px; grid-column: 1 / 3; grid-row: 3; order: 0 !important; justify-content: flex-start; padding-inline: 0 !important; width: 100%; min-width: 0 } .bio-dock > [data-addcur] { grid-column: 3; grid-row: 3; order: 0; flex: none !important; min-width: 0; max-width: 100%; justify-self: end; flex-direction: row-reverse; justify-content: flex-end; padding-inline: 0 !important } .bio-dock > [data-addcur][hidden] { display: flex !important; visibility: hidden } .bio-dock > [data-addcur] [data-addcur-label] { max-width: 100% !important } .bio-dock > .bio-volume { display: none } } .bio-dock > [data-addcur], .bio-dock > [data-addcur][hidden] { display: none !important } html.bio-kb:not(.bio-sel) .bio-dock { display: none !important } html.bio-kb dialog.rsheet:not(:has(.sheet-foot)) .sheet-body { padding-bottom: 0 !important } html.bio-kb dialog.rsheet:not(:has(.sheet-foot)) .sheet { padding-bottom: 0 !important } html.bio-kb #itemDlg .sheet { padding-bottom: 0 !important } html.bio-kb #ibtns { height: calc(var(--gutter) * 2) !important } #itemDlg .sheet-body { margin-bottom: 0 }   dialog.rsheet .sheet-head .rhead.rhead { border-bottom: 0 } .rcard[data-addm]:not(:first-child) { margin-top: calc(var(--sp-2) - var(--sp-1)) !important }";   /* the add-music card after a card: the standard space (sp-2) in every grid it sits in, grid gap plus this; alone it gets none */   /* the exercise popup keeps room for the player at its bottom (rule above, with its id); with the keyboard up the player is gone, so no room is left empty above the keyboard: the class from the visual viewport, and also whenever a field of the popup has focus (whatever the browser reports), and the scroller's own hairline margin no longer hangs below the sheet where it clipped the last line; a popup's header has no line under it, the edge shadow shows on scroll; phones keep a small gap (the gutter) under the last field, inside the scroll */
+    st.textContent = "@media (width < 760px) { * { scrollbar-width: none } #ibtns { height: var(--gap) !important } html.bio-docked #itemDlg .sheet { padding-bottom: var(--dockfull) !important } html.bio-docked #itemDlg .sheet-body { padding-bottom: 0 !important } #ibtns { height: var(--gap) !important } *::-webkit-scrollbar { display: none } .rlist:has(> [data-exsec]) { gap: var(--gap) } [data-recv] .bio-accb > div > div { padding-block: var(--gap) !important } [data-recv] .bio-accb > div > div:empty { padding: 0 !important } #plist { padding-block: var(--gap) !important } [data-recv=end] { margin-top: 0 !important } dialog.rsheet .sheet { gap: var(--gap-tight) } .rlist:has(> [data-exsec]) { gap: var(--gap) } dialog.rsheet[data-from=\"bottom\"] > .rs-grab, dialog.rsheet:not([data-from]) > .rs-grab { height: calc(var(--bar-top) + var(--gap-tight) + var(--bar-gap)) !important; align-content: start; margin-bottom: 0 } dialog.rsheet > .rs-grab::before { margin-top: var(--bar-top) } html.bio-docked dialog.rsheet:not(:has(.sheet-foot)) .sheet { padding-bottom: var(--dockfull) !important } .bio-ihead--m { display: block; padding-inline: 0; touch-action: pan-y } .bio-ihead--m > .bio-tabs { overflow: hidden; direction: ltr; padding-block: 0 var(--gap) } .bio-tab__g { display: flex; flex-direction: column; align-items: center; gap: var(--gap-tight) } .bio-tabs__track { display: flex; width: max-content; visibility: hidden; transform: translateX(var(--tx, 0px)); transition: transform .22s cubic-bezier(.2, .8, .2, 1) } .bio-tabs__track.is-ready { visibility: visible } .bio-tabs__track.is-drag, .bio-tabs__track.is-drag .bio-tab { transition: none !important } .bio-tab { cursor: pointer; flex: none; display: flex; flex-direction: column; align-items: center; gap: var(--gap); width: calc(var(--cw, 360px) * .38); white-space: nowrap; color: var(--text); direction: rtl; opacity: calc(.4 + .6 * max(0, 1 - abs(var(--cx, 0px) + var(--tx, 0px) - var(--cw, 360px) / 2) / (var(--cw, 360px) * .6))); transition: opacity .22s cubic-bezier(.2, .8, .2, 1) } .bio-tab__f { transform: translateX(calc(var(--nb, 0) * (clamp(var(--cw, 360px) * .13, var(--cx, 0px) + var(--tx, 0px), var(--cw, 360px) * .87) - (var(--cx, 0px) + var(--tx, 0px))))) } .bio-tab__n { --nx: calc(clamp(var(--cw, 360px) * .13, var(--cx, 0px) + var(--tx, 0px), var(--cw, 360px) * .87) - (var(--cx, 0px) + var(--tx, 0px))); transform: translateX(calc(var(--nb, 0) * var(--nx))); opacity: calc(1 - var(--nb, 0) * min(1, abs(var(--nx)) / (var(--cw, 360px) * .45))); font: var(--fw-bold) var(--fs-l)/var(--lh-tight) var(--font); font-variant-numeric: tabular-nums } .bio-tab__t { --dc: calc(var(--cx, 0px) + var(--tx, 0px) - var(--cw, 360px) / 2); --dd: calc(var(--cw, 360px) * .38); --sd: min(1, max(.2, (var(--dd) - (var(--hl, 0px) * (1 + clamp(-1, var(--dc) / (var(--cw, 360px) * .02), 1)) + var(--hr, 0px) * (1 - clamp(-1, var(--dc) / (var(--cw, 360px) * .02), 1))) / 2 - var(--gap-tight)) / var(--h, 1px))); transform: scaleX(calc(1 - min(1, abs(var(--dc)) / var(--dd)) * (1 - var(--sd)))); font: var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font); color: var(--text-muted) } .bio-tab.is-cur .bio-tab__t { color: var(--text); font-weight: var(--fw-bold) } .bio-ihead { flex-wrap: wrap; row-gap: 0 } .bio-ihead > .rhead__text { display: contents } .bio-ihead #ina { order: 10; flex: 1 1 100% !important; width: 100% !important; margin-top: var(--gap) !important } .bio-ihead #itimer { margin-inline-start: auto } :root { --dockfull: calc(var(--ctl) * 2 + var(--icon) + var(--gap) * 3 + var(--inset-b)) } .bio-dock { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; column-gap: var(--gap); row-gap: var(--gap); min-height: 0; padding-block: var(--gap) calc(var(--gap) + var(--inset-b)) } .bio-dock > .bio-dockbar { grid-column: 1 / -1; grid-row: 1 } .bio-dock > .rbtn:first-child { grid-column: 1; grid-row: 2; order: 0; margin-inline-end: 0; width: var(--icon) !important; height: var(--icon) !important; min-height: 0 !important } .bio-dock > .bio-dock__time { grid-column: 2; grid-row: 2; order: 0; font: var(--fw-bold) var(--fs-l)/1 var(--font) !important; background: transparent !important; padding: 0 !important; text-align: center; font-variant-numeric: tabular-nums } .bio-dock > .bio-dock__name { grid-column: 3; grid-row: 2; order: 0; min-width: 0 } .bio-dock > [data-hist] { grid-column: 4; grid-row: 2; order: 0 } .bio-dock > .bio-dock__cat { text-decoration: underline; text-underline-offset: 4px; grid-column: 1 / 3; grid-row: 3; order: 0 !important; justify-content: flex-start; padding-inline: 0 !important; width: 100%; min-width: 0 } .bio-dock > [data-addcur] { grid-column: 3; grid-row: 3; order: 0; flex: none !important; min-width: 0; max-width: 100%; justify-self: end; flex-direction: row-reverse; justify-content: flex-end; padding-inline: 0 !important } .bio-dock > [data-addcur][hidden] { display: flex !important; visibility: hidden } .bio-dock > [data-addcur] [data-addcur-label] { max-width: 100% !important } .bio-dock > .bio-volume { display: none } } .bio-dock > [data-addcur], .bio-dock > [data-addcur][hidden] { display: none !important } html.bio-kb:not(.bio-sel) .bio-dock { display: none !important } html.bio-kb dialog.rsheet:not(:has(.sheet-foot)) .sheet-body { padding-bottom: 0 !important } html.bio-kb dialog.rsheet:not(:has(.sheet-foot)) .sheet { padding-bottom: 0 !important } html.bio-kb #itemDlg .sheet { padding-bottom: 0 !important } html.bio-kb #ibtns { height: calc(var(--gap) * 2) !important } #itemDlg .sheet-body { margin-bottom: 0 }   dialog.rsheet .sheet-head .rhead.rhead { border-bottom: 0 } .rcard[data-addm]:not(:first-child) { margin-top: 0 !important }";   /* the add-music card after a card: the standard space (sp-2) in every grid it sits in, grid gap plus this; alone it gets none */   /* the exercise popup keeps room for the player at its bottom (rule above, with its id); with the keyboard up the player is gone, so no room is left empty above the keyboard: the class from the visual viewport, and also whenever a field of the popup has focus (whatever the browser reports), and the scroller's own hairline margin no longer hangs below the sheet where it clipped the last line; a popup's header has no line under it, the edge shadow shows on scroll; phones keep a small gap (the gutter) under the last field, inside the scroll */
     document.head.appendChild(st);
     var vv = window.visualViewport; if (!vv) return;
     function upd() { document.documentElement.classList.toggle("bio-kb", Math.max(0, window.innerHeight - vv.height - vv.offsetTop) > 120); }
@@ -1163,7 +1170,7 @@
   var catPrevCtx = null;   /* the exercise of the catalog that is looked at: what the add button adds */
   function catAddHtml() {
     var t = state.viv ? (state.viv.title || "הוויוונסיה") : "ויוונסיה";
-    return '<button type="button" id="catAdd" class="rbtn" style="flex:none;gap:var(--sp-1)" aria-label="הוספה לוויוונסיה ' + esc(t) + '" title="הוספה לוויוונסיה" disabled><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span><span style="max-width:14rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(t) + '</span></button>';
+    return '<button type="button" id="catAdd" class="rbtn" style="flex:none;gap:var(--gap)" aria-label="הוספה לוויוונסיה ' + esc(t) + '" title="הוספה לוויוונסיה" disabled><span aria-hidden="true" style="display:grid;width:var(--icon);height:var(--icon)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span><span style="max-width:var(--w);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(t) + '</span></button>';
   }
   function refreshPrevLabel() {   /* it always says the vivencia that is open now, and is on only while an exercise is looked at */
     if (!catLayer) return;
@@ -1172,13 +1179,12 @@
     if (sp && sp.textContent !== t) sp.textContent = t; b.setAttribute("aria-label", "הוספה לוויוונסיה"); b.disabled = !catPrevCtx;
   }
   function loadCatSnap() { try { return JSON.parse(localStorage.getItem(CAT_KEY) || "null"); } catch (e) { return null; } }
-  function ensureCatPrev() { /* the left part is built with the layer */ }
   function closeCatPrev() {   /* the left part slides back in under the right one */
     if (!catPrev) return;
     catPrev.classList.remove("is-open"); catPrevMus = null; catPrevId = null; catPreview = false; catPrevCtx = null; refreshPrevLabel(); saveCat();
     if (catLayer) catLayer.querySelectorAll(".bio-card[aria-current]").forEach(function (c) { c.removeAttribute("aria-current"); });
   }
-  (function () { var st = document.createElement("style"); st.textContent = "#catLayer .catsh { position: absolute; z-index: 5; inset-block: 0; right: var(--plw); width: 10px; margin-right: -5px; pointer-events: auto; cursor: col-resize; touch-action: none } #catLayer .catsh::after { content: ''; position: absolute; inset-block: 0; right: 4px; width: 2px; background: transparent; transition: background var(--t-base) } #catLayer .catsh:hover::after, #catLayer .catsh:focus-visible::after, html.split-drag #catLayer .catsh::after { background: var(--line-strong) } #catLayer .catsh:focus-visible { outline: none } #catLayer { position: fixed; z-index: 20; pointer-events: none; transform: translateX(100%); transition: transform .25s var(--ease) } #catLayer[hidden] { display: none } #catLayer.is-open { transform: none } #catLayer > .catmain { position: absolute; z-index: 1; inset-block: 0; right: 0; width: var(--plw); display: flex; flex-direction: column; min-height: 0; pointer-events: auto; box-shadow: -1px 0 0 var(--line) } #catLayer .catbody > .rhead { padding-inline-end: var(--gutter) } #catLayer .catbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column } #catLayer .catbody > .rlist { flex: 1 1 auto; min-height: 0 } #catLayer > .catprev { position: absolute; z-index: 0; inset-block: 0; left: 0; width: var(--pdw); display: flex; flex-direction: column; min-height: 0; overflow: hidden; pointer-events: auto; visibility: hidden; transform: translateX(100%); transition: transform .25s var(--ease), visibility 0s linear .25s } #catLayer > .catprev.is-open { visibility: visible; transform: none; transition: transform .25s var(--ease), visibility 0s } #catLayer > .catprev > .rlist { flex: 1 1 auto; min-height: 0 } @media (prefers-reduced-motion: reduce) { #catLayer, #catLayer > .catprev { transition: none } }"; document.head.appendChild(st); })();
+  (function () { var st = document.createElement("style"); st.textContent = "#catLayer .catsh { position: absolute; z-index: 5; inset-block: 0; right: calc(var(--plw) - var(--gap-tight)); width: var(--handle-w); pointer-events: auto; cursor: col-resize; touch-action: none } #catLayer .catsh::after { content: ''; position: absolute; inset-block: 0; right: 4px; width: 2px; background: transparent; transition: background var(--t-base) } #catLayer .catsh:hover::after, #catLayer .catsh:focus-visible::after, html.split-drag #catLayer .catsh::after { background: var(--border-strong) } #catLayer .catsh:focus-visible { outline: none } #catLayer { position: fixed; z-index: 20; pointer-events: none; transform: translateX(100%); transition: transform var(--t-base) var(--ease) } #catLayer[hidden] { display: none } #catLayer.is-open { transform: none } #catLayer > .catmain { position: absolute; z-index: 1; inset-block: 0; right: 0; width: var(--plw); display: flex; flex-direction: column; min-height: 0; pointer-events: auto; box-shadow: -1px 0 0 var(--border) } #catLayer .catbody > .rhead { padding-inline-end: var(--gap) } #catLayer .catbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column } #catLayer .catbody > .rlist { flex: 1 1 auto; min-height: 0 } #catLayer > .catprev { position: absolute; z-index: 0; inset-block: 0; left: 0; width: var(--pdw); display: flex; flex-direction: column; min-height: 0; overflow: hidden; pointer-events: auto; visibility: hidden; transform: translateX(100%); transition: transform var(--t-base) var(--ease), visibility 0s linear var(--t-base) } #catLayer > .catprev.is-open { visibility: visible; transform: none; transition: transform var(--t-base) var(--ease), visibility 0s } #catLayer > .catprev > .rlist { flex: 1 1 auto; min-height: 0 } @media (prefers-reduced-motion: reduce) { #catLayer, #catLayer > .catprev { transition: none } }"; document.head.appendChild(st); })();
   function placeCatLayer() {   /* the one body spans both sides, from the left side's edge to the right side's edge */
     if (!catLayer) return; var a = pd.getBoundingClientRect(), b = pl.getBoundingClientRect();
     catLayer.style.top = b.top + "px"; catLayer.style.height = b.height + "px"; catLayer.style.left = a.left + "px"; catLayer.style.width = (b.right - a.left) + "px";
@@ -1216,7 +1222,7 @@
   }
   function openCatPanel() {   /* the whole body slides left; the exercise on the left side goes dark */
     if (catPanel || !catLayer || catLayer.hidden) return;
-    if (window.__closeHist) window.__closeHist();   /* one layer at a time */
+    if (window.__closeLeftAll) window.__closeLeftAll();   /* the side layers go before the catalog opens */
     placeCatLayer(); catLayer.classList.add("is-open"); catLayer.querySelector(".catbody").removeAttribute("inert");
     document.querySelectorAll("[data-catopen]").forEach(function (b) { b.setAttribute("aria-pressed", "true"); });
     catPanel = catLayer; state.pickerShow = true; catPreview = !!catPrevId;
@@ -1233,13 +1239,13 @@
       var cur = liveItem && state.items.filter(function (x) { return x.id === liveItem.id; })[0];   /* standing on an exercise: the new one comes right after it, in its group; otherwise at the end of the numbered ones */
       var pos = cur ? cur.position + 1 : state.items.reduce(function (x, k) { return Math.max(x, k.position); }, 0) + 1;
       var shift = cur ? state.items.filter(function (x) { return x.position > cur.position; }).map(function (x) { return api("/rest/v1/vivencia_items?id=eq." + x.id, { method: "PATCH", prefer: "return=minimal", json: { position: x.position + 1 } }); }) : [];
-      Promise.all(shift).then(function () { return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=representation", json: { vivencia_id: state.viv.id, position: pos, backlog: cur ? !!cur.backlog : false, exercise_id: null, music_id: null } }); }).then(function (made) {
+      busy(ab, Promise.all(shift).then(function () { return api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=representation", json: { vivencia_id: state.viv.id, position: pos, backlog: cur ? !!cur.backlog : false, exercise_id: null, music_id: null } }); }).then(function (made) {
         return loadItems().then(function () {
           paint(); ab.disabled = false;
           var it = made && made[0] && state.items.filter(function (x) { return x.id === made[0].id; })[0];
           if (it) { if (wide()) itemScreen(it); else go(function () { itemScreen(it); }); }
         });
-      }).then(null, function (e) { ab.disabled = false; fail(e); });
+      }).then(null, function (e) { ab.disabled = false; fail(e); }));
       return;
     } });
   document.addEventListener("click", function (ev) { var b = ev.target.closest && ev.target.closest("[data-catopen]"); if (!b) return; if (wide()) { if (catPanel) closeCatPanel(); else openCatPanel(); } else { resetPk(); pickerSheet(); } });   /* a computer: the layer; a phone: the popup from the bottom, from anywhere the player is */
@@ -1261,8 +1267,8 @@
   function gate(msg, signedIn) {
     show('<div class="rempty" style="margin-block:auto"><b>ביודנסה</b><span>' + esc(msg) + '</span>' +
       (signedIn ? '<button class="rbtn rbtn--ghost" data-act="out">יציאה</button>' : '<button class="rbtn" data-act="in">כניסה עם גוגל</button>') + '</div>', function (r) {
-      on(r, "in", function () { FLOA_AUTH.signIn(location.origin + BASE); });
-      on(r, "out", function () { Promise.resolve(FLOA_AUTH.signOut()).then(function () { location.reload(); }); });
+      on(r, "in", function (b) { FLOA_AUTH.signIn(location.origin + BASE); busy(b, new Promise(function (res) { window.addEventListener("pageshow", res, { once: true }); })); });   /* the page leaves for Google; coming back from the browser's history clears the wait */
+      on(r, "out", function (b) { busy(b, Promise.resolve(FLOA_AUTH.signOut())).then(function () { location.reload(); }); });
     });
   }
 
@@ -1284,10 +1290,10 @@
       api("/rest/v1/vivencia_likes?select=vivencia_id&order=created_at.desc").then(function (rows) {
         var l = r.querySelector("#likv"), list = (rows || []).map(function (x) { return state.vivs.filter(function (v) { return v.id === x.vivencia_id; })[0]; }).filter(Boolean);
         l.innerHTML = list.length ? list.map(function (v) {
-          var n = v.vivencia_items && v.vivencia_items[0] ? v.vivencia_items[0].count : 0;
-          return '<div class="rrow rrow--link" data-vrow="' + v.id + '">' + heartBtnViv(v.id, "rrow__trail") + '<button type="button" class="rrow__main" data-open="' + v.id + '" style="margin-inline-start:var(--sp-1);background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub">' + n + ' תרגילים</span></button></div>';
+          return vivRow(v, "data-open");
         }).join("") : ph("עוד אין ויוונסיות שאהבת", "לחצו על הלב ליד ויוונסיה כדי לשמור אותה כאן");
         l.querySelectorAll("[data-open]").forEach(function (b) { b.addEventListener("click", function () { closeLiked(); openViv(b.dataset.open); }); });
+        l.querySelectorAll("[data-vm]").forEach(function (b) { b.addEventListener("click", function (ev) { ev.stopPropagation(); var v0 = state.vivs.filter(function (x) { return x.id === b.dataset.vm; })[0]; if (v0) vivMenu(v0, b); }); });
       }, fail);
     });
   }
@@ -1295,10 +1301,13 @@
   function likedExScreen() {
     showL("תרגילים שאהבתי", '<div class="rlist" id="likx"><div class="rskel rskel--title"></div></div>', function (r) {
       on(r, "back", wide() ? closeLeft : back);
-      api("/rest/v1/exercise_likes?select=exercises(id,title_he,title_en,category)&order=created_at.desc").then(function (rows) {
-        var l = r.querySelector("#likx"), list = (rows || []).map(function (x) { return x.exercises; }).filter(Boolean);
+      /* the hearts of exercises are of two kinds and the menu counts both (likesEx): a catalog exercise (exercise_likes) and an exercise of a vivencia that has no catalog exercise (item_likes, key "item:<id>"); this list shows both, so the number and the list are one thing */
+      Promise.all([api("/rest/v1/exercise_likes?select=exercises(id,title_he,title_en,category)&order=created_at.desc"), api("/rest/v1/item_likes?select=vivencia_items(id,title,exercise_id)&order=created_at.desc").catch(function () { return []; })]).then(function (res) {
+        var l = r.querySelector("#likx");
+        var list = (res[0] || []).map(function (x) { return x.exercises; }).filter(Boolean).map(function (e) { return { key: e.id, name: name(e), sub: catName(e.category) }; })
+          .concat((res[1] || []).map(function (x) { return x.vivencia_items; }).filter(Boolean).map(function (it) { return { key: "item:" + it.id, name: it.title || "תרגיל ללא שם", sub: "" }; }));
         l.innerHTML = list.length ? list.map(function (e) {
-          return '<div class="rrow" style="padding-inline:var(--gutter);padding-block:var(--sp-2)">' + heartBtnEx(e.id, "rrow__trail") + '<div class="rrow__main" style="flex:1 1 0;min-width:0;margin-inline-start:var(--sp-1)"><span class="rrow__title">' + esc(name(e)) + '</span>' + (catName(e.category) ? '<span class="rrow__sub">' + esc(catName(e.category)) + '</span>' : '') + '</div></div>';
+          return '<div class="rrow" style="padding-inline:var(--gap);padding-block:var(--gap)">' + heartBtnEx(e.key, "rrow__trail") + '<div class="rrow__main" style="flex:1 1 0;min-width:0"><span class="rrow__title">' + esc(e.name) + '</span>' + (e.sub ? '<span class="rrow__sub">' + esc(e.sub) + '</span>' : '') + '</div></div>';
         }).join("") : ph("עוד אין תרגילים שאהבת", "לחצו על הלב בראש תרגיל כדי לשמור אותו כאן");
       }, fail);
     });
@@ -1323,9 +1332,9 @@
   function home() {
     curLeave();
     if (!wide()) { stack().length = 0; stack().push(home); setUrl(BASE); }
+    state.vq = "";
     show(head("הוויוונסיות שלי", "", false,
-      '<button class="rbtn rbtn--icon bio-flat" data-act="homemore" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>',
-      (wide() ? '<img src="favicon.png" alt="" style="flex:none;width:var(--ctl);height:var(--ctl);border-radius:var(--r-ctl)">' : '<img src="bird.png" alt="" style="flex:none;width:var(--icon-m);height:var(--icon-m);margin-inline:calc((var(--ctl) - var(--icon-m)) / 2);object-fit:contain">')) +
+      '<button class="rbtn rbtn--icon bio-flat" data-act="homemore" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>', '<button class="rbtn rbtn--icon bio-flat" data-act="vsearch" aria-label="חיפוש" title="חיפוש">' + I.search + '</button>') +
       '<div class="rlist" data-fab-room id="hl"><div class="rskel rskel--title"></div></div>' +
       '', function (r) {
       var plus0 = r.querySelector('[data-act="new"]'), dx0 = null; try { dx0 = localStorage.getItem("biodanza.plusdx"); } catch (e) { /* none */ }
@@ -1334,10 +1343,23 @@
         var cnt = function (o) { return Object.keys(o).filter(function (k) { return o[k]; }).length; };
         var items = state.offline ? [] : [{ label: "יצירת ויוונסיה", icon: I.plus, fn: newViv }, { label: "קטלוג", icon: I.catalog, fn: function () { if (wide()) openCatPanel(); else { resetPk(); pickerSheet(); } } }, { label: "ויוונסיות שאהבתי", meta: String(cnt(likesViv)), icon: I.heart, fn: function () { likedVivScreen(); } }, { label: "תרגילים שאהבתי", meta: String(cnt(likesEx)), icon: I.heart, fn: function () { likedExScreen(); } }, { label: "מוסיקה שאהבתי", meta: String(cnt(likes)), icon: I.heart, fn: function () { likedScreen(); } }];   /* in the order of the app: vivencias, exercises, songs */
         if (state.me.admin) items.push({ label: "ניהול משתמשים", icon: I.users, fn: allowPopup });
-        items.push({ label: "יציאה", icon: I.out, tone: "danger", fn: function () { Promise.resolve(FLOA_AUTH.signOut()).then(function () { location.reload(); }); } });
+        items.push({ label: "יציאה", icon: I.out, tone: "danger", keep: true, fn: function (b) { busy(b, Promise.resolve(FLOA_AUTH.signOut())).then(function () { location.reload(); }); } });
         menu(b, items);
       });
       on(r, "new", newViv);
+      on(r, "vsearch", function (b) {   /* the title gives its place to a search field; the same button closes it and brings the title back */
+        var tx = r.querySelector(".rhead .rhead__text"); if (!tx) return;
+        if (tx.__title == null) {
+          tx.__title = tx.innerHTML; tx.innerHTML = '<input id="vq" class="rhead__title" type="text" placeholder="חיפוש ויוונסיה" autocomplete="off" aria-label="חיפוש ויוונסיה">';
+          b.innerHTML = I.x; b.setAttribute("aria-label", "סגירת חיפוש"); b.title = "סגירת חיפוש";
+          var q = tx.querySelector("#vq"); q.addEventListener("input", function () { state.vq = q.value; applyVq(); });
+          q.addEventListener("keydown", function (e) { if (e.key === "Escape") b.click(); });
+          q.focus();
+        } else {
+          tx.innerHTML = tx.__title; tx.__title = null; state.vq = ""; applyVq();
+          b.innerHTML = I.search; b.setAttribute("aria-label", "חיפוש"); b.title = "חיפוש";
+        }
+      });
     });
     /* the list is asked for again when an answer fails (a refresh can hit a moment the connection or the token is not ready); only if it still fails, the copies kept on the device are shown, else a line that says so: never an empty list that looks like "no vivencias" */
     var tries = function (n) { return loadVivs().catch(function (e) { if (n <= 0) throw e; return new Promise(function (r) { setTimeout(r, 800); }).then(function () { return tries(n - 1); }); }); };
@@ -1385,19 +1407,19 @@
     var h1 = [tx - hl * Math.cos(ang - 0.5), ty - hl * Math.sin(ang - 0.5)], h2 = [tx - hl * Math.cos(ang + 0.5), ty - hl * Math.sin(ang + 0.5)];
     var s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     s.setAttribute("class", "bio-arrow"); s.setAttribute("aria-hidden", "true"); s.setAttribute("width", lr.width); s.setAttribute("height", lr.height);
-    s.style.cssText = "position:absolute;left:0;top:0;fill:none;stroke:var(--text-3);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;pointer-events:none;overflow:visible";
+    s.style.cssText = "position:absolute;left:0;top:0;fill:none;stroke:var(--text-muted);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;pointer-events:none;overflow:visible";
     s.innerHTML = '<path d="M' + f(sx) + " " + f(sy) + "C" + f(c1x) + " " + f(c1y) + " " + f(c2x) + " " + f(c2y) + " " + f(tx) + " " + f(ty) + '"/><path d="M' + f(h1[0]) + " " + f(h1[1]) + "L" + f(tx) + " " + f(ty) + "L" + f(h2[0]) + " " + f(h2[1]) + '"/>';
     l.appendChild(s);
     if (!l.__arrowRo && window.ResizeObserver) { l.__arrowRo = new ResizeObserver(function () { if (l.querySelector(".rempty")) arrowTo(l); }); l.__arrowRo.observe(l); }
   }
   function vivMenu(v, b) {   /* the owner: rename, share, delete; somebody it is shared with: rename (with edit rights) and taking themselves off it */
-    var items = (v.role === "view" ? [] : [{ label: "עריכת שם", icon: I.pen, fn: function () { namePopup(v, false); } }]).concat([{ label: "שכפול", icon: I.copy || I.plus, fn: function () { dupPopup(v); } }]);
+    var items = (v.role === "view" ? [] : [{ label: "עריכת שם", icon: I.pen, fn: function () { namePopup(v, false, b); } }]).concat([{ label: "שכפול", icon: I.copy || I.plus, fn: function () { dupPopup(v); } }]);
     if (v.role === "owner") items.push({ label: "שיתוף", icon: I.share, fn: function () { sharePopup(v); } }, { label: "מחיקה", icon: I.trash, tone: "danger", fn: function () { confirmDelete(v); } });
     else items.push({ label: "הסרה שלי מהוויוונסיה", icon: I.out, tone: "danger", fn: function () { confirmLeave(v); } });
     if (state.offline) items.length = 0;   /* with no internet nothing changes: only the copy on the device can be taken off it */
     if (items.length) menu(b, items);
   }
-  (function () { var st = document.createElement("style"); st.textContent = ".bio-card .bio-lk { position: absolute; right: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2); bottom: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2); display: none; place-items: center; width: var(--tag-s); height: var(--tag-s); min-height: var(--tag-s); padding: 0; background: transparent; border-color: transparent } .bio-card .bio-lk > svg { width: var(--icon-m); height: var(--icon-m) } .bio-card .bio-lk[aria-pressed=\"true\"], .bio-card.is-play .bio-lk, .bio-card:has([data-audio][data-st=\"pause\"]) .bio-lk { display: grid } .bio-card:has([data-choose]) .bio-lk { display: none !important } .bio-card .bio-ha { position: absolute; opacity: 0; flex: none; width: var(--tag-s); height: var(--tag-s); min-height: var(--tag-s); padding: 0; background: transparent; border-color: transparent; transition: opacity var(--t-base) var(--ease) } .bio-card [data-audio] svg, .bio-card [data-hp] svg, #imus .bio-card [data-audio] svg { width: calc(var(--icon-s) * .75); height: calc(var(--icon-s) * .75) } .bio-card [data-orm] { opacity: 0; transition: opacity var(--t-base) var(--ease) } .bio-card [data-orm] > svg { width: var(--icon-m); height: var(--icon-m) } .bio-card:hover [data-orm], .bio-card [data-orm]:focus-visible { opacity: 1 } @media (hover: none) { .bio-card [data-orm] { opacity: 1 } } .bio-card .bio-ha.bio-ha--tl[data-likex] { right: auto; bottom: auto; left: var(--sp-2); top: var(--sp-2) } .bio-card .bio-ha > svg { width: var(--icon-m); height: var(--icon-m) } .bio-card .bio-ha[data-likex] { right: calc(var(--sp-2) + (var(--ctl) - var(--icon-m)) / 2 - (var(--tag-s) - var(--icon-m)) / 2); bottom: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2) } .bio-card .bio-ha[data-idel] { left: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2); top: calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2) }   /* the icon itself is a full card step from the card's edges */ .bio-card:hover .bio-ha, .bio-card .bio-ha:focus-visible, .bio-card .bio-ha[aria-pressed=\"true\"] { opacity: 1 } @media (hover: none) { .bio-card .bio-ha { opacity: 1 } } #list[data-fab-room] { padding-bottom: var(--sp-1) } .rbtn[data-recvloop], .rbtn[data-recvloop]:hover, .rbtn[data-recvloop]:active, .rbtn[data-recvloop]:focus, .rbtn[data-recvloop][aria-pressed=\"true\"], .rhead .rbtn[data-recvloop]:hover, .rhead .rbtn[data-recvloop]:active { background: transparent; border-color: transparent; box-shadow: none; color: var(--text-2) } .rbtn[data-recvloop][aria-pressed=\"true\"], .rbtn[data-recvloop][aria-pressed=\"true\"]:hover, .rbtn[data-recvloop][aria-pressed=\"true\"]:active { color: var(--danger) } .rhead .rbtn--icon[data-act=\"back\"] { margin-inline-start: 0 } .rhead .rbtn--icon[data-act=\"back\"], .rhead .rbtn--icon[data-act=\"back\"]:hover, .rhead .rbtn--icon[data-act=\"back\"]:active { background: transparent; border-color: transparent } .bio-vm { opacity: 1 } .rrow:hover .bio-vm, .bio-vm:focus-visible, .bio-vm[aria-expanded=\"true\"] { opacity: 1 } @media (hover: none) { .bio-vm { opacity: 1 } }"; document.head.appendChild(st); })();
+  (function () { var st = document.createElement("style"); st.textContent = ".bio-card .bio-lk { display: none; place-items: center; padding: 0; background: transparent; border-color: transparent } .bio-card .bio-lk[aria-pressed=\"true\"], .bio-card.is-play .bio-lk, .bio-card:has([data-audio][data-st=\"pause\"]) .bio-lk { display: grid } .bio-card:has([data-choose]) .bio-lk { display: none !important } .bio-card [data-audio] svg, .bio-card [data-hp] svg, #imus .bio-card [data-audio] svg { width: var(--icon); height: var(--icon) } .bio-card [data-orm] { opacity: 0; transition: opacity var(--t-base) var(--ease) } .bio-card:hover [data-orm], .bio-card [data-orm]:focus-visible { opacity: 1 } @media (hover: none) { .bio-card [data-orm] { opacity: 1 } } #list[data-fab-room] { padding-bottom: var(--gap) } .rbtn[data-recvloop], .rbtn[data-recvloop]:hover, .rbtn[data-recvloop]:active, .rbtn[data-recvloop]:focus, .rbtn[data-recvloop][aria-pressed=\"true\"], .rhead .rbtn[data-recvloop]:hover, .rhead .rbtn[data-recvloop]:active { background: transparent; border-color: transparent; box-shadow: none; color: var(--text-muted) } .rbtn[data-recvloop][aria-pressed=\"true\"], .rbtn[data-recvloop][aria-pressed=\"true\"]:hover, .rbtn[data-recvloop][aria-pressed=\"true\"]:active { color: var(--danger) } .rhead .rbtn--icon[data-act=\"back\"] { margin-inline-start: 0 } .rhead .rbtn--icon[data-act=\"back\"], .rhead .rbtn--icon[data-act=\"back\"]:hover, .rhead .rbtn--icon[data-act=\"back\"]:active { background: transparent; border-color: transparent } .bio-vm { opacity: 1 } .rrow:hover .bio-vm, .bio-vm:focus-visible, .bio-vm[aria-expanded=\"true\"] { opacity: 1 } @media (hover: none) { .bio-vm { opacity: 1 } }"; document.head.appendChild(st); })();
   /* the vivencia the song that plays comes from is marked red in the list, like the exercise that plays inside it */
   var nowViv = { name: "", id: null, num: "", playing: false };
   function placeOf(items, name) {   /* the place of the exercise whose song plays, as on its card: a number, a dot for an additional one, nothing for the start and the end music */
@@ -1445,17 +1467,28 @@
     }
     paintVivPlay();
   }
+  /* THE VIVENCIA ROW (law 4): heart at the start, the name (and who it is shared by), the exercise count with its wave glyph, then the menu. ONE builder for the home list and the liked list; mainAttr is the only difference (what the row opens). */
+  function vivRow(v, mainAttr) {
+    var n = v.vivencia_items && v.vivencia_items[0] ? v.vivencia_items[0].count : 0;
+    return '<div class="rrow rrow--link" data-vrow="' + v.id + '">' + heartBtnViv(v.id, "rrow__trail") + '<button type="button" class="rrow__main" ' + mainAttr + '="' + v.id + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub">' + (v.role === "owner" ? "" : "משותף" + (v.role === "view" ? " (צפייה)" : " (עריכה)")) + '</span></button><span class="bio-vcnt" data-vc="' + v.id + '" aria-label="' + n + ' תרגילים" title="' + n + ' תרגילים"><span data-nn>' + n + '</span><span class="bio-vcnt__c" aria-hidden="true">' + I.curve + '</span></span>' + (state.offline ? '' : '<button type="button" class="rbtn rbtn--icon bio-vm" data-vm="' + v.id + '" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>') + '</div>';
+  }
+  function applyVq() {   /* the rows whose name does not match what is typed are not shown */
+    var l = document.getElementById("hl"); if (!l) return; var q = state.vq || "";
+    l.querySelectorAll("[data-vrow]").forEach(function (row) {
+      var v = state.vivs.filter(function (x) { return x.id === row.dataset.vrow; })[0];
+      row.style.display = !q || !v || fz(v.title || "", q) ? "" : "none";
+    });
+  }
   function renderVivs() {
     var l = document.getElementById("hl"); if (!l) return;
     l.innerHTML = state.vivs.length ? state.vivs.map(function (v) {
-      var n = v.vivencia_items && v.vivencia_items[0] ? v.vivencia_items[0].count : 0;
-      return '<div class="rrow rrow--link" data-vrow="' + v.id + '">' + heartBtnViv(v.id, "rrow__trail") + '<button type="button" class="rrow__main" data-id="' + v.id + '" style="margin-inline-start:var(--sp-1);background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(v.title || "ויוונסיה ללא שם") + '</span><span class="rrow__sub">' + (v.role === "owner" ? "" : "משותף" + (v.role === "view" ? " (צפייה)" : " (עריכה)")) + '</span></button><span class="bio-vcnt" data-vc="' + v.id + '" aria-label="' + n + ' תרגילים" title="' + n + ' תרגילים"><span data-nn>' + n + '</span><span class="bio-vcnt__c" aria-hidden="true">' + I.curve + '</span></span>' + (state.offline ? '' : '<button type="button" class="rbtn rbtn--icon bio-vm" data-vm="' + v.id + '" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>') + '</div>';
+      return vivRow(v, "data-id");
     }).join("") : (state.offline ? ph("אין ויוונסיות שמורות", "שמרו ויוונסיה מהתפריט שלה כשיש חיבור, והיא תהיה כאן גם בלי אינטרנט") : ph("עוד אין ויוונסיות", "פתחו את התפריט ובחרו ביצירת ויוונסיה"));
     if (!state.vivs.length) { l.style.position = "relative"; if (l.firstElementChild) l.firstElementChild.style.marginBlock = "auto"; arrowTo(l); setTimeout(function () { arrowTo(l); }, 350); }   /* the arrow is a second child, so the words are centred by hand (the kit does it only for an only child) */
     l.querySelectorAll("[data-id]").forEach(function (b) { b.addEventListener("click", function () { openViv(b.dataset.id); }); });
     l.querySelectorAll("[data-vm]").forEach(function (b) { b.addEventListener("click", function (ev) { ev.stopPropagation(); var v0 = state.vivs.filter(function (x) { return x.id === b.dataset.vm; })[0]; if (v0) vivMenu(v0, b); }); });   /* the dots on a row of the list: that vivencia's menu */
     if (state.vivs.length) enableDrag(l, "[data-id]", persistVivs);
-    paintSel(); paintVivPlay();
+    paintSel(); paintVivPlay(); applyVq();
     pl.style.setProperty("--sbw", Math.max(0, l.offsetWidth - l.clientWidth) + "px");   /* the header gives its side the room this list's scrollbar takes: its buttons are over the rows' buttons, and no scrollbar left over from another screen moves them */
     if (pending && pending.viv && state.vivsLoaded) {   /* opened on a vivencia's own address; only once the list is really here (the hearts can answer first, and an empty list would throw the address away) */
       var vv = state.vivs.filter(function (x) { return x.id === pending.viv; })[0];
@@ -1478,12 +1511,12 @@
       var t = inp.value.trim(); if (!t) return toast("חסר נושא");
       if (btn.disabled) return; btn.disabled = true;
       var nid = uuid();
-      api("/rest/v1/rpc/duplicate_vivencia", { method: "POST", json: { src: v.id, p_id: nid, p_title: t } }).then(function () {
+      busy(btn, api("/rest/v1/rpc/duplicate_vivencia", { method: "POST", json: { src: v.id, p_id: nid, p_title: t } }).then(function () {
         dlg.close();
         state.vivs.unshift({ id: nid, title: t, role: "owner", updated_at: new Date().toISOString() });
         if (document.getElementById("hl")) renderVivs();
         persistVivs(0, 0);   /* it goes first, like a new one */
-      }, function (e) { btn.disabled = false; fail(e); });
+      }, function (e) { btn.disabled = false; fail(e); }));
     }
     btn.addEventListener("click", save);
     inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); save(); } });
@@ -1514,47 +1547,37 @@
     var order = function (e) { var k = state.members.findIndex(function (m) { return m.email === e; }); return k < 0 ? 999 : k; };
     return es.slice().sort(function (a, b) { return order(a) - order(b); }).map(facShort).join(", ");   /* all the leaders, by first name, in the order of the members */
   }
-  function facChip(it, extra) {
+  function facChip(it, extra, asText) {
     if (!facOn()) return "";
     var has = facEmails(it).length > 0;
-    if (!canEdit()) return has ? '<span class="rchip' + (extra || "") + '" data-fac-label="' + it.id + '">' + esc(facLabel(it)) + '</span>' : "";
-    return '<button type="button" class="rchip rchip--button' + (extra || "") + '" data-fac="' + it.id + '" aria-haspopup="menu" aria-pressed="' + has + '">' + esc(facLabel(it)) + '</button>';
+    /* the leader is a TEXT BUTTON (law: object type "כפתור טקסט"): the name of the leader, tapped to change it through the existing leader menu (data-fac) */
+    if (!asText) {   /* the header's tabs on a phone keep the chip */
+      if (!canEdit()) return has ? '<span class="rchip' + (extra || "") + '" data-fac-label="' + it.id + '">' + esc(facLabel(it)) + '</span>' : "";
+      return '<button type="button" class="rchip rchip--button' + (extra || "") + '" data-fac="' + it.id + '" aria-haspopup="menu" aria-pressed="' + has + '">' + esc(facLabel(it)) + '</button>';
+    }
+    if (!canEdit()) return has ? '<button type="button" class="rbtn--text' + (extra || "") + '" disabled data-fac-label="' + it.id + '">' + esc(facLabel(it)) + '</button>' : "";
+    return '<button type="button" class="rbtn--text' + (extra || "") + '" data-fac="' + it.id + '" aria-haspopup="menu" aria-pressed="' + has + '">' + esc(facLabel(it)) + '</button>';
   }
   function facRefresh(it) {
     document.querySelectorAll('[data-fac="' + it.id + '"]').forEach(function (b) { b.textContent = facLabel(it); b.setAttribute("aria-pressed", String(facEmails(it).length > 0)); });
   }
-  /* the menu of people: a tick adds or removes one, the menu stays open so several can be ticked */
+  /* the menu of people: a tick adds or removes one, the menu stays open so several can be ticked (the one menu, with ticked items) */
   function facMenu(btn, it) {
-    var old = document.getElementById("moreMenu"); if (old) old.remove();
-    var m = document.createElement("div"); m.id = "moreMenu"; m.className = "rmenu rmenu--fixed"; m.setAttribute("role", "menu");
-    var blank = '<svg viewBox="0 0 24 24" aria-hidden="true"></svg>';
-    function paintM() {
+    menu(btn, function () {
       var on = facEmails(it);
-      m.innerHTML = state.members.map(function (x, k) {
-        return '<button type="button" class="rmenu__item" role="menuitemcheckbox" aria-checked="' + (on.indexOf(x.email) >= 0) + '" data-k="' + k + '">' + (on.indexOf(x.email) >= 0 ? I.check : blank) + '<span>' + esc(x.note || x.email) + '</span></button>';
-      }).join("");
-      m.querySelectorAll("[data-k]").forEach(function (b) {
-        b.addEventListener("click", function () {
-          var mem = state.members[+b.dataset.k], has = facEmails(it).indexOf(mem.email) >= 0;
-          var req = has ? api("/rest/v1/vivencia_item_facilitators?item_id=eq." + it.id + "&email=eq." + encodeURIComponent(mem.email), { method: "DELETE" })
-                        : api("/rest/v1/vivencia_item_facilitators", { method: "POST", prefer: "return=minimal", json: { item_id: it.id, email: mem.email } });
+      return state.members.map(function (x) {
+        return { label: x.note || x.email, check: on.indexOf(x.email) >= 0, keep: true, fn: function (b, close, repaint) {
+          var has = facEmails(it).indexOf(x.email) >= 0;
+          var req = has ? api("/rest/v1/vivencia_item_facilitators?item_id=eq." + it.id + "&email=eq." + encodeURIComponent(x.email), { method: "DELETE" })
+                        : api("/rest/v1/vivencia_item_facilitators", { method: "POST", prefer: "return=minimal", json: { item_id: it.id, email: x.email } });
+          busy(b, req);
           req.then(function () {
-            it.vivencia_item_facilitators = has ? (it.vivencia_item_facilitators || []).filter(function (x) { return x.email !== mem.email; }) : (it.vivencia_item_facilitators || []).concat([{ email: mem.email }]);
-            paintM(); facRefresh(it);
+            it.vivencia_item_facilitators = has ? (it.vivencia_item_facilitators || []).filter(function (y) { return y.email !== x.email; }) : (it.vivencia_item_facilitators || []).concat([{ email: x.email }]);
+            repaint(); facRefresh(it);
           }, fail);
-        });
+        } };
       });
-    }
-    paintM();
-    var sh = document.createElement("div"); sh.style.cssText = "position:fixed;inset:0;z-index:var(--z-menu);background:transparent;touch-action:none";   /* an open menu blocks everything outside it: a touch there only closes the menu */
-    document.body.appendChild(sh); document.body.appendChild(m);
-    btn.setAttribute("aria-expanded", "true");   /* the button that opened the menu stays shown while it is open */
-    var r = btn.getBoundingClientRect();
-    m.style.top = Math.round(r.bottom + 2) + "px"; m.style.left = Math.max(8, Math.min(Math.round(r.right - m.offsetWidth), window.innerWidth - m.offsetWidth - 8)) + "px";   /* the menu hangs from the chip: its right edge is the chip's right edge, and it opens over the free side of the card, not over the name */
-    function close() { m.remove(); sh.remove(); btn.removeAttribute("aria-expanded"); document.removeEventListener("click", away, true); document.removeEventListener("keydown", onKey, true); }
-    function away(e) { if (!m.contains(e.target) && e.target !== btn) close(); }
-    function onKey(e) { if (e.key === "Escape") close(); }
-    setTimeout(function () { document.addEventListener("click", away, true); document.addEventListener("keydown", onKey, true); }, 0);
+    }, { end: true });
   }
   /* a chip's click is its own: it never opens the strip, and it is not the start of a drag */
   function wireFac(root) {
@@ -1568,23 +1591,43 @@
     });
   }
 
-  /* the kit's anchored menu: opens under its button, closes on a tap outside or Escape */
-  function menu(btn, items, opts) {   /* opts.head: a block of text above the items; opts.up: the menu opens upwards from the button (the player is at the bottom) */
+  /* THE menu of the app (law 3): every menu, whatever it holds, is made here and nowhere else.
+     items: an array, or a function that returns one (called again by repaint)
+     item: { label, icon, tone, meta, fn, keep (fn(btn, close, repaint): the menu stays open), check (true/false: a ticked item), disabled }
+     opts: head (a block above the items), foot (buttons below), up (opens upwards, from opts.ref's top if given), end (hangs from the button's end edge), fit (as wide as its content) */
+  function menu(btn, items, opts) {
+    opts = opts || {};
     var old = document.getElementById("moreMenu"); if (old) old.remove();
     var m = document.createElement("div"); m.id = "moreMenu"; m.className = "rmenu rmenu--fixed"; m.setAttribute("role", "menu");
-    m.innerHTML = (opts && opts.head ? opts.head : "") + items.map(function (it, k) { return '<button type="button" class="rmenu__item" role="menuitem" data-k="' + k + '"' + (it.tone ? ' data-tone="' + it.tone + '"' : '') + '>' + it.icon + '<span>' + esc(it.label) + '</span>' + (it.meta ? '<span data-meta style="margin-inline-start:auto;display:inline-flex;align-items:center;gap:var(--sp-1);color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + it.meta + '</span>' : '') + '</button>'; }).join("") + (opts && opts.foot ? '<div style="display:flex;flex-direction:column;gap:var(--sp-1);padding:var(--sp-2) var(--sp-3) var(--sp-3)">' + opts.foot.map(function (f, k) { return '<button type="button" class="rbtn rbtn--block' + (f.primary ? ' rbtn--primary' : '') + '" data-f="' + k + '"' + (f.disabled ? ' disabled' : '') + (f.ghost ? ' style="background:transparent;border-color:transparent;color:var(--mus-solid)"' : '') + '>' + esc(f.label) + '</button>'; }).join("") + '</div>' : "");
+    var blank = '<svg viewBox="0 0 24 24" aria-hidden="true"></svg>', list = [];
+    function paint() {
+      list = typeof items === "function" ? items() : items;
+      m.innerHTML = (opts.head || "") + '<div class="rmenu__list">' + list.map(function (it, k) {
+        if (it.disabled) return '<div class="rmenu__item" role="menuitem" aria-disabled="true" style="opacity:.6;pointer-events:none"><span>' + esc(it.label) + '</span></div>';
+        var tick = it.check !== undefined;
+        return '<button type="button" class="rmenu__item" role="' + (tick ? 'menuitemcheckbox" aria-checked="' + it.check : 'menuitem') + '" data-k="' + k + '"' + (it.tone ? ' data-tone="' + it.tone + '"' : '') + '>' + (tick ? (it.check ? I.check : blank) : (it.icon || "")) + '<span>' + esc(it.label) + '</span>' + (it.meta ? '<span data-meta style="margin-inline-start:auto;display:inline-flex;align-items:center;gap:var(--gap);color:var(--text-muted);font:var(--fw-regular) var(--fs-m)/1 var(--font);font-variant-numeric:tabular-nums">' + it.meta + '</span>' : '') + '</button>';
+      }).join("") + '</div>' + (opts.foot ? '<div class="rmenu__foot">' + opts.foot.map(function (f, k) { return '<button type="button" class="rbtn rbtn--block' + (f.primary ? ' rbtn--primary' : '') + '" data-f="' + k + '"' + (f.disabled ? ' disabled' : '') + (f.ghost ? ' style="background:transparent;border-color:transparent;color:var(--primary)"' : '') + '>' + esc(f.label) + '</button>'; }).join("") + '</div>' : "");
+      m.querySelectorAll("[data-k]").forEach(function (b) { b.addEventListener("click", function () { var it = list[+b.dataset.k]; if (it.keep) { it.fn(b, close, paint); return; } var f = it.fn; close(); f(); }); });   /* an item with keep leaves the menu open: it shows its own progress */
+      if (opts.foot) m.querySelectorAll("[data-f]").forEach(function (b) { b.addEventListener("click", function () { var f = opts.foot[+b.dataset.f].fn; close(); f(); }); });
+    }
+    paint();
     var sh = document.createElement("div"); sh.style.cssText = "position:fixed;inset:0;z-index:var(--z-menu);background:transparent;touch-action:none";   /* an open menu blocks everything outside it: a touch there only closes the menu */
     document.body.appendChild(sh); document.body.appendChild(m);
+    /* a popup (a modal dialog) is in the browser's top layer, above anything in the page: the menu and its shield go up there too, or they are drawn behind it */
+    [sh, m].forEach(function (n) { n.setAttribute("popover", "manual"); n.style.setProperty("pointer-events", "auto"); });
+    try { sh.showPopover(); m.showPopover(); } catch (x) { [sh, m].forEach(function (n) { n.removeAttribute("popover"); }); }   /* the shield first, the menu after it: the later one is the upper one */
+    sh.style.cssText += ";margin:0;padding:0;border:0;width:100%;height:100%;overflow:visible";
+    m.style.setProperty("right", "auto"); m.style.setProperty("bottom", "auto"); m.style.setProperty("margin", "0");
     btn.setAttribute("aria-expanded", "true");   /* the button that opened the menu stays shown while it is open */
-    var r = btn.getBoundingClientRect();
-    if (opts && opts.up) { m.style.maxWidth = "min(28rem, calc(100vw - 16px))"; m.style.top = Math.max(8, Math.round(((opts.ref ? opts.ref.getBoundingClientRect().top : r.top)) - 8 - m.offsetHeight)) + "px"; m.style.left = Math.min(Math.max(8, Math.round(r.left)), Math.max(8, innerWidth - m.offsetWidth - 8)) + "px"; }
-    else { m.style.top = Math.round(r.bottom + 4) + "px"; m.style.left = Math.max(8, Math.round(r.left)) + "px"; }
+    if (opts.fit) { m.style.minWidth = "0"; m.style.width = "max-content"; }
+    var r = btn.getBoundingClientRect(), w = m.offsetWidth, h = m.offsetHeight, top, left = opts.end ? r.right - w : r.left;
+    if (opts.up) top = (opts.ref ? opts.ref.getBoundingClientRect().top : r.top) - 8 - h;
+    else { top = r.bottom + 4; if (top + h > innerHeight - 8 && r.top - 4 - h >= 8) top = r.top - 4 - h; }   /* no room below: it flips above */
+    m.style.top = Math.max(8, Math.round(top)) + "px"; m.style.left = Math.max(8, Math.min(Math.round(left), innerWidth - w - 8)) + "px";
     function close() { m.remove(); sh.remove(); btn.removeAttribute("aria-expanded"); document.removeEventListener("click", away, true); document.removeEventListener("keydown", onKey, true); }
     function away(e) { if (!m.contains(e.target)) { e.preventDefault(); e.stopPropagation(); close(); } }
     function onKey(e) { if (e.key === "Escape") close(); }
     setTimeout(function () { document.addEventListener("click", away, true); document.addEventListener("keydown", onKey, true); }, 0);
-    m.querySelectorAll("[data-k]").forEach(function (b) { b.addEventListener("click", function () { var it = items[+b.dataset.k]; if (it.keep) { it.fn(b, close); return; } var f = it.fn; close(); f(); }); });   /* an item with `keep` leaves the menu open: it shows its own progress */
-    if (opts && opts.foot) m.querySelectorAll("[data-f]").forEach(function (b) { b.addEventListener("click", function () { var f = opts.foot[+b.dataset.f].fn; close(); f(); }); });
     var first = m.querySelector(".rmenu__item"); if (first) first.focus({ preventScroll: true });
   }
 
@@ -1592,41 +1635,41 @@
   function sharePopup(v) {
     var dlg = document.getElementById("shareDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "shareDlg"; document.body.appendChild(dlg); }
-    var shares = [], cands = [];
-    RosterSheet.render(dlg, {
-      title: "שיתוף", from: "bottom",
-      body: '<div class="pad"><label class="rfield"><span>הוספת אדם (אימייל או שם)</span><input id="sq" type="search" placeholder=" " autocomplete="off"></label></div><div id="slist"></div>'
-    });
+    var shares = [], cands = [], ready = false;   /* ready: the list has arrived (until then the skeleton stays, typing does not draw an empty state) */
+    var shareBody = '<div class="pad"><label class="rfield"><span>הוספת אדם (אימייל או שם)</span><input id="sq" type="search" placeholder=" " autocomplete="off"></label></div><div id="slist"><div class="rskel rskel--title"></div></div>';
+    if (wide() && window.__showLeft) window.__showLeft(head("שיתוף", "", true) + '<div class="rlist">' + shareBody + '</div>', function (r) { dlg = r; on(r, "back", closeLeft); });   /* law 6: a long window is the side panel, the same left layer as the history and the liked lists */
+    else RosterSheet.render(dlg, { title: "שיתוף", from: "bottom", body: shareBody });
     function who(e) { var c = cands.filter(function (x) { return x.email === e; })[0]; return c && c.note ? c.note : e; }
     function paintS() {
+      if (!ready) return;
       var q = fold(dlg.querySelector("#sq").value.trim()), l = dlg.querySelector("#slist");
       var have = {}; shares.forEach(function (x) { have[x.email] = 1; });
       var mine = shares.filter(function (x) { return !q || fz(x.email + " " + who(x.email), q); });
       var rest = q ? cands.filter(function (c) { return !have[c.email] && fz(c.email + " " + (c.note || ""), q); }) : [];   /* the people who are not shared yet show only when you search for them */
-      var title2 = function (t) { return '<div class="rrow rrow--compact"><span class="rrow__sub">' + t + '</span></div>'; };
+      var title2 = function (t) { return '<div class="rdiv"><span class="rdiv__l">' + t + '</span></div>'; };   /* the group label is the list's divider (the one divider type), not a row of its own */
       var html = "";
       if (mine.length) {
         html += title2("משותף עם") + mine.map(function (x) {
           var isEdit = x.role === "edit";
           return '<div class="rrow"><div class="rrow__main"><span class="rrow__title">' + esc(who(x.email)) + '</span>' + (who(x.email) !== x.email ? '<span class="rrow__sub" dir="ltr">' + esc(x.email) + '</span>' : '') + '</div>' +
-            '<button type="button" data-role="' + (isEdit ? "view" : "edit") + '" data-e="' + esc(x.email) + '" aria-label="' + (isEdit ? "עריכה: לחיצה משנה לצפייה" : "צפייה: לחיצה משנה לעריכה") + '" title="' + (isEdit ? "יכול לערוך. לחיצה: צפייה בלבד" : "צפייה בלבד. לחיצה: יכול לערוך") + '" style="flex:none;background:none;border:0;padding:0 var(--sp-1);cursor:pointer;color:var(--primary);font:var(--fw-bold) var(--fs-s)/1 var(--font)">' + (isEdit ? "עריכה" : "צפייה") + '</button>' +
-            '<button type="button" class="rbtn rbtn--icon" data-rm="' + esc(x.email) + '" aria-label="הסרה" title="הסרה">' + I.x + '</button></div>';
+            '<span class="rgroup"><button type="button" class="rbtn rbtn--icon" data-role="' + (isEdit ? "view" : "edit") + '" data-e="' + esc(x.email) + '" aria-pressed="' + isEdit + '" aria-label="' + (isEdit ? "עריכה: לחיצה משנה לצפייה" : "צפייה: לחיצה משנה לעריכה") + '" title="' + (isEdit ? "יכול לערוך. לחיצה: צפייה בלבד" : "צפייה בלבד. לחיצה: יכול לערוך") + '" style="color:' + (isEdit ? "var(--primary)" : "var(--text-muted)") + '">' + I.pen + '</button>' +
+            '<button type="button" class="rbtn rbtn--icon" data-rm="' + esc(x.email) + '" aria-label="הסרה" title="הסרה">' + I.x + '</button></span></div>';
         }).join("");
       }
       if (rest.length) {
         html += title2("הוספה") + rest.map(function (c) {
-          return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-add="' + esc(c.email) + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(c.note || c.email) + '</span>' + (c.note ? '<span class="rrow__sub" dir="ltr">' + esc(c.email) + '</span>' : '') + '</button><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m);color:var(--primary)">' + I.plus + '</span></div>';
+          return '<div class="rrow rrow--link"><button type="button" class="rrow__main" data-add="' + esc(c.email) + '" style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit"><span class="rrow__title">' + esc(c.note || c.email) + '</span>' + (c.note ? '<span class="rrow__sub" dir="ltr">' + esc(c.email) + '</span>' : '') + '</button><span aria-hidden="true" style="display:grid;width:var(--icon);height:var(--icon);color:var(--primary)">' + I.plus + '</span></div>';
         }).join("");
       }
       if (!html) html = q ? ph("לא נמצא", "אפשר לשתף רק עם חשבונות מרשימת המורשים.") : ph("עוד לא שיתפתם", "חפשו אדם לפי שם או אימייל כדי להוסיף אותו.");
       l.innerHTML = html;
-      l.querySelectorAll("[data-role]").forEach(function (b) { b.addEventListener("click", function () { setRole(b.dataset.e, b.dataset.role); }); });
-      l.querySelectorAll("[data-rm]").forEach(function (b) { b.addEventListener("click", function () { api("/rest/v1/vivencia_shares?vivencia_id=eq." + v.id + "&email=eq." + encodeURIComponent(b.dataset.rm), { method: "DELETE" }).then(load, fail); }); });
-      l.querySelectorAll("[data-add]").forEach(function (b) { b.addEventListener("click", function () { api("/rest/v1/vivencia_shares", { method: "POST", prefer: "return=minimal", json: { vivencia_id: v.id, email: b.dataset.add, role: "view" } }).then(function () { dlg.querySelector("#sq").value = ""; return load(); }, fail); }); });
+      l.querySelectorAll("[data-role]").forEach(function (b) { b.addEventListener("click", function () { busy(b, setRole(b.dataset.e, b.dataset.role)); }); });
+      l.querySelectorAll("[data-rm]").forEach(function (b) { b.addEventListener("click", function () { busy(b, api("/rest/v1/vivencia_shares?vivencia_id=eq." + v.id + "&email=eq." + encodeURIComponent(b.dataset.rm), { method: "DELETE" }).then(load, fail)); }); });
+      l.querySelectorAll("[data-add]").forEach(function (b) { b.addEventListener("click", function () { busy(b, api("/rest/v1/vivencia_shares", { method: "POST", prefer: "return=minimal", json: { vivencia_id: v.id, email: b.dataset.add, role: "view" } }).then(function () { dlg.querySelector("#sq").value = ""; return load(); }, fail)); }); });
     }
-    function setRole(e, role) { api("/rest/v1/vivencia_shares?vivencia_id=eq." + v.id + "&email=eq." + encodeURIComponent(e), { method: "PATCH", json: { role: role } }).then(load, fail); }
+    function setRole(e, role) { return api("/rest/v1/vivencia_shares?vivencia_id=eq." + v.id + "&email=eq." + encodeURIComponent(e), { method: "PATCH", json: { role: role } }).then(load, fail); }
     function load() {
-      return Promise.all([api("/rest/v1/vivencia_shares?vivencia_id=eq." + v.id + "&select=email,role&order=created_at"), api("/rest/v1/rpc/share_candidates", { method: "POST", json: {} })]).then(function (r) { shares = r[0] || []; cands = r[1] || []; paintS(); }, fail);
+      return Promise.all([api("/rest/v1/vivencia_shares?vivencia_id=eq." + v.id + "&select=email,role&order=created_at"), api("/rest/v1/rpc/share_candidates", { method: "POST", json: {} })]).then(function (r) { shares = r[0] || []; cands = r[1] || []; ready = true; paintS(); }, function (er) { if (!ready) dlg.querySelector("#slist").innerHTML = ph("לא הצלחנו לטעון", "בדקו את החיבור ונסו שוב."); fail(er); });
     }
     dlg.querySelector("#sq").addEventListener("input", paintS);
     load();
@@ -1642,7 +1685,7 @@
       foot: '<button class="rbtn rbtn--danger rbtn--block" type="button" id="cdel">הסרה</button>'
     });
     dlg.querySelector("#cdel").addEventListener("click", function () {
-      api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "DELETE" }).then(function () { dlg.close(); toast("התרגיל הוסר"); state.lastItem = null;
+      busy(dlg.querySelector("#cdel"), api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "DELETE" })).then(function () { dlg.close(); toast("התרגיל הוסר"); state.lastItem = null;
         if (wide()) { show(phPick("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); setUrl(BASE + state.viv.id); loadItems().then(paint, fail); } else back(); }, fail);
     });
   }
@@ -1667,11 +1710,11 @@
     f.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); commit(); dlg.close(); } });
     setTimeout(function () { f.focus(); f.select(); }, 80);
   }
-  function namePopup(v, isNew) {
+  function namePopup(v, isNew, anchor) {   /* anchor: the control that opened it; on a computer the popup opens next to it */
     var dlg = document.getElementById("nameDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "nameDlg"; document.body.appendChild(dlg); }
     RosterSheet.render(dlg, {
-      title: isNew ? "ויוונסיה חדשה" : "שינוי שם", from: "bottom", size: "s",
+      title: isNew ? "ויוונסיה חדשה" : "שינוי שם", from: "bottom", size: "s", anchor: anchor,
       body: '<div class="pad"><label class="rfield"><span>נושא</span><input id="nt" placeholder=" " autocomplete="off" value="' + esc(v.title) + '"></label></div>',
       foot: '<button class="rbtn rbtn--block" type="button" id="nsave">שמירה</button>'
     });
@@ -1684,8 +1727,8 @@
           renderVivs(); persistVivs(0, 0); }   /* it goes FIRST and stays there (its place is saved like any move), and it is not opened: you stay on the list and see it at the top */
         else { v.title = t; if (state.viv && state.viv.id === v.id) state.viv.title = t; if (wide()) home(); if (state.viv && state.viv.id === v.id) editor(); }   /* narrow: the vivencia's own screen is redrawn in place, the address stays */
       };
-      (isNew ? api("/rest/v1/vivencias", { method: "POST", json: { id: v.id, title: t }, prefer: "return=minimal" })
-             : api("/rest/v1/vivencias?id=eq." + v.id, { method: "PATCH", json: { title: t, updated_at: new Date().toISOString() } })).then(done, fail);
+      busy(dlg.querySelector("#nsave"), (isNew ? api("/rest/v1/vivencias", { method: "POST", json: { id: v.id, title: t }, prefer: "return=minimal" })
+             : api("/rest/v1/vivencias?id=eq." + v.id, { method: "PATCH", json: { title: t, updated_at: new Date().toISOString() } }))).then(done, fail);
     }
     dlg.querySelector("#nsave").addEventListener("click", save);
     inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); save(); } });
@@ -1726,13 +1769,18 @@
     var id = state.viv && state.viv.id, key = id + "|" + kind;
     return { __recv: kind, id: id, exercise_id: null, music_id: null, music: null, item_music_options: recvCache[key] || (recvCache[key] = []) };
   }
-  var PLAYSVG = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true" style="width:100%;height:100%"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>';
   /* the three parts of a vivencia are accordions: the arrow sits next to the title; only the vivencia itself is open until somebody opens another */
   var accOpen = {};
   function accIsOpen(kind) { var k = (state.viv && state.viv.id) + "|" + kind; return accOpen[k] != null ? accOpen[k] : kind === "ex"; }
+  /* THE SECTION HEADER (law 4): the title with its fold arrow and, at the end, ONE group of icon buttons (--gap-section between them); no buttons, no group. Every section uses it. */
+  function secHead(kind, label, endHtml) { return '<div class="bio-sech" style="display:flex;align-items:center;justify-content:space-between">' + accHead(kind, label) + (endHtml ? '<span class="rgroup">' + endHtml + '</span>' : '') + '</div>'; }
   function accHead(kind, label) {
     var on = accIsOpen(kind);
-    return '<button type="button" class="bio-acc" data-acc="' + kind + '" aria-expanded="' + on + '"><span class="rrow__title" style="font-weight:var(--fw-black)">' + label + '</span><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m);transition:transform .2s var(--ease);' + (on ? 'transform:rotate(180deg)' : '') + '">' + I.down.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span></button>';
+    return '<button type="button" class="bio-acc" data-acc="' + kind + '" aria-expanded="' + on + '"><span class="rrow__title" style="font-weight:var(--fw-bold)">' + label + '</span><span aria-hidden="true" style="display:grid;width:var(--icon);height:var(--icon);transition:transform .2s var(--ease);' + (on ? 'transform:rotate(180deg)' : '') + '">' + I.down.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span></button>';
+  }
+  /* THE FOLD ROW: a row whose whole face folds a group open. The title at the start, then the count and the arrow at the end, in ONE line. */
+  function foldRow(attr, title, sub, count, on, line) {
+    return '<div class="rrow rrow--link bio-fold"' + (line ? ' style="border-bottom-color:' + (on ? "transparent" : "var(--border)") + '"' : '') + '><button type="button" class="rrow__main" ' + attr + ' aria-expanded="' + on + '"><span class="bio-fold__t"><span class="rrow__title">' + title + '</span>' + (sub ? '<span class="rrow__sub">' + esc(sub) + '</span>' : '') + '</span>' + (count != null ? '<span class="bio-fold__n" data-catn>' + count + '</span>' : '') + '<span class="bio-fold__c" aria-hidden="true">' + I.down + '</span></button></div>';
   }
   function accOpenTag(kind) { return '<div class="bio-accb" data-accb="' + kind + '"' + (accIsOpen(kind) ? '' : ' data-closed') + '><div>'; }
   var ACC_CLOSE = '</div></div>';
@@ -1745,7 +1793,6 @@
     document.querySelectorAll("[data-recvplay]").forEach(function (b) { var on = recvPlaying(b.dataset.recvplay) && !!(window.__bioNow || {}).playing; b.innerHTML = on ? PAUSEI : I.play; b.style.color = on ? "var(--danger)" : "var(--text)"; b.setAttribute("aria-label", on ? "השהיה" : "השמעה"); });
   });
   /* a section of only songs: "מוסיקת התחלה" above the exercises, "מוסיקת סיום" under them */
-  function cntHtml(n) { return '<span class="bio-cnt" aria-label="' + n + '" style="font:var(--fw-bold) var(--fs-m)/1 var(--font);font-variant-numeric:tabular-nums;color:var(--text-2);min-width:1.4em;text-align:center">' + n + '</span>'; }
   function timerToggle(el, on) {   /* the time left comes in and goes out with a short move and fade (transform and opacity only) */
     var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (on) {
@@ -1766,9 +1813,9 @@
     var play = list.length > 1 ? '<button type="button" class="rbtn rbtn--icon' + (loopLive(kind) ? ' is-live' : '') + '" data-recvloop="' + kind + '" aria-pressed="' + loopOn(kind) + '" aria-label="לולאה" title="לולאה: כשמנגנים מוסיקה מהקטע, המוסיקה ממשיכה אחד אחרי השני ובסוף חוזרים להתחלה">' + I.loop + '</button>' : '';
     var pOn = recvPlaying(kind) && !!(window.__bioNow || {}).playing;
     var playBtn = list.length ? '<button type="button" class="rbtn rbtn--icon" data-recvplay="' + kind + '" aria-label="' + (pOn ? "השהיה" : "השמעה") + '" style="background:transparent;border-color:transparent;color:' + (pOn ? 'var(--danger)' : 'var(--text)') + '">' + (pOn ? PAUSEI : I.play) + '</button>' : '';
-    var add = edit ? '<div class="rcard rcard--compact bio-addcard" data-addm role="button" tabindex="0" style="margin:0;min-width:0;display:flex;align-items:center;justify-content:center;gap:var(--sp-1);cursor:pointer;min-height:calc(var(--tag-s) * 2 + var(--sp-2));border:0;background:var(--ex-tint);box-shadow:none;color:var(--ex-solid);font:var(--fw-bold) var(--fs-s)/1 var(--font)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>הוספת מוזיקה</div>' : '';
-    return '<div data-recv="' + kind + '" ><div class="bio-sech" style="display:flex;align-items:center;justify-content:space-between;padding:var(--gutter) var(--gutter) 0">' + accHead(kind, label + " (" + list.length + ")") + '<span style="display:flex;align-items:center;gap:var(--sp-1)">' + playBtn + play + (edit ? '<button type="button" class="rbtn rbtn--icon" data-addm aria-label="הוספת מוזיקה" title="הוספת מוזיקה">' + I.plus + '</button>' : '') + '</span></div>' + accOpenTag(kind) +
-      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);padding:var(--gutter)">' + list.map(function (m) { var nw = window.__bioNow || {}; return optCardHtml(m, !!(nw.playing && m.audio_object && nw.name === m.audio_object), edit, true, key, true); }).join("") + '</div>' + ACC_CLOSE + '</div>';
+    var add = edit ? '<div class="rcard rcard--compact bio-addcard" data-addm role="button" tabindex="0" style="margin:0;min-width:0;display:flex;align-items:center;justify-content:center;gap:var(--gap);cursor:pointer;min-height:var(--tile-min-h);border:0;background:var(--surface);box-shadow:none;color:var(--primary);font:var(--fw-bold) var(--fs-m)/1 var(--font)"><span aria-hidden="true" style="display:grid;width:var(--icon);height:var(--icon)">' + I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>הוספת מוזיקה</div>' : '';
+    return '<div data-recv="' + kind + '" >' + secHead(kind, label + " (" + list.length + ")", playBtn + play + (edit ? '<button type="button" class="rbtn rbtn--icon" data-addm aria-label="הוספת מוזיקה" title="הוספת מוזיקה">' + I.plus + '</button>' : '')) + accOpenTag(kind) +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--gap)">' + list.map(function (m) { var nw = window.__bioNow || {}; return optCardHtml(m, !!(nw.playing && m.audio_object && nw.name === m.audio_object), edit, true, key, true); }).join("") + '</div>' + ACC_CLOSE + '</div>';
   }
   /* the opening of the evening: a free text (kept only where there is nobody to add) and a section for each leader who says something before the evening
      (a black chip, the words under it, indented; the chip folds the section). One row per section in biodanza.vivencia_opening, who = '' for the free text:
@@ -1836,41 +1883,29 @@
       try { fr.contentWindow.focus(); fr.contentWindow.print(); } catch (e) { /* the browser refused: nothing to clean but the frame */ } setTimeout(function () { fr.remove(); }, 1500); };
     setTimeout(go, 250);
   }
-  document.addEventListener("click", function (ev) { if (ev.target.closest && ev.target.closest("[data-printopen]")) { ev.preventDefault(); ev.stopPropagation(); printOpening(); } }, true);
   function openName(who) { return String(who).split("#")[0]; }   /* a leader may have several paragraphs: the first is under the name, the others under name#2, name#3 */
   function openKey(n) { var have = {}; openRows().forEach(function (x) { have[x.who] = 1; }); if (!have[n]) return n; for (var k = 2; ; k++) if (!have[n + "#" + k]) return n + "#" + k; }
   function openSecHtml(q, i, ro) {
     var on = accOpen[(state.viv.id) + "|sec|" + q.who] === true;   /* folded when the vivencia opens, each leader's words in one line */
-    return '<div data-sec="' + i + '" data-who="' + esc(q.who) + '" style="margin-top:calc(var(--sp-1) / 2)"><div data-sech-row style="display:flex;align-items:center;gap:var(--sp-1)">' +
-      '<button type="button" class="bio-chipb" data-sech aria-expanded="' + on + '"><span>' + esc(openName(q.who)) + '</span><span aria-hidden="true" style="display:grid;width:var(--icon-s);height:var(--icon-s);transition:transform .2s var(--ease);' + (on ? 'transform:rotate(180deg)' : '') + '">' + I.down.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span></button>' +
-      '<span data-secsum dir="auto" style="flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-2);font:var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font)">' + (on ? '' : esc(openSum(q.body))) + '</span>' +
-      (ro ? '' : '<button type="button" class="rbtn rbtn--icon" data-secx aria-label="הסרת המקטע" title="הסרת המקטע" style="flex:none;height:var(--tag-s);min-height:var(--tag-s);background:transparent;border-color:transparent;color:var(--text-3)">' + I.trash + '</button>') + '</div>' +
-      '<div class="bio-accb" data-secb' + (on ? '' : ' data-closed') + '><div><label class="rfield bio-secf" style="flex:none;margin:0"><span>מה אומר/ת</span><div id="opt' + i + '" data-owho="' + esc(q.who) + '" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true">' + rtHtml(q.body) + '</div></label></div></div></div>';
+    return '<div data-sec="' + i + '" data-who="' + esc(q.who) + '"><div data-sech-row style="display:flex;align-items:center;gap:var(--gap)">' + titleRow('',
+      '<span data-secsum dir="auto" class="rtitle__tx" style="color:var(--text-muted);font:var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font)">' + (on ? '' : esc(openSum(q.body))) + '</span>',
+      '<button type="button" class="rchip rchip--button bio-chipb" data-sech aria-expanded="' + on + '"><span>' + esc(openName(q.who)) + '</span><span aria-hidden="true" style="display:grid;width:var(--icon);height:var(--icon);transition:transform .2s var(--ease);' + (on ? 'transform:rotate(180deg)' : '') + '">' + I.down.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span></button>') +
+      (ro ? '' : '<button type="button" class="rbtn rbtn--icon" data-secx aria-label="הסרת המקטע" title="הסרת המקטע" style="flex:none;color:var(--text-muted)">' + I.trash + '</button>') + '</div>' +
+      '<div class="bio-accb" data-secb' + (on ? '' : ' data-closed') + '><div><label class="rfield bio-secf" style="flex:none"><span>מה אומר/ת</span><div id="opt' + i + '" data-owho="' + esc(q.who) + '" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true">' + rtHtml(q.body) + '</div></label></div></div></div>';
   }
   function openingHtml() {   /* between the start music and the vivencia */
     var v = state.viv, ro = !canEdit(); if (!v) return "";
     var free = openFreeText(), secs = openRows().filter(function (x) { return x.who !== ""; });
     if (ro && !free && !secs.length) return "";
-    return '<div data-opening><div class="bio-sech" style="display:flex;align-items:center;justify-content:space-between;padding:var(--gutter) var(--gutter) 0">' + accHead("open", "פתיחת הערב") + '</div>' + accOpenTag("open") +
-      '<div style="padding:0 var(--gutter)">' + (facOn() && !free ? '' : '<label class="rfield" style="flex:none;margin:calc(-1 * var(--sp-3)) 0 0"><span>טקסט חופשי</span><div id="opt0" data-owho="" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true">' + rtHtml(free) + '</div></label>') +
+    return '<div data-opening>' + secHead("open", "פתיחת הערב", !ro && facOn() ? '<button type="button" class="rbtn rbtn--icon" data-secadd aria-haspopup="menu" aria-label="הוספת פסקה" title="הוספת פסקה">' + I.plus + '</button>' : '') + accOpenTag("open") +
+      '<div style="display:flex;flex-direction:column;gap:var(--gap-tight)">' + (facOn() && !free ? '' : '<label class="rfield" style="flex:none"><span>טקסט חופשי</span><div id="opt0" data-owho="" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true">' + rtHtml(free) + '</div></label>') +
       secs.map(function (q, k) { return openSecHtml(q, k + 1, ro); }).join("") +
-      (!ro && facOn() ? '<div style="display:flex;justify-content:flex-start"><button type="button" class="rbtn rbtn--icon" data-secadd style="margin-inline-start:calc(-1 * (var(--ctl) - var(--icon-m)) / 2)" aria-haspopup="menu" aria-label="הוספת פסקה" title="הוספת פסקה">' + I.plus + '</button></div>' : '') + '</div>' + ACC_CLOSE + '</div>';
+      '</div>' + ACC_CLOSE + '</div>';
   }
-  function openMenu(btn, onPick) {   /* the leaders; one tap picks */
-    var old = document.getElementById("moreMenu"); if (old) old.remove();
-    var m = document.createElement("div"); m.id = "moreMenu"; m.className = "rmenu rmenu--fixed"; m.setAttribute("role", "menu");
-    var seen = {}, have = {};   /* every leader, again and again: each tap is one more paragraph */
-    m.innerHTML = state.members.filter(function (x) { var n = facShort(x.email); if (seen[n] || have[n]) return false; return (seen[n] = 1); }).map(function (x) { return '<button type="button" class="rmenu__item" role="menuitem" data-n="' + esc(facShort(x.email)) + '"><span>' + esc(facShort(x.email)) + '</span></button>'; }).join("");
-    if (!m.children.length) m.innerHTML = '<div class="rmenu__item" role="menuitem" aria-disabled="true" style="opacity:.6;pointer-events:none"><span>' + (state.members.length < 2 ? "אין עוד מובילים בשיתוף" : "כל המובילים כבר כאן") + '</span></div>';
-    var sh = document.createElement("div"); sh.style.cssText = "position:fixed;inset:0;z-index:var(--z-menu);background:transparent;touch-action:none";
-    document.body.appendChild(sh); document.body.appendChild(m);
-    var r = btn.getBoundingClientRect();
-    m.style.minWidth = "0"; m.style.width = "max-content";   /* as wide as the names, not as the menus of the app */
-    m.style.top = Math.round(r.bottom + 6) + "px"; m.style.left = Math.max(8, Math.min(Math.round(r.right - m.offsetWidth), window.innerWidth - m.offsetWidth - 8)) + "px";
-    function close() { m.remove(); sh.remove(); document.removeEventListener("keydown", onKey, true); }
-    function onKey(e) { if (e.key === "Escape") close(); }
-    sh.addEventListener("click", close); document.addEventListener("keydown", onKey, true);
-    m.querySelectorAll("[data-n]").forEach(function (x) { x.addEventListener("click", function () { var n = x.dataset.n; close(); onPick(n); }); });
+  function leadersMenu(btn, onPick) {   /* the leaders; one tap picks */
+    var seen = {};   /* every leader, again and again: each tap is one more paragraph */
+    var names = state.members.map(function (x) { return facShort(x.email); }).filter(function (n) { if (seen[n]) return false; return (seen[n] = 1); });
+    menu(btn, names.length ? names.map(function (n) { return { label: n, fn: function () { onPick(n); } }; }) : [{ label: state.members.length < 2 ? "אין עוד מובילים בשיתוף" : "כל המובילים כבר כאן", disabled: true }], { end: true, fit: true });
   }
   function wireOpening(l) {
     var root = l.querySelector("[data-opening]"); if (!root) return;
@@ -1919,7 +1954,7 @@
     if (canEdit() && secEls.length > 1) enableDrag(secEls[0].parentElement, "[data-sech]", openMove, "[data-sec]", "[data-sech-row]");   /* hold and drag a chip up or down, like the exercises */
     var add = root.querySelector("[data-secadd]");
     if (add) add.addEventListener("click", function () {
-      openMenu(add, function (n) {
+      leadersMenu(add, function (n) {
         var key = openKey(n);
         accOpen[state.viv.id + "|sec|" + key] = true; openPut(key, ""); paint();
         setTimeout(function () { var bx = [].slice.call(document.querySelectorAll("[data-owho]")).filter(function (x) { return x.dataset.owho === key; })[0]; if (bx) bx.focus(); }, 0);
@@ -1953,21 +1988,14 @@
   }
   function editor() {
     var v = state.viv; setUrl(BASE + v.id); curJoin(v.id); refreshPrevLabel();
-    show(head(v.title || "ויוונסיה חדשה", "", true, wide() ? '<button type="button" id="vgo" class="rbtn rbtn--icon" hidden aria-label="לתרגיל שמתנגן" title="לתרגיל שמתנגן" style="display:none;flex:none;flex-direction:column;gap:0;color:var(--danger);background:transparent;border-color:transparent"><span id="vgon" style="font:var(--fw-black) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums"></span><span style="display:block;width:18px;height:18px">' + I.curve + '</span></button><span id="vtimer" hidden aria-live="off" style="flex:none;margin-left:var(--sp-2);font:var(--fw-black) calc(2.75 * var(--fs-m))/.95 var(--font);font-variant-numeric:tabular-nums;color:var(--text);direction:ltr"></span>' + '<button type="button" class="rbtn rbtn--icon bio-flat" data-act="vmore" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>' : '<button type="button" class="rbtn rbtn--icon bio-flat" data-act="vmore" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>') +   /* the way to the catalog is a word in the header, not a floating button */
+    show(head(v.title || "ויוונסיה חדשה", "", true, wide() ? '<button type="button" id="vgo" class="rbtn rbtn--icon" hidden aria-label="לתרגיל שמתנגן" title="לתרגיל שמתנגן" style="display:none;flex:none;flex-direction:column;gap:0;color:var(--danger);background:transparent;border-color:transparent"><span id="vgon" style="font:var(--fw-bold) var(--fs-m)/1 var(--font);font-variant-numeric:tabular-nums"></span><span style="display:block;width:var(--icon);height:var(--icon)">' + I.curve + '</span></button><span id="vtimer" hidden aria-live="off" style="flex:none;margin-left:var(--gap);font:var(--fw-bold) var(--fs-l)/var(--lh-tight) var(--font);font-variant-numeric:tabular-nums;color:var(--text);direction:ltr"></span>' + '<button type="button" class="rbtn rbtn--icon bio-flat" data-act="vmore" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>' : '<button type="button" class="rbtn rbtn--icon bio-flat" data-act="vmore" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>') +   /* the way to the catalog is a word in the header, not a floating button */
       '<div class="rlist" data-fab-room id="list"><div class="rskel rskel--title"></div></div>' +
       '', function (r) {   /* on a wide screen the way to the catalog is a green banner down the side, added by show() */
       on(r, "back", back); on(r, "add", function () { resetPk(); if (wide()) goSub(picker); else pickerSheet(); });
       on(r, "vmore", function (b) {   /* the same three dots as in the list of vivencias: the catalog and the print */
         menu(b, [{ label: "קטלוג", icon: I.catalog, fn: function () { if (wide()) { if (catPanel) closeCatPanel(); else openCatPanel(); } else { resetPk(); pickerSheet(); } } }, { label: "הדפסה", icon: I.print || '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><path d="M6 18H4a1 1 0 0 1-1-1v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a1 1 0 0 1-1 1h-2"/><rect x="6" y="14" width="12" height="7"/></svg>', fn: function () { printOpening(); } }]);
       });
-      on(r, "more", function (b) {
-        /* the owner: rename, share, delete; somebody it is shared with: rename (with edit rights) and taking themselves off it */
-        var items = (v.role === "view" ? [] : [{ label: "עריכת שם", icon: I.pen, fn: function () { namePopup(v, false); } }]).concat([{ label: "שכפול", icon: I.copy || I.plus, fn: function () { dupPopup(v); } }]);
-        if (v.role === "owner") items.push({ label: "שיתוף", icon: I.share, fn: function () { sharePopup(v); } }, { label: "מחיקה", icon: I.trash, tone: "danger", fn: function () { confirmDelete(v); } });
-        else items.push({ label: "הסרה שלי מהוויוונסיה", icon: I.out, tone: "danger", fn: function () { confirmLeave(v); } });
-        if (state.offline) items.length = 0;   /* with no internet nothing changes: only the copy on the device can be taken off it */
-        menu(b, items);
-      });
+      on(r, "more", function (b) { vivMenu(v, b); });
     });
     /* the exercises come from the device's copy at once (the skeleton only when there is none); the cloud's answer then corrects them */
     var local = Promise.resolve(null);
@@ -2024,7 +2052,7 @@
       foot: '<button class="rbtn rbtn--danger rbtn--block" type="button" id="cleave">הסרה</button>'
     });
     dlg.querySelector("#cleave").addEventListener("click", function () {
-      api("/rest/v1/rpc/leave_vivencia", { method: "POST", json: { v: v.id } }).then(function () {
+      busy(dlg.querySelector("#cleave"), api("/rest/v1/rpc/leave_vivencia", { method: "POST", json: { v: v.id } })).then(function () {
         dlg.close(); if (window.BioOffline) BioOffline.remove(v.id); toast("הוסרת מהוויוונסיה"); state.viv = null;
         if (wide()) { stack().length = 0; homeWide(); } else back();
       }, fail);
@@ -2039,7 +2067,7 @@
       foot: '<button class="rbtn rbtn--danger rbtn--block" type="button" id="cdel">מחיקה</button>'
     });
     dlg.querySelector("#cdel").addEventListener("click", function () {
-      api("/rest/v1/vivencias?id=eq." + v.id, { method: "DELETE" }).then(function () {
+      busy(dlg.querySelector("#cdel"), api("/rest/v1/vivencias?id=eq." + v.id, { method: "DELETE" })).then(function () {
         dlg.close(); if (window.BioOffline) BioOffline.remove(v.id); toast("הוויוונסיה נמחקה"); state.viv = null;
         if (wide()) { stack().length = 0; homeWide(); } else back();
       }, fail);
@@ -2062,17 +2090,17 @@
     var rowOf = function (i, tile) {
       var m = i.music;
       return exCardUi(i, { cls: (playsIn(chosenOf(i)) ? "is-play" : playsIn(audOf(i)) ? "is-play-opt" : ""), attrs: 'data-auds="' + esc(audOf(i)) + '" data-chosen="' + esc(chosenOf(i)) + '" data-icard="' + i.id + '"' + (i.backlog ? ' data-back="1"' : ''), selected: wide() && state.lastItem === i.id, lead: tile, title: itemName(i), titleAttr: 'data-edit="' + i.id + '"',
-        pill: m ? pillCount(cardPill(m), optList(i).length) : "", chip: facChip(i, " rchip--s"),
+        pill: m ? pillCount(cardPill(m), optList(i).length) : "", chip: facChip(i, "", true),
         rm: canEdit() ? '<button type="button" class="rbtn rbtn--icon bio-act" data-idel="' + i.id + '" aria-label="הסרה מהוויוונסיה" title="הסרה מהוויוונסיה">' + I.x + '</button>' : '',
         actions: "" });   /* on hover: the bin at the right, the heart at its left */
     };
     var totSec = main.reduce(function (n, i) { return n + (i.music ? (durOf(i.music) || 0) : 0); }, 0);   /* the length of the chosen songs of the exercises, one after the other */
     var totTxt = totSec > 0 ? (totSec >= 3600 ? Math.floor(totSec / 3600) + ":" + ("0" + Math.floor(totSec % 3600 / 60)).slice(-2) + ":" + ("0" + Math.floor(totSec % 60)).slice(-2) : Math.floor(totSec / 60) + ":" + ("0" + Math.floor(totSec % 60)).slice(-2)) : "";
-    var exHead = '<div class="bio-sech" style="display:flex;align-items:center;justify-content:space-between;padding:var(--gutter) var(--gutter) 0">' + accHead("ex", "ויוונסיה (" + main.length + ")") + '<span style="display:flex;align-items:center;gap:var(--sp-1)">' + (totTxt ? '<span class="bio-total" title="משך המוסיקה הנבחרת בכל התרגילים" style="flex:none;box-sizing:border-box;width:var(--ctl);padding-left:calc((var(--ctl) - var(--icon-m)) / 2);direction:ltr;text-align:left;color:var(--text-2);font:var(--fw-medium) var(--fs-m)/1 var(--font);font-variant-numeric:tabular-nums;white-space:nowrap">' + totTxt + '</span>' : '') + (canEdit() ? '<button type="button" class="rbtn rbtn--icon" data-addex aria-haspopup="menu" aria-label="הוספת תרגיל" title="הוספת תרגיל">' + I.plus + '</button>' : '') + '</span></div>';   /* the exercises have a title like the songs of the start, with a plus at its other end */
+    var exHead = secHead("ex", "ויוונסיה (" + main.length + ")", (totTxt ? '<span class="bio-total" title="משך המוסיקה הנבחרת בכל התרגילים" style="flex:none;direction:ltr;text-align:left;color:var(--text-muted);font:var(--fw-regular) var(--fs-m)/1 var(--font);font-variant-numeric:tabular-nums;white-space:nowrap">' + totTxt + '</span>' : '') + (canEdit() ? '<button type="button" class="rbtn rbtn--icon" data-addex aria-haspopup="menu" aria-label="הוספת תרגיל" title="הוספת תרגיל">' + I.plus + '</button>' : ''));   /* the exercises have a title like the songs of the start, with a plus at its other end */
+    var gridCss = "display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--gap);align-items:stretch";   /* the grid of exercise cards: the numbered ones, the divider, then "נוספים", all in one list */
     var fo = document.activeElement, foId = fo && l.contains(fo) && /^opt[0-9]+$/.test(fo.id) ? fo.id : "", foSel = foId ? rtSel(fo) : null;   /* a repaint while somebody types in the opening keeps the cursor there */
-    l.innerHTML = recvHtml("start") + openingHtml() + exHead + accOpenTag("ex") + '<div id="plist" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);align-items:stretch;padding:var(--gutter)">' + main.map(function (i, k) { return rowOf(i, k + 1); }).join("") +
-      '<div data-div style="grid-column:1 / -1;padding:var(--sp-2) 0 var(--sp-1);margin-top:var(--sp-1);min-height:var(--ctl)"><div class="bio-divl"><span class="rrow__sub" style="margin:0">נוספים</span></div>' + (back.length || !canEdit() ? '' : '<div class="rrow__sub" style="margin-top:var(--sp-1);text-align:center">גררו לכאן תרגיל שעוד לא החלטתם עליו</div>') + '</div>' +
-      back.map(function (i) { return rowOf(i, "•"); }).join("") + '</div>' + ACC_CLOSE + recvHtml("end");
+    var divHtml = back.length || canEdit() ? '<div class="rdiv" data-div><span class="rdiv__l">נוספים</span>' + (back.length ? '' : '<span class="rdiv__hint">גררו לכאן תרגיל שעוד לא החלטתם עליו</span>') + '</div>' : "";   /* the extras are a second group of cards in the same list, after a divider; a viewer with no extras sees no divider */
+    l.innerHTML = recvHtml("start") + openingHtml() + '<div data-exsec>' + exHead + accOpenTag("ex") + '<div id="plist" style="' + gridCss + '">' + main.map(function (i, k) { return rowOf(i, k + 1); }).join("") + divHtml + back.map(function (i) { return rowOf(i, "•"); }).join("") + '</div>' + ACC_CLOSE + '</div>' + recvHtml("end");
     wireOpening(l);
     if (foId) { var fe = l.querySelector("#" + foId); if (fe) { fe.focus(); try { var rg = document.createRange(), pa = rtPoint(fe, foSel.a), pb = rtPoint(fe, foSel.b); rg.setStart(pa[0], pa[1]); rg.setEnd(pb[0], pb[1]); var sl = window.getSelection(); sl.removeAllRanges(); sl.addRange(rg); } catch (x) { /* no caret */ } } }
     /* the list has a scrollbar at its left edge that takes room from the cards: the header above gives its left side the same room, so its button is over the cards' edge */
@@ -2124,7 +2152,7 @@
     });
     registerLists();
     if (canEdit()) {
-      enableGroupDrag(l.querySelector("#plist"), persistGroups);
+      enableGroupDrag(l, persistGroups);
       ["start", "end"].forEach(function (k) { var box = l.querySelector('[data-recv="' + k + '"] > div:last-child'); if (box) enableRecvDrag(box, k); });
     }
   }
@@ -2144,7 +2172,7 @@
     });
     function begin() {
       d.live = true; d.c.setPointerCapture && d.c.setPointerCapture(d.pid);
-      d.c.style.transition = "none"; d.c.style.zIndex = "var(--z-raised)"; d.c.style.boxShadow = "var(--sh-card)";
+      d.c.style.transition = "none"; d.c.style.zIndex = "var(--z-raised)"; d.c.style.boxShadow = "var(--shadow)";
       cards.forEach(function (r) { if (r !== d.c) r.style.transition = "transform var(--t-base) var(--ease)"; });
     }
     function move(e) {
@@ -2192,7 +2220,7 @@
     var l = document.getElementById("list"); if (!l || !l.hasAttribute("data-fab-room")) return;
     l.querySelectorAll("[data-edit]").forEach(function (b) { (b.closest(".bio-icard") || b.closest(".rrow")).setAttribute("aria-current", wide() && b.dataset.edit === state.lastItem ? "true" : "false"); });
   }
-  function persistGroups(mainIds, backIds) {
+  function persistGroups(mainIds, backIds, el) {   /* el: the card that was moved, it shows the wait until the order is saved (law 7) */
     var by = {}; state.items.forEach(function (i) { by[i.id] = i; });
     var nm = mainIds.map(function (id) { return by[id]; }).filter(Boolean), nb = backIds.map(function (id) { return by[id]; }).filter(Boolean);
     state.items = nm.concat(nb);
@@ -2203,15 +2231,16 @@
       it.position = k + 1; it.backlog = isBack;
       jobs.push(api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { position: k + 1, backlog: isBack } }));
     });
-    Promise.all(jobs).then(loadItems).then(paint, fail);
+    busy(el, Promise.all(jobs).then(loadItems).then(paint, fail));
   }
   /* The drag of the exercise cards: two groups, the numbered ones and "נוספים". The divider never moves; the group is the one the carried card is over
      (below the divider's middle: "נוספים"), the place in it is where the card is in reading order, and the others go to the places they would have. */
   function enableGroupDrag(l, onDrop) {
     if (l._dragOff) l._dragOff();
     var cards = [].slice.call(l.querySelectorAll(".bio-icard")), div = l.querySelector("[data-div]");
-    var d = null, blockTouch = function (e) { if (d && d.live) e.preventDefault(); };
+    var d = null, ghost = null, blockTouch = function (e) { if (d && d.live) e.preventDefault(); };   /* ghost: the carried card's copy, in the body, above everything (--z-drag), never clipped by a section's body */
     l.addEventListener("touchmove", blockTouch, { passive: false });
+    var dropGhost = function () { if (ghost) { ghost.remove(); ghost = null; } };
     var grpOf = function (c) { return c.hasAttribute("data-back") ? 1 : 0; };
     var ids = function (arr) { return arr.map(function (i) { return cards[i].dataset.icard; }); };
     function keyMove(c, delta) {   /* Alt + arrow: one place on, across the divider too */
@@ -2222,7 +2251,7 @@
         else if (inBack && delta < 0) { back.splice(k, 1); main.push(id); }
         else return;
       } else { arr.splice(k, 1); arr.splice(to, 0, id); }
-      onDrop(main, back);
+      onDrop(main, back, c);
     }
     cards.forEach(function (c) {
       var title = c.querySelector("[data-edit]");
@@ -2252,14 +2281,18 @@
     function begin() {
       d.sc = scroller(); d.sc0 = d.sc ? d.sc.scrollTop : 0;
       d.live = true; d.c.setPointerCapture && d.c.setPointerCapture(d.pid);
-      d.c.style.transition = "none"; d.c.style.zIndex = "var(--z-raised)"; d.c.style.boxShadow = "var(--sh-card)";
+      var gr = d.c.getBoundingClientRect(); ghost = d.c.cloneNode(true); ghost.removeAttribute("id");
+      ghost.setAttribute("popover", "manual");   /* the player's pill is in the top layer (a popover), so only another popover shown after it is above it: the carried card is one */
+      ghost.style.cssText = "position:fixed;inset:auto;margin:0;box-sizing:border-box;overflow:visible;color:var(--text);left:" + gr.left + "px;top:" + gr.top + "px;width:" + gr.width + "px;height:" + gr.height + "px;z-index:var(--z-drag);pointer-events:none;box-shadow:var(--shadow);transition:none;transform:none";
+      document.body.appendChild(ghost); try { ghost.showPopover(); } catch (x) { /* an old browser: a fixed element at --z-drag */ }   /* the card itself stays in its place, unseen: its slot is kept, nothing jumps */
+      d.c.style.visibility = "hidden";
       cards.forEach(function (r) { if (r !== d.c) r.style.transition = "transform var(--t-base) var(--ease)"; });
       if (div) div.style.transition = "transform var(--t-base) var(--ease)";
       if (d.sc && !raf) raf = requestAnimationFrame(auto);
     }
     function virtualSlot(g, sl, idxs) {   /* the place after the last one of a group, for the card that moves into it */
       var last = sl[idxs[idxs.length - 1]], xs = sl.map(function (t) { return t.x; }), right = Math.max.apply(null, xs), left = Math.min.apply(null, xs);
-      var pitch = sl.length > 2 ? sl[2].y - sl[0].y : last.h + 8;
+      var below = sl.filter(function (t) { return t.y > sl[0].y + 3; })[0], pitch = below ? below.y - sl[0].y : last.h + 8;   /* the distance of one row: the first card that is lower than the first one (in a single column that is the next card, in two columns the third) */
       return Math.abs(last.x - right) < Math.abs(last.x - left) ? { x: left, y: last.y } : { x: right, y: last.y + pitch };
     }
     function move(e) {
@@ -2276,14 +2309,14 @@
     }
     function apply() {
       var so = d.sc ? d.sc.scrollTop - d.sc0 : 0, dx = d.last.clientX - d.x0, dy = d.last.clientY - d.y0 + so;   /* what the list scrolled is part of the way the card travelled */
-      d.c.style.transform = "translate(" + dx + "px, " + dy + "px)";
+      if (ghost) ghost.style.transform = "translate(" + dx + "px, " + (d.last.clientY - d.y0) + "px)";   /* the copy is fixed: it follows the finger, the list's own scroll is not part of its way */
       var cx = d.sl[d.k].x + dx, cy = d.sl[d.k].y + dy, dr = div.getBoundingClientRect(), back = cy > dr.top + so + dr.height / 2 ? 1 : 0;
       var grp = [[], []], slots = [[], []];
       cards.forEach(function (r, i) { slots[grpOf(r)].push(i); if (i !== d.k) grp[grpOf(r)].push(i); });
       var ins = 0; grp[back].forEach(function (i, n) { var t = d.sl[i]; if (t.y < cy - t.h / 2 || (Math.abs(t.y - cy) <= t.h / 2 && t.x > cx)) ins = n + 1; });
       var order = [grp[0].slice(), grp[1].slice()]; order[back].splice(ins, 0, d.k); d.order = order;
       /* a card that crosses the divider needs room on the other side: the divider and the "נוספים" cards go down by the room of a card (it enters the numbered ones) or up (it leaves them), in a single column */
-      var from = grpOf(d.c), oneCol = d.sl.every(function (t) { return Math.abs(t.x - d.sl[0].x) < 3; }), gapPx = parseFloat(getComputedStyle(div.parentElement).rowGap) || 8, room = d.sl[d.k].h + gapPx;
+      var from = grpOf(d.c), oneCol = d.sl.every(function (t) { return Math.abs(t.x - d.sl[0].x) < 3; }), gapPx = parseFloat(getComputedStyle(cards[d.k].parentElement).rowGap) || 8, room = d.sl[d.k].h + gapPx;
       var extra = !oneCol ? 0 : (from === 1 && back === 0) ? room : (from === 0 && back === 1) ? -room : 0;
       div.style.transform = extra ? "translateY(" + Math.round(extra) + "px)" : "";
       [0, 1].forEach(function (g) { order[g].forEach(function (ci, pos) {
@@ -2299,7 +2332,7 @@
       clearTimeout(d.timer); if (raf) { cancelAnimationFrame(raf); raf = 0; }
       var was = d; d = null;
       if (!was.live) return;
-      cards.forEach(function (r) { r.style.transform = ""; r.style.transition = ""; r.style.zIndex = ""; r.style.boxShadow = ""; });
+      dropGhost(); cards.forEach(function (r) { r.style.transform = ""; r.style.transition = ""; r.style.zIndex = ""; r.style.boxShadow = ""; r.style.visibility = ""; });
       if (div) { div.style.transform = ""; div.style.transition = ""; }
       var eat = function (ev) { ev.stopPropagation(); ev.preventDefault(); };
       l.addEventListener("click", eat, true); setTimeout(function () { l.removeEventListener("click", eat, true); }, 80);
@@ -2307,42 +2340,20 @@
       var nm = ids(was.order[0]), nb = ids(was.order[1]);
       var om = cards.filter(function (r) { return !grpOf(r); }).map(function (r) { return r.dataset.icard; }), ob = cards.filter(grpOf).map(function (r) { return r.dataset.icard; });
       if (nm.join() === om.join() && nb.join() === ob.join()) return;
-      onDrop(nm, nb);
+      onDrop(nm, nb, was.c);
     }
     l.addEventListener("pointerup", finish); l.addEventListener("pointercancel", finish);
-    l._dragOff = function () { l.removeEventListener("touchmove", blockTouch); l.removeEventListener("pointermove", move); l.removeEventListener("pointerup", finish); l.removeEventListener("pointercancel", finish); l._dragOff = null; };
+    l._dragOff = function () { dropGhost(); l.removeEventListener("touchmove", blockTouch); l.removeEventListener("pointermove", move); l.removeEventListener("pointerup", finish); l.removeEventListener("pointercancel", finish); l._dragOff = null; };
   }
-  function persistCross(from, to) {   /* from, to: places among the rows AND the divider "נוספים"; what ends up after the divider is "נוספים" */
-    var main = state.items.filter(function (i) { return !i.backlog; }), back = state.items.filter(function (i) { return i.backlog; });
-    var seq = main.concat([null], back), moved = seq.splice(from, 1)[0]; seq.splice(to, 0, moved);
-    var d = seq.indexOf(null), nm = seq.slice(0, d), nb = seq.slice(d + 1);
-    state.items = nm.concat(nb);
-    var jobs = [];
-    nm.concat(nb).forEach(function (it, k) {
-      var isBack = k >= nm.length;
-      if (it.position === k + 1 && !!it.backlog === isBack) return;
-      it.position = k + 1; it.backlog = isBack;
-      jobs.push(api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { position: k + 1, backlog: isBack } }));
-    });
-    Promise.all(jobs).then(loadItems).then(paint, fail);
-  }
-  function persistItems(from, to) {
-    var moved = state.items.splice(from, 1)[0]; state.items.splice(to, 0, moved);
-    Promise.all(state.items.map(function (it, k) {
-      if (it.position === k + 1) return null;
-      it.position = k + 1;
-      return api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { position: k + 1 } });
-    })).then(loadItems).then(paint, fail);
-  }
-  function persistVivs(from, to) {
+  function persistVivs(from, to, row) {   /* row: the row that was moved, it shows the wait until the order is saved (law 7) */
     var moved = state.vivs.splice(from, 1)[0]; state.vivs.splice(to, 0, moved);
     var uid = FLOA_AUTH.userId();
-    Promise.all(state.vivs.map(function (v, k) {
+    busy(row, Promise.all(state.vivs.map(function (v, k) {
       if (v.pos === k + 1) return null;
       v.pos = k + 1;
       return v.role === "owner" ? api("/rest/v1/vivencia_owners?vivencia_id=eq." + v.id + "&user_id=eq." + uid, { method: "PATCH", json: { position: k + 1 } })
                                 : api("/rest/v1/rpc/set_share_position", { method: "POST", json: { v: v.id, pos: k + 1 } });
-    })).then(function () { renderVivs(); }, fail);
+    })).then(function () { renderVivs(); }, fail));
   }
 
   /* Reorder by dragging a row (no arrows). A mouse drags after a few pixels; a finger after a short hold, so scrolling still works.
@@ -2359,7 +2370,7 @@
         if (!e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
         var to = k + (e.key === "ArrowUp" ? -1 : 1);
         if (to < 0 || to >= rows.length) return;
-        e.preventDefault(); onMove(k, to);
+        e.preventDefault(); onMove(k, to, row);
       });
       row.addEventListener("pointerdown", function (e) {
         if (e.button > 0) return;
@@ -2382,7 +2393,7 @@
     function begin() {
       d.sc = scroller(); d.sc0 = d.sc ? d.sc.scrollTop : 0;
       d.live = true; d.row.setPointerCapture && d.row.setPointerCapture(d.pid);
-      d.row.style.transition = "none"; d.row.style.zIndex = "var(--z-raised)"; d.row.style.boxShadow = "var(--sh-card)"; d.row.style.position = "relative";
+      d.row.style.transition = "none"; d.row.style.zIndex = "var(--z-raised)"; d.row.style.boxShadow = "var(--shadow)"; d.row.style.position = "relative";
       rows.forEach(function (r) { if (r !== d.row) r.style.transition = "transform var(--t-base) var(--ease)"; });
       if (d.sc && !raf) raf = requestAnimationFrame(auto);
     }
@@ -2423,7 +2434,7 @@
       rows.forEach(function (r) { r.style.transform = ""; r.style.transition = ""; r.style.zIndex = ""; r.style.boxShadow = ""; r.style.position = ""; });
       var eat = function (ev) { ev.stopPropagation(); ev.preventDefault(); };   /* the drag is not a tap on the title; only the click that comes right after it */
       l.addEventListener("click", eat, true); setTimeout(function () { l.removeEventListener("click", eat, true); }, 80);
-      if (was.to !== was.k) onMove(was.k, was.to);
+      if (was.to !== was.k) onMove(was.k, was.to, was.row);
     }
     l.addEventListener("pointerup", finish); l.addEventListener("pointercancel", finish);
     l._dragOff = function () { l.removeEventListener("touchmove", blockTouch); l.removeEventListener("pointermove", move); l.removeEventListener("pointerup", finish); l.removeEventListener("pointercancel", finish); l._dragOff = null; };
@@ -2435,8 +2446,8 @@
   (function () {
     var st = document.createElement("style");
     st.textContent = "#itemDlg { height: var(--rs-vvh, 100dvh); max-height: none; padding-top: var(--safe-t, 0px); transform: translateY(var(--rs-dy, 0px)) } @media (min-width: 760px) { #itemDlg { height: calc(100dvh - 48px); max-height: calc(100dvh - 48px); padding-top: 0 } } " +
-      "#itemDlg .sheet-head, #itemDlg .sheet-head * { touch-action: none } #itemDlg .sheet-head [data-act=\"list\"] { pointer-events: none; flex: none !important; margin-inline: auto calc(var(--gap-button) * -1) } #itemDlg .sheet-head [data-likex] { margin-inline-end: auto } #itemDlg .sheet-head { margin-inline: calc(var(--pp-px) * -1); margin-bottom: 0 } #itemDlg .sheet-head > .rhead { flex: 1 1 auto; min-width: 0; width: 100%; margin: 0 } " +
-      "#itemDlg .sheet-body { overflow: hidden; margin-inline: calc(var(--pp-px) * -1); padding: 0 } #itemDlg .sheet-body > #itemHost { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; position: relative; padding-inline: 0 } " +
+      "#itemDlg .sheet-head, #itemDlg .sheet-head * { touch-action: none } #itemDlg .sheet-head [data-act=\"list\"] { pointer-events: none; flex: none !important; margin-inline-start: auto } #itemDlg .sheet-head [data-likex] { margin-inline-end: auto } #itemDlg .sheet { padding-inline: 0 } #itemDlg .sheet-head { padding-inline: 0; margin-bottom: 0 } #itemDlg .sheet-head > .rhead { flex: 1 1 auto; min-width: 0; width: 100%; margin: 0 } " +
+      "#itemDlg .sheet-body { overflow: hidden; padding: 0 } #itemDlg .sheet-body > #itemHost { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; position: relative; padding-inline: 0 } " +
       "html.rs-lock:not(.kb-open) #itemDlg .rfab { opacity: 1; transform: none; pointer-events: auto }";   /* the kit hides page buttons while a popup is open; these two belong to this one */
     document.head.appendChild(st);
   })();
@@ -2455,6 +2466,7 @@
     var dlg = document.getElementById("itemDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "itemDlg"; document.body.appendChild(dlg); }
     if (!dlg.open) {
+      dlg.__openedAt = performance.now();   /* a popstate of an earlier close that arrives after this must not close it */
       dlg.__screen = true;   /* before it opens: syncLayers gives it no marker entry */
       RosterSheet.render(dlg, { title: "", from: "bottom", body: '<div id="itemHost"></div>' });
       dlg.setAttribute("aria-label", "תרגיל");
@@ -2475,13 +2487,13 @@
   }
   /* the page of an exercise, below its header: the songs (cards), the texts. ro: the catalog's exercise, only read (no facilitators, no notes, the texts are not edited) */
   function itemPageHtml(it, ro) {
-    var mus = '<div id="imus" style="flex:none;padding:var(--gutter) var(--gutter) 0">' + musCards(it, ro) + '</div>';   /* the songs this exercise is torn between, as cards: the chosen one plays in the vivencia; on a catalog exercise they come after the texts */
-    return '<style>#ipg, #ipg * { touch-action: pan-y } #ipg textarea, #ipg .rf-rich { max-height: none } #ifields > .rfield { margin: 0 } #ifields .rf-rich { font-size: var(--fs-m); line-height: 1.5 } #ifields[data-ro] .rf-rich { font-size: var(--fs-m); line-height: 1.6 } #imus [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important } #ipg:has(#ifields:not([data-ro])) #imus [data-audio] { display: none } #ipg:has(#ifields:not([data-ro])) #imus .bio-card[aria-current] { border-color: var(--line); box-shadow: var(--sh-card) }</style><div id="ipg" style="display:flex;flex-direction:column;flex:1 1 auto;min-height:0">' +   /* nothing between the header and the scroller: the content goes right under the header's edge, where its shadow is */
-      '<div id="iscroll" style="flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-top:calc(var(--pp-head-gap, var(--sp-2)) + var(--pp-hair))">' +   /* everything under the name scrolls together; the texts are open to the end */
-      '<div id="ifields"' + (ro ? ' data-ro' : '') + ' style="flex:none;display:flex;flex-direction:column;gap:var(--gap-field);padding:' + (!ro && !wide() ? '0' : 'var(--gutter)') + ' var(--gutter) 0">' + (!ro && !wide() ? '<div id="iplay" style="flex:none;display:flex;align-items:center;justify-content:center;gap:var(--sp-2);margin-top:var(--sp-1)">' + (it.music && it.music.audio_object ? cardPill(it.music) : '') + heartBtnEx(it.exercise_id || ("item:" + it.id), "bio-flat") + '</div>' : '') + '<label class="rfield" style="flex:none"><span>פואטיקה</span><div id="ipo" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true"' + (isDraft(it, "poetics") ? DRAFT_FIELD : "") + '>' + rtHtml(txt(it, "poetics")) + '</div></label>' +
+    var mus = '<div id="imus" style="flex:none">' + musCards(it, ro) + '</div>';   /* the songs this exercise is torn between, as cards: the chosen one plays in the vivencia; on a catalog exercise they come after the texts */
+    return '<style>#ipg, #ipg * { touch-action: pan-y } #ipg textarea, #ipg .rf-rich { max-height: none } #ipg .rfield, [data-opening] .rfield { margin: 0 } #ifields .rf-rich { font-size: var(--fs-m); line-height: var(--lh-text) } #ifields[data-ro] .rf-rich { font-size: var(--fs-m); line-height: var(--lh-text) } #imus [data-audio] svg { width: var(--icon) !important; height: var(--icon) !important } #ipg:has(#ifields:not([data-ro])) #imus [data-audio] { display: none } #ipg:has(#ifields:not([data-ro])) #imus .bio-card[aria-current] { border-color: var(--border); box-shadow: var(--shadow) }</style><div id="ipg" style="display:flex;flex-direction:column;flex:1 1 auto;min-height:0">' +   /* nothing between the header and the scroller: the content goes right under the header's edge, where its shadow is */
+      '<div id="iscroll" style="flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:var(--gap);padding:var(--gap) var(--gap) 0">' +   /* everything under the name scrolls together; ONE parent: its padding is the gutter, its gap sequences the fields, the songs and the end room */
+      '<div id="ifields"' + (ro ? ' data-ro' : '') + ' style="flex:none;display:flex;flex-direction:column;gap:var(--gap)">' + (!ro && (!wide() || (it.music && it.music.audio_object)) ? '<div id="iplay" style="flex:none;display:flex;align-items:center;justify-content:center;gap:var(--gap)">' + (it.music && it.music.audio_object ? bigPlay(it.music) : '') + (wide() ? '' : heartBtnEx(it.exercise_id || ("item:" + it.id), "bio-flat")) + '</div>' : '') + '<label class="rfield" style="flex:none"><span>פואטיקה</span><div id="ipo" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true"' + (isDraft(it, "poetics") ? DRAFT_FIELD : "") + '>' + rtHtml(txt(it, "poetics")) + '</div></label>' +
       '<label class="rfield" style="flex:none"><span>הנחיה</span><div id="igu" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true"' + (isDraft(it, "guidance") ? DRAFT_FIELD : "") + '>' + rtHtml(txt(it, "guidance")) + '</div></label>' +
       (ro ? '' : '<label class="rfield" style="flex:none"><span>הערות</span><div id="it" class="rf-rich" contenteditable="' + (ro ? 'false' : 'true') + '" spellcheck="false" role="textbox" aria-multiline="true">' + rtHtml(it.notes || "") + '</div></label>') + '</div>' +
-      mus + '<div id="ibtns" style="flex:none;height:calc(2 * var(--fab) + var(--sp-2) + 2 * var(--gutter) + var(--inset-b))"></div></div></div>';
+      mus + '<div id="ibtns" style="flex:none;height:calc(2 * var(--fab) + var(--gap) + 2 * var(--gap) + var(--inset-b))"></div></div></div>';
   }
   /* the page scrolls under its header with a scrollbar at the left that takes room from the cards: the header gives its left side the same room, so its button is over the cards' edge */
   function sbSync(r) {
@@ -2491,11 +2503,13 @@
   }
   function tabsCenter(trk) {   /* the current tab is in the middle of the strip, whatever the width of the words is; every tab tells CSS where its middle is */
     var cur = trk.querySelector(".is-cur"); if (!cur) return;
-    var cw = trk.parentElement.clientWidth, base = cw / 2 - (cur.offsetLeft + cur.offsetWidth / 2);
+    var cw = trk.parentElement.clientWidth; trk.style.setProperty("--cw", cw + "px");   /* every tab is as wide as the same share of the strip: the neighbours stand the same distance from the current one on both sides, and sliding never changes a width */
+    var base = cw / 2 - (cur.offsetLeft + cur.offsetWidth / 2);
     trk.classList.add("is-drag");   /* put in place, not slid there */
-    trk.style.setProperty("--cw", cw + "px");
     [].forEach.call(trk.querySelectorAll(".bio-tab"), function (t) { t.style.setProperty("--cx", (t.offsetLeft + t.offsetWidth / 2) + "px"); });
     var all = [].slice.call(trk.querySelectorAll(".bio-tab")), ci = all.indexOf(cur); all.forEach(function (t, i) { t.style.setProperty("--nb", Math.abs(i - ci) === 1 ? "1" : "0"); if (Math.abs(i - ci) > 1) t.setAttribute("data-far", ""); else t.removeAttribute("data-far"); });   /* the tabs two steps away are never seen, not even while the strip slides */   /* only the two next to this one keep their numbers in view */
+    /* each name tells CSS how wide it is and how wide the two names beside it are; the squeeze itself is CSS, from the place of the tab on the strip */
+    all.forEach(function (t, i) { var hw = function (x) { var n = x && x.querySelector(".bio-tab__t"); return n ? n.offsetWidth / 2 : 0; }; t.style.setProperty("--h", Math.max(1, hw(t)) + "px"); t.style.setProperty("--hl", hw(all[i - 1]) + "px"); t.style.setProperty("--hr", hw(all[i + 1]) + "px"); });
     trk._base = base; trk.style.setProperty("--tx", base + "px"); trk.classList.add("is-ready");
     requestAnimationFrame(function () { requestAnimationFrame(function () { trk.classList.remove("is-drag"); }); });
   }
@@ -2551,7 +2565,6 @@
         });
       }
       function nbDrag(dx) { nbEnsure(); if (!nb) return; Object.keys(nb).forEach(function (k) { nb[k].style.transition = "none"; nb[k].style.transform = "translateX(calc(" + (k * 100) + "% + " + dx + "px))"; }); }
-      function nbDrop() { if (!nb) return; Object.keys(nb).forEach(function (k) { nb[k].remove(); }); nb = null; }
       function nbSettle() { if (!nb) return; var o = nb; nb = null; Object.keys(o).forEach(function (k) { o[k].style.transition = "transform .22s cubic-bezier(.2, .8, .2, 1)"; o[k].style.transform = "translateX(" + (k * 100) + "%)"; }); setTimeout(function () { Object.keys(o).forEach(function (k) { o[k].remove(); }); }, 260); }
       function nbLeave(dir) { if (!nb) return; var el = nb[-dir]; if (el) { el.style.transition = "transform .16s ease-in"; el.style.transform = "translateX(0)"; } }   /* the page that was beside comes to the middle as the old one goes */
       function walkSwipe(to) { var keep = nb; nb = null; repNext = true; state.slideFrom = 0; stack().pop(); go(function () { itemScreen(to); }); if (keep) Object.keys(keep).forEach(function (k) { keep[k].remove(); }); }
@@ -2583,6 +2596,7 @@
         hdrEl.addEventListener("pointerup", function (ev) {   /* a tap is decided by the finger itself: a small movement of a real finger must not turn it into a swipe that eats the click */
           var t0 = tap0; tap0 = null; if (!t0) return;
           if (Math.hypot(ev.clientX - t0.x, ev.clientY - t0.y) > 12 || Date.now() - t0.t > 600) return;
+          if (ev.target.closest && ev.target.closest("[data-fac]")) return;   /* a real button gets its own click: delivering one by hand as well opens its menu and the second click closes it */
           var hit = document.elementsFromPoint(ev.clientX, ev.clientY).filter(function (e) { return e.matches && e.matches(hitSel); })[0]; if (!hit) return;
           hdrEl.__tapAt = Date.now();
           setTimeout(function () { hdrEl.__syn = true; hit.click(); hdrEl.__syn = false; }, 0);
@@ -2613,7 +2627,7 @@
           var ch = ev.target.closest("[data-choose]");
           if (ch) {   /* the one that plays in the vivencia */
             var m = optList(it).filter(function (x) { return x.id === ch.dataset.choose; })[0]; if (!m || m.id === it.music_id) return;
-            confirmChoose(songName(m), itemName(it) || "התרגיל", function () { setChosen(it, m).then(function () { repaintMus(); if (wide()) paint(); }, fail); });
+            confirmChoose(songName(m), itemName(it) || "התרגיל", function () { return setChosen(it, m).then(function () { repaintMus(); if (wide()) paint(); }, fail); });
             return;
           }
           var c = ev.target.closest("[data-opt]"); if (!c) return;   /* a tap on the card plays the song, as on the music page */
@@ -2689,7 +2703,7 @@
         var pid = state.items[k2 - 1] && state.items[k2 - 1].id, nid = state.items[k2 + 1] && state.items[k2 + 1].id;
         var strip = r.querySelector('[data-act="pickMusic"]');
         if (fresh.music_id !== it.music_id && strip && fresh.exercise_id === it.exercise_id) {   /* the song changed: the strip and its bar are written anew in place, so it shows even while I am typing */
-          strip.innerHTML = '<div style="flex:1 1 auto;min-width:0">' + (fresh.music ? songLines(fresh.music) : '<span class="rrow__title">לחצו לבחירת מוזיקה</span>') + '</div>' + (fresh.music ? playCol(fresh.music, true) : '');
+          strip.innerHTML = '<div style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:var(--gap-tight)">' + (fresh.music ? songLines(fresh.music) : '<span class="rrow__title">לחצו לבחירת מוזיקה</span>') + '</div>' + (fresh.music ? playCol(fresh.music, true) : '');
           var nb = strip.nextElementSibling, bar = "";   /* the exercise has no bar of its own: the player at the bottom is the one bar */
           if (nb && nb.classList.contains("bio-bar")) { if (bar) nb.outerHTML = bar; else nb.remove(); } else if (bar) strip.insertAdjacentHTML("afterend", bar);
           it.music_id = fresh.music_id; it.music = fresh.music;
@@ -2749,7 +2763,7 @@
   }
   /* the music chooser: one search over this exercise's songs, the exercises, and the songs inside them; each other exercise opens like an accordion onto its songs */
   function musicBrowse(l, own, it, pick, tail) {
-    l.innerHTML = '<label class="rfield" style="margin-bottom:var(--sp-2)"><span>חיפוש מוזיקה או תרגיל</span><input id="mq" placeholder=" " autocomplete="off"></label><div id="mb"></div>' + (tail || "");
+    l.style.display = "grid"; l.style.gap = "var(--gap)"; l.style.alignContent = "start"; l.innerHTML = '<label class="rfield"><span>חיפוש מוזיקה או תרגיל</span><input id="mq" placeholder=" " autocomplete="off"></label><div id="mb"></div>' + (tail || "");
     var mb = l.querySelector("#mb"), q = l.querySelector("#mq"), groups = null, open = {}, byId = {};
     own.forEach(function (m) { byId[m.id] = m; });
     function hit(m, s) { return fz(songName(m) + " " + songBy(m), s); }
@@ -2766,7 +2780,7 @@
           if (!ms.length) return;
           var on = open[g.id] != null ? open[g.id] : (!!s && !nm);   /* a search that matched songs inside opens their exercise; an exercise matched by name stays closed until asked */
           shown++;
-          h += '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-2)"><button type="button" class="rrow__main" data-ex="' + g.id + '" aria-expanded="' + on + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit;display:flex;align-items:center;gap:var(--sp-2)"><span style="flex:1 1 auto;min-width:0"><span class="rrow__title">' + esc(g.name) + '</span><span class="rrow__sub">' + ms.length + ' מוזיקות</span></span><span style="flex:none;width:20px;height:20px;transition:transform .2s;' + (on ? 'transform:rotate(180deg)' : '') + '">' + I.down + '</span></button></div>';
+          h += foldRow('data-ex="' + g.id + '"', esc(g.name), ms.length + ' מוזיקות', null, on, false);
           if (on) ms.forEach(function (m) { byId[m.id] = m; h += songRow(m, it.music_id === m.id, "data-m"); });
         });
         if (!mine.length && !shown) h += ph("לא נמצא", "");
@@ -2785,7 +2799,7 @@
   function musicScreen(it) {
     var out = wide() ? function () { if (inSub()) leaveAll(); else itemScreen(it); } : back;   /* beside the list, back is the same exercise */
     /* clearing the song is the neutral tile at the header's left, as in the popup on a phone, not a row */
-    var clr = '<button class="rbtn rbtn--icon rbtn--edge-end" type="button" data-act="mclear" aria-label="ניקוי המוזיקה" title="ניקוי המוזיקה"' + (it.music_id ? "" : " disabled") + '>' + I.trash + '</button>';
+    var clr = '<button class="rbtn rbtn--icon" type="button" data-act="mclear" aria-label="ניקוי המוזיקה" title="ניקוי המוזיקה"' + (it.music_id ? "" : " disabled") + '>' + I.trash + '</button>';
     show(head(itemName(it) || "מוזיקה", "", true, clr) + '<div class="rlist" id="mlist"><div class="rskel rskel--title"></div></div>', function (r) {
       on(r, "back", out);
       on(r, "mclear", function () { chooseSongHere(it, null, out); });
@@ -2878,11 +2892,6 @@
     return chain.then(function () { return api("/rest/v1/vivencia_items?id=eq." + it.id, { method: "PATCH", json: { music_id: m ? m.id : null } }); }).then(function () { it.music_id = m ? m.id : null; it.music = m; });
   }
   /* the time of a music card: the place in the song and its whole length, "1:23 / 3:40"; the player keeps it up to date (the bioaudio event) */
-  function clkSpan(m, big) {
-    var nw = window.__bioNow || {}, d = durOf(m), isMine = !!(nw.name && m.audio_object && nw.name === m.audio_object), t = isMine ? Math.floor(nw.t || 0) : 0;
-    var tot = nw.name && nw.name === m.audio_object && nw.d > 0 ? Math.floor(nw.d) : d;
-    return '<span class="bio-clk" data-dur="' + (d || "") + '"' + (m.audio_object ? ' data-for="' + esc(m.audio_object) + '"' : '') + ' style="direction:ltr;color:var(--text-2);font:var(--fw-medium) ' + (big ? 'var(--fs-m)' : 'var(--fs-s)') + '/1 var(--font);font-variant-numeric:tabular-nums">' + (isMine ? clock(t) + (tot ? " / " + clock(tot) : "") : (tot ? clock(tot) : "")) + '</span>';
-  }
   document.addEventListener("bioaudio", function (ev) {
     var d = ev.detail || {}; window.__bioNow = { name: d.name || "", t: d.t || 0, d: d.d || 0 };
     window.__bioNow.playing = !!d.playing;
@@ -2896,66 +2905,57 @@
       if (sp.textContent !== txt2) sp.textContent = txt2;
     });
   });
-  /* THE SONG CARD: the same on every screen. The name at the top left; under it the length (fixed, it never counts while the song plays), then the performer (cut with dots when it is long); at the right end the action as an icon and, at its right, the heart. A tap on the card plays and stops the song: its play tile is kept in the card, hidden. */
-  function songCardUi(m, o) {
-    var d = durOf(m), pill = o.pill || "", keep = !!o.keepPlay, hasAud = pill.indexOf("data-audio") >= 0, hide = hasAud && !keep;
-    var heart = m && m.id && !/^h[0-9]/.test(m.id) && !o.noHeart ? cardHeart(m) : "";
-    var act = o.act || "", rmX = "";
-    var rmM = act.match(/<button[^>]*data-orm[\s\S]*?<\/button>/);
-    if (rmM) { act = act.replace(rmM[0], ""); rmX = '<span style="position:absolute;top:calc(var(--sp-2) + var(--sp-1));right:var(--sp-3);transform:translate(50%,-50%);display:flex">' + rmM[0] + '</span>'; }   /* the remove cross sits in the card's top right corner */
-    return '<div class="rcard rcard--compact bio-card bio-mcard' + (o.cls ? ' ' + o.cls : '') + '" ' + (o.attrs || '') + (o.selected ? ' aria-current="true"' : '') + ' style="margin:0;min-width:0;display:flex;flex-direction:column;gap:var(--gap-tight);padding:var(--sp-2);cursor:pointer;position:relative;direction:ltr;text-align:left">' +
-      '<span style="display:block;min-height:var(--tag-s);line-height:var(--tag-s);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;' + (rmX ? 'padding-right:var(--ctl);' : o.corner ? 'padding-right:5rem;' : '') + 'font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(o.title) + '</span>' +
-      '<div style="display:flex;align-items:center;gap:var(--sp-1);min-height:var(--tag-s)"><span class="bio-dur" style="flex:none;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + (d ? clock(d) : '') + '</span>' +
-      '<span style="flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;text-align:left;color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font)">' + esc(o.by || "") + '</span>' +
-      '<span style="flex:none;display:flex;align-items:center;gap:var(--gap-tight)">' + (o.heartFirst ? heart + act + (hide ? '' : pill) : act + (hide ? '' : pill) + heart) + '</span></div>' +
-      (hide ? '<span hidden>' + pill + '</span>' : '') + rmX + (o.corner || '') + '</div>';
+  /* THE CARD (law 10): one component for every list item shown as a card; a song, an exercise, a vivencia exercise are only what fills its slots.
+     A grid of two rows. The LEAD (a number, an image, a big sign) spans both rows. In each row, the text on one side and its buttons on the other.
+     o: attrs (data-..., role: what the card is for the code), cls (hooks for the states), selected,
+        lead (html), title (text), titleAttr (the title is a button with these attributes), chip (html, after the title),
+        act1 (html, the buttons of row 1: remove), dur (a length, clock text), sub (text of row 2) or subHtml (its markup), act2 (html, the buttons of row 2: play, +N, heart, plus),
+        hidden (html that must stay in the card but not be seen: a play tile with no place, it keeps the shimmer and the tap).
+     An empty slot is not written, so it takes no room; with no sub and no act2 the card is one row. Looks: .bio-c in kit.css. */
+  /* THE TITLE ROW (law 4): a text and its chip under ONE parent; --gap between them, the text shrinks with an ellipsis, the chip never does. Used by the card's primary slot and the opening sections. Looks: .rtitle in kit.css. */
+  function titleRow(cls, textHtml, chipHtml) { return '<span class="rtitle' + (cls ? ' ' + cls : '') + '">' + textHtml + (chipHtml || '') + '</span>'; }
+  function cardSlots(o) {
+    var h = '<div class="bio-card bio-c' + (o.cls ? ' ' + o.cls : '') + '" ' + (o.attrs || '') + (o.selected ? ' aria-current="true"' : '') + '>';
+    if (o.lead) h += '<span class="bio-c__lead" aria-hidden="true">' + o.lead + '</span>';
+    h += titleRow('bio-c__t bio-c__t1', o.titleAttr ? '<button type="button" class="bio-c__tx rrow__main" dir="auto" ' + o.titleAttr + '>' + esc(o.title) + '</button>' : '<span class="bio-c__tx" dir="auto">' + esc(o.title) + '</span>');
+    if (o.act1 || o.chip) h += '<span class="bio-c__a bio-c__a1">' + (o.chip || '') + (o.act1 || '') + '</span>';   /* the chip is in the END group of row 1, on the start side of that row's actions */
+    if (o.dur || o.sub || o.subHtml) h += '<span class="bio-c__t bio-c__t2">' + (o.dur ? '<span class="bio-dur">' + o.dur + '</span>' : '') + (o.subHtml ? '<span class="bio-c__tx">' + o.subHtml + '</span>' : o.sub ? '<span class="bio-c__tx" dir="auto">' + esc(o.sub) + '</span>' : '') + '</span>';
+    if (o.act2) h += '<span class="bio-c__a bio-c__a2">' + o.act2 + '</span>';
+    return h + (o.hidden ? '<span hidden>' + o.hidden + '</span>' : '') + '</div>';
   }
-  /* THE EXERCISE CARD, laid out like the song card: the number at the right; at its left the name of the exercise (the leader's chip at the far left), and under it the length of the chosen song, its name, then at the left end the cross and the play tile. */
+  /* a song as the slots: its name, its length and performer, and at the end of the second row what can be done with it (the heart among them) */
+  function songCardUi(m, o) {
+    var d = durOf(m), pill = o.pill || "", hasAud = pill.indexOf("data-audio") >= 0, hide = hasAud && !o.keepPlay;
+    var heart = m && m.id && !/^h[0-9]/.test(m.id) && !o.noHeart ? cardHeart(m) : "";
+    var act = o.act || "";
+    return cardSlots({ cls: 'bio-mcard' + (o.cls ? ' ' + o.cls : ''), attrs: o.attrs, selected: o.selected, title: o.title, act1: o.rm || "", dur: d ? clock(d) : "", sub: o.by || "",
+      act2: o.heartFirst ? heart + act + (hide ? '' : pill) : act + heart + (hide ? '' : pill), hidden: hide ? pill : "" });
+  }
+  /* an exercise of a vivencia as the slots: the number is the lead; the name (a button) and the leader's chip, the cross; the length and name of the chosen song, its play tile */
   function exCardUi(i, o) {
     var m = i.music, d = m ? durOf(m) : 0;
-    return '<div class="rcard rcard--compact bio-card bio-icard' + (o.cls ? ' ' + o.cls : '') + '" ' + (o.attrs || '') + (o.selected ? ' aria-current="true"' : '') + ' style="margin:0;min-width:0;display:flex;flex-direction:row;align-items:center;gap:var(--sp-2);padding:var(--sp-2);cursor:pointer;position:relative">' +
-      '<span aria-hidden="true" style="flex:none;display:flex;align-items:center;justify-content:center;min-width:var(--ctl);font:var(--fw-black) calc(2.75 * var(--fs-m))/.95 var(--font);color:var(--text);font-variant-numeric:tabular-nums">' + o.lead + '</span>' +
-      '<div style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:var(--gap-tight)">' +
-        '<div style="display:flex;align-items:center;gap:var(--sp-1);min-height:var(--tag-s)' + (o.rm ? ';padding-left:var(--ctl)' : '') + '"><button type="button" class="rrow__main" ' + o.titleAttr + ' style="flex:0 1 auto;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font);color:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(o.title) + '</button>' + (o.chip || '') + '</div>' +
-        '<div style="display:flex;align-items:center;gap:var(--sp-1);min-height:var(--tag-s)">' +
-          (d ? '<span class="bio-dur" style="flex:none;color:var(--text-2);font:var(--fw-medium) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums;direction:ltr">' + clock(d) + '</span>' : '') +
-          '<span dir="auto" style="flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-2);font:var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font)">' + (m ? esc(songName(m)) : 'בלי מוזיקה') + '</span><span style="flex:1 1 0;min-width:0"></span>' +
-          '<span style="flex:none;display:flex;align-items:center;gap:var(--gap-tight)">' + (o.pill || '') + '</span>' +
-        '</div>' +
-      '</div>' + (o.rm ? '<span style="position:absolute;top:calc(var(--sp-2) + var(--sp-1));left:var(--sp-3);transform:translate(-50%,-50%);display:flex">' + o.rm + '</span>' : '') + (o.actions || '') + '</div>';
+    return cardSlots({ cls: 'bio-icard' + (o.cls ? ' ' + o.cls : ''), attrs: o.attrs, selected: o.selected, lead: o.lead, title: o.title, titleAttr: o.titleAttr, chip: o.chip,
+      act1: o.rm || "", dur: d ? clock(d) : "", sub: m ? songName(m) : 'בלי מוזיקה', act2: o.pill || "" });
   }
-  /* THE CARD: one element for a song and for an exercise. A name (bold), a line under it (small), at the foot the play tile with what goes with it and the time, a number or a mark at its side (lead), a small button in its corner, and the green frame when it is the marked one.
-     o: attrs (what the card is for the code: data-..., role), cls, selected, ltr (a Latin name: left to right), lead, title, titleAttr (the name is a button with these attributes), sub, subLtr, pill, chip, time, corner */
-  function cardUi(o) {
-    var dir = o.ltr ? "direction:ltr;text-align:left;" : "";
-    /* a heart or a bin in the card's top left corner: no line of the title or of the sub line may reach it (its box and one step) */
-    var pl = /bio-ha--tl|data-idel/.test(o.actions || "") ? "padding-left:calc((var(--tag-s) + var(--icon-m)) / 2 + var(--sp-1));" : "";
-    var title = o.titleAttr
-      ? '<button type="button" class="rrow__main" ' + o.titleAttr + ' style="background:none;border:0;padding:0;text-align:start;cursor:pointer;font:var(--fw-bold) ' + (o.big ? 'var(--fs-l)' : 'var(--fs-s)') + '/var(--lh-tight) var(--font);color:inherit;display:block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;' + dir + (o.corner ? 'padding-inline-end:var(--ctl);' : '') + pl + '">' + esc(o.title) + '</button>'
-      : '<span style="display:block;' + dir + 'overflow-wrap:anywhere;' + (o.corner ? 'padding-right:var(--ctl);' : '') + pl + 'font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font)">' + esc(o.title) + '</span>';
-    var sub = '<span style="display:block;' + (o.subRight ? 'direction:ltr;text-align:right;' : o.subLtr !== false ? 'direction:ltr;text-align:left;' : '') + 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;' + pl + 'color:var(--text-2);font:var(--fw-regular) ' + (o.big ? 'var(--fs-m)' : 'var(--fs-xs)') + '/var(--lh-tight) var(--font)">' + (o.subHtml || (o.sub ? esc(o.sub) : '&nbsp;')) + '</span>';
-    var foot = o.footEnd ? '<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-1);margin-top:auto;padding-top:var(--gap-tight);min-height:calc(var(--tag-s) + var(--gap-tight))"><div style="display:flex;align-items:center;gap:var(--sp-1)">' + (o.chip || '') + '</div><div style="display:flex;align-items:center;gap:var(--sp-1)">' + (o.time || '') + (o.pill || '') + '</div></div>'   /* the leader chip at the right end, under the song; the play tile at the left end, its time on its right */
-      : '<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-1);margin-top:auto;padding-top:var(--gap-tight)"><div style="display:flex;align-items:center;gap:var(--sp-1)">' + (o.pill || '') + (o.chip || '') + '</div>' + (o.time || '') + '</div>';
-    var lead = o.lead ? (o.bigLead
-      ? '<span aria-hidden="true" style="flex:none;display:flex;align-items:flex-start;justify-content:center;min-width:var(--ctl);font:var(--fw-black) calc(2.75 * var(--fs-m))/.95 var(--font);color:var(--text);font-variant-numeric:tabular-nums">' + o.lead + '</span>'   /* the number as tall as the two lines beside it, no tile */
-      : '<span aria-hidden="true" style="flex:none;display:flex;align-items:center;justify-content:center;width:var(--ctl);height:var(--ctl);border-radius:var(--r-ctl);background:var(--surface-2);font:var(--fw-bold) var(--fs-m)/1 var(--font)">' + o.lead + '</span>') : '';
-    if (!o.footEnd && !o.pill && !o.chip && !o.time) foot = '';   /* an exercise card keeps its bottom row even with no song: all the cards are one height, the same with a song and without */   /* nothing to put in the bottom row: it does not add room under the text */
-    var body = '<div style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:var(--gap-tight);' + (o.lead ? '' : 'width:100%') + '">' + title + sub + foot + '</div>';
-    return '<div class="rcard rcard--compact bio-card' + (o.cls ? ' ' + o.cls : '') + '" ' + (o.attrs || '') + (o.selected ? ' aria-current="true"' : '') + ' style="margin:0;min-width:0;display:flex;' + (o.lead ? 'flex-direction:row;align-items:flex-start;gap:var(--sp-2);' : 'flex-direction:column;') + 'padding:var(--sp-2);cursor:pointer;position:relative">' + lead + body + (o.corner || '') + (o.actions || '') + '</div>';   /* the same room on all four sides */
+  var CARD_PILL = "";
+  function bigPlay(m) {   /* a phone's exercise page: its song's play button is a LARGE icon (law 11); the player's states (data-st, data-audio) still drive it */
+    if (m.audio_object) songInfo[m.audio_object] = { t: m.title || m.name, a: m.artist || "" };
+    if (m.audio_object && window.BioAudio && BioAudio.button) return BioAudio.button(m.audio_object, false, true);
+    return cardPill(m);
   }
-  var CARD_PILL = "width:var(--tag-s);height:var(--tag-s);min-height:var(--tag-s);padding:0;border-radius:999px;background:var(--surface-2);";
   function cardPill(m, listKey) {
-    var b = songBtn(m, false).replace(/width:var\(--fab\);height:var\(--fab\);min-height:var\(--fab\);/g, CARD_PILL);
+    var b = songBtn(m, false).replace(/width:var\(--ctl\);height:var\(--ctl\);min-height:var\(--ctl\);/g, CARD_PILL);
     return listKey ? b.replace('data-audio="', 'data-list="' + esc(listKey) + '" data-audio="') : b;
   }
   function pillCount(pill, n) {   /* an exercise with several songs: how many, on the corner of the play button; it takes no room, so nothing moves */
     if (!(n > 1)) return pill;
-    return '<span style="display:inline-flex;align-items:center;gap:var(--sp-1);flex:none"><b class="bio-cnt2" aria-label="' + n + ' מוסיקות" style="color:var(--primary);font:var(--fw-bold) var(--fs-s)/1 var(--font);text-align:center;font-variant-numeric:tabular-nums;pointer-events:none" dir="ltr">+' + (n - 1) + '</b>' + pill + '</span>';
+    var at = pill.lastIndexOf("</button>"); if (at < 0) return pill;
+    return pill.slice(0, at) + btnTail("+" + (n - 1), 'title="' + n + ' מוסיקות"') + pill.slice(at);   /* law 10: the count is the play button's tail, inside its touch area */
   }
   /* a song with no file: the card has no YouTube sign, a tap on it opens YouTube; the only mark is the upload (a file from this device), with no background */
   (function () {
     var st = document.createElement("style");
-    st.textContent = ".bio-tab .bio-tab__n, .bio-tab .bio-tab__f { transform: none !important } .bio-tab__t { display: inline-flex; flex-direction: column; align-items: center } .bio-tab__t::before { content: attr(data-t); height: 0; overflow: hidden; visibility: hidden; font-weight: 700; pointer-events: none; user-select: none; white-space: nowrap } .bio-tab button.rchip.bio-tab__f[data-fac] { position: relative } .bio-tab button.rchip.bio-tab__f[data-fac]::after { content: \"\"; position: absolute; inset: -3px -18px -16px } .bio-tab [data-nameedit]::after { content: \"\"; position: absolute; inset: -14px -18px -3px } .bio-tab [data-nameedit] { position: relative } .bio-tab button.rchip.bio-tab__f[data-fac], .bio-tab button.rchip.bio-tab__f[data-fac][aria-pressed] { background: transparent !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; min-height: 0 !important; height: auto !important; color: var(--primary) !important; font-weight: var(--fw-bold) !important; font-size: 13px !important; line-height: 13px !important; letter-spacing: -.17px !important; cursor: pointer } .bio-tab.is-play button.rchip.bio-tab__f[data-fac] { color: var(--mus-solid) !important } #iscroll:has(#iplay) { padding-top: 0 !important } #iplay [data-audio] { width: 40px !important; height: 40px !important; min-height: 40px !important } #iplay [data-audio] svg { width: var(--icon-m) !important; height: var(--icon-m) !important } #iplay [data-likex] { width: 40px !important; height: 40px !important; min-height: 40px !important } #iplay [data-likex] svg { width: 24px !important; height: 24px !important } #itemDlg .bio-tab input.bio-tab__in, #itemDlg .rhead input.bio-tab__in { margin: 0 !important; margin-block: 0 !important; order: 0 !important; height: 1.25em !important; min-height: 0 !important; line-height: 1.25 !important; padding: 0 !important } .bio-tab__in { field-sizing: content; min-width: 5ch; max-width: 78vw; border: 0 !important; outline: 0; background: transparent !important; padding: 0 !important; margin: 0 !important; text-align: center; direction: rtl; font-family: inherit; text-overflow: ellipsis; height: auto; min-height: 0; line-height: var(--lh-tight); box-sizing: content-box; display: block } .bio-tab__in::placeholder { color: var(--text-3); font-weight: var(--fw-regular) } .bio-dock .bio-dock__name { flex: 0 1 auto !important; max-width: 28rem } #pl > .rhead [data-act=\"new\"] { transition: none !important } #pl > .rhead { position: relative } #pl > .rhead > .rhead__text + * { margin-inline-start: auto } #pl > .rhead [data-catopen] { margin-inline-start: auto } #pl > .rhead #vtimer:not([hidden]) { margin-inline-start: auto } #pl > .rhead:has(#vtimer:not([hidden])) [data-catopen] { margin-inline-start: 0 } #pl > .rhead .rhead__text { position: absolute; left: 50%; top: 0; bottom: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; justify-content: center; flex: none; max-width: calc(100% - 220px); pointer-events: none; text-align: center } #pl > .rhead .rhead__title { flex: none; text-box: normal; line-height: 1.4; padding-block: 0; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100% } @media (max-width: 700px) { html.bio-docked dialog.rsheet:has(.sheet-foot) .sheet { padding-bottom: calc(var(--dockfull) + var(--sp-2)) !important } html.bio-kb.bio-docked dialog.rsheet:has(.sheet-foot) .sheet, html.bio-kb dialog.rsheet:has(.sheet-foot) .sheet { padding-bottom: var(--sp-2) !important; margin-bottom: 0 !important } html.bio-kb dialog.rsheet:has(.sheet-foot) { padding-bottom: 0 !important; height: auto !important; min-height: 0 !important; top: auto !important; bottom: 0 !important; inset-block-start: auto !important; margin-top: auto !important } html.bio-kb dialog.rsheet:has(.sheet-foot) .sheet { flex: 0 1 auto !important; min-height: 0 !important } } .bio-card [data-idel] svg, .bio-card [data-orm] svg, .bio-card [data-amrm] svg, .bio-card [data-rm] svg { width: 14px !important; height: 14px !important; stroke-width: 2.2 !important } #hl .rrow { padding-block: var(--sp-1) !important; min-height: 0 !important; align-items: center !important } #hl .rrow__main { justify-content: center; min-width: 0; padding-inline-end: calc(var(--ctl) + var(--sp-3) + var(--sp-1)) !important } #hl .rrow__title { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap } #hl .rrow__sub:empty { display: none } .bio-vcnt__c { display: grid; flex: none; width: var(--icon-m); height: var(--icon-m); color: var(--text-2) } .bio-vcnt__c svg { width: 100%; height: 100%; display: block; stroke-width: var(--icon-w) } .bio-vcnt__c svg path { animation: none !important; stroke-dasharray: none !important } .bio-vcnt { position: absolute; left: calc(var(--ctl) + var(--sp-2)); top: 50%; transform: translateY(-50%); display: inline-flex; align-items: center; gap: var(--gap-tight); color: var(--text-2); font: var(--fw-bold) var(--fs-s)/1 var(--font); font-variant-numeric: tabular-nums; pointer-events: none } button:has(> span > [data-exn][data-zero]), button:has(> span > [data-exn]:empty) { display: none !important } #vtimer, #itimer { display: inline-flex; align-items: center; height: var(--ctl); line-height: 1 !important } #vtimer[hidden], #itimer[hidden] { display: none } .bio-tab .bio-tab__t, .bio-tab.is-cur .bio-tab__t { --e: max(0, calc(1 - abs(var(--cx, 0px) + var(--tx, 0px) - var(--cw, 360px) / 2) / (var(--cw, 360px) * .28))); color: color-mix(in srgb, var(--text) calc(var(--e) * 100%), var(--text-2)); font-weight: calc(500 + 200 * var(--e)); transition: color .22s cubic-bezier(.2, .8, .2, 1) } .bio-tabs__track.is-drag .bio-tab .bio-tab__t { transition: none !important } .bio-tab .bio-tab__n, .bio-tab .bio-tab__f { transition: transform .22s cubic-bezier(.2, .8, .2, 1), opacity .22s cubic-bezier(.2, .8, .2, 1) } .bio-tabs__track.is-drag .bio-tab .bio-tab__n, .bio-tabs__track.is-drag .bio-tab .bio-tab__f { transition: none !important } .bio-tab { --nx: calc(clamp(var(--cw, 360px) * .13, var(--cx, 0px) + var(--tx, 0px), var(--cw, 360px) * .87) - (var(--cx, 0px) + var(--tx, 0px))) } .bio-tab .bio-tab__n, .bio-tab .bio-tab__f { opacity: calc(1 - var(--nb, 0) * min(1, abs(var(--nx)) / (var(--cw, 360px) * .36))) !important } .bio-tab[data-far] { opacity: clamp(0, calc(1.5 - abs(var(--cx, 0px) + var(--tx, 0px) - var(--cw, 360px) / 2) / (var(--cw, 360px) * .37)), .7) !important } #iplay [data-likex] { width: var(--tag-s) !important; height: var(--tag-s) !important; min-height: var(--tag-s) !important; padding: 0 !important; margin: 0 !important } #iplay [data-likex] svg { width: var(--icon-m); height: var(--icon-m) } #iplay [data-audio] svg { width: var(--icon-s) !important; height: var(--icon-s) !important } .bio-card[aria-current=true][data-ex], .bio-card[aria-current=true][data-ex]:hover, .bio-icard[aria-current=true]:not(.is-play) { background: var(--ex-tint) !important; border-color: transparent !important; box-shadow: var(--sh-card) !important; outline: 0 !important } .bio-tab .rchip.bio-tab__f[data-fac-label], .bio-tab .rchip.bio-tab__f { background: transparent !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; min-height: 0 !important; height: auto !important; color: var(--primary) !important; font-weight: var(--fw-bold) !important } .bio-tab.is-play .rchip.bio-tab__f[data-fac-label], .bio-tab.is-play .rchip.bio-tab__f { background: transparent !important; color: var(--mus-solid) !important } .bio-icard button.rchip[data-fac][aria-pressed], .bio-icard .rchip[data-fac-label], .bio-icard button.rchip[data-fac], .bio-icard .rchip { background: transparent !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; min-height: 0 !important; height: auto !important; color: var(--primary) !important; font-weight: var(--fw-bold) !important } .bio-icard .rchip::before { content: \"|\"; margin-inline-end: var(--sp-1); color: var(--text-3); font-weight: var(--fw-regular) } .bio-icard.is-play .rchip, .bio-icard:has([data-audio][data-st=\"pause\"]) .rchip, .bio-icard.is-play button.rchip[data-fac][aria-pressed], .bio-icard.is-play .rchip[data-fac-label], .bio-icard:has([data-audio][data-st=\"pause\"]) button.rchip[data-fac][aria-pressed], .bio-icard:has([data-audio][data-st=\"pause\"]) .rchip[data-fac-label] { background: transparent !important; border: 0 !important; color: #FFFFFF !important } .bio-icard.is-play .rchip::before, .bio-icard:has([data-audio][data-st=\"pause\"]) .rchip::before { color: #FFFFFF } .bio-card [data-yt] { display: none !important } .bio-card [data-upl] { width: var(--tag-s) !important; height: var(--tag-s) !important; min-height: var(--tag-s) !important; padding: 0 !important; background: transparent !important; border: 0 !important; box-shadow: none !important; color: var(--text) !important } .bio-card [data-upl] svg { width: var(--icon-m) !important; height: var(--icon-m) !important; stroke-width: 2 !important } .bio-card.is-play [data-upl], .bio-card:has([data-audio][data-st=\"pause\"]) [data-upl], .bio-card.is-play [data-like], .bio-card:has([data-audio][data-st=\"pause\"]) [data-like], .bio-card.is-play [data-likex], .bio-card:has([data-audio][data-st=\"pause\"]) [data-likex] { color: #FFFFFF !important }";
+    st.textContent = ".bio-tab .bio-tab__n, .bio-tab .bio-tab__f { transform: none !important } .bio-tab__t { display: inline-flex; flex-direction: column; align-items: center } .bio-tab__t::before { content: attr(data-t); height: 0; overflow: hidden; visibility: hidden; font-weight: var(--fw-bold); pointer-events: none; user-select: none; white-space: nowrap } .bio-tab button.rchip.bio-tab__f[data-fac] { position: relative } .bio-tab button.rchip.bio-tab__f[data-fac]::after { content: \"\"; position: absolute; inset: -3px -18px -16px } .bio-tab [data-nameedit]::after { content: \"\"; position: absolute; inset: -14px -18px -3px } .bio-tab [data-nameedit] { position: relative } .bio-tab.is-play button.rchip.bio-tab__f[data-fac] { color: var(--primary) !important } #iscroll:has(#iplay) { padding-top: 0 !important } #iplay [data-likex] { width: var(--icon) !important; height: var(--icon) !important; min-height: 0 !important } #iplay [data-likex] svg { width: var(--icon) !important; height: var(--icon) !important } #itemDlg .bio-tab input.bio-tab__in, #itemDlg .rhead input.bio-tab__in { margin: 0 !important; margin-block: 0 !important; order: 0 !important; height: 1.25em !important; min-height: 0 !important; line-height: 1.25 !important; padding: 0 !important } .bio-tab__in { field-sizing: content; min-width: var(--ctl); max-width: 78vw; border: 0 !important; outline: 0; background: transparent !important; padding: 0 !important; margin: 0 !important; text-align: center; direction: rtl; font-family: inherit; text-overflow: ellipsis; height: auto; min-height: 0; line-height: var(--lh-tight); box-sizing: content-box; display: block } .bio-tab__in::placeholder { color: var(--text-muted); font-weight: var(--fw-regular) } .bio-dock .bio-dock__name { flex: 0 1 auto !important; max-width: var(--w) } #pl > .rhead [data-act=\"new\"] { transition: none !important } #pl > .rhead { position: relative } #pl > .rhead [data-catopen] { margin-inline-start: auto } #pl > .rhead #vtimer:not([hidden]) { margin-inline-start: auto } #pl > .rhead:has(#vtimer:not([hidden])) [data-catopen] { margin-inline-start: 0 } #pl > .rhead .rhead__text { align-items: flex-start; text-align: start } #pl > .rhead .rhead__title { flex: none; text-box: normal; line-height: 1.4; padding-block: 0; text-align: start; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100% } #pl > .rhead input.rhead__title { flex: 1 1 auto; width: 100%; border: 0; outline: 0; background: transparent; padding: 0; margin: 0; color: inherit; font-family: inherit } @media (width < 760px) { html.bio-docked dialog.rsheet:has(.sheet-foot) .sheet { padding-bottom: calc(var(--dockfull) + var(--gap)) !important } html.bio-kb.bio-docked dialog.rsheet:has(.sheet-foot) .sheet, html.bio-kb dialog.rsheet:has(.sheet-foot) .sheet { padding-bottom: var(--gap) !important; margin-bottom: 0 !important } html.bio-kb dialog.rsheet:has(.sheet-foot) { padding-bottom: 0 !important; height: auto !important; min-height: 0 !important; top: auto !important; bottom: 0 !important; inset-block-start: auto !important; margin-top: auto !important } html.bio-kb dialog.rsheet:has(.sheet-foot) .sheet { flex: 0 1 auto !important; min-height: 0 !important } } #pl > #list { padding-block-start: var(--gap); padding-inline: var(--gap); gap: var(--gap) }   /* the end padding is the kit's: --end-pad, and the add button's room only while that button is on the screen */ [data-recv], [data-opening], [data-exsec] { display: flex; flex-direction: column } :is([data-recv], [data-opening], [data-exsec]):has(> .bio-accb:not([data-closed]) > div > :not(:empty)) { gap: var(--gap) }  [data-vrow] .rrow__main { justify-content: center; min-width: 0 } [data-vrow] .rrow__title { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap } [data-vrow] .rrow__sub:empty { display: none } .bio-vcnt__c { display: grid; flex: none; width: var(--icon); height: var(--icon); color: var(--text-muted) } .bio-vcnt__c svg { width: 100%; height: 100%; display: block; stroke-width: var(--icon-w) } .bio-vcnt__c svg path { animation: none !important; stroke-dasharray: none !important } .bio-vcnt { flex: none; display: inline-flex; align-items: center; gap: var(--gap-tight); color: var(--text-muted); font: var(--fw-bold) var(--fs-m)/1 var(--font); font-variant-numeric: tabular-nums; pointer-events: none } button:has(> [data-exn][data-zero]), button:has(> [data-exn]:empty) { display: none !important } #vtimer, #itimer { display: inline-flex; align-items: center; height: var(--ctl); line-height: 1 !important } #vtimer[hidden], #itimer[hidden] { display: none } .bio-tab .bio-tab__t, .bio-tab.is-cur .bio-tab__t { --e: max(0, calc(1 - abs(var(--cx, 0px) + var(--tx, 0px) - var(--cw, 360px) / 2) / (var(--cw, 360px) * .28))); color: color-mix(in srgb, var(--text) calc(var(--e) * 100%), var(--text-muted)); font-weight: calc(var(--fw-regular) + (var(--fw-bold) - var(--fw-regular)) * var(--e)); transition: color .22s cubic-bezier(.2, .8, .2, 1) } .bio-tabs__track.is-drag .bio-tab .bio-tab__t { transition: none !important } .bio-tab .bio-tab__n, .bio-tab .bio-tab__f { transition: transform .22s cubic-bezier(.2, .8, .2, 1), opacity .22s cubic-bezier(.2, .8, .2, 1) } .bio-tabs__track.is-drag .bio-tab .bio-tab__n, .bio-tabs__track.is-drag .bio-tab .bio-tab__f { transition: none !important } .bio-tab { --nx: calc(clamp(var(--cw, 360px) * .13, var(--cx, 0px) + var(--tx, 0px), var(--cw, 360px) * .87) - (var(--cx, 0px) + var(--tx, 0px))) } .bio-tab .bio-tab__n, .bio-tab .bio-tab__f { opacity: calc(1 - var(--nb, 0) * min(1, abs(var(--nx)) / (var(--cw, 360px) * .36))) !important } .bio-tab[data-far] { opacity: clamp(0, calc(1.5 - abs(var(--cx, 0px) + var(--tx, 0px) - var(--cw, 360px) / 2) / (var(--cw, 360px) * .37)), .7) !important } #iplay [data-likex] { width: var(--icon) !important; height: var(--icon) !important; min-height: 0 !important; padding: 0 !important; margin: 0 !important } #iplay [data-likex] svg { width: var(--icon); height: var(--icon) } .bio-card[aria-current=true][data-ex], .bio-card[aria-current=true][data-ex]:hover, .bio-icard[aria-current=true]:not(.is-play) { background: var(--surface) !important; border-color: transparent !important; box-shadow: var(--shadow) !important; outline: 0 !important } .bio-card [data-yt] { display: none !important } .bio-card [data-upl] { width: var(--icon) !important; height: var(--icon) !important; min-height: 0 !important; padding: 0 !important; background: transparent !important; border-color: transparent !important; box-shadow: none !important; color: var(--text) !important } .bio-card [data-upl] svg { width: var(--icon) !important; height: var(--icon) !important; stroke-width: 2 !important } .bio-card.is-play [data-upl], .bio-card:has([data-audio][data-st=\"pause\"]) [data-upl], .bio-card.is-play [data-like], .bio-card:has([data-audio][data-st=\"pause\"]) [data-like], .bio-card.is-play [data-likex], .bio-card:has([data-audio][data-st=\"pause\"]) [data-likex] { color: var(--on-primary) !important }";
     document.head.appendChild(st);
     document.addEventListener("click", function (ev) {
       var c = ev.target.closest && ev.target.closest(".bio-card"); if (!c || c.querySelector("[data-audio]")) return;
@@ -2968,7 +2968,7 @@
     ev.stopPropagation(); ev.preventDefault();
     api("/rest/v1/music?id=eq." + encodeURIComponent(b.dataset.addto) + "&select=id,name,title,artist,duration_sec,audio_object,in_catalog&limit=1").then(function (rows) {
       var m = rows && rows[0]; if (!m) { toast("המוסיקה לא נמצאה"); return; }
-      chooseDest(songName(m), { vivId: state.viv && state.viv.id, itemId: liveItem && liveItem.id }, function (d) { addMusicTo(m, d); });
+      chooseDest(songName(m), { vivId: state.viv && state.viv.id, itemId: liveItem && liveItem.id }, function (d) { return addMusicTo(m, d); });
     }, fail);
   }, true);
   /* every popup on a wide screen can be moved: hold its top (the title, or the empty strip above its content) and drag it anywhere; it comes back to its place the next time it opens */
@@ -2997,11 +2997,11 @@
     document.addEventListener("pointerup", end); document.addEventListener("pointercancel", end);
     document.addEventListener("close", function (ev) { if (ev.target && ev.target.tagName === "DIALOG") ev.target.style.translate = ""; }, true);
   })();
-  var CARD_BIN = 'style="position:absolute;top:calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2);right:calc(var(--sp-2) - (var(--tag-s) - var(--icon-m)) / 2);color:var(--text-3);min-height:var(--tag-s);height:var(--tag-s);width:var(--tag-s);padding:0;background:transparent;border-color:transparent"';
-  /* the card of a music option: the song, its performer, the play tile, the chip that chooses it, the time, the bin */
+    /* the card of a music option: the song, its performer, the play tile, the chip that chooses it, the time, the bin */
   function optCardHtml(m, sel, withRm, plain, listKey, askWhere) {   /* plain: the catalog's exercise, only its songs: no chip to choose, no green frame */
     return songCardUi(m, { attrs: 'data-opt="' + esc(m.id) + '" role="button" tabindex="0"', selected: sel, title: songName(m), by: songBy(m), pill: cardPill(m, listKey), keepPlay: false, heartFirst: !!plain,
-            act: (plain ? '<button type="button" class="rbtn rbtn--ghost" data-mfx="' + esc(m.id) + '" aria-label="התרגילים של המוזיקה" title="התרגילים של המוזיקה בקטלוג" style="margin-inline-end:var(--sp-1);background:none !important;box-shadow:none !important;border:0 !important;padding:0;min-width:0;min-height:var(--tag-s);color:var(--pick-ink, var(--primary)) !important;font:var(--fw-bold) var(--fs-s)/1 var(--font)">' + exBtnInner(m.id) + '</button>' + (askWhere ? '<button type="button" class="rbtn rbtn--icon bio-act" data-addto="' + esc(m.id) + '" aria-label="הוספה" title="הוספה לוויוונסיה או לתרגיל">' + I.plus + '</button>' : '<button type="button" class="rbtn rbtn--ghost" data-pick="' + esc(m.id) + '" aria-label="' + (sel ? 'נבחר לתרגיל' : 'הוספה לתרגיל') + '" title="בחירת המוזיקה לתרגיל" style="display:inline-flex;align-items:center;gap:var(--gap-tight);background:none !important;box-shadow:none !important;border:0 !important;padding:0;min-width:0;min-height:0;color:var(--pick-ink, var(--primary)) !important;font:var(--fw-bold) var(--fs-s)/1 var(--font)">' + (sel ? I.check : I.plus) + '</button>') : '') + (withRm ? '<button type="button" class="rbtn rbtn--icon bio-act" data-orm="' + esc(m.id) + '" aria-label="הסרה מהתרגיל" title="הסרה מהתרגיל">' + I.x + '</button>' : '') + (sel || plain ? '' : '<button type="button" class="rbtn rbtn--icon bio-act" data-choose="' + esc(m.id) + '" aria-label="בחירה" title="לבחור אותה לתרגיל בוויוונסיה">' + I.check + '</button>') + (plain ? '' : exBtnG(m)) });
+            rm: withRm ? '<button type="button" class="rbtn rbtn--icon bio-act" data-orm="' + esc(m.id) + '" aria-label="הסרה מהתרגיל" title="הסרה מהתרגיל">' + I.x + '</button>' : '',
+            act: (plain ? '<button type="button" class="rbtn rbtn--icon" data-mfx="' + esc(m.id) + '" aria-label="התרגילים של המוזיקה" title="התרגילים של המוזיקה בקטלוג" style="color:var(--pick-ink, var(--primary)) !important">' + exBtnInner(m.id) + '</button>' + (askWhere ? '<button type="button" class="rbtn rbtn--icon bio-act" data-addto="' + esc(m.id) + '" aria-label="הוספה" title="הוספה לוויוונסיה או לתרגיל">' + I.plus + '</button>' : '<button type="button" class="rbtn rbtn--icon" data-pick="' + esc(m.id) + '" aria-label="' + (sel ? 'נבחר לתרגיל' : 'הוספה לתרגיל') + '" title="בחירת המוזיקה לתרגיל" style="color:var(--pick-ink, var(--primary)) !important">' + (sel ? I.check : I.plus) + '</button>') : '') + (sel || plain ? '' : '<button type="button" class="rbtn rbtn--icon bio-act" data-choose="' + esc(m.id) + '" aria-label="בחירה" title="לבחור אותה לתרגיל בוויוונסיה">' + I.check + '</button>') + (plain ? '' : exBtnG(m)) });
   }
   /* deleting a song from an exercise: asked in the kit's popup; closing it is the cancel */
   function confirmRemoveOpt(it, m, done) {
@@ -3014,22 +3014,17 @@
       foot: '<button class="rbtn rbtn--danger rbtn--block" type="button" id="crmo">מחיקה</button>'
     });
     dlg.querySelector("#crmo").addEventListener("click", function () {
-      dlg.close();
-      dropOpt(it, m).then(done, fail);
+      busy(dlg.querySelector("#crmo"), dropOpt(it, m)).then(function () { dlg.close(); done(); }, function (e) { dlg.close(); fail(e); });
     });
   }
   function musCards(it, ro) {   /* the songs of an exercise: a small header with the pencil that opens the editing of its music (add, remove, choose), then the cards */
     var list = optList(it), cur = it.music_id;
-    var head = function (n) { return '<div style="display:flex;align-items:center;justify-content:flex-start;gap:var(--sp-2);min-height:var(--ctl)"><span style="font:var(--fw-bold) var(--fs-s)/1 var(--font);color:var(--text-2)">מוזיקה' + (n ? ' (' + n + ')' : '') + '</span>' + (ro ? '' : '<button type="button" class="rbtn rbtn--ghost" data-addm aria-label="עריכת מוזיקה" title="עריכת מוזיקה" style="display:inline-flex;align-items:center;gap:var(--gap-tight);background:none !important;box-shadow:none !important;border:0 !important;outline:0;text-shadow:none;filter:none;padding-inline:0;min-width:0;color:var(--primary) !important;font-weight:var(--fw-bold)">' + I.pen + '<span>עריכה</span></button>') + '</div>'; };
-    var grid = function (c) { return !c ? '<div style="color:var(--text-2);font:var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font);padding-block:var(--sp-1)">אין מוזיקה מקושרת</div>' : '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);align-items:stretch">' + c + '</div>'; };
+    var head = function (n) { return '<div style="display:flex;align-items:center;justify-content:flex-start;gap:var(--gap);min-height:var(--ctl)"><span style="font:var(--fw-bold) var(--fs-m)/1 var(--font);color:var(--text-muted)">מוזיקה' + (n ? ' (' + n + ')' : '') + '</span>' + (ro ? '' : '<button type="button" class="rbtn rbtn--ghost" data-addm aria-label="עריכת מוזיקה" title="עריכת מוזיקה" style="display:inline-flex;align-items:center;gap:var(--gap-tight);background:none !important;box-shadow:none !important;border:0 !important;outline:0;text-shadow:none;filter:none;padding-inline:0;min-width:0;color:var(--primary) !important;font-weight:var(--fw-bold)">' + I.pen + '<span>עריכה</span></button>') + '</div>'; };
+    var grid = function (c) { return !c ? '<div style="color:var(--text-muted);font:var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font);padding-block:var(--gap)">אין מוזיקה מקושרת</div>' : '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--gap);align-items:stretch">' + c + '</div>'; };
     if (ro) { var base = (it.item_music_options || []).map(function (o) { return o.music; }).filter(Boolean); return head(base.length) + grid(base.map(function (m) { return optCardHtml(m, !!(it.sel && it.sel.indexOf(m.id) >= 0), false, true); }).join("")); }
     return head(list.length) + grid(list.map(function (m) { return optCardHtml(m, m.id === cur, true); }).join(""));
   }
   /* the catalog's preview of an exercise: the songs it comes with, as the same cards, at the same place (above the texts), without the add card */
-  function prevMusic(songs, sel, inset) {
-    if (!songs.length) return "";
-    return '<div id="pvmus" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);align-items:stretch;margin-bottom:var(--sp-2)' + (inset ? ';margin-inline:var(--gutter)' : '') + '">' + songs.map(function (m) { return optCardHtml(m, m.id === sel, false); }).join("") + '</div>';
-  }
   /* a song joins the options of the exercise; if the exercise has no chosen song yet, it is the chosen one */
   function dropOpt(it, m) {
     if (it.__preview) {
@@ -3092,7 +3087,7 @@
   }
   function openAddMusic(it, changed) {
     var me = FLOA_AUTH.userId(), vid = state.viv && state.viv.id;
-    var r = sheetOf("addMusDlg", "", '<style>#addMusDlg .sheet-head { display: none } #addMusDlg .sheet-body > div:first-of-type { position: relative; z-index: 1 } #addMusDlg .sheet-body > div:first-of-type::after { content: \"\"; position: absolute; inset-inline: calc(-1 * var(--bleed, var(--pp-px))); top: calc(100% + var(--sp-2)); height: var(--edge-shadow-h); background: var(--edge-shadow); opacity: 0; transition: opacity .18s ease; pointer-events: none } #addMusDlg[data-scrolled] .sheet-body > div:first-of-type::after { opacity: 1 } html.bio-docked #addMusDlg .sheet-body { padding-bottom: 0 } #addMusDlg .bio-card[aria-current="true"] { border-color: var(--line); box-shadow: var(--sh-card) } #addMusDlg #amup { height: var(--rf-h); min-height: var(--rf-h); border-radius: 0; border: 0; border-bottom: 1px solid var(--rf-line); background: transparent } #addMusDlg .rfield:focus-within + #amup { border-bottom-color: var(--rf-ink); box-shadow: 0 1px 0 var(--rf-ink) }</style><div style="display:flex;align-items:flex-end;gap:0"><label class="rfield" style="flex:1 1 auto;margin:0"><span id="amc">חיפוש בין מוסיקות</span><input id="amq" placeholder=" " autocomplete="off"></label><button type="button" class="rbtn rbtn--icon rbtn--ghost" id="amup" aria-label="העלאת קובץ מוזיקה" title="העלאת קובץ מוזיקה" style="flex:none;gap:var(--sp-1)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + I.upload.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span></button></div><div id="amlist" style="flex:1 1 auto;min-height:0;overflow-y:auto;margin-top:var(--sp-2);padding-bottom:calc(var(--dockfull) + var(--gutter))"><div class="rskel rskel--title"></div></div>');
+    var r = sheetOf("addMusDlg", "", '<style>#addMusDlg .sheet-head { display: none } #addMusDlg .sheet-body { gap: var(--gap) } #addMusDlg .sheet-body > div:first-of-type { position: relative; z-index: 1 } #addMusDlg .sheet-body > div:first-of-type::after { content: \"\"; position: absolute; inset-inline: 0; top: calc(100% + var(--gap)); height: var(--gap-tight); background: linear-gradient(color-mix(in srgb, var(--scrim) 25%, transparent), transparent); opacity: 0; transition: opacity .18s ease; pointer-events: none } #addMusDlg[data-scrolled] .sheet-body > div:first-of-type::after { opacity: 1 } html.bio-docked #addMusDlg .sheet-body { padding-bottom: 0 } #addMusDlg .bio-card[aria-current="true"] { border-color: var(--border); box-shadow: var(--shadow) } #addMusDlg #amup { height: var(--ctl); min-height: var(--ctl); border-radius: 0; border: 0; border-bottom: 1px solid var(--rf-line); background: transparent } #addMusDlg .rfield:focus-within + #amup { border-bottom-color: var(--rf-ink); box-shadow: 0 1px 0 var(--rf-ink) }</style><div style="display:flex;align-items:flex-end;gap:0"><label class="rfield" style="flex:1 1 auto;margin:0"><span id="amc">חיפוש בין מוסיקות</span><input id="amq" placeholder=" " autocomplete="off"></label><button type="button" class="rbtn rbtn--icon rbtn--ghost" id="amup" aria-label="העלאת קובץ מוזיקה" title="העלאת קובץ מוזיקה" style="flex:none;height:var(--ctl)"><span aria-hidden="true" style="display:grid;width:var(--icon);height:var(--icon)">' + I.upload.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span></button></div><div id="amlist" style="flex:1 1 auto;min-height:0;overflow-y:auto;padding-bottom:calc(var(--dockfull) + var(--gap))"><div class="rskel rskel--title"></div></div>');
     r.style.overflowY = "hidden";   /* the search stays, only the cards scroll */
     if (wide()) {   /* the music popup (the songs like the one that plays, or adding music): on the left side, over the exercise, as the history is */
       var ad = document.getElementById("addMusDlg"), a0 = pd.getBoundingClientRect();
@@ -3106,7 +3101,8 @@
     function cardHtml(m, added) {
       var ex = xsOf[m.id];
       return songCardUi(m, { attrs: 'data-am="' + esc(m.id) + '" role="button" tabindex="0"', selected: added, title: songName(m), by: ex ? ex + " \u00b7 " + songBy(m) : songBy(m), pill: cardPill(m), keepPlay: false,
-        act: exBtnG(m) + (it.__listen ? '<button type="button" class="rbtn rbtn--icon bio-act" data-addto="' + esc(m.id) + '" aria-label="הוספה" title="הוספה לוויוונסיה או לתרגיל">' + I.plus + '</button>' : (added ? '<button type="button" class="rbtn rbtn--icon bio-act" data-amrm aria-label="הסרה מהתרגיל" title="הסרה מהתרגיל">' + I.x + '</button>' : '<button type="button" class="rbtn rbtn--icon bio-act" data-amadd aria-label="הוספה לתרגיל" title="הוספה לתרגיל">' + I.plus + '</button>')) });
+        act: exBtnG(m) + (it.__listen ? '<button type="button" class="rbtn rbtn--icon bio-act" data-addto="' + esc(m.id) + '" aria-label="הוספה" title="הוספה לוויוונסיה או לתרגיל">' + I.plus + '</button>' : (added ? '' : '<button type="button" class="rbtn rbtn--icon bio-act" data-amadd aria-label="הוספה לתרגיל" title="הוספה לתרגיל">' + I.plus + '</button>')),
+        rm: !it.__listen && added ? '<button type="button" class="rbtn rbtn--icon bio-act" data-amrm aria-label="הסרה מהתרגיל" title="הסרה מהתרגיל">' + I.x + '</button>' : '' });
     }
     function draw() {
       if (!linked || !rest) return;
@@ -3122,8 +3118,8 @@
       }
       if (it.__listen) lk = lk.filter(function (m) { return m.id !== it.music_id; });
       var cnt = r.querySelector("#amc"); if (cnt && it.__listen) cnt.textContent = "חיפוש " + (words.length ? lk.length + " מתוך " : "בין ") + linked.filter(function (m) { return m.id !== it.music_id; }).length + " מוסיקות דומות"; else if (cnt) cnt.textContent = "חיפוש " + (words.length ? (sl.length + lk.length + ot.length + xl.length) + " מתוך " : "בין ") + (linked.length + rest.length) + " מוסיקות";   /* as the music page says it */
-      var grid = function (arr) { return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(18rem,1fr));gap:var(--sp-1)">' + arr.map(function (m) { return cardHtml(m, !!has[m.id]); }).join("") + '</div>'; };
-      var head = function (t, n) { return '<div class="rrow__sub" style="padding:var(--sp-2) 0 var(--sp-1)">' + esc(t) + ' (' + n + ')</div>'; };
+      var grid = function (arr) { return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(18rem,1fr));gap:var(--gap)">' + arr.map(function (m) { return cardHtml(m, !!has[m.id]); }).join("") + '</div>'; };
+      var head = function (t, n) { return '<div class="rrow__sub" style="padding:var(--gap) 0 var(--gap)">' + esc(t) + ' (' + n + ')</div>'; };
       listEl.innerHTML = (sl.length ? head(it.__listen ? "מתנגנת" : it.__preview ? "נבחרו" : "בתרגיל", sl.length) + grid(sl) : '') + (lk.length ? (it.__listen ? '' : head("הצעות", lk.length)) + grid(lk) : '') + (cut.length ? head("מוסיקה אחרת", ot.length) + grid(cut) : '') + (xl.length ? head("מוסיקה מתרגילים תואמים", xl.length) + grid(xl) : '') + (!sl.length && !lk.length && !cut.length && !xl.length ? ph(it.__listen ? "אין מוסיקה דומה" : "לא נמצא", "") : '');
     }
     var upb = r.querySelector("#amup");
@@ -3133,8 +3129,8 @@
       var inp = document.createElement("input"); inp.type = "file"; inp.accept = "audio/*,.flac,.m4a,.aiff,.aif,.wav,.mp3";
       inp.addEventListener("change", function () {
         var f = inp.files && inp.files[0]; if (!f) return;
-        var label = upb.innerHTML; upb.dataset.busy = "1"; upb.textContent = "0%";
-        var back = function (t, ms) { if (t !== label) upb.textContent = t; setTimeout(function () { upb.innerHTML = label; delete upb.dataset.busy; }, ms || 0); };
+        var label = upb.innerHTML; upb.dataset.busy = "1"; upb.textContent = "0%"; var upDone; busy(upb, new Promise(function (res) { upDone = res; }));
+        var back = function (t, ms) { upDone(); if (t !== label) upb.textContent = t; setTimeout(function () { upb.innerHTML = label; delete upb.dataset.busy; }, ms || 0); };
         putAudio(f, function (pc) { upb.textContent = pc + "%"; }).then(function (o) {
           var title = f.name.replace(/\.[^.]+$/, "").replace(/[_]+/g, " ").trim();
           return api("/rest/v1/rpc/add_upload", { method: "POST", json: { p_object: o.object, p_format: o.format, p_size: o.size, p_title: title, p_artist: "", p_vivencia: state.viv ? state.viv.id : null } });
@@ -3172,9 +3168,9 @@
         confirmRemoveOpt(it, m, function () { draw(); refreshSimilar(); if (changed) changed(); });   /* taking a song off asks first, in the kit's popup */
         return;
       }
-      if (!it.__recv && !it.__preview && !it.__listen && it.id && state.viv) { chooseDest(songName(m), { vivId: state.viv.id, itemId: it.id }, function (d) { addMusicTo(m, d).then(function () { draw(); refreshSimilar(); if (changed) changed(); }); }); return; }   /* the plus asks where: the exercise is marked, a vivencia or another exercise can be chosen */
-      if (it.__recv && state.viv) { chooseRecv(songName(m), it.__recv, function (kind) { var tgt = kind === it.__recv ? it : recvItem(kind); addOpt(tgt, m).then(function () { draw(); refreshSimilar(); if (changed) changed(); if (tgt !== it) { paint(); toast(kind === "end" ? "נוסף למוסיקת הסיום" : "נוסף למוסיקת ההתחלה"); } }, fail); }); return; }
-      confirmAddMusic(songName(m), it.__recv ? (it.__recv === "start" ? "מוסיקת ההתחלה" : "מוסיקת הסיום") : (itemName(it) || "התרגיל"), function () { addOpt(it, m).then(function () { draw(); refreshSimilar(); if (changed) changed(); }, fail); });
+      if (!it.__recv && !it.__preview && !it.__listen && it.id && state.viv) { chooseDest(songName(m), { vivId: state.viv.id, itemId: it.id }, function (d) { return addMusicTo(m, d).then(function () { draw(); refreshSimilar(); if (changed) changed(); }); }); return; }   /* the plus asks where: the exercise is marked, a vivencia or another exercise can be chosen */
+      if (it.__recv && state.viv) { chooseRecv(songName(m), it.__recv, function (kind) { var tgt = kind === it.__recv ? it : recvItem(kind); return addOpt(tgt, m).then(function () { draw(); refreshSimilar(); if (changed) changed(); if (tgt !== it) { paint(); toast(kind === "end" ? "נוסף למוסיקת הסיום" : "נוסף למוסיקת ההתחלה"); } }, fail); }); return; }
+      confirmAddMusic(songName(m), it.__recv ? (it.__recv === "start" ? "מוסיקת ההתחלה" : "מוסיקת הסיום") : (itemName(it) || "התרגיל"), function () { return addOpt(it, m).then(function () { draw(); refreshSimilar(); if (changed) changed(); }, fail); });
     });
     var allSongs = null;
     function applyLinked(rows) {   /* the suggestions, and the rest of the music without them */
@@ -3208,11 +3204,11 @@
     d.addEventListener("transitionend", end); setTimeout(end, 320);
   }
   function bleedCss(id) {
-    var v = 'var(--bleed, var(--pp-px))', q = '#' + id;
+    var v = 'var(--bleed, var(--gap))', q = '#' + id;
     /* the body is as wide as the popup, its content keeps the title's side room, and a row pulls back out to the edges, so its background and stripe reach the popup's walls */
-    return '<style>' + q + ' .sheet-body { overflow-x: hidden; margin-inline: calc(' + v + ' * -1); padding-inline: 0 } ' + q + ' .sheet-body > * { padding-inline: ' + v + ' } ' + q + ' #imus, ' + q + ' #ifields { padding-inline: 0 !important } ' +   /* the popup already pads the sides: the song cards and the fields of an exercise do not pad them again */
+    return '<style>' + q + ' .sheet { padding-inline: 0 } ' + q + ' .sheet-head, ' + q + ' .sheet-foot { padding-inline: var(--gap) } ' + q + ' .sheet-body { overflow-x: hidden; padding-inline: 0 } ' + q + ' .sheet-body > * { padding-inline: ' + v + ' } ' + q + ' #iscroll { padding-inline: 0 !important } ' +   /* the popup already pads the sides: the song cards and the fields of an exercise do not pad them again */
       q + ' #ipg { padding-inline: 0 } ' + q + ' #iscroll { padding-inline: ' + v + ' } ' +   /* the exercise page's scroller is as wide as the popup and pads the sides itself: a scroller clips a shadow at its padding box, so the cards' shadow gets its room */
-      q + ' .rrow { margin-inline: calc(' + v + ' * -1); padding-inline: ' + v + ' } ' + q + ' .rrow[aria-current="true"] { background: var(--surface); box-shadow: inset 3px 0 0 var(--ex-solid) }</style>';
+      q + ' .rrow { padding-inline: ' + v + ' } ' + q + ' .rrow[aria-current="true"] { background: var(--surface); box-shadow: inset 3px 0 0 var(--primary) }</style>';
   }
   function bleedSet(dlg) {
     var sh = dlg.querySelector(".sheet"), h = dlg.querySelector(".sheet-head h2"); if (!sh || !h) return;
@@ -3229,7 +3225,7 @@
   function musicSheet(it) {
     var r = sheetOf("musicDlg", itemName(it) || "מוזיקה", '<div id="mlist"><div class="rskel rskel--title"></div></div>', { label: "ניקוי המוזיקה", icon: I.trash, id: "mclear" });   /* "no music" is the icon at the header's left: it clears the song */
     var dlg0 = document.getElementById("musicDlg"), clr = dlg0.querySelector("#mclear");
-    if (clr) { clr.classList.remove("rbtn--primary"); clr.style.cssText += ";background:var(--surface-2);border-color:var(--surface-2);color:var(--text)";   /* clearing is not the main action: the header's neutral tile, not the green one */
+    if (clr) { clr.classList.remove("rbtn--primary"); clr.style.cssText += ";background:var(--surface);border-color:var(--surface);color:var(--text)";   /* clearing is not the main action: the header's neutral tile, not the green one */
       if (!it.music_id) RosterSheet.setDirty(dlg0, false); else RosterSheet.setDirty(dlg0, true); clr.addEventListener("click", function () { chooseSong(it, null); }); }
     similarRows(it).then(function (rows) {
       var seen = {}, list = [];
@@ -3241,7 +3237,7 @@
     }, fail);
   }
   /* other music: the files the catalogs do not list, and the songs this person uploaded by hand (those can be renamed). One upload button on top. */
-  var UP_BTN = '<button type="button" class="rbtn rbtn--block rbtn--ghost" id="oup" style="margin-top:var(--sp-2)">העלאת קובץ מוזיקה</button>';
+  var UP_BTN = '<button type="button" class="rbtn rbtn--block rbtn--ghost" id="oup">העלאת קובץ מוזיקה</button>';
   function putAudio(f, progress) {   /* the file goes to the bucket through the Worker; resolves with { object, format, size } */
     var fmt = (f.name.split(".").pop() || "").toLowerCase();
     if (!UPL_FORMATS[fmt]) return Promise.reject(new Error("format"));
@@ -3273,13 +3269,13 @@
         body: '<div class="pad"><span>למחוק את "' + esc(songName(m)) + '" לגמרי? הוא יוסר מכל התרגילים והוויוונסיות שבהם הוא נמצא.</span></div>',
         foot: '<button class="rbtn rbtn--danger rbtn--block" type="button" id="csdel">מחיקה</button>' });
       c.querySelector("#csdel").addEventListener("click", function () {
-        c.close();
+        var delb = c.querySelector("#csdel");
         var said = function (text) {   /* the answer is on the screen, not only in the console */
           RosterSheet.render(c, { kind: "confirm", title: "המחיקה לא בוצעה", from: "bottom", size: "s", body: '<div class="pad"><span>' + esc(text) + '</span></div>' });
         };
-        api("/rest/v1/music?id=eq." + m.id, { method: "DELETE", prefer: "return=representation" }).then(function (gone) {
+        busy(delb, api("/rest/v1/music?id=eq." + m.id, { method: "DELETE", prefer: "return=representation" })).then(function (gone) {
           if (!gone || !gone.length) { said("אין הרשאה למחוק את המוסיקה הזאת. רק מי שהעלה אותה יכול למחוק אותו."); return; }
-          m.__gone = true;
+          c.close(); m.__gone = true;
           (state.items || []).forEach(function (x) {
             if (x.music && x.music.id === m.id) { x.music = null; x.music_id = null; }
             x.item_music_options = (x.item_music_options || []).filter(function (o) { return o.music_id !== m.id; });
@@ -3294,7 +3290,7 @@
     });
     function save() {
       var t = n.value.trim(), ar = a.value.trim(); if (!t) return toast("חסר שם");
-      api("/rest/v1/music?id=eq." + m.id, { method: "PATCH", prefer: "return=minimal", json: { title: t, artist: ar, name: t + (ar ? ", " + ar : "") } }).then(function () {
+      busy(dlg.querySelector("#ssave"), api("/rest/v1/music?id=eq." + m.id, { method: "PATCH", prefer: "return=minimal", json: { title: t, artist: ar, name: t + (ar ? ", " + ar : "") } })).then(function () {
         m.title = t; m.artist = ar; m.name = t + (ar ? ", " + ar : "");
         var fix = function (x) { if (x && x.id === m.id) { x.title = t; x.artist = ar; x.name = m.name; } };   /* every copy of this song that is on the screen's side: the exercises', their options', the start and end music */
         (state.items || []).forEach(function (x) { fix(x.music); (x.item_music_options || []).forEach(function (o) { fix(o.music); }); });
@@ -3311,7 +3307,7 @@
   function otherWire(r, it, pick) {
     var l = r.querySelector("#olist"), all = [], me = FLOA_AUTH.userId(), up = r.querySelector("#oup");
     var vid = state.viv && state.viv.id, canEd = state.viv && (state.viv.role === "owner" || state.viv.role === "edit");   /* a song made in this vivencia can be renamed by whoever can edit it */
-    var pen = function (m) { return (m.owner_id && m.owner_id === me) || (canEd && vid && m.vivencia_id === vid) ? '<button type="button" class="rbtn rbtn--icon rrow__trail" data-ed="' + esc(m.id) + '" aria-label="עריכת שם ומבצע" title="עריכת שם ומבצע" style="width:var(--fab);height:var(--fab);min-height:var(--fab);color:var(--text-3)">' + I.pen + '</button>' : ''; };
+    var pen = function (m) { return (m.owner_id && m.owner_id === me) || (canEd && vid && m.vivencia_id === vid) ? '<button type="button" class="rbtn rbtn--icon rrow__trail" data-ed="' + esc(m.id) + '" aria-label="עריכת שם ומבצע" title="עריכת שם ומבצע" style="color:var(--text-muted)">' + I.pen + '</button>' : ''; };
     function draw() {
       all = all.filter(function (m) { return !m.__gone; });
       var q = fold(r.querySelector("#oq").value.trim());
@@ -3330,8 +3326,8 @@
       var inp = document.createElement("input"); inp.type = "file"; inp.accept = "audio/*,.flac,.m4a,.aiff,.aif,.wav,.mp3";
       inp.addEventListener("change", function () {
         var f = inp.files && inp.files[0]; if (!f) return;
-        var label = up.textContent; up.dataset.busy = "1"; up.textContent = "0%";
-        var back = function (t, ms) { up.textContent = t; setTimeout(function () { up.textContent = label; delete up.dataset.busy; }, ms || 0); };
+        var label = up.textContent; up.dataset.busy = "1"; up.textContent = "0%"; var upDone; busy(up, new Promise(function (res) { upDone = res; }));
+        var back = function (t, ms) { upDone(); up.textContent = t; setTimeout(function () { up.textContent = label; delete up.dataset.busy; }, ms || 0); };
         putAudio(f, function (pc) { up.textContent = pc + "%"; }).then(function (o) {
           var title = f.name.replace(/\.[^.]+$/, "").replace(/[_]+/g, " ").trim();
           return api("/rest/v1/rpc/add_upload", { method: "POST", json: { p_object: o.object, p_format: o.format, p_size: o.size, p_title: title, p_artist: "", p_vivencia: state.viv ? state.viv.id : null } });
@@ -3350,7 +3346,7 @@
     }, fail);
   }
   function otherSheet(it) {
-    var r = sheetOf("otherDlg", "מוזיקות אחרות", '<label class="rfield"><span>חיפוש</span><input id="oq" placeholder=" " autocomplete="off"></label>' + UP_BTN + '<div id="olist" style="flex:1 1 auto;min-height:0;overflow-y:auto;margin-top:var(--sp-2)"><div class="rskel rskel--title"></div></div>');
+    var r = sheetOf("otherDlg", "מוזיקות אחרות", '<style>#otherDlg .sheet-body { gap: var(--gap) }</style><label class="rfield"><span>חיפוש</span><input id="oq" placeholder=" " autocomplete="off"></label>' + UP_BTN + '<div id="olist" style="flex:1 1 auto;min-height:0;overflow-y:auto"><div class="rskel rskel--title"></div></div>');
     r.style.overflowY = "hidden";   /* the search stays, only the list scrolls */
     otherWire(r, it, function (m) { chooseSong(it, m); });
   }
@@ -3368,11 +3364,11 @@
   /* the catalog picker: a search and the list of categories; a category opens like an accordion onto its exercises. On a wide screen it is a pane; on a narrow one it is a popup from the bottom. */
   function searchInput(id, label) {
     id = id || "q"; label = label || "חיפוש תרגילים בקטלוג";
-    return '<div style="display:flex;align-items:center;gap:var(--sp-2)"><input id="' + id + '" class="rhead__title" type="text" placeholder="' + label + '" autocomplete="off" aria-label="' + label + '" style="width:100%;min-width:0;border:0;background:transparent;padding-inline:0;margin:0;color:inherit;text-align:start;outline:0;text-overflow:ellipsis;text-box:normal;line-height:1.4;padding-block:0">' + '<span data-sicon aria-hidden="true" style="flex:none;display:grid;width:var(--icon-m);height:var(--icon-m);color:var(--text-2)"><svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></span></div>';
+    return '<div class="bio-search"><input id="' + id + '" class="rhead__title" type="text" placeholder="' + label + '" autocomplete="off" aria-label="' + label + '"></div>';
   }
   /* the two tabs of the catalog: exercises (the first, on the right) and music; they are the pager's two pages */
   function pickerTabs() {
-    return '<div class="rtabs" role="tablist" style="position:relative;flex:0 0 auto;width:100%;min-width:0;border-bottom:0"><button type="button" class="rtab" role="tab" data-pkt="ex" aria-selected="true" style="box-shadow:none">תרגילים</button><button type="button" class="rtab" role="tab" data-pkt="mu" aria-selected="false" style="box-shadow:none">מוסיקה</button><i data-pkind aria-hidden="true" style="position:absolute;inset-block-end:0;inset-inline-start:0;width:50%;height:3px;background:var(--primary);pointer-events:none;will-change:transform"></i></div>';
+    return '<div class="rtabs" role="tablist" style="position:relative;flex:0 0 auto;width:100%;min-width:0;border-bottom:0"><button type="button" class="rtab" role="tab" data-pkt="ex" aria-selected="true" style="box-shadow:none">תרגילים</button><button type="button" class="rtab" role="tab" data-pkt="mu" aria-selected="false" style="box-shadow:none">מוסיקה</button><i data-pkind aria-hidden="true" style="position:absolute;inset-block-end:0;inset-inline-start:0;width:50%;height:var(--bw-bar);background:var(--primary);pointer-events:none;will-change:transform"></i></div>';
   }
   /* what the music tab filters by: the three tag columns of the music table. Values stay in English (they are the keys); a value with no entry here shows as it is. */
   var MU_LINE = [["Affectivity", "affectivity", "חיבתיות"], ["Creativity", "creativity", "יצירתיות"], ["Vitality", "vitality", "חיוניות"], ["Sexuality", "sexuality", "מיניות"], ["Trance", "transcendence", "התעלות"], ["Maze", "", "מבוך"]];   /* the app's own line names are used when it has them */
@@ -3383,7 +3379,7 @@
     return (!f.ln || (m.line_tags || []).indexOf(f.ln) >= 0) && (!f.ch || (m.rhythm_char_tags || []).indexOf(f.ch) >= 0) && (!f.sp || (m.rhythm_speed_tags || []).indexOf(f.sp) >= 0) && (!f.ef || (m.effect_tags || []).indexOf(f.ef) >= 0);
   }
   function pickerBody(sheetMode, swapIt) {
-    var pageCss = '<style>.mfs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-1) } @media (min-width: 640px) { .mfs { grid-template-columns: repeat(4, minmax(0, 1fr)) } } .pgh > .pgs { padding-inline: var(--gutter); padding-block: 0 } #pks, #pkl { scrollbar-width: none } #pks::-webkit-scrollbar, #pkl::-webkit-scrollbar { display: none } .pgh { position: absolute; inset: 0 0 auto 0; z-index: 2; background: var(--bg); padding-bottom: var(--sp-1); transform: translateY(calc(-1 * var(--ho, 0px))); will-change: transform } .pgp::after { content: \"\"; position: absolute; inset-inline: 0; top: calc(var(--hh, 0px) - var(--ho, 0px)); height: var(--edge-shadow-h); background: var(--edge-shadow); opacity: 0; transition: opacity .18s ease; pointer-events: none; z-index: 3 } .pgp[data-sc]::after { opacity: 1 } .pgp > .pgl { padding-top: var(--hh, 0px) } #pgr::-webkit-scrollbar { display: none } ' + (sheetMode ? '#catDlg .sheet-head { display: none } #catDlg [data-accb] > div > div, #catDlg #mgrid { padding-inline: 0 !important } #catDlg .sheet-body > #pgr, #catDlg .sheet-body > .rtabs { padding-inline: 0 } #catDlg .pgp > * { padding-inline: var(--bleed, var(--pp-px)) } #catDlg .pgh > .pgs { padding-inline: 0 }' : '') + '</style>';
+    var pageCss = '<style>.bio-search { display: flex; align-items: center; gap: var(--gap-tight); min-height: var(--ctl); border-bottom: var(--bw) solid transparent } .bio-search > [data-sicon] { display: grid; flex: none; width: var(--icon); height: var(--icon); color: var(--text-muted) } .bio-search > [data-sicon] svg { width: 100%; height: 100%; stroke-width: var(--icon-w) } .bio-search > input { flex: 1 1 auto; align-self: stretch; width: 100%; min-width: 0; margin: 0; padding: 0; border: 0; background: transparent; color: inherit; text-align: center; outline: 0; text-overflow: ellipsis; text-box: normal } .mfs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap) } @media (min-width: 760px) { .mfs { grid-template-columns: repeat(4, minmax(0, 1fr)) } } .pgh > .pgs { padding-inline: var(--gap); padding-block: 0 } .pgs > .rfield { margin: 0 } #pks, #pkl { scrollbar-width: none } #pks::-webkit-scrollbar, #pkl::-webkit-scrollbar { display: none } .pgh { position: absolute; inset: 0 0 auto 0; z-index: 2; display: flex; flex-direction: column; gap: var(--gap); background: var(--page); padding: var(--gap) 0 0; transform: translateY(calc(-1 * var(--ho, 0px))); will-change: transform } .pgp::after { content: \"\"; position: absolute; inset-inline: 0; top: calc(var(--hh, 0px) - var(--ho, 0px)); height: var(--gap-tight); background: linear-gradient(color-mix(in srgb, var(--scrim) 25%, transparent), transparent); opacity: 0; transition: opacity .18s ease; pointer-events: none; z-index: 3 } .pgp[data-sc]::after { opacity: 1 } .pgp > .pgl { padding-top: var(--hh, 0px) } #pgr::-webkit-scrollbar { display: none } ' + (sheetMode ? '#catDlg .sheet-head { display: none } #catDlg [data-accb] > div > div, #catDlg #mgrid { padding-inline: 0 !important } #catDlg .sheet-body > #pgr, #catDlg .sheet-body > .rtabs { padding-inline: 0 } #catDlg .pgp > * { padding-inline: var(--bleed, var(--gap)) } #catDlg .pgh > .pgs { padding-inline: 0 }' : '') + '</style>';
     var pageSt = 'position:relative;flex:0 0 100%;min-width:0;min-height:0;display:flex;flex-direction:column;scroll-snap-align:start;scroll-snap-stop:always', listSt = 'position:relative;flex:1 1 auto;min-height:0;overflow-y:auto';
     var exPage = '<div class="pgp" role="tabpanel" style="' + pageSt + '"><div class="pgh"><div class="pgs">' + searchInput("q", "חיפוש תרגילים בקטלוג") + '</div></div><div class="rlist pgl" id="pks" style="' + listSt + '"><div id="list"><div class="rskel rskel--title"></div></div></div></div>';
     var muPage = swapIt ? '' : '<div class="pgp" role="tabpanel" style="' + pageSt + '"><div class="pgh"><div class="pgs mfs">' +
@@ -3397,8 +3393,8 @@
       r.querySelector("#q").value = pk.q;
       var catBy = {};
       function catCards(k) {
-        return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);padding:var(--gutter)">' + (catBy[k] || []).map(function (e) {
-          return cardUi({ attrs: 'data-ex="' + e.id + '" role="button" tabindex="0"', title: name(e), subHtml: exSubHtml(e), subLtr: false });
+        return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--gap);padding:var(--gap)">' + (catBy[k] || []).map(function (e) {
+          return cardSlots({ attrs: 'data-ex="' + e.id + '" role="button" tabindex="0"', title: name(e), subHtml: exSubHtml(e) });
         }).join("") + '</div>';
       }
       /* the one click handler of the list: a category opens or closes (slides), an exercise opens */
@@ -3410,8 +3406,8 @@
           var k = cb.dataset.cat, nowOn = cb.getAttribute("aria-expanded") !== "true"; open[k] = nowOn; cb.setAttribute("aria-expanded", String(nowOn)); saveCat();
           var chev = cb.lastElementChild; if (chev) chev.style.transform = nowOn ? "rotate(180deg)" : "";
           var acc = l.querySelector('[data-accb="' + (window.CSS && CSS.escape ? CSS.escape(k) : k) + '"]');
-          var hrow = cb.closest(".rrow"); if (hrow) hrow.style.borderBottomColor = nowOn ? "transparent" : "var(--line)";   /* no line between an open header and its cards: the line is under the cards */
-          if (acc) acc.style.borderBottomColor = nowOn ? "var(--line)" : "transparent";
+          var hrow = cb.closest(".rrow"); if (hrow) hrow.style.borderBottomColor = nowOn ? "transparent" : "var(--border)";   /* no line between an open header and its cards: the line is under the cards */
+          if (acc) acc.style.borderBottomColor = nowOn ? "var(--border)" : "transparent";
           if (acc) { if (nowOn && !acc.firstChild.firstChild) acc.firstChild.innerHTML = catCards(k); requestAnimationFrame(function () { acc.style.gridTemplateRows = nowOn ? "1fr" : "0fr"; }); }
           return;
         }
@@ -3438,11 +3434,11 @@
         }
         catBy = by;
         hint(r.querySelector("#q"), catFind("").length, "תרגיל", "תרגילים");
-        var chip = exFilter ? '<div style="display:flex;align-items:center;gap:var(--sp-1);padding:var(--sp-1) var(--gutter)"><span style="font:var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font);color:var(--text-2)">התרגילים של</span><button type="button" data-xfx class="rchip" style="display:inline-flex;align-items:center;gap:var(--sp-1);cursor:pointer;max-width:100%" aria-label="שחרור הסינון" title="שחרור הסינון"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(exFilter.name) + '</span><span aria-hidden="true" style="display:grid;width:var(--icon-s);height:var(--icon-s);flex:none">' + I.x.replace("<svg ", '<svg style="width:100%;height:100%" ') + '</span></button></div>' : '';
+        var chip = exFilter ? '<div style="display:flex;align-items:center;gap:var(--gap);padding:var(--gap) var(--gap)"><span style="font:var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font);color:var(--text-muted)">התרגילים של</span><button type="button" data-xfx class="rchip" style="display:inline-flex;align-items:center;gap:var(--gap);cursor:pointer;max-width:100%" aria-label="שחרור הסינון" title="שחרור הסינון"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(exFilter.name) + '</span><span aria-hidden="true" style="display:grid;width:var(--icon);height:var(--icon);flex:none">' + I.x.replace("<svg ", '<svg style="width:100%;height:100%" ') + '</span></button></div>' : '';
         l.innerHTML = chip + (cats.length ? cats.map(function (k) {
           var on = open[k] != null ? open[k] : false;   /* a category opens only when it is tapped: typing a search opens nothing */
-          var head = '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-1);min-height:0;border-bottom-color:' + (on ? "transparent" : "var(--line)") + '"><button type="button" class="rrow__main" data-cat="' + esc(k) + '" aria-expanded="' + on + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit;display:flex;align-items:center;gap:var(--sp-2)"><span style="flex:1 1 auto;min-width:0"><span class="rrow__title" style="font-weight:var(--fw-black)">' + esc(catName(k) || "ללא קטגוריה") + '</span></span><span data-catn style="flex:none;color:var(--text-2);font:var(--fw-regular) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + by[k].length + '</span><span style="flex:none;width:20px;height:20px;transition:transform .25s var(--ease);' + (on ? 'transform:rotate(180deg)' : '') + '">' + I.down + '</span></button></div>';
-          return head + '<div data-accb="' + esc(k) + '" style="border-bottom:1px solid ' + (on ? "var(--line)" : "transparent") + ';display:grid;grid-template-rows:' + (on ? '1fr' : '0fr') + ';transition:grid-template-rows .25s var(--ease)"><div style="overflow:hidden;min-height:0">' + (on ? catCards(k) : '') + '</div></div>';
+          var head = foldRow('data-cat="' + esc(k) + '"', esc(catName(k) || "ללא קטגוריה"), "", by[k].length, on, true);
+          return head + '<div data-accb="' + esc(k) + '" style="border-bottom:1px solid ' + (on ? "var(--border)" : "transparent") + ';display:grid;grid-template-rows:' + (on ? '1fr' : '0fr') + ';transition:grid-template-rows .25s var(--ease)"><div style="overflow:hidden;min-height:0">' + (on ? catCards(k) : '') + '</div></div>';
         }).join("") : ph("לא נמצא תרגיל", ""));   /* the exercises tab holds exercises only: the songs have their own tab */
       }
       /* the pager: two pages side by side in one horizontal scroller with scroll snap. In RTL the first page (exercises) is on the right and scrollLeft runs negative, so the target is signed by the direction. A tap on a tab scrolls the pager; a swipe changes the tab; the tab marker is the kit's own (aria-selected). */
@@ -3455,7 +3451,7 @@
       var musicAll = null, musicLoading = false, mById = {}, mList = [], mShown = 0, MP = 100, mxOf = {}, xs = [], xsFor = null, xsT = 0;
       function musicCards(a, b) {
         return mList.slice(a, b).map(function (m) {
-          return songCardUi(m, { heartFirst: true, attrs: 'data-sgc="' + esc(m.id) + '"', title: songName(m), by: mxOf[m.id] ? mxOf[m.id] + " \u00b7 " + songBy(m) : songBy(m), pill: cardPill(m), act: '<button type="button" class="rbtn rbtn--ghost" data-sg="' + esc(m.id) + '" aria-label="התרגילים של המוזיקה" title="התרגילים של המוזיקה" style="background:none !important;box-shadow:none !important;border:0 !important;padding:0;min-width:0;min-height:0;color:var(--pick-ink, var(--primary)) !important;font:var(--fw-bold) var(--fs-s)/1 var(--font)">' + exBtnInner(m.id) + '</button><button type="button" class="rbtn rbtn--icon bio-act" data-addto="' + esc(m.id) + '" aria-label="הוספה" title="הוספה לוויוונסיה או לתרגיל">' + I.plus + '</button>' });
+          return songCardUi(m, { heartFirst: true, attrs: 'data-sgc="' + esc(m.id) + '"', title: songName(m), by: mxOf[m.id] ? mxOf[m.id] + " \u00b7 " + songBy(m) : songBy(m), pill: cardPill(m), act: '<button type="button" class="rbtn rbtn--icon" data-sg="' + esc(m.id) + '" aria-label="התרגילים של המוזיקה" title="התרגילים של המוזיקה" style="color:var(--pick-ink, var(--primary)) !important">' + exBtnInner(m.id) + '</button><button type="button" class="rbtn rbtn--icon bio-act" data-addto="' + esc(m.id) + '" aria-label="הוספה" title="הוספה לוויוונסיה או לתרגיל">' + I.plus + '</button>' });
         }).join("");
       }
       function fillSelects() {
@@ -3477,7 +3473,7 @@
         mList = s ? songTiers(byTags, s) : byTags; mxOf = {};
         if (s && xsFor === s) { var inT = {}, got = {}; byTags.forEach(function (m) { inT[m.id] = 1; }); mList.forEach(function (m) { got[m.id] = 1; }); xs.forEach(function (o) { if (inT[o.m.id] && !got[o.m.id]) { got[o.m.id] = 1; mList.push(mById[o.m.id] || o.m); if (o.ex) mxOf[o.m.id] = o.ex; } }); }
         mShown = Math.min(MP, mList.length); l.scrollTop = 0;
-        l.innerHTML = mList.length ? '<div id="mgrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);padding:var(--gutter)">' + musicCards(0, mShown) + '</div>' : ph("לא נמצאה מוסיקה", "");
+        l.innerHTML = mList.length ? '<div id="mgrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--gap);padding:var(--gap)">' + musicCards(0, mShown) + '</div>' : ph("לא נמצאה מוסיקה", "");
       }
       function ensureMusic() {
         if (!pgr || !r.querySelector("#pkl") || musicLoading || musicAll) return;
@@ -3530,7 +3526,7 @@
         ml.addEventListener("click", function (ev) {   /* the same as before: a tap on a card plays, the chip adds an exercise with no name and that song */
           if (ev.target.closest("[data-audio], a")) return;
           var bt = ev.target.closest("[data-sg]");
-          if (!bt) { var cd = ev.target.closest("[data-sgc]"), pb = cd && cd.querySelector("[data-audio]"); if (pb) pb.click(); return; }
+          if (!bt) { var cd = ev.target.closest("[data-sgc]"), pb = cd && cd.querySelector("[data-audio]"), fx = cd && cd.querySelector("[data-sg]"); if (pb) pb.click(); if (fx && cd.getAttribute("aria-current") !== "true") fx.click(); return; }   /* a tap on a song: it plays, and its exercises open, as if the curve button of the card was pressed */
           var m = mById[bt.dataset.sg]; if (m) previewMusic(m);
         });
       }
@@ -3554,7 +3550,7 @@
   }
   function picker(swapIt) {
     state.pickerShow = true;
-    show('<header class="rhead"><button class="rbtn rbtn--icon rbtn--edge-start" data-act="back" aria-label="חזרה" title="חזרה">' + I.back + '</button><div class="rhead__text">' + (swapIt ? '<span class="rhead__title">הקטלוג</span>' : pickerTabs()) + '</div></header>' + pickerBody(false, swapIt), function (r) {
+    show('<header class="rhead"><button class="rbtn rbtn--icon" data-act="back" aria-label="חזרה" title="חזרה">' + I.back + '</button><div class="rhead__text">' + (swapIt ? '<span class="rhead__title">הקטלוג</span>' : pickerTabs()) + '</div></header>' + pickerBody(false, swapIt), function (r) {
       on(r, "back", !wide() ? back : swapIt ? function () { pending = { item: swapIt.id }; back(); }   /* leaving a replacement: the same exercise is open again on the left */
         : function () { show(phPick("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); back(); });
       pickerWire(r, swapIt, false);
@@ -3579,7 +3575,6 @@
     var q0 = dlg.querySelector("#q"); if (q0) q0.blur();   /* the popup opens on the list: the keyboard comes up only when the search is touched */
     if (document.activeElement && document.activeElement !== document.body && dlg.contains(document.activeElement)) document.activeElement.blur();   /* showModal focuses the first control, now the first tab: it would show a focus frame, so nothing starts focused */
     var r = dlg.querySelector(".sheet-body"), ls = r.querySelector("#pks");
-    var ph0 = r.querySelector("[data-pickhead]"); if (ph0) { ph0.style.paddingTop = "0"; ph0.style.paddingInline = "0"; }   /* the popup already leaves its standard step under the title */
     r.style.overflowY = "hidden";   /* the search stays where it is and only the list scrolls, so nothing shows through above it */
     if (ls) ls.style.cssText += ";flex:1 1 auto;min-height:0;overflow-y:auto";
     if (!dlg.__catWired) { dlg.__catWired = true; dlg.addEventListener("close", function () { if (!swapIt) saveCat(); }); }
@@ -3629,6 +3624,8 @@
   }
   function previewSheet(e, swapIt) {
     var tok = ++previewTok;
+    var skelDlg = document.getElementById("exDlg"); if (!skelDlg) { skelDlg = document.createElement("dialog"); skelDlg.id = "exDlg"; document.body.appendChild(skelDlg); }
+    RosterSheet.render(skelDlg, { title: name(e), from: "bottom", body: '<div class="rlist"><div class="rskel rskel--title"></div></div>' });   /* law 7: the window opens now, its content comes after */
     loadPreview(e.id).then(function (res) { var rows = res.rows, songs = res.songs;
       if (tok !== previewTok) return;
       var fake = itemFake(e, rows, songs);
@@ -3636,7 +3633,7 @@
       var dlg = document.getElementById("exDlg");
       if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "exDlg"; document.body.appendChild(dlg); }
       RosterSheet.render(dlg, { title: name(e), from: "bottom",
-        body: bleedCss("exDlg") + '<style>#exDlg .sheet-body { padding-bottom: calc(var(--fab) + var(--gutter) * 2 + var(--inset-b)) } html.rs-lock:not(.kb-open) #exDlg .rfab { opacity: 1; transform: none; pointer-events: auto }</style>' + itemPageHtml(fake, true) });
+        body: bleedCss("exDlg") + '<style>#exDlg .sheet-body { padding-bottom: calc(var(--fab) + var(--gap) * 2 + var(--inset-b)) } html.rs-lock:not(.kb-open) #exDlg .rfab { opacity: 1; transform: none; pointer-events: auto }</style>' + itemPageHtml(fake, true) });
       bleedSet(dlg);
       dlg.dataset.ex = swapIt ? "" : e.id; if (!dlg.__catWired) { dlg.__catWired = true; dlg.addEventListener("close", function () { saveCat(); }); } saveCat();
       wireRoMusic(dlg, fake);
@@ -3644,13 +3641,13 @@
       var vname = state.viv ? (state.viv.title || "הוויוונסיה") : "ויוונסיה", ico = (swapIt ? I.swap : I.plus).replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ');
       var gob = document.createElement("button"); gob.type = "button"; gob.id = "exgo"; gob.className = "rbtn rbtn--icon rbtn--primary"; gob.setAttribute("aria-label", swapIt ? word : "הוספה לוויוונסיה " + vname); gob.title = swapIt ? word : "הוספה לוויוונסיה " + vname;
       gob.style.cssText = "order:98;flex:none";
-      gob.innerHTML = '<span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m);flex:none">' + ico + '</span>';   /* only the plus; the confirmation says where it goes */
+      gob.innerHTML = '<span aria-hidden="true" style="display:grid;width:var(--icon);height:var(--icon);flex:none">' + ico + '</span>';   /* only the plus; the confirmation says where it goes */
       var shd = dlg.querySelector(".sheet-head"); if (shd) shd.appendChild(gob);
       gob.addEventListener("click", function () {
         if (swapIt) confirmSwap(e, swapIt, true, fake.music_id, fake.sel);
         else chooseDest(name(e), { vivId: state.viv && state.viv.id }, function (d) { var es = effSel(fake); addExTo(e, d.vivId, es.mid, es.all, true); }, { vivOnly: true });
       });
-    }, fail);
+    }, function (er) { if (tok === previewTok) RosterSheet.render(skelDlg, { title: name(e), from: "bottom", body: '<div class="pad">' + ph("לא הצלחנו לטעון", "בדקו את החיבור ונסו שוב.") + '</div>' }); fail(er); });
   }
   /* the catalog is over a thousand exercises and the server hands out at most a thousand rows at a time: read it page by page */
   /* the catalog search: the names first, then the exercises whose poetics or guidance has the words (lower, after all the names). The texts come once, when the first word is typed. */
@@ -3763,33 +3760,12 @@
       });
     });
   }
-  function musicRows(songs, sel) {
-    if (!songs.length) return "";
-    /* each song the same way as everywhere (songRow); one of them is the one the exercise comes with */
-    return '<div style="margin-top:var(--sp-2);border-top:1px solid var(--line);min-width:0">' + songs.map(function (m) { return songRow(m, m.id === sel, "data-pk"); }).join("") + '</div>';
-  }
   /* choosing the song an exercise is added with: a tap marks it, a tap on the marked one takes the mark off (no music) */
-  function wirePick(root, onPick, songs, sel0) {
-    var g = root.querySelector("#pvmus"); if (!g) return;
-    var cur = sel0;
-    g.addEventListener("click", function (ev) {
-      if (ev.target.closest("[data-audio], a")) return;
-      var ch = ev.target.closest("[data-choose]");
-      if (ch) { cur = ch.dataset.choose; g.innerHTML = prevMusic(songs, cur).replace(/^<div[^>]*>/, "").replace(/<\/div>$/, ""); onPick(cur); return; }
-      var c = ev.target.closest("[data-opt]"); if (!c) return;
-      var pb = c.querySelector("[data-audio]"); if (pb) pb.click();
-    });
-  }
   function firstMusic(exId, mid) {   /* the song an exercise is added with: the chosen one (or none), else the catalog's first */
     if (mid !== undefined) return Promise.resolve(mid ? [{ music_id: mid }] : []);
     return api("/rest/v1/exercise_music?exercise_id=eq." + exId + "&select=music_id&limit=1");
   }
   /* in no vivencia: the three vivencias that were changed last, to put the exercise in one of them */
-  function vivPick(btn, e, mid, all) {
-    var last3 = (state.vivs || []).filter(function (v) { return v.role !== "view"; }).sort(function (a, b) { return Date.parse(b.updated_at || 0) - Date.parse(a.updated_at || 0); }).slice(0, 3);
-    if (!last3.length) return;
-    menu(btn, last3.map(function (v) { return { label: v.title || "ויוונסיה ללא שם", icon: I.plus, fn: function () { addExToViv(v, e, mid, all); } }; }));
-  }
   function addExToViv(v, e, mid, all) {   /* the same as adding to the open vivencia, to the one that was picked: then it is opened, on the new exercise */
     var newId = null;
     api("/rest/v1/vivencia_items?vivencia_id=eq." + v.id + "&select=position&order=position.desc&limit=1").then(function (top) {
@@ -3835,6 +3811,10 @@
     var useLayer = !!(catPanel && wide());
     if (useLayer && catPrevMus === m.id && catPrev && catPrev.classList.contains("is-open")) { closeMusPrev(); return; }
     var tok = ++previewTok;
+    if (useLayer && catLayer) { catLayer.querySelectorAll(".bio-card[aria-current]").forEach(function (c) { c.removeAttribute("aria-current"); }); var mc = catLayer.querySelector("[data-sgc=\"" + m.id + "\"]"); if (mc) mc.setAttribute("aria-current", "true"); }   /* the song whose exercises are shown is marked, as the exercise whose texts are shown is */
+    var skelM = '<div class="rlist"><div class="rskel rskel--title"></div></div>';   /* law 7: the layer or the popup opens now, with a skeleton */
+    if (useLayer) { catPrev.innerHTML = '<header class="rhead bio-ihead"><div class="rhead__text" style="flex-direction:row;align-items:center;gap:var(--gap);padding-inline-start:0;justify-content:flex-start"><span class="rhead__title" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4;text-box:normal">' + esc(songName(m)) + '</span></div></header>' + skelM; catPrevId = null; catPrevCtx = null; catPrevMus = m.id; lastMusPrev = m; refreshPrevLabel(); requestAnimationFrame(function () { catPrev.classList.add("is-open"); }); }
+    else { var skelDlg = document.getElementById("mpDlg"); if (!skelDlg) { skelDlg = document.createElement("dialog"); skelDlg.id = "mpDlg"; document.body.appendChild(skelDlg); } RosterSheet.render(skelDlg, { title: songName(m), from: "bottom", body: skelM }); }
     Promise.all([api("/rest/v1/exercise_music?music_id=eq." + m.id + "&select=exercises(id,title_he,title_en,category)&limit=500"), state.cats ? null : api("/rest/v1/categories?select=key,name_he&order=sort").then(function (c) { state.cats = c || []; }, function () { return null; })]).then(function (rr) { var rows = rr[0];
       if (tok !== previewTok) return;
       var seen = {}, exs = [];
@@ -3847,35 +3827,34 @@
       order.sort(function (a, b) { return rank(a) - rank(b); });
       var groups = order.map(function (k) { return { name: catName(k) || "ללא קטגוריה", list: byLine[k] }; });
       var plusI = I.plus.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ');
-      var addBtn = ''; var addBtnOld = '<button type="button" class="rbtn" data-mpadd style="flex:none;gap:var(--sp-1);margin-inline-end:var(--gutter)"><span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m)">' + plusI + '</span><span>הוספה</span></button>';
+      var addBtn = ''; var addBtnOld = '<button type="button" class="rbtn" data-mpadd style="flex:none;gap:var(--gap);margin-inline-end:var(--gap)"><span aria-hidden="true" style="display:grid;width:var(--icon);height:var(--icon)">' + plusI + '</span><span>הוספה</span></button>';
       /* the exercises of the song, laid out as the catalog's exercises tab: a header per category with its count, opening on a tap (it slides), the same cards under it */
-      var opn = {}, cardsOf = function (g) { return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--sp-1);padding:var(--gutter)">' + g.list.map(function (e) { return cardUi({ attrs: 'data-pvex="' + esc(e.id) + '" role="button" tabindex="0"', title: name(e), subHtml: exSubHtml(e), subLtr: false }); }).join("") + '</div>'; };
+      var opn = {}, cardsOf = function (g) { return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(21rem,100%),1fr));gap:var(--gap);padding:var(--gap)">' + g.list.map(function (e) { return cardSlots({ attrs: 'data-pvex="' + esc(e.id) + '" role="button" tabindex="0"', title: name(e), subHtml: exSubHtml(e) }); }).join("") + '</div>'; };
       var body = exs.length ? groups.map(function (g, gi) {
         var on = groups.length === 1;   /* one category only: it is open, there is nothing to choose */
         opn[gi] = on;
-        var head = '<div class="rrow rrow--link" style="padding-inline:var(--gutter);padding-block:var(--sp-1);min-height:0;border-bottom-color:' + (on ? "transparent" : "var(--line)") + '"><button type="button" class="rrow__main" data-pvcat="' + gi + '" aria-expanded="' + on + '" style="flex:1 1 0;min-width:0;background:none;border:0;padding:0;text-align:start;cursor:pointer;font:inherit;color:inherit;display:flex;align-items:center;gap:var(--sp-2)"><span style="flex:1 1 auto;min-width:0"><span class="rrow__title" style="font-weight:var(--fw-black)">' + esc(g.name) + '</span></span><span style="flex:none;color:var(--text-2);font:var(--fw-regular) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + g.list.length + '</span><span style="flex:none;width:20px;height:20px;transition:transform .25s var(--ease);' + (on ? 'transform:rotate(180deg)' : '') + '">' + I.down + '</span></button></div>';
-        return head + '<div data-pvaccb="' + gi + '" style="border-bottom:1px solid ' + (on ? "var(--line)" : "transparent") + ';display:grid;grid-template-rows:' + (on ? '1fr' : '0fr') + ';transition:grid-template-rows .25s var(--ease)"><div style="overflow:hidden;min-height:0">' + (on ? cardsOf(g) : '') + '</div></div>';
-      }).join("") : '<div style="padding:var(--gutter);color:var(--text-2);font:var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font)">המוזיקה הזאת לא משויכת לתרגיל בקטלוג</div>';
+        var head = foldRow('data-pvcat="' + gi + '"', esc(g.name), "", g.list.length, on, true);
+        return head + '<div data-pvaccb="' + gi + '" style="border-bottom:1px solid ' + (on ? "var(--border)" : "transparent") + ';display:grid;grid-template-rows:' + (on ? '1fr' : '0fr') + ';transition:grid-template-rows .25s var(--ease)"><div style="overflow:hidden;min-height:0">' + (on ? cardsOf(g) : '') + '</div></div>';
+      }).join("") : '<div style="padding:var(--gap);color:var(--text-muted);font:var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font)">המוזיקה הזאת לא משויכת לתרגיל בקטלוג</div>';
       var wire = function (root) {
         var ab = root.querySelector("[data-mpadd]");
-        if (ab) ab.addEventListener("click", function () { chooseDest(songName(m), { vivId: state.viv && state.viv.id, itemId: liveItem && liveItem.id }, function (d) { addMusicTo(m, d, false); }); });
+        if (ab) ab.addEventListener("click", function () { chooseDest(songName(m), { vivId: state.viv && state.viv.id, itemId: liveItem && liveItem.id }, function (d) { return addMusicTo(m, d, false); }); });
         root.addEventListener("click", function (ev) {
           var cb = ev.target.closest("[data-pvcat]");
           if (cb) {   /* a category opens or closes, sliding */
             var gi = cb.dataset.pvcat, nowOn = cb.getAttribute("aria-expanded") !== "true"; cb.setAttribute("aria-expanded", String(nowOn));
             var chev = cb.lastElementChild; if (chev) chev.style.transform = nowOn ? "rotate(180deg)" : "";
-            var acc = root.querySelector('[data-pvaccb="' + gi + '"]'), hrow = cb.closest(".rrow"); if (hrow) hrow.style.borderBottomColor = nowOn ? "transparent" : "var(--line)";
-            if (acc) { acc.style.borderBottomColor = nowOn ? "var(--line)" : "transparent"; if (nowOn && !acc.firstChild.firstChild) acc.firstChild.innerHTML = cardsOf(groups[+gi]); requestAnimationFrame(function () { acc.style.gridTemplateRows = nowOn ? "1fr" : "0fr"; }); }
+            var acc = root.querySelector('[data-pvaccb="' + gi + '"]'), hrow = cb.closest(".rrow"); if (hrow) hrow.style.borderBottomColor = nowOn ? "transparent" : "var(--border)";
+            if (acc) { acc.style.borderBottomColor = nowOn ? "var(--border)" : "transparent"; if (nowOn && !acc.firstChild.firstChild) acc.firstChild.innerHTML = cardsOf(groups[+gi]); requestAnimationFrame(function () { acc.style.gridTemplateRows = nowOn ? "1fr" : "0fr"; }); }
             return;
           }
           if (ev.target.closest("[data-audio], a, [data-mpadd], button:not([data-pvex])")) return;
           var ex = ev.target.closest("[data-pvex]");
           if (ex) { var e = exs.filter(function (x) { return x.id === ex.dataset.pvex; })[0]; if (e) previewEx(e); return; }
-          var c = ev.target.closest("[data-pmc]"); if (c) { var pb = c.querySelector("[data-audio]"); if (pb) pb.click(); }
         });
       };
       if (useLayer) {
-        catPrev.innerHTML = '<header class="rhead bio-ihead"><div class="rhead__text" style="flex-direction:row;align-items:center;gap:var(--sp-2);padding-inline-start:0;justify-content:flex-start"><span class="rhead__title" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(songName(m)) + '</span></div>' + addBtn + '</header>' + body;
+        catPrev.innerHTML = '<header class="rhead bio-ihead"><div class="rhead__text" style="flex-direction:row;align-items:center;gap:var(--gap);padding-inline-start:0;justify-content:flex-start"><span class="rhead__title" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4;text-box:normal">' + esc(songName(m)) + '</span></div>' + addBtn + '</header>' + body;
         wire(catPrev);
         var ph = catPrev.querySelector(".rhead"); if (ph) { var xb = document.createElement("button"); xb.type = "button"; xb.className = "rbtn rbtn--icon bio-flat"; xb.setAttribute("aria-label", "סגירה"); xb.title = "סגירה"; xb.innerHTML = I.x; xb.addEventListener("click", function () { previewTok++; closeMusPrev(); }); ph.appendChild(xb); }
         catPrevId = null; catPrevCtx = null; catPrevMus = m.id; lastMusPrev = m; refreshPrevLabel();
@@ -3887,12 +3866,15 @@
         var shd = dlg.querySelector(".sheet-head"); if (shd) { shd.insertAdjacentHTML("beforeend", addBtn); var b2 = shd.querySelector("[data-mpadd]"); if (b2) b2.style.order = "98"; }
         wire(dlg);
       }
-    }, fail);
+    }, function (er) { if (tok === previewTok) { var eb = ph("לא הצלחנו לטעון", "בדקו את החיבור ונסו שוב."); if (useLayer) catPrev.innerHTML = '<header class="rhead bio-ihead"><div class="rhead__text" style="flex-direction:row;align-items:center;gap:var(--gap);padding-inline-start:0;justify-content:flex-start"><span class="rhead__title" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4;text-box:normal">' + esc(songName(m)) + '</span></div></header>' + eb; else RosterSheet.render(skelDlg, { title: songName(m), from: "bottom", body: eb }); } fail(er); });
   }
   function previewEx(e, swapIt) {
     var useLayer = !!(catPanel && wide() && !swapIt);
     if (useLayer && catPrevId === e.id && catPrev && catPrev.classList.contains("is-open")) { previewTok++; closeExPrev(); return; }   /* a second tap on the chosen one: it closes, with its animation */
     var tok = ++previewTok;
+    var skelH = '<header class="rhead bio-ihead"><div class="rhead__text" style="flex-direction:row;align-items:center;gap:var(--gap);padding-inline-start:0;justify-content:flex-start"><span class="rhead__title" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4;text-box:normal">' + esc(name(e)) + '</span></div></header>' + '<div class="rlist"><div class="rskel rskel--title"></div></div>';   /* law 7: the layer or the popup opens now, with a skeleton; the exercise fills it when it arrives */
+    if (useLayer && catPanel) { catPrev.innerHTML = skelH; catPrevId = e.id; lastExPrev = e; catPrevCtx = null; refreshPrevLabel(); requestAnimationFrame(function () { catPrev.classList.add("is-open"); }); }
+    else show('<div class="rlist"><div class="rskel rskel--title"></div></div>', function () { /* the skeleton has nothing to wire */ }, "d");
     loadPreview(e.id).then(function (res) { var rows = res.rows, songs = res.songs;
       if (tok !== previewTok) return;   /* a later row was chosen meanwhile */
       var fake = itemFake(e, rows, songs);
@@ -3907,9 +3889,9 @@
         });
       };
       if (useLayer && catPanel) { catPrev.innerHTML = phtml; pwire(catPrev);
-        var ph0 = catPrev.querySelector(".rhead"); if (ph0) { var xb = document.createElement("button"); xb.type = "button"; xb.className = "rbtn rbtn--icon bio-flat"; xb.setAttribute("aria-label", "סגירת התרגיל"); xb.title = "סגירת התרגיל"; xb.innerHTML = I.x; xb.addEventListener("click", function () { previewTok++; closeExPrev(); }); ph0.insertAdjacentHTML("beforeend", heartBtnEx(e.id, "bio-flat")); ph0.appendChild(xb); } catPrevId = e.id; lastExPrev = e; catPrevCtx = { e: e, fake: fake }; refreshPrevLabel(); saveCat(); requestAnimationFrame(function () { catPrev.classList.add("is-open"); }); }
+        var ph0 = catPrev.querySelector(".rhead"); if (ph0) { var xb = document.createElement("button"); xb.type = "button"; xb.className = "rbtn rbtn--icon bio-flat"; xb.setAttribute("aria-label", "סגירת התרגיל"); xb.title = "סגירת התרגיל"; xb.innerHTML = I.x; xb.addEventListener("click", function () { previewTok++; closeExPrev(); }); var gr0 = document.createElement("span"); gr0.className = "rgroup"; var da0 = ph0.querySelector(":scope > [data-act=\"doswap\"]"); if (da0) gr0.appendChild(da0); gr0.insertAdjacentHTML("beforeend", heartBtnEx(e.id, "bio-flat")); gr0.appendChild(xb); ph0.appendChild(gr0); } catPrevId = e.id; lastExPrev = e; catPrevCtx = { e: e, fake: fake }; refreshPrevLabel(); saveCat(); requestAnimationFrame(function () { catPrev.classList.add("is-open"); }); }
       else show(phtml, pwire, "d");
-    }, fail);
+    }, function (er) { if (tok === previewTok) { var eb = ph("לא הצלחנו לטעון", "בדקו את החיבור ונסו שוב."); if (useLayer && catPanel) catPrev.innerHTML = skelH.replace('<div class="rlist"><div class="rskel rskel--title"></div></div>', eb); else show(eb, function () { /* nothing to wire */ }, "d"); } fail(er); });
   }
   /* replacing is asked in the kit's popup, one action: closing it is the cancel */
   function confirmSwap(e, swapIt, sheet, mid, all) {
@@ -3923,47 +3905,35 @@
     dlg.querySelector("#cswap").addEventListener("click", function () { dlg.close(); addEx(e, swapIt, sheet, mid, all); });
   }
   function closeSheets() { ["exDlg", "catDlg"].forEach(function (id) { slideClose(document.getElementById(id)); }); }
-  var sgTok = 0;
   /* a song chosen in the catalog's search: an exercise with no name, only that song */
-  function confirmAddEx(exLabel, toLabel, fn, noMusic) {   /* adding an exercise from the catalog asks first, with one action */
-    var dlg = document.getElementById("confirmDlg");
-    if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
-    RosterSheet.render(dlg, { kind: "confirm", title: "הוספת תרגיל", from: "bottom", size: "s",
-      body: '<div class="pad"><span>להוסיף את "' + esc(exLabel) + '" ל"' + esc(toLabel) + '"?</span>' + (noMusic ? '<div style="margin-top:var(--sp-2);font-weight:var(--fw-black)">שימו לב: לא נבחרה מוסיקה</div>' : '') + '</div>',
-      foot: '<button class="rbtn rbtn--block" type="button" id="caddex">הוספה</button>' });
-    dlg.querySelector("#caddex").addEventListener("click", function () { dlg.close(); fn(); });
-  }
+  /* a confirm that waits for its action (the action returns its promise): the popup stays and the pressed button shows the wait, then it closes, on success and on failure (law 7) */
+  function confirmGo(dlg, btn, fn) { var pr = fn(), fin = function () { dlg.close(); }; if (pr && pr.then) busy(btn, pr).then(fin, fin); else fin(); }
   function confirmChoose(songLabel, exLabel, fn) {   /* choosing the song that plays in the vivencia asks first, in the kit's popup with ONE action */
     var dlg = document.getElementById("confirmDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
     RosterSheet.render(dlg, { kind: "confirm", title: "בחירת מוזיקה", from: "bottom", size: "s",
       body: '<div class="pad"><span>לבחור את "' + esc(songLabel) + '" כמוזיקה של "' + esc(exLabel) + '"? היא תתנגן בוויוונסיה.</span></div>',
       foot: '<button class="rbtn rbtn--block" type="button" id="cchoose">בחירה</button>' });
-    dlg.querySelector("#cchoose").addEventListener("click", function () { dlg.close(); fn(); });
+    dlg.querySelector("#cchoose").addEventListener("click", function (ev) { confirmGo(dlg, ev.currentTarget, fn); });
   }
   function confirmAddMusic(songLabel, toLabel, fn) {   /* every adding of a song asks first, in the kit's popup with ONE action */
     var dlg = document.getElementById("confirmDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
     RosterSheet.render(dlg, { kind: "confirm", title: "הוספת מוזיקה", from: "bottom", size: "s",
-      body: '<div class="pad"><span>להוסיף את "' + esc(songLabel) + '" ל' + (toLabel ? '"' + esc(toLabel) + '"' : "") + '?</span></div>',
+      body: '<div class="pad" style="display:flex;flex-direction:column;gap:var(--gap)"><span>להוסיף את "' + esc(songLabel) + '" ל' + (toLabel ? '"' + esc(toLabel) + '"' : "") + '?</span></div>',
       foot: '<button class="rbtn rbtn--block" type="button" id="cadd">הוספה</button>' });
-    dlg.querySelector("#cadd").addEventListener("click", function () { dlg.close(); fn(); });
+    dlg.querySelector("#cadd").addEventListener("click", function (ev) { confirmGo(dlg, ev.currentTarget, fn); });
   }
   /* WHERE A SONG GOES: a popup with the vivencias as an accordion, each opening to its exercises. It opens on the vivencia (and the exercise) the person is in, and the choice is marked; the button at the bottom adds. A vivencia with no exercise marked takes the song as a new exercise with no name. */
-  /* the popups that ask where to add (a song, an exercise) have a dialog of their own, on the left side of a wide screen */
+  /* the small pickers that ask where to add have a dialog of their own (chooseDest is a side panel on a wide screen, see showL / __showLeft) */
   function destDialog() {
     var dlg = document.getElementById("destDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "destDlg"; document.body.appendChild(dlg); }
-    ["position", "margin", "inset", "left", "top", "width", "max-width", "max-height", "translate"].forEach(function (k) { dlg.style.removeProperty(k); });
-    if (wide()) {
-      var a0 = pd.getBoundingClientRect(), w = Math.min(a0.width - 32, 440), set = function (k, v) { dlg.style.setProperty(k, v, "important"); };
-      set("position", "fixed"); set("margin", "0"); set("inset", "auto"); set("left", Math.round(a0.left + (a0.width - w) / 2) + "px"); set("top", "50%"); set("translate", "0 -50%"); set("width", w + "px"); set("max-width", "none"); set("max-height", "88dvh");
-    }
     return dlg;
   }
   function chooseDest(songLabel, cur, fn, opts) {
     var vivOnly = !!(opts && opts.vivOnly);
-    var dlg = destDialog();
+    var side = wide() && !!window.__showLeft, pane = null, dlg = side ? null : destDialog();   /* a wide screen: the side panel of the app (the same layer as the lists of what I loved); a phone: the bottom sheet */
     var vivs = (state.vivs || []).filter(function (v) { return v.role !== "view"; });
     var dest = { vivId: cur && cur.vivId || null, itemId: cur && cur.itemId || null };
     if (dest.vivId && !vivs.some(function (v) { return v.id === dest.vivId; })) dest = { vivId: null, itemId: null };
@@ -3971,32 +3941,37 @@
     var open = {}, cache = {};
     if (dest.vivId && !vivOnly) { open[dest.vivId] = 1; if (state.viv && state.viv.id === dest.vivId && state.items) cache[dest.vivId] = state.items; }
     function body() {
-      var chipSt = 'display:inline-flex;align-items:center;gap:var(--sp-1);min-width:0;max-width:100%;padding:var(--sp-1) var(--sp-2);border-radius:999px;font:var(--fw-bold) var(--fs-s)/1.2 var(--font);color:var(--ex-ink)';
-      var ico = function (svg) { return '<span aria-hidden="true" style="display:grid;flex:none;width:var(--icon-s);height:var(--icon-s)">' + svg + '</span>'; };
+      var chipSt = 'display:inline-flex;align-items:center;gap:var(--gap);min-width:0;max-width:100%;padding:var(--gap) var(--gap);border-radius:999px;font:var(--fw-bold) var(--fs-m)/1.2 var(--font);color:var(--text)';
+      var ico = function (svg) { return '<span aria-hidden="true" style="display:grid;flex:none;width:var(--icon);height:var(--icon)">' + svg + '</span>'; };
       var noteSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>';
-      var arrowSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:var(--icon-m);height:var(--icon-m);flex:none;color:var(--primary)"><path d="M20 12H5"/><path d="M11 6l-6 6 6 6"/></svg>';
+      var arrowSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:var(--icon);height:var(--icon);flex:none;color:var(--primary)"><path d="M20 12H5"/><path d="M11 6l-6 6 6 6"/></svg>';
       var dv = vivs.filter(function (v) { return v.id === dest.vivId; })[0], di = dest.itemId && (cache[dest.vivId] || []).filter(function (i) { return i.id === dest.itemId; })[0];
       var destTxt = dv ? esc(dv.title || "ויוונסיה חדשה") + (di ? ' <span style="font-weight:var(--fw-regular)">·</span> ' + esc(itemName(di) || "ללא שם") : dest.recv ? ' <span style="font-weight:var(--fw-regular)">·</span> ' + (dest.recv === "end" ? "מוסיקת סיום" : "מוסיקת התחלה") : '') : '';
-      var flow = '<div style="display:flex;align-items:center;gap:var(--sp-1);flex-wrap:wrap;padding-bottom:var(--sp-1)">' +
-        '<span style="' + chipSt + ';background:' + (vivOnly ? 'var(--ex-tint)' : 'var(--mus-tint)') + '">' + ico(vivOnly ? I.curve.replace("<svg ", '<svg style="width:100%;height:100%" ') : noteSvg) + '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(songLabel) + '</span></span>' + arrowSvg +
-        (dv ? '<span style="' + chipSt + ';background:var(--ex-solid);color:#FFFFFF"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + destTxt + '</span></span>' : '<span style="' + chipSt + ';border:2px dashed var(--line);color:var(--text-2);font-weight:var(--fw-regular)">בחרו יעד</span>') + '</div>';
-      return '<div class="pad" style="display:flex;flex-direction:column;gap:var(--sp-1)">' + flow +
+      var flow = '<div style="display:flex;align-items:center;gap:var(--gap);flex-wrap:wrap;padding-bottom:var(--gap)">' +
+        '<span style="' + chipSt + ';background:' + (vivOnly ? 'var(--surface)' : 'var(--surface)') + '">' + ico(vivOnly ? I.curve.replace("<svg ", '<svg style="width:100%;height:100%" ') : noteSvg) + '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(songLabel) + '</span></span>' + arrowSvg +
+        (dv ? '<span style="' + chipSt + ';background:var(--primary);color:var(--on-primary)"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + destTxt + '</span></span>' : '<span style="' + chipSt + ';border:2px dashed var(--border);color:var(--text-muted);font-weight:var(--fw-regular)">בחרו יעד</span>') + '</div>';
+      return '<div class="pad" style="display:flex;flex-direction:column;gap:var(--gap)">' + flow +
         '<div id="cdbox" style="max-height:min(50vh,26rem);overflow-y:auto;display:flex;flex-direction:column;gap:var(--gap-tight)">' + vivs.map(function (v) {
           var isOpen = !vivOnly && !!open[v.id], selV = dest.vivId === v.id && !dest.itemId && !dest.recv, items = cache[v.id];
-          var recvRow = function (k, label) { var on = dest.vivId === v.id && dest.recv === k; return '<button type="button" data-cdr="' + k + '" data-cdv="' + esc(v.id) + '" aria-pressed="' + on + '" style="display:flex;align-items:center;gap:var(--sp-1);width:100%;border:0;border-radius:var(--r-ctl);padding:var(--sp-1) var(--sp-2);padding-inline-start:calc(var(--sp-2) * 2);cursor:pointer;text-align:start;font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font);color:var(--text);background:' + (on ? 'var(--ex-tint)' : 'transparent') + '"><span style="flex:1 1 auto;min-width:0">' + label + '</span>' + (on ? '<span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m);color:var(--primary)">' + I.check.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>' : '') + '</button>'; };
-          var rows = !isOpen ? '' : !items ? '<div style="padding:var(--sp-1) var(--sp-2);color:var(--text-2);font:var(--fw-regular) var(--fs-s)/1 var(--font)">טוען</div>' :
+          var recvRow = function (k, label) { var on = dest.vivId === v.id && dest.recv === k; return '<button type="button" data-cdr="' + k + '" data-cdv="' + esc(v.id) + '" aria-pressed="' + on + '" style="display:flex;align-items:center;gap:var(--gap);width:100%;border:0;border-radius:var(--r);padding:var(--gap) var(--gap);padding-inline-start:calc(var(--gap) * 2);cursor:pointer;text-align:start;font:var(--fw-bold) var(--fs-m)/var(--lh-tight) var(--font);color:var(--text);background:' + (on ? 'var(--surface)' : 'transparent') + '"><span style="flex:1 1 auto;min-width:0">' + label + '</span>' + (on ? '<span aria-hidden="true" style="display:grid;width:var(--icon);height:var(--icon);color:var(--primary)">' + I.check.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>' : '') + '</button>'; };
+          var rows = !isOpen ? '' : !items ? '<div class="rskel rskel--title"></div>' :
             (function () { var n = 0; return items.map(function (i) { var label = itemName(i) || "ללא שם", num = i.backlog ? "" : (++n); var sel = dest.itemId === i.id;
-              return '<button type="button" data-cdi="' + esc(i.id) + '" data-cdv="' + esc(v.id) + '" aria-pressed="' + sel + '" style="display:flex;align-items:center;gap:var(--sp-1);width:100%;border:0;border-radius:var(--r-ctl);padding:var(--sp-1) var(--sp-2);padding-inline-start:calc(var(--sp-2) * 2);cursor:pointer;text-align:start;font:var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font);color:var(--text);background:' + (sel ? 'var(--ex-tint)' : 'transparent') + '"><span style="flex:none;min-width:1.4em;color:var(--text-2);font-variant-numeric:tabular-nums">' + num + '</span><span style="flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(label) + '</span>' + (sel ? '<span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m);color:var(--primary)">' + I.check.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>' : '') + '</button>'; }).join(""); })();
+              return '<button type="button" data-cdi="' + esc(i.id) + '" data-cdv="' + esc(v.id) + '" aria-pressed="' + sel + '" style="display:flex;align-items:center;gap:var(--gap);width:100%;border:0;border-radius:var(--r);padding:var(--gap) var(--gap);padding-inline-start:calc(var(--gap) * 2);cursor:pointer;text-align:start;font:var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font);color:var(--text);background:' + (sel ? 'var(--surface)' : 'transparent') + '"><span style="flex:none;min-width:var(--icon);color:var(--text-muted);font-variant-numeric:tabular-nums">' + num + '</span><span style="flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(label) + '</span>' + (sel ? '<span aria-hidden="true" style="display:grid;width:var(--icon);height:var(--icon);color:var(--primary)">' + I.check.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>' : '') + '</button>'; }).join(""); })();
           if (isOpen) rows = recvRow("start", "מוסיקת התחלה") + rows + recvRow("end", "מוסיקת סיום");
-          return '<button type="button" data-cdh="' + esc(v.id) + '" aria-expanded="' + isOpen + '" aria-pressed="' + selV + '" style="display:flex;align-items:center;gap:var(--sp-1);width:100%;border:0;border-radius:var(--r-ctl);padding:var(--sp-1) var(--sp-2);cursor:pointer;text-align:start;font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font);color:var(--text);background:' + (selV ? 'var(--ex-tint)' : 'transparent') + '"><span style="flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(v.title || "ויוונסיה חדשה") + '</span>' + (selV ? '<span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m);color:var(--primary)">' + I.check.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>' : '') + '<span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m);color:var(--text-2)">' + (vivOnly ? '' : isOpen ? I.up : I.down) + '</span></button>' + rows;
+          return '<button type="button" data-cdh="' + esc(v.id) + '" aria-expanded="' + isOpen + '" aria-pressed="' + selV + '" style="display:flex;align-items:center;gap:var(--gap);width:100%;border:0;border-radius:var(--r);padding:var(--gap) var(--gap);cursor:pointer;text-align:start;font:var(--fw-bold) var(--fs-m)/var(--lh-tight) var(--font);color:var(--text);background:' + (selV ? 'var(--surface)' : 'transparent') + '"><span style="flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(v.title || "ויוונסיה חדשה") + '</span>' + (selV ? '<span aria-hidden="true" style="display:grid;width:var(--icon);height:var(--icon);color:var(--primary)">' + I.check.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>' : '') + '<span aria-hidden="true" style="display:grid;width:var(--icon);height:var(--icon);color:var(--text-muted)">' + (vivOnly ? '' : isOpen ? I.up : I.down) + '</span></button>' + rows;
         }).join("") + '</div></div>';
     }
     function foot() { return '<button class="rbtn rbtn--block" type="button" id="cdadd"' + (dest.vivId ? '' : ' disabled') + '>הוספה</button>'; }
     function draw(keep) {
-      var sc = keep ? (dlg.querySelector("#cdbox") || {}).scrollTop : 0;
-      RosterSheet.render(dlg, { kind: "confirm", title: vivOnly ? "הוספת תרגיל" : "הוספת מוזיקה", from: "bottom", size: "s", body: body(), foot: foot() });
-      var bx = dlg.querySelector("#cdbox"); if (bx && sc) bx.scrollTop = sc;
-      wire();
+      var ttl = vivOnly ? "הוספת תרגיל" : "הוספת מוזיקה", root;
+      if (side) {
+        if (!pane) { window.__showLeft(head(ttl, "", true) + '<div data-cdpane style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column"></div>', function (r) { on(r, "back", closeLeft); pane = r.querySelector("[data-cdpane]"); }); pane.addEventListener("click", onClick); }
+        root = pane;
+      } else root = dlg;
+      var sc = keep ? (root.querySelector("#cdbox") || {}).scrollTop : 0;
+      if (side) pane.innerHTML = body().replace('<div class="pad" style="', '<div class="pad" style="flex:1 1 auto;min-height:0;').replace("max-height:min(50vh,26rem);overflow-y:auto", "flex:1 1 auto;min-height:0;overflow-y:auto") + '<div class="pad">' + foot() + '</div>';
+      else { RosterSheet.render(dlg, { kind: "confirm", title: ttl, from: "bottom", size: "s", body: body(), foot: foot() }); wire(); }
+      var bx = root.querySelector("#cdbox"); if (bx && sc) bx.scrollTop = sc;
     }
     function load(vid) {
       if (cache[vid]) return;
@@ -4015,7 +3990,7 @@
         load(v); draw(true); return;
       }
       if (it) { dest = { vivId: it.dataset.cdv, itemId: it.dataset.cdi }; draw(true); return; }
-      if (ad && dest.vivId) { dlg.removeEventListener("click", onClick); var d = { vivId: dest.vivId, itemId: dest.itemId, recv: dest.recv || null, items: cache[dest.vivId] || null }; dlg.close(); fn(d); }
+      if (ad && dest.vivId) { var d = { vivId: dest.vivId, itemId: dest.itemId, recv: dest.recv || null, items: cache[dest.vivId] || null }; var fin = function () { if (side) closeLeft(); else { dlg.removeEventListener("click", onClick); dlg.close(); } }, pr = fn(d); if (pr && pr.then) busy(ad, pr).then(fin, fin); else fin(); }
     }
     draw(false);
     if (dest.vivId && !vivOnly) load(dest.vivId);
@@ -4026,14 +4001,14 @@
     var dlg = destDialog();
     var sel = cur === "end" ? "end" : "start", names = { start: "מוסיקת התחלה", end: "מוסיקת סיום" };
     function draw() {
-      var chipSt = 'display:inline-flex;align-items:center;gap:var(--sp-1);min-width:0;max-width:100%;padding:var(--sp-1) var(--sp-2);border-radius:999px;font:var(--fw-bold) var(--fs-s)/1.2 var(--font)';
+      var chipSt = 'display:inline-flex;align-items:center;gap:var(--gap);min-width:0;max-width:100%;padding:var(--gap) var(--gap);border-radius:999px;font:var(--fw-bold) var(--fs-m)/1.2 var(--font)';
       var noteSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>';
-      var arrowSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:var(--icon-m);height:var(--icon-m);flex:none;color:var(--primary)"><path d="M20 12H5"/><path d="M11 6l-6 6 6 6"/></svg>';
-      var flow = '<div style="display:flex;align-items:center;gap:var(--sp-1);flex-wrap:wrap;padding-bottom:var(--sp-1)"><span style="' + chipSt + ';background:var(--mus-tint);color:var(--ex-ink)"><span aria-hidden="true" style="display:grid;flex:none;width:var(--icon-s);height:var(--icon-s)">' + noteSvg + '</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(songLabel) + '</span></span>' + arrowSvg + '<span style="' + chipSt + ';background:var(--ex-solid);color:#FFFFFF">' + esc(names[sel]) + '</span></div>';
-      var row = function (k) { var on = sel === k; return '<button type="button" data-rk="' + k + '" aria-pressed="' + on + '" style="display:flex;align-items:center;gap:var(--sp-1);width:100%;border:0;border-radius:var(--r-ctl);padding:var(--sp-1) var(--sp-2);cursor:pointer;text-align:start;font:var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font);color:var(--text);background:' + (on ? 'var(--ex-tint)' : 'transparent') + '"><span style="flex:1 1 auto">' + names[k] + '</span>' + (on ? '<span aria-hidden="true" style="display:grid;width:var(--icon-m);height:var(--icon-m);color:var(--primary)">' + I.check.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>' : '') + '</button>'; };
+      var arrowSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:var(--icon);height:var(--icon);flex:none;color:var(--primary)"><path d="M20 12H5"/><path d="M11 6l-6 6 6 6"/></svg>';
+      var flow = '<div style="display:flex;align-items:center;gap:var(--gap);flex-wrap:wrap;padding-bottom:var(--gap)"><span style="' + chipSt + ';background:var(--surface);color:var(--text)"><span aria-hidden="true" style="display:grid;flex:none;width:var(--icon);height:var(--icon)">' + noteSvg + '</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(songLabel) + '</span></span>' + arrowSvg + '<span style="' + chipSt + ';background:var(--primary);color:var(--on-primary)">' + esc(names[sel]) + '</span></div>';
+      var row = function (k) { var on = sel === k; return '<button type="button" data-rk="' + k + '" aria-pressed="' + on + '" style="display:flex;align-items:center;gap:var(--gap);width:100%;border:0;border-radius:var(--r);padding:var(--gap) var(--gap);cursor:pointer;text-align:start;font:var(--fw-bold) var(--fs-m)/var(--lh-tight) var(--font);color:var(--text);background:' + (on ? 'var(--surface)' : 'transparent') + '"><span style="flex:1 1 auto">' + names[k] + '</span>' + (on ? '<span aria-hidden="true" style="display:grid;width:var(--icon);height:var(--icon);color:var(--primary)">' + I.check.replace("<svg ", '<svg style="width:100%;height:100%;stroke-width:var(--icon-w)" ') + '</span>' : '') + '</button>'; };
       RosterSheet.render(dlg, { kind: "confirm", title: "הוספת מוזיקה", from: "bottom", size: "s", body: '<div class="pad" style="display:flex;flex-direction:column;gap:var(--gap-tight)">' + flow + row("start") + row("end") + '</div>', foot: '<button class="rbtn rbtn--block" type="button" id="cradd">הוספה</button>' });
       dlg.querySelectorAll("[data-rk]").forEach(function (b) { b.addEventListener("click", function () { sel = b.dataset.rk; draw(); }); });
-      dlg.querySelector("#cradd").addEventListener("click", function () { dlg.close(); fn(sel); });
+      dlg.querySelector("#cradd").addEventListener("click", function (ev) { confirmGo(dlg, ev.currentTarget, function () { return fn(sel); }); });
     }
     draw();
   }
@@ -4074,13 +4049,6 @@
     if (state.viv && state.viv.id === vivId) return addEx(e, undefined, sheet, mid, all);
     var v = (state.vivs || []).filter(function (x) { return x.id === vivId; })[0];
     if (v) { if (sheet) closeSheets(); addExToViv(v, e, mid, all); }
-  }
-  function addSongOnly(m, sheet) {
-    var pos = state.items.reduce(function (x, i) { return Math.max(x, i.position); }, 0) + 1;
-    api("/rest/v1/vivencia_items", { method: "POST", prefer: "return=minimal", json: { vivencia_id: state.viv.id, position: pos, backlog: true, exercise_id: null, music_id: m.id } }).then(function () {
-      if (sheet) { closeSheets(); return loadItems().then(paint, fail); }
-      if (wide()) show(phPick("בחרו תרגיל", "פרטי התרגיל יופיעו כאן"), null, "d"); else stack().pop(); back();
-    }, fail);
   }
   /* An exercise placed in a vivencia is cut loose from the catalog: the item keeps its own copy of the name, the poetics and the guidance as they are
      at that moment, so a later change to the catalog exercise never reaches a session that was already planned (the item fields: null follows the catalog). */
@@ -4141,7 +4109,7 @@
   function allowPopup() {
     var dlg = document.getElementById("allowDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "allowDlg"; document.body.appendChild(dlg); }
-    var rows = [];
+    var rows = [], ready = false;   /* ready: the list has arrived (until then the skeleton stays) */
     if (wide()) { var a0 = pd.getBoundingClientRect(), set = function (k, v) { dlg.style.setProperty(k, v, "important"); };
       set("position", "fixed"); set("margin", "0"); set("inset", "auto"); set("left", a0.left + "px"); set("top", a0.top + "px"); set("width", a0.width + "px"); set("height", a0.height + "px"); set("max-width", "none"); set("max-height", "none"); set("transform", "none"); set("border-radius", "0"); }
     RosterSheet.render(dlg, {
@@ -4150,9 +4118,10 @@
         '<label class="rfield"><span>חיפוש</span><input id="aq" type="search" placeholder=" " autocomplete="off"></label>' +
         '<label class="rfield rfield--ltr"><span>אימייל של חשבון גוגל</span><input id="em" type="email" placeholder=" " autocomplete="off"></label>' +
         '<label class="rfield"><span>שם (לא חובה)</span><input id="en" placeholder=" " autocomplete="off"></label>' +
-        '<button class="rbtn" id="addm" type="button">הוספה</button></div><div id="alist"></div>'
+        '<button class="rbtn" id="addm" type="button">הוספה</button></div><div id="alist"><div class="rskel rskel--title"></div></div>'
     });
     function paintA() {
+      if (!ready) return;
       var q = fold(dlg.querySelector("#aq").value.trim()), l = dlg.querySelector("#alist");
       var vis = rows.filter(function (a) { return !q || fz(a.email + " " + (a.note || ""), q); });
       var sup = !!(state.me && state.me.super), roleOf = function (a) { return a.is_super ? "super" : a.is_admin ? "admin" : "member"; };
@@ -4168,19 +4137,19 @@
           api("/rest/v1/rpc/set_member_role", { method: "POST", json: { target: i.dataset.urole, new_role: i.value } }).then(function () { toast("נשמר"); load(); }, function () { toast("אי אפשר לשנות: חייב להישאר לפחות מנהל על אחד"); load(); });
         });
       });
-      l.querySelectorAll("[data-rm]").forEach(function (b) { b.addEventListener("click", function () { api("/rest/v1/allowed?email=eq." + encodeURIComponent(b.dataset.rm), { method: "DELETE" }).then(load, fail); }); });
+      l.querySelectorAll("[data-rm]").forEach(function (b) { b.addEventListener("click", function () { busy(b, api("/rest/v1/allowed?email=eq." + encodeURIComponent(b.dataset.rm), { method: "DELETE" })).then(load, fail); }); });
       l.querySelectorAll("[data-note]").forEach(function (i) {
         i.addEventListener("change", function () {
           api("/rest/v1/allowed?email=eq." + encodeURIComponent(i.dataset.note), { method: "PATCH", json: { note: i.value.trim() } }).then(function () { rows.forEach(function (a) { if (a.email === i.dataset.note) a.note = i.value.trim(); }); toast("נשמר"); }, fail);
         });
       });
     }
-    function load() { return api("/rest/v1/allowed?select=email,is_admin,is_super,note&order=added_at").then(function (r) { rows = r || []; paintA(); }, fail); }
+    function load() { return api("/rest/v1/allowed?select=email,is_admin,is_super,note&order=added_at").then(function (r) { rows = r || []; ready = true; paintA(); }, function (er) { if (!ready) dlg.querySelector("#alist").innerHTML = ph("לא הצלחנו לטעון", "בדקו את החיבור ונסו שוב."); fail(er); }); }
     dlg.querySelector("#aq").addEventListener("input", paintA);
     dlg.querySelector("#addm").addEventListener("click", function () {
       var em = dlg.querySelector("#em").value.trim().toLowerCase(), nm = dlg.querySelector("#en").value.trim();
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) return toast("אימייל לא תקין");
-      api("/rest/v1/allowed", { method: "POST", prefer: "return=minimal", json: { email: em, note: nm } }).then(function () { dlg.querySelector("#em").value = ""; dlg.querySelector("#en").value = ""; return load(); }, fail);
+      busy(dlg.querySelector("#addm"), api("/rest/v1/allowed", { method: "POST", prefer: "return=minimal", json: { email: em, note: nm } })).then(function () { dlg.querySelector("#em").value = ""; dlg.querySelector("#en").value = ""; return load(); }, fail);
     });
     load();
   }
@@ -4317,7 +4286,7 @@
   }
   (function () {
     var st = document.createElement("style");
-    st.textContent = ".bio-ghost { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 2 } .bio-ghost mark { color: transparent; border-radius: 2px } .bio-caret { display: inline-block; width: 0; height: 1.1em; vertical-align: text-bottom; border-inline-start: 2px solid var(--c); position: relative } .bio-caret > i { position: absolute; bottom: 100%; inset-inline-start: calc(var(--sp-hair) / -2); padding: 0 var(--sp-hair); border-radius: 4px 4px 4px 0; background: var(--c); color: #fff; font: 600 11px/16px var(--font); font-style: normal; white-space: nowrap }";
+    st.textContent = ".bio-ghost { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 2 } .bio-ghost mark { color: transparent; border-radius: 2px } .bio-caret { display: inline-block; width: 0; height: 1.1em; vertical-align: text-bottom; border-inline-start: 2px solid var(--c); position: relative } .bio-caret > i { position: absolute; bottom: 100%; inset-inline-start: calc(var(--gap-tight) / -2); padding: 0 var(--gap-tight); border-radius: 4px 4px 4px 0; background: var(--c); color: var(--on-primary); font: var(--fw-bold) var(--fs-s)/16px var(--font); font-style: normal; white-space: nowrap }";
     document.head.appendChild(st);
     setInterval(paintGhosts, 1500);   /* a marker that was not renewed goes */
     function inMyField() { var el = document.activeElement; if (inOpening(el)) return true; return !!(liveItem && liveItem.fld && liveItem.root.isConnected && el && el.classList.contains("rf-rich") && ["poetics", "guidance", "notes"].some(function (k) { return liveItem.fld[k] === el; })); }
@@ -4365,7 +4334,9 @@
   /* wide screen: drag the line between the list and the vivencia to change the width (arrows on the keyboard, double click resets); kept in this browser */
   (function () {
     var KEY = "biodanza_listw", h = document.getElementById("sh"), root = document.documentElement;
-    function clampW(w) { return Math.round(Math.max(320, Math.min(w, window.innerWidth - 420))); }
+    function tok(v) { var d = document.createElement("div"); d.style.cssText = "position:absolute;visibility:hidden;width:" + v; document.body.appendChild(d); var w = d.getBoundingClientRect().width; d.remove(); return w; }
+    /* both panes stay usable from the breakpoint up: the list is never narrower than a popup less two controls, and never wider than half the window, so the exercise is never narrower than the list */
+    function clampW(w) { var lo = tok("var(--pane-min)"), hi = Math.max(lo, window.innerWidth / 2); return Math.round(Math.max(lo, Math.min(w, hi))); }
     function curW() { return pl.getBoundingClientRect().width; }
     function setW(w) { root.style.setProperty("--listw", clampW(w) + "px"); }
     function save() { try { localStorage.setItem(KEY, String(Math.round(curW()))); } catch (e) { /* not kept */ } }
@@ -4388,6 +4359,8 @@
     if (jump) {   /* our own history.go(): no screen change unless we asked for one */
       var j = jump; jump = null;
       if (!j.render) { if (j.then) j.then(); return; }
+      var nd = document.getElementById("itemDlg");
+      if (nd && nd.open && nd.__openedAt > j.at) { if (j.then) j.then(); return; }   /* a tap opened an exercise while the earlier close was still walking history back: that exercise stays, only its address is written */
     } else {
       for (var i = layers.length - 1; i >= 0; i--) if (layers[i].own) { layers[i].own = false; closeLayer(layers[i].el); return; }   /* Back closes the top popup only */
       if (history.state && history.state.bk) { startJump(1, false); return; }   /* Forward onto the entry of a popup that is closed: step over it */
@@ -4407,7 +4380,8 @@
       layers.forEach(function (l) { if (l.el !== idlg) { l.own = false; if (l.el.id === "moreMenu") l.el.remove(); else if (l.el.open) l.el.close(); } });
       if (idlg && idlg.open) { idlg.__quiet = true; slideClose(idlg); }
       liveItem = null; stack().length = 0; stack().push(home, editor);
-      loadItems().then(paint, fail);   /* what was changed inside is in the list */
+      var sig0 = JSON.stringify(state.items || null);
+      loadItems().then(function () { if (JSON.stringify(state.items || null) === sig0) return; paint(); }, fail);   /* what was changed inside is in the list; when nothing was, the list is not drawn again, so a tap that began meanwhile still lands on its card */
       return;
     }
     layers.forEach(function (l) { l.own = false; if (l.el.__screen) l.el.__quiet = true; if (l.el.id !== "moreMenu" && l.el.open) l.el.close(); else if (l.el.id === "moreMenu") l.el.remove(); });

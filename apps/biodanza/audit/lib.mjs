@@ -1,7 +1,7 @@
 import fs from "fs"; import { spawn } from "child_process";
 export async function launch(w = 430, h = 900) {
-  const port = 9351;
-  const proc = spawn("C:/Program Files/Google/Chrome/Application/chrome.exe", ["--headless=new", "--remote-debugging-port=" + port, "--user-data-dir=C:/tmp/bio/cards/prof", "--no-first-run", "--autoplay-policy=no-user-gesture-required", "--hide-scrollbars", "--window-size=" + w + "," + h, "about:blank"], { stdio: "ignore" });
+  const port = +process.env.BIO_PORT || 9351;
+  const proc = spawn("C:/Program Files/Google/Chrome/Application/chrome.exe", ["--headless=new", "--remote-debugging-port=" + port, "--user-data-dir=C:/tmp/bio/cards/prof" + (process.env.BIO_PORT ? process.env.BIO_PORT : ""), "--no-first-run", "--autoplay-policy=no-user-gesture-required", "--hide-scrollbars", "--window-size=" + w + "," + h, "about:blank"], { stdio: "ignore" });
   await new Promise(r => setTimeout(r, 2500));
   const pages = await (await fetch("http://localhost:" + port + "/json")).json();
   const pg = pages.find(p => p.type === "page");

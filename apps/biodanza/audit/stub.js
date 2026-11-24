@@ -52,6 +52,11 @@
     if (path === "/rest/v1/exercise_music") {
       return [{ exercise_id: "ex1", exercises: { id: "ex1", title_he: "הליכה", title_en: "Walking" }, music: M.m1 }, { exercise_id: "ex1", exercises: { id: "ex1", title_he: "הליכה", title_en: "Walking" }, music: M.m2 }, { exercise_id: "ex2", exercises: { id: "ex2", title_he: "מפגש", title_en: "Meeting" }, music: M.m7 }];
     }
+    if (path === "/rest/v1/vivencia_shares") return q.indexOf("vivencia_id=eq.") >= 0 ? [{ email: "a@x.com", role: "edit" }, { email: "b@x.com", role: "view" }] : [];
+    if (path === "/rest/v1/rpc/share_candidates") return [{ email: "a@x.com", note: "אופיר אבירם" }, { email: "b@x.com", note: "הדר לוריא" }, { email: "c@x.com", note: "דנה" }];
+    if (path === "/rest/v1/vivencia_likes") return [{ vivencia_id: "v1" }];
+    if (path === "/rest/v1/categories") return [{ key: "circles", name_he: "מעגלים" }, { key: "walk", name_he: "הליכה" }, { key: "games", name_he: "משחקים" }];
+    if (path === "/rest/v1/exercises") { var ks = ["circles", "walk", "games"], o = []; for (var i = 0; i < 14; i++) o.push({ id: "cx" + i, title_he: "תרגיל מספר " + (i + 1) + (i % 4 === 0 ? " עם שם ארוך מאוד שנחתך בסוף השורה כדי לבדוק גלישה" : ""), title_en: "Exercise " + (i + 1), category: ks[i % 3], phase_hint: null, phase_keys: [], level_key: null, source: null, exercise_texts: [], exercise_lines: [], exercise_music: [{ count: i % 5 }] }); return o; }
     return [];
   }
   window.__bioCalls = [];

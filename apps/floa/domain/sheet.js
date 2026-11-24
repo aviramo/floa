@@ -126,8 +126,34 @@
       '<button type="button" class="hicon rs-x" data-close aria-label="' + (o.closeLabel || "סגירה") + '">' + (o.icon || X_ICON) + "</button></div>" +
       '<div class="sheet-body">' + (o.body || "") + "</div>" + (o.foot ? '<div class="sheet-foot">' + o.foot + "</div>" : "") + "</div>";
   }
+  /* o.anchor = the element that opened it: on a computer (from WIDE) a SHORT popup opens next to that control (law 3) instead of in the middle: below it, flipped above (or to its side)
+     when there is no room, always inside the window, as wide as its content up to --w. On a phone, or with no anchor, nothing changes (the bottom sheet / the page's own placement). */
+  function unanchor(dlg) {
+    dlg.removeAttribute("data-anchored"); dlg.style.removeProperty("top"); dlg.style.removeProperty("left");
+    if (dlg.__rsRo) { dlg.__rsRo.disconnect(); dlg.__rsRo = null; }
+    if (dlg.__rsGo) { window.removeEventListener("resize", dlg.__rsGo); dlg.__rsGo = null; }
+  }
+  function anchorTo(dlg, a) {
+    dlg.setAttribute("data-anchored", "");
+    var G = 12, T = 4;   /* the kit's --gap and --gap-tight: the room kept from the window's edge, and from the control */
+    var go = function () {
+      if (!dlg.open || !a.isConnected || !wide()) return;
+      var r = a.getBoundingClientRect(), w = dlg.offsetWidth, h = dlg.offsetHeight, vw = window.innerWidth, vh = window.innerHeight;
+      var top = r.bottom + T, left = r.left;
+      if (top + h > vh - G) {
+        if (r.top - T - h >= G) top = r.top - T - h;
+        else { top = Math.max(G, Math.min(r.top, vh - h - G)); left = r.right + T + w <= vw - G ? r.right + T : r.left - T - w; }
+      }
+      dlg.style.top = Math.round(top) + "px"; dlg.style.left = Math.round(Math.max(G, Math.min(left, vw - w - G))) + "px";
+    };
+    dlg.__rsGo = go; window.addEventListener("resize", go);
+    if (window.ResizeObserver) { dlg.__rsRo = new ResizeObserver(go); dlg.__rsRo.observe(dlg); }   /* a popup that grows (a message, a busy state) stays inside the window */
+    dlg.addEventListener("close", function () { unanchor(dlg); }, { once: true });
+    go();
+  }
   function render(dlg, o) {
     o = o || {};
+    unanchor(dlg);
     attach(dlg, { from: o.from });
     dlg.className = (o.kind ? o.kind + " " : "") + "rsheet";
     if (o.from) dlg.setAttribute("data-from", o.from);
@@ -136,6 +162,7 @@
     dlg.innerHTML = markup(o);
     ensureGrab(dlg);
     if (!dlg.open) dlg.showModal();
+    if (o.anchor && wide() && o.anchor.isConnected) anchorTo(dlg, o.anchor);
   }
 
   /* the header action: disabled until something changed (setDirty), loading while saving (busy). The button keeps its place in the header. */

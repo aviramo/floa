@@ -26,27 +26,29 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap"></noscript>
 <link rel="stylesheet" href="/kit.css">
+<link rel="stylesheet" href="assets/theme.css">
 <style>
 /* The page shell: a column the height of the window, so the page never scrolls and only .rlist does. On a wide screen the list of
    vivencias is the right pane and the open vivencia the left one, with a line between them that can be dragged (roster's split).
    Tokens only. Awaiting the owner's approval as part of the kit. */
 html, body { height: 100%; }   /* the page itself never scrolls (the shell is exactly the window's height): only .rlist and a popup's body do. No overflow:hidden on the root: it switches off the browser's own pull-down to refresh. */
-body { margin: 0; display: flex; flex-direction: column; height: 100dvh; background: var(--bg); color: var(--text); font: var(--fw-regular) var(--fs-m)/var(--lh-body) var(--font); }
+body { margin: 0; display: flex; flex-direction: column; height: 100dvh; background: var(--page); color: var(--text); font: var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font); }
 #app { position: relative; display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
 #pl, #pd { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; min-width: 0; }
 #pl > .rlist, #pd > .rlist { flex: 1 1 auto; }
 #pd, #sh { display: none; }
-.pad { padding: var(--gutter); display: flex; flex-direction: column; gap: var(--gap-field); }
-.bar { display: flex; flex-direction: column; gap: var(--gap-button); padding: var(--gutter) var(--gutter) var(--end-pad); border-top: 1px solid var(--line); }
-@media (min-width: 1024px) {
+.pad { padding: var(--gap); display: flex; flex-direction: column; gap: var(--gap); }
+dialog.rsheet .pad { padding: 0; }   /* a popup pads its content itself (law 2): the block inside it adds nothing */
+.bar { display: flex; flex-direction: column; gap: var(--gap); padding: var(--gap) var(--gap) var(--end-pad); border-top: 1px solid var(--border); }
+@media (min-width: 760px) {
   :root { --listw: 50vw; }
   #app { display: grid; grid-template-columns: var(--listw) 1fr; }
-  #pl { border-inline-end: 1px solid var(--line); }
-  #pl .rfab { left: calc(100vw - var(--listw) + var(--gutter)); }   /* the add button keeps the same gap to the pane's side and bottom edges as to the window's */
+  #pl { border-inline-end: 1px solid var(--border); }
+  #pl .rfab { left: calc(100vw - var(--listw) + var(--gap)); }   /* the add button keeps the same gap to the pane's side and bottom edges as to the window's */
   #pd { display: flex; }
-  #sh { display: block; position: absolute; top: 0; bottom: 0; right: var(--listw); z-index: var(--z-menu); width: calc(var(--sp-hair) * 2.5); margin-right: calc(var(--sp-hair) * -1); cursor: col-resize; touch-action: none; }
-  #sh::after { content: ""; position: absolute; top: 0; bottom: 0; right: var(--sp-hair); width: 2px; background: transparent; transition: background var(--t-base); }
-  #sh:hover::after, #sh:focus-visible::after, html.split-drag #sh::after { background: var(--line-strong); }
+  #sh { display: block; position: absolute; top: 0; bottom: 0; right: calc(var(--listw) - var(--gap-tight)); z-index: var(--z-menu); width: var(--handle-w); cursor: col-resize; touch-action: none; }
+  #sh::after { content: ""; position: absolute; top: 0; bottom: 0; right: var(--gap-tight); width: calc(var(--bw) * 2); background: transparent; transition: background var(--t-base); }
+  #sh:hover::after, #sh:focus-visible::after, html.split-drag #sh::after { background: var(--border-strong); }
   #sh:focus-visible { outline: none; }
   html.split-drag, html.split-drag * { cursor: col-resize !important; user-select: none !important; }
 }

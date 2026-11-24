@@ -9,34 +9,35 @@
 <link rel="icon" href="../favicon.ico" sizes="any">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="/kit.css">
+<script>document.write('<link rel="stylesheet" href="' + (/^(localhost|127[.])/.test(location.hostname) ? '/biodanza/' : '/') + 'assets/theme.css">')</script>
 <style>
 /* The page is the window's height and never scrolls: the header, the search and the filter stay, only the list scrolls (kit elements only, tokens only). */
 html, body { height: 100%; }
-body { margin: 0; display: flex; flex-direction: column; height: 100dvh; background: var(--bg); color: var(--text); font: var(--fw-regular) var(--fs-m)/var(--lh-body) var(--font); }
+body { margin: 0; display: flex; flex-direction: column; height: 100dvh; background: var(--page); color: var(--text); font: var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font); }
 #app { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; width: 100%; }
 #app > .rlist { flex: 1 1 auto; }
 #out, #out * { user-select: text; -webkit-user-select: text; }
-.pad { padding: var(--gutter); display: flex; flex-direction: column; gap: var(--gap-field); }
-#out { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 24rem), 1fr)); gap: var(--sp-1); padding: 0 var(--gutter) var(--gutter); align-content: start; align-items: stretch; }
+.pad { padding: var(--gap); display: flex; flex-direction: column; gap: var(--gap); }
+#out { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 24rem), 1fr)); gap: var(--gap); padding: 0 var(--gap) var(--gap); align-content: start; align-items: stretch; }
 #out > .rempty, #out > .rhint, #out > .rskel { grid-column: 1 / -1; }
-#out > .rcard { background: var(--on-primary); margin: 0; min-width: 0; display: flex; flex-direction: column; gap: var(--sp-1); }
+#out > .rcard { background: var(--on-primary); margin: 0; min-width: 0; display: flex; flex-direction: column; gap: var(--gap); }
 #out > * { flex-shrink: 0; }
 .c__t, .c__s, .c__h { overflow-wrap: anywhere; }
-.c__t { direction: ltr; text-align: start; font: var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font); }
-.c__h { font: var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font); color: var(--text-2); }
-.c__s { color: var(--text-2); font: var(--fw-regular) var(--fs-xs)/var(--lh-tight) var(--font); }
+.c__t { direction: ltr; text-align: start; font: var(--fw-bold) var(--fs-m)/var(--lh-tight) var(--font); }
+.c__h { font: var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font); color: var(--text-muted); }
+.c__s { color: var(--text-muted); font: var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font); }
 .c__blk { display: flex; flex-direction: column; gap: 2px; }
-.c__match { border-top: 1px solid var(--line); padding-top: var(--sp-1); display: flex; flex-direction: column; gap: 2px; }
-.c__lbl { color: var(--text-2); font: var(--fw-medium) var(--fs-xs)/1 var(--font); margin-bottom: 2px; }
-.c__why { color: var(--text); font: var(--fw-regular) var(--fs-xs)/var(--lh-body) var(--font); margin-top: var(--sp-1); }
-.c__accs { border-top: 1px solid var(--line); padding-top: var(--sp-1); display: flex; flex-direction: column; }
-.c__accb { all: unset; box-sizing: border-box; width: 100%; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); padding-block: var(--sp-1); cursor: pointer; font: var(--fw-medium) var(--fs-s)/var(--lh-tight) var(--font); color: var(--text); }
-.c__accb:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.c__plays { display: flex; flex-wrap: wrap; gap: var(--sp-1); padding-bottom: var(--sp-1); }
-.c__names { display: flex; flex-direction: column; gap: 2px; padding-bottom: var(--sp-1); direction: ltr; text-align: start; }
-.c__more { border-top: 1px solid var(--line); padding-top: var(--sp-1); display: flex; flex-direction: column; gap: 2px; }
+.c__match { border-top: 1px solid var(--border); padding-top: var(--gap); display: flex; flex-direction: column; gap: 2px; }
+.c__lbl { color: var(--text-muted); font: var(--fw-regular) var(--fs-s)/1 var(--font); margin-bottom: 2px; }
+.c__why { color: var(--text); font: var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font); margin-top: var(--gap); }
+.c__accs { border-top: 1px solid var(--border); padding-top: var(--gap); display: flex; flex-direction: column; }
+.c__accb { all: unset; box-sizing: border-box; width: 100%; display: flex; align-items: center; justify-content: space-between; gap: var(--gap); padding-block: var(--gap); cursor: pointer; font: var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font); color: var(--text); }
+.c__accb:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.c__plays { display: flex; flex-wrap: wrap; gap: var(--gap); padding-bottom: var(--gap); }
+.c__names { display: flex; flex-direction: column; gap: 2px; padding-bottom: var(--gap); direction: ltr; text-align: start; }
+.c__more { border-top: 1px solid var(--border); padding-top: var(--gap); display: flex; flex-direction: column; gap: 2px; }
 .rhead.rhead { border-bottom: 0; position: relative; z-index: 2 }
-.rhead.rhead::after { content: ""; position: absolute; inset-inline: 0; top: 100%; height: var(--edge-shadow-h, 6px); background: var(--edge-shadow, linear-gradient(rgba(0, 0, 0, .12), rgba(0, 0, 0, 0))); opacity: 0; transition: opacity .18s ease; pointer-events: none }
+.rhead.rhead::after { content: ""; position: absolute; inset-inline: 0; top: 100%; height: var(--gap-tight); background: linear-gradient(color-mix(in srgb, var(--scrim) 25%, transparent), transparent); opacity: 0; transition: opacity .18s ease; pointer-events: none }
 .rhead.rhead[data-scrolled]::after { opacity: 1 }
 @media (prefers-reduced-motion: reduce) { .rhead.rhead::after { transition: none } }
 </style>
@@ -171,7 +172,7 @@ document.addEventListener("scroll", function (e) {
   function gcard(g) {
     var h = '<div class="rcard"><div class="c__blk"><span class="c__lbl">תרגיל בקטלוג הקיים · ' + g.items.length + ' תרגילים מ־2014</span>' + nm(g.ex) + '</div><div class="c__match"><span class="c__lbl">מקטלוג 2014</span>';
     g.items.sort(function (x, y) { return y.b.title - x.b.title; }).forEach(function (i) {
-      h += '<div class="c__blk" style="margin-bottom:var(--sp-1)"><div class="c__t">' + esc(i.r.title_en) + '</div><div class="c__h">' + esc(i.r.title_he) + '</div><div class="c__s">שם ' + pct(i.b.title) + ' · מוסיקה: ' + i.r.music.length + ' מוסיקות, ' + i.b.shared + ' משותפים' + (i.b.shared ? ' (' + pct(i.b.jaccard) + ')' : '') + '</div></div>';
+      h += '<div class="c__blk" style="margin-bottom:var(--gap)"><div class="c__t">' + esc(i.r.title_en) + '</div><div class="c__h">' + esc(i.r.title_he) + '</div><div class="c__s">שם ' + pct(i.b.title) + ' · מוסיקה: ' + i.r.music.length + ' מוסיקות, ' + i.b.shared + ' משותפים' + (i.b.shared ? ' (' + pct(i.b.jaccard) + ')' : '') + '</div></div>';
     });
     return h + '</div></div>';
   }
