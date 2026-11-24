@@ -163,7 +163,7 @@ Deno.serve(async (req) => {
 
   // The opening is written by the bot: milestone one
   if (body.mode === 'opening') {
-    const openSystem = [stable, { type: 'text', text: [sessionFacts(b, ctx, null, adText, addressOf(fromLink)), openingTask(b, adText, addressOf(fromLink), ctx.profile?.title ?? '')].join('\n\n') }];
+    const openSystem = [stable, { type: 'text', text: [sessionFacts(b, { ...ctx, brief: undefined, hypothesis: undefined, profile: null } as any, null, adText, addressOf(fromLink)), openingTask(b, adText, addressOf(fromLink), ctx.profile?.title ?? '')].join('\n\n') }];
     let raw = await claude(apiKey, model, openSystem, [{ role: 'user', content: 'התחילו.' }], 800);
     let op = raw ? parseOpening(raw) : null;
     const fixes: { type: string; text: string }[] = [];

@@ -75,7 +75,7 @@ Deno.test('state block nudges a long conversation toward a clear step', () => {
 
 Deno.test('opening task names the business bot and keeps the meeting out of the opening', () => {
   const t = openingTask(harpatka, 'כמה זמן עבר?');
-  if (!t.includes(harpatka.botName) || !t.includes('אפשר להזכיר שמדובר בערב תנועה')) throw new Error(t);
+  if (!t.includes(harpatka.botName) || !t.includes('אסור להזכיר ערב, מפגש או תנועה')) throw new Error(t);
 });
 
 import { revealedGender, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsEvening, padChips, CHAT_POOL, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
@@ -97,7 +97,7 @@ Deno.test('address follows the audience of the link: woman, man, or plural when 
   if (!f.includes('לשון נקבה יחידה')) throw new Error('session facts must carry the address block');
   for (const [a, needle] of [['female', 'אליה בלשון נקבה'], ['male', 'אליו בלשון זכר'], ['plural', 'לשון רבים בלבד']] as const) {
     const o = openingTask(harpatka, 'x', a);
-    if (!o.includes(needle) || !o.includes('אין מגדר ואין רגש') || !o.includes('אפשר להזכיר שמדובר בערב תנועה')) throw new Error('opening ' + a);
+    if (!o.includes(needle) || !o.includes('אין מגדר ואין רגש') || !o.includes('אסור להזכיר ערב, מפגש או תנועה')) throw new Error('opening ' + a);
   }
   if (!turnReminder('male').includes('זכר') || !turnReminder('plural').includes('<state>')) throw new Error('reminder');
 });
@@ -275,7 +275,7 @@ Deno.test('round two: wrong singular, cut and one-word chips, "not sure fully", 
   eq(wrongSingular('ראית את המודעה על לחץ', 'male'), false, 'את as a particle is fine');
   eq(chipOk('משהו ש'), false, 'cut');
   eq(chipOk('האם'), false, 'one word');
-  eq(chipOk('קצת'), true, 'kept');
+  eq(chipOk('קצת'), false, 'a bare generic answer is not a quick reply');
   eq(neutralize('בננה, מעניין. לא בטוח לגמרי למה התכוונת'), 'בננה, מעניין. לא לגמרי ברור למה התכוונת', 'bare not sure');
   if (!styleFix('ההנחיה כאן: לא מפרטים')) throw new Error('leak');
 });
@@ -341,4 +341,11 @@ Deno.test('round eleven: no hotline for silence or a bare question mark', () => 
 
 Deno.test('round eleven: hotline stays allowed in a conversation that had real distress earlier', () => {
   if (styleFix('אם אתה בסכנה התקשר ל-101', 'לא יודע', 'אני לא רוצה לחיות יותר לא יודע')) throw new Error('blocked a hotline inside an ongoing crisis');
+});
+
+Deno.test('round eleven: no price or schedule in chat, no generic chips, no bot-voice chips', () => {
+  if (!styleFix('המפגשים בתשלום, פעם בשבוע', 'אתם סתם רוצים כסף')) throw new Error('price leak missed');
+  if (!styleFix('אתה כתבת שאתה עייף', 'שקט אמיתי')) throw new Error('quoted a tap');
+  if (chipOk('כן') || chipOk('קצת') || chipOk('אני אחזור אליך בקרוב')) throw new Error('bad chip allowed');
+  if (!chipOk('אני רוצה לספר קצת על זה')) throw new Error('good chip blocked');
 });
