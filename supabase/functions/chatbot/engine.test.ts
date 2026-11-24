@@ -372,3 +372,8 @@ Deno.test('round eleven: talk about the conversation itself is sent back', () =>
   if (!styleFix('זה נשמע מתיש. לפני שאני שואל עוד, את רוצה לספר מה קורה?', 'הרגע שאחרי')) throw new Error('process talk missed');
   if (styleFix('זה נשמע מתיש. מה קורה בדיוק ברגע שבו זה נסגר?', 'הרגע שאחרי')) throw new Error('false alarm');
 });
+
+Deno.test('round eleven: two questions in one reply are sent back', () => {
+  if (!styleFix('מתי זה התחיל? ואיך זה נראה לך?', 'כשמישהו מתקרב אלי')) throw new Error('two questions missed');
+  if (styleFix('מתי זה התחיל, ואיך זה נראה לך?', 'כשמישהו מתקרב אלי')) throw new Error('false alarm on one question');
+});
