@@ -20,7 +20,7 @@
      node build.mjs                build every business
      node build.mjs --only=floa    build one
      node build.mjs --watch        rebuild on any change under src/ or apps/
-     node build.mjs --serve        ... and serve it on http://localhost:5173
+     node build.mjs --serve        ... and serve it on http://localhost:5173 (--port=5174 for another port)
    ========================================================================== */
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -448,7 +448,8 @@ async function main() {
 
   await build(only);
 
-  if (flag("--serve")) serve(5173, flag("--test"));
+  const port = Number(argv.find((a) => a.startsWith("--port="))?.slice("--port=".length)) || 5173;   // --port=5174 serves a second copy beside the first
+  if (flag("--serve")) serve(port, flag("--test"));
   if (flag("--watch") || flag("--serve")) {
     let queued = null;
     const rebuild = (file) => {
@@ -458,7 +459,7 @@ async function main() {
         /* A fresh process, not build() again: ESM caches every module it has
            already imported, so an in-process rebuild would keep re-rendering
            the content it read the first time. */
-        spawnSync(process.execPath, [fileURLToPath(import.meta.url), ...argv.filter((a) => a !== "--serve" && a !== "--watch")], { stdio: "inherit" });
+        spawnSync(process.execPath, [fileURLToPath(import.meta.url), ...argv.filter((a) => a !== "--serve" && a !== "--watch" && !a.startsWith("--port="))], { stdio: "inherit" });
       }, 60);
     };
     watch(SRC, { recursive: true }, (_e, file) => rebuild(file));
