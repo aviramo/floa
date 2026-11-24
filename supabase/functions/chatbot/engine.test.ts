@@ -78,7 +78,7 @@ Deno.test('opening task names the business bot and keeps the meeting out of the 
   if (!t.includes(harpatka.botName) || !t.includes('אסור להזכיר ערב, מפגש או תנועה')) throw new Error(t);
 });
 
-import { oneSentence, stripReferrals, endOnQuestion, revealedGender, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsOffer, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { oneMessage, oneSentence, stripReferrals, endOnQuestion, revealedGender, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsOffer, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 Deno.test('distress net catches plain phrasings and not ordinary talk', () => {
   for (const t of ['אני חושבת על למות', 'לפעמים אני חושבת שעדיף שלא אהיה פה', 'רוצה למות', 'אין טעם לחיות']) if (!distressIn(t)) throw new Error('missed: ' + t);
   for (const t of ['הייתי רוצה להרגיש חלק ממשהו', 'מתי המפגש הקרוב?', 'מת מצחוק', 'עייפה ולא ישנה']) if (distressIn(t)) throw new Error('false alarm: ' + t);
@@ -400,4 +400,9 @@ Deno.test('round eleven: a message is one sentence, the last question stays; cri
   eq(oneSentence('הכול כתוב באתר. אפשר להציץ שם.'), 'הכול כתוב באתר. אפשר להציץ שם.', 'site line stays');
   if (!styleFix('זה נשמע כבד. מה קורה בגוף באותו רגע?', 'כשמישהו מתקרב')) throw new Error('two sentences missed');
   if (styleFix('נשמע כבד, מה קורה בגוף באותו רגע?', 'כשמישהו מתקרב')) throw new Error('false alarm on one sentence');
+});
+
+Deno.test('round eleven: paragraphs become one message', () => {
+  eq(oneMessage('נשמע כבד.\n\nמה קורה בגוף?'), 'נשמע כבד. מה קורה בגוף?', 'joined');
+  eq(oneMessage('הכול באתר.\n\nאפשר להציץ.'), 'הכול באתר.\n\nאפשר להציץ.', 'site line keeps its paragraphs');
 });

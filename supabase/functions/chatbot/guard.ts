@@ -228,3 +228,6 @@ export function oneSentence(reply: string): string {
   const questions = parts.filter((p) => /\?\s*$/.test(p));
   return questions.length ? questions[questions.length - 1] : parts[0];
 }
+
+// One turn is one message: paragraphs become one line (a crisis, a goodbye and the site line keep theirs).
+export const oneMessage = (reply: string): string => ENDS_OK.test(String(reply ?? '')) ? String(reply ?? '') : String(reply ?? '').replace(/\s*\n+\s*/g, ' ').trim();

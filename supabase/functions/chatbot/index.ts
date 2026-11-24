@@ -8,7 +8,7 @@ import { lastSentence, buildMessages, MAX_USER_TURNS, parse, parseOpening, quote
 import { BUSINESSES } from './businesses/index.ts';
 import { journeyOf } from './journey.ts';
 import { openingTask, sessionFacts, stableSystem, stateBlock, addressOf, turnReminder } from './prompt.ts';
-import { oneSentence, stripReferrals, endOnQuestion, revealedGender, openingMeetingFix, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsOffer, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { oneMessage, oneSentence, stripReferrals, endOnQuestion, revealedGender, openingMeetingFix, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsOffer, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 import { ctaFor, ctasOf, diffEvents, extractState, initialState, linkGender, mergeState, stateFromClient } from './state.ts';
 import type { CampaignContext, JourneyBusiness, SessionState } from './types.ts';
 
@@ -287,7 +287,7 @@ Deno.serve(async (req) => {
   reply = stripReferrals(reply, distress, b.lexicon.crisisDoor, /הדר/);   // never a hotline, emergency services or a professional
   if (reply !== r0) hits.push('referral_cut');
   const r1 = reply;
-  if (!distress && next.action !== 'safety' && next.action !== 'end') reply = oneSentence(endOnQuestion(reply));   // one sentence, and it is the question
+  if (!distress && next.action !== 'safety' && next.action !== 'end') reply = oneMessage(oneSentence(endOnQuestion(reply)));   // one sentence in one message, and it is the question
   if (reply !== r1) hits.push('tail_after_question_cut');
   { const sess = /^[0-9a-f-]{36}$/i.test(session) ? session : ''; const allUser = clean.filter((m: any) => m.role === 'user').map((m: any) => String(m.content)).join(' '); const still = !!styleFix(reply, lastUser, allUser); for (const h of hits) logViolation(b, sess, h, draftReply, reply, !still); }
   if (!incoming) next.action = 'continue';      // a reply without a state block advances nothing
