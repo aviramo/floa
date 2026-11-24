@@ -287,3 +287,8 @@ Deno.test('round three: objections may name the meeting, no "I cannot", long rep
   eq(neutralize('אני לא יכול לומר כאן מה המחיר'), 'אי אפשר לומר כאן מה המחיר', 'I cannot');
   if (!styleFix('א. ב. ג. ד. ה. ו. ז.')) throw new Error('long reply');
 });
+
+Deno.test('round four: no time greetings, no "what exactly brought you", no quoting-and-interpreting', () => {
+  for (const s of ['לילה טוב ושיהיה לך יום נעים', 'מה בדיוק הביא אותך למודעה?', '"אוקיי" נשמע כמו סימן שאתה מוכן', 'אני מציע לא לשאול יותר שאלות']) if (!styleFix(s)) throw new Error('missed: ' + s);
+  if (styleFix('מה הכי חסר לך בערב כזה?')) throw new Error('false alarm');
+});
