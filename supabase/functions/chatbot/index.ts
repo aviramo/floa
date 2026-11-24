@@ -232,7 +232,7 @@ Deno.serve(async (req) => {
   if (b.flowPrompt && cta) next.action = cta === 'whatsapp' ? 'guide' : cta;
   if (next.action === 'safety' || next.action === 'end') { cta = null; chips = []; }
   // Someone is never left with only a text box: when the model sent no quick replies, neutral ones are offered
-  if (next.action === 'safety') cta = 'whatsapp';
+  if (next.action === 'safety') { cta = 'whatsapp'; chips = ['אני אתקשר עכשיו', 'יש לי מישהו לדבר איתו', 'אני לא בסכנה, רק קשה לי']; }   // in a crisis too, answers to tap and not only a text box
   // Registrations are the point of the paid ad: the page offers the evening from the third message of the visitor, or at once when the reply itself
   // gives the date and the price, unless the visitor ended it or said no
   const putsTheEveningOnTheTable = /\d{1,2}\.\d{1,2}/.test(reply) && /(בשעה|ש"ח)/.test(reply);
@@ -248,7 +248,7 @@ Deno.serve(async (req) => {
     chips = padChips(chips, eitherOr ? ['קצת משניהם', 'משהו אחר', 'לא בטוח עדיין'] : (b.siteOnly ? pitchOk : eveningSeen) ? CHAT_POOL : TOPIC_POOL).map((c) => genderChip(c, address));   // last resort only
   }
   if (cta === 'register' && !(b.siteOnly ? pitchOk : eveningSeen)) cta = null;
-  if (b.siteOnly && !cta && pitchOk && /(באתר|בקישור)/.test(reply) && next.action !== 'safety') cta = 'register';   // the reply points at the site: the button is the way there
+  if (b.siteOnly && !cta && pitchOk && /(באתר|בקישור|\blink\b|website)/i.test(reply) && next.action !== 'safety') cta = 'register';   // the reply points at the site: the button is the way there
   if (b.siteOnly && !cta && pitchOk && asksDetails(lastUser) && next.action !== 'safety') cta = 'register';   // asked when, how much, how to register: the site link is the answer
   if (!cta && offersUpdates(reply) && next.action !== 'safety') cta = 'updates';
   if (!cta && facts && putsTheEveningOnTheTable && !['end', 'safety'].includes(next.action) && next.readiness !== 'not_fit') cta = 'register';
