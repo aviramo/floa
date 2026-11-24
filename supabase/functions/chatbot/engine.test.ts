@@ -78,7 +78,7 @@ Deno.test('opening task names the business bot and keeps the meeting out of the 
   if (!t.includes(harpatka.botName) || !t.includes('אפשר להזכיר שמדובר בערב תנועה')) throw new Error(t);
 });
 
-import { wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsEvening, padChips, CHAT_POOL, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsEvening, padChips, CHAT_POOL, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 Deno.test('distress net catches plain phrasings and not ordinary talk', () => {
   for (const t of ['אני חושבת על למות', 'לפעמים אני חושבת שעדיף שלא אהיה פה', 'רוצה למות', 'אין טעם לחיות']) if (!distressIn(t)) throw new Error('missed: ' + t);
   for (const t of ['הייתי רוצה להרגיש חלק ממשהו', 'מתי המפגש הקרוב?', 'מת מצחוק', 'עייפה ולא ישנה']) if (distressIn(t)) throw new Error('false alarm: ' + t);
@@ -305,4 +305,10 @@ Deno.test('round six: masculine verb forms to a woman and the reverse, "מה ש�
   eq(wrongSingular('ספרי לי עוד', 'male'), true, 'ספרי to a man');
   eq(wrongSingular('ספר לי עוד', 'male'), false, 'ספר to a man');
   if (!styleFix('אם מה שהביא אותך לכאן הוא סקרנות')) throw new Error('what brought you with ש');
+});
+
+Deno.test('round seven: placeholders and pipe lines never reach the visitor, a bare "מתי" counts as asking', () => {
+  eq(scrub('ביודנסה היא שיטה.\n\n{{chips}}\nלא שמעתי|שמעתי קצת'), 'ביודנסה היא שיטה.', 'scrub');
+  eq(scrub('שורה אחת\nכן|לא|אולי\nשורה שנייה'), 'שורה אחת\nשורה שנייה', 'pipe line');
+  eq(pitchAllowed({ turns: 3, lastUser: 'מתי', prevDone: [], prevReadiness: '' }), true, 'bare when');
 });

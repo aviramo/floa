@@ -105,7 +105,7 @@ const ASKS_ABOUT_IT = /(מתי (זה|המפגש|הערב|הבא)|כמה (זה )?
 export function pitchAllowed(a: { turns: number; lastUser: string; prevDone: string[]; prevReadiness: string }): boolean {
   // Only an explicit question about the evening, or a conversation that really got through connect, desire and motivation (or a long one), opens the door.
   // A "yes", a chip or a message count alone does not: the visitor learned from the ad about a pain, not about a meeting.
-  const asked = ASKS_ABOUT_IT.test(a.lastUser);
+  const asked = ASKS_ABOUT_IT.test(a.lastUser) || asksDetails(a.lastUser);
   const gotThere = ['connect', 'desire', 'motivation'].every((d) => a.prevDone.includes(d)) || a.prevDone.includes('bridge');
   return a.turns >= 5 || asked || gotThere;
 }
@@ -179,3 +179,6 @@ export function stripMeeting(reply: string): string {
 
 // The visitor asks for the details or wants to register: the site link is the answer
 export const asksDetails = (t: string) => /((^|\s)ו?מתי\s*\?|^ו?מתי$|מתי (זה|המפגש|הערב|הבא)|כמה (זה )?עולה|בכמה|מחיר|יקר|כסף|תשלום|הרשמ|נרשמ|קישור|תאריך|איפה (זה|המפגש|הערב|מתקיים)|פרטים|לשלוח)/.test(String(t ?? ''));
+
+// The model sometimes writes a placeholder like {{chips}} and a line of choices separated by pipes into the text itself: never shown
+export const scrub = (s: string) => String(s ?? '').replace(/\{\{[\s\S]*$/, '').split('\n').filter((l) => !/\|.*\|/.test(l)).join('\n').trim();

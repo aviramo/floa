@@ -8,7 +8,7 @@ import { lastSentence, buildMessages, MAX_USER_TURNS, parse, parseOpening, quote
 import { BUSINESSES } from './businesses/index.ts';
 import { journeyOf } from './journey.ts';
 import { openingTask, sessionFacts, stableSystem, stateBlock, addressOf, turnReminder } from './prompt.ts';
-import { wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, TOPIC_POOL, offersUpdates, mentionsEvening, CHAT_POOL, OPENING_POOL, padChips, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, TOPIC_POOL, offersUpdates, mentionsEvening, CHAT_POOL, OPENING_POOL, padChips, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 import { ctaFor, ctasOf, diffEvents, extractState, initialState, linkGender, mergeState, stateFromClient } from './state.ts';
 import type { CampaignContext, JourneyBusiness, SessionState } from './types.ts';
 
@@ -201,7 +201,7 @@ Deno.serve(async (req) => {
   if (raw === null) raw = await claude(apiKey, model, system, merged, 1400);   // one more try: an upstream hiccup must not end a conversation
   if (raw === null) return json(b, origin, { error: 'upstream' }, 502);
   let { text, state: incoming } = extractState(raw);
-  let parsed = parse(text);
+  let parsed = parse(text); parsed.reply = scrub(parsed.reply);
   // One more try, told exactly why, when the reply still speaks to a woman or a man in the plural, or offers the evening before the visitor reacted to the bridge
   const replyFixes: { type: string; text: string }[] = [];
   if (address !== 'plural' && pluralAddress(parsed.reply)) replyFixes.push({ type: 'text', text: genderFix(address) });
@@ -211,7 +211,7 @@ Deno.serve(async (req) => {
   { const sf = styleFix(parsed.reply); if (sf) replyFixes.push({ type: 'text', text: sf }); }
   if (replyFixes.length) {
     const raw2 = await claude(apiKey, model, [...system, ...replyFixes], merged, 1400);
-    if (raw2) { const o2 = extractState(raw2), p2 = parse(o2.text); if (p2.reply) { text = o2.text; incoming = o2.state; parsed = p2; } }
+    if (raw2) { const o2 = extractState(raw2), p2 = parse(o2.text); if (p2.reply) { text = o2.text; incoming = o2.state; parsed = p2; parsed.reply = scrub(parsed.reply); } }
   }
   const pitchOk = pitchAllowed({ turns, lastUser, prevDone: prev.done, prevReadiness: prev.readiness });
   // Quick replies never name the evening or its people before the visitor may hear about them, and never offer "I have a question"
