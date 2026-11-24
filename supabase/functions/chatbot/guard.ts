@@ -101,7 +101,7 @@ export const putsEveningOnTable = (reply: string) => /\d{1,2}\.\d{1,2}/.test(Str
 
 // The evening is offered after a bridge the visitor reacted to, or when they ask, or when they would rather not talk, or by their fourth message.
 // A reply that offers it earlier is asked again once. Never a jump from "I want quiet" straight to a date and a price.
-const ASKS_ABOUT_IT = /(מתי (זה|המפגש|הערב|הבא)|כמה (זה )?עולה|בכמה|מחיר|יקר|כסף|תשלום|הרשמ|נרשמ|קישור|תאריך|איפה (זה|המפגש|הערב|מתקיים)|מה זה|מה זו|מי אתם|מה אתם|מה בדיוק מוכרים|מוכרים|על מה (זה|המפגש|הערב)|כת|רמא|מה עושים|מי מנחה|המנחים)/;
+const ASKS_ABOUT_IT = /(מתי (זה|המפגש|הערב|הבא)|כמה (זה )?עולה|בכמה|מחיר|(?<![א-ת])יקר(?![א-ת])|כסף|תשלום|הרשמ|נרשמ|קישור|תאריך|איפה (זה|המפגש|הערב|מתקיים)|מה זה|מה זו|מי אתם|מה אתם|מה בדיוק מוכרים|מוכרים|על מה (זה|המפגש|הערב)|(?<![א-ת])כת(?![א-ת])|רמא|מה עושים|מי מנחה|המנחים)/;
 export function pitchAllowed(a: { turns: number; lastUser: string; prevDone: string[]; prevReadiness: string }): boolean {
   // Only an explicit question about the evening, or a conversation that really got through connect, desire and motivation (or a long one), opens the door.
   // A "yes", a chip or a message count alone does not: the visitor learned from the ad about a pain, not about a meeting.
@@ -179,7 +179,7 @@ export function stripMeeting(reply: string): string {
 }
 
 // The visitor asks for the details or wants to register: the site link is the answer
-export const asksDetails = (t: string) => /((^|\s)ו?מתי\s*\?|^ו?מתי$|מתי (זה|המפגש|הערב|הבא)|כמה (זה )?עולה|בכמה|מחיר|יקר|כסף|תשלום|הרשמ|נרשמ|קישור|תאריך|איפה (זה|המפגש|הערב|מתקיים)|פרטים|לשלוח)/.test(String(t ?? ''));
+export const asksDetails = (t: string) => /((^|\s)ו?מתי\s*\?|^ו?מתי$|מתי (זה|המפגש|הערב|הבא)|כמה (זה )?עולה|בכמה|מחיר|(?<![א-ת])יקר(?![א-ת])|כסף|תשלום|הרשמ|נרשמ|קישור|תאריך|איפה (זה|המפגש|הערב|מתקיים)|פרטים|לשלוח)/.test(String(t ?? ''));
 
 // The model sometimes writes a placeholder like {{chips}} and a line of choices separated by pipes into the text itself: never shown
 export const scrub = (s: string) => String(s ?? '').replace(/\{\{[\s\S]*$/, '').split('\n').filter((l) => !/\|.*\|/.test(l)).join('\n').trim();

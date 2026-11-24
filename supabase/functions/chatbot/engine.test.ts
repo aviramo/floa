@@ -325,3 +325,7 @@ Deno.test('round ten: no "what you wrote" after a few words or a tap', () => {
   if (!styleFix('מה שכתבת מוכר מאוד', 'מוכר מאוד')) throw new Error('missed');
   if (styleFix('מה שכתבת מוכר מאוד', 'יש סביבי אנשים ובכל זאת חסר משהו וגם בבית יש עומס')) throw new Error('false alarm after a long message');
 });
+
+Deno.test('round eleven: "בעיקר" does not count as asking about price', () => {
+  eq(pitchAllowed({ turns: 2, lastUser: 'בעיקר בערבים', prevDone: [], prevReadiness: '' }), false, 'בעיקר');
+});
