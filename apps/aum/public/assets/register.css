@@ -32,6 +32,7 @@
 .su-hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 .su-send { width: 100%; margin-top: 1rem; white-space: nowrap; transition: opacity .25s ease, background-color .4s ease; }
 .su-send:disabled { opacity: .7; cursor: default; }
+.paychoose .pc-open:disabled { opacity: .45; cursor: not-allowed; }
 .su-send.swap { opacity: 0; }
 .su-send.gone { display: none; }
 .su-send.saved, .su-send:disabled.saved { opacity: 1; background: #E9D9A8; border-color: #E9D9A8; color: #8A6A55; cursor: not-allowed; pointer-events: none; }
@@ -113,3 +114,11 @@ select.pf-input option{ color:var(--ink, #4A2514); }
 .pf-long { display: flex; flex-direction: column; gap: 2px; }
 .pf-long > span, .pf-field.pf-long:has(> input:placeholder-shown:not(:focus)) > span { position: static; transform: none; white-space: normal; overflow: visible; text-overflow: clip; font-size: 14px; line-height: 20px; text-align: start; inset: auto; }
 .pf-long > .pf-input { height: 34px; padding-top: 4px; }
+
+/* the cancellation policy: a second dialog above the registration one; the link to it sits at the end of the declaration */
+.modal-2 { z-index: 70; }
+.pol-link { color: var(--red); text-decoration: underline; cursor: pointer; }
+.pol-body { text-align: right; color: var(--ink); font-size: .98rem; line-height: 1.55; }
+.pol-body p { margin: 0 0 .5rem; }
+.pol-body ul { margin: 0; padding-inline-start: 1.1rem; }
+.pol-body li { margin: 0 0 .5rem; }

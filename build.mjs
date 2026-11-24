@@ -401,6 +401,8 @@ const TEST_ENV_JS = readFileSync(join(ROOT, "scripts", "test-env.client.js"), "u
 function serve(port = 5173, test = false) {
   const DEV_SPA = (() => { try { return JSON.parse(readFileSync(join(ROOT, "domains.json"), "utf8")).hosts.filter((h) => h.devSpa && h.folder).map((h) => h.folder.replace(/\/$/, "")); } catch { return []; } })();
   const DEV_NAMES = (() => { try { return JSON.parse(readFileSync(join(ROOT, "domains.json"), "utf8")).hosts.filter((h) => h.folder && h.enabled !== false && !h.test).map((h) => [h.host.split(".")[0], h.folder.replace(/\/?$/, "/")]).filter(([l, f]) => f !== l + "/" && !existsSync(join(DIST, l))); } catch { return []; } })();
+  /* a link to any app's own address (https://aum.floa.co.il/...) is a link to /aum/... here, so the apps open each other and the FLOA home page opens them on localhost, not on the live site; the list comes from domains.json */
+  const DEV_LINKS = (() => { try { const ls = JSON.parse(readFileSync(join(ROOT, "domains.json"), "utf8")).hosts.filter((h) => h.folder && h.enabled !== false && !h.test).map((h) => h.host.split(".")[0]); return ls.length ? new RegExp("https://(" + ls.join("|") + ")\.floa\.co\.il/?", "g") : null; } catch { return null; } })();
   createServer(async (req, res) => {
     if (test && req.url.split("?")[0] === "/__test-env.js") return res.writeHead(200, { "content-type": "text/javascript", "cache-control": "no-store" }).end(TEST_ENV_JS);
     let path = decodeURIComponent(new URL(req.url, "http://x").pathname);
@@ -417,6 +419,7 @@ function serve(port = 5173, test = false) {
     if (!extname(path) && !path.endsWith("/") && existsSync(join(file, "index.html"))) return res.writeHead(301, { location: path + "/" + new URL(req.url, "http://x").search }).end();
     try {
       let body = await readFile(file);
+      if (DEV_LINKS && extname(file) === ".html") body = Buffer.from(body.toString("utf8").replace(DEV_LINKS, (m, label) => "/" + label + "/"));
       if (test && extname(file) === ".html") body = Buffer.from(body.toString("utf8").replace(/<head[^>]*>/i, (m) => m + '<script src="/__test-env.js"></script>'));
       res.writeHead(200, { "content-type": TYPES[extname(file)] ?? "application/octet-stream", "cache-control": "no-store" }).end(body);
     } catch {
