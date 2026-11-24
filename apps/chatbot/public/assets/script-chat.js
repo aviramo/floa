@@ -20,7 +20,7 @@
 
     // the five messages: three of the pain, then the biodanza question (the pain's own sentence first), then the invitation
     const steps = [pain.s1, pain.s2, pain.s3,
-      { say: T(pain.help) + '. ' + (pain.s4say ? T(pain.s4say) : data.common.s4.say), options: data.common.s4.options },
+      { say: T(pain.help) + '. ' + (pain.s4say ? T(pain.s4say) : data.common.s4.say), options: data.common.s4.options, noAgent: true },
       { say: data.common.s5.say, options: data.common.s5.options, final: true }];
 
     const SKEY = KEY + ':script:' + (cid || 'default') + ':' + g;
@@ -106,7 +106,7 @@
       track('ChatStep', { pain: cid || 'default', step: i + 1, source });
       await say('user', text, true);
       const t = typing();
-      const [res] = await Promise.all([react(text, source, question, i), wait(reduce ? 0 : 900)]);
+      const [res] = await Promise.all([steps[i].noAgent && source === 'button' ? { reaction: null } : react(text, source, question, i), wait(reduce ? 0 : 900)]);
       t.remove();
       if (res.safety) { st.log.push({ r: 'bot', t: data.common.crisis.say }); save(); await say('bot', data.common.crisis.say, true); crisis(); busyNow = false; return; }
       const ack = res.reaction || staticAck || T(data.common.fallbackAck);

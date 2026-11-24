@@ -90,7 +90,7 @@ function cleanReaction(raw: string | null, address: 'female' | 'male' | 'plural'
   if (/^(מבינה|מבין|שומעת|שומע|רואה|מרגישה|מרגיש)(\s|$)/.test(r)) return null;
   const first = sentencesOf(r).find((p) => !/\?/.test(p)) ?? '';
   r = stripFinalDot(first);
-  if (!r || r.split(/\s+/).length > maxWords || /(מוכר|אמיתי|אותי|הרבה זמן|כל הזמן|תמיד|לאורך|בגלל|כנראה|בטח|נשמע כמו משהו|מלווה|קשור ל|אופי|דפוס)/.test(r) || r.length > 140 || /[—–]/.test(r) || mentionsOffer(r, b.lexicon.offerWords) || hasReferral(r)) return null;
+  if (!r || r.split(/\s+/).length > maxWords || /(הבוט|האדם|ענה|הנחיה|בכל מקרה|מוכר|אמיתי|אותי|הרבה זמן|כל הזמן|תמיד|לאורך|בגלל|כנראה|בטח|נשמע כמו משהו|מלווה|קשור ל|אופי|דפוס)/.test(r) || r.length > 140 || /[—–]/.test(r) || mentionsOffer(r, b.lexicon.offerWords) || hasReferral(r)) return null;
   return r;
 }
 
