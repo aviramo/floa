@@ -171,7 +171,7 @@
     $('generalSum').textContent = 'ברכה: ' + String(c.greeting || '').slice(0, 40);
     $('preview').href = pageUrl() + '&fresh=' + Date.now();
     var g = $('greeting'); g.value = c.greeting || ''; g.oninput = function () { c.greeting = g.value; dirty(true); };
-    var it = $('intro'); it.value = typeof c.intro === 'string' ? c.intro : ''; it.oninput = function () { c.intro = it.value; dirty(true); };
+    var it = $('intro'); it.value = typeof c.intro === 'string' ? c.intro : ''; it.oninput = function () { c.intro = it.value; dirty(true); }; fit($('adtextin')); fit(g); fit(it);
 
     var box = $('steps'); box.textContent = '';
     var list = steps(), blank = false;
@@ -307,6 +307,8 @@
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(done, function () { prompt('העתק ידנית', u); });
       else prompt('העתק ידנית', u);
     });
+    // the title, the greeting and the opening message wrap to more lines and grow with their text
+    ['adtextin', 'greeting', 'intro'].forEach(function (id) { $(id).addEventListener('input', function () { fit($(id)); }); });
     $('adtextin').addEventListener('input', function () { S.content.ads[S.ad].ad = $('adtextin').value; dirty(true); });
     $('adcode').addEventListener('change', function () {
       var v = $('adcode').value.trim(), ads = S.content.ads;

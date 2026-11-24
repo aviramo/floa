@@ -43,7 +43,7 @@
       </div>
       <div class="adset">
         <div><label class="lbl" for="adcode">קוד המודעה בכתובת</label><input class="field" id="adcode" type="text" dir="ltr" maxlength="30"></div>
-        <div><label class="lbl" for="adtextin">כותרת המודעה (לעצמנו)</label><input class="field" id="adtextin" type="text"></div>
+        <div><label class="lbl" for="adtextin">כותרת המודעה (לעצמנו)</label><textarea class="field" id="adtextin" rows="1"></textarea></div>
         <span class="opens" id="opens"></span>
       </div>
     </div>
@@ -53,11 +53,11 @@
         <div>
           <label class="lbl" for="greeting">הברכה הראשונה (בועה נפרדת, משותפת לכל המודעות והמגדרים)</label>
           <p class="hint">הכתובת: ad=קוד המודעה, ובנוסף gender=female או male. בלי gender מוצגת גרסת שני המינים.</p>
-          <input class="field" id="greeting" type="text">
+          <textarea class="field" id="greeting" rows="1"></textarea>
         </div>
         <div>
           <label class="lbl" for="intro">הודעת פתיחה אחרי הברכה (בועה נפרדת לפני הודעה 1, משותפת לכל המודעות והמגדרים. ריק = לא מוצגת)</label>
-          <input class="field" id="intro" type="text">
+          <textarea class="field" id="intro" rows="1"></textarea>
         </div>
       </div>
     </details>
@@ -103,6 +103,6 @@
 <script src="/supabase.js"></script>
 <script src="/auth.js"></script>
 <script src="editor/stats.js?v=4"></script>
-<script src="editor/admin.js?v=26"></script>
+<script src="editor/admin.js?v=27"></script>
 </body>
 </html>
