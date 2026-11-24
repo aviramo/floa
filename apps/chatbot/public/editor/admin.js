@@ -272,7 +272,7 @@
     $('refreshStats').addEventListener('click', function () { loadStats().then(function () { status('הנתונים עודכנו', 'ok'); }); });
     $('saveDraft').addEventListener('click', saveDraft);
     $('adq').addEventListener('input', function () { drawAds(); if ($('adq').value.trim()) { $('side').classList.add('open'); $('adToggle').setAttribute('aria-expanded', 'true'); } });
-    $('adToggle').addEventListener('click', function () { var s = $('side'); s.classList.toggle('open'); $('adToggle').setAttribute('aria-expanded', s.classList.contains('open') ? 'true' : 'false'); if (s.classList.contains('open')) $('adq').focus(); });
+    $('adToggle').addEventListener('click', function () { var s = $('side'); s.classList.toggle('open'); $('adToggle').setAttribute('aria-expanded', s.classList.contains('open') ? 'true' : 'false'); });
     $('adq').addEventListener('keydown', function (e) { if (e.key === 'Enter') { var f = $('adlist').querySelector('.adi'); if (f) f.click(); } });
     $('expandAll').addEventListener('click', function () { document.querySelectorAll('#steps details').forEach(function (d) { d.open = true; }); fitAll(); });
     $('collapseAll').addEventListener('click', function () { document.querySelectorAll('#steps details').forEach(function (d) { d.open = false; }); });

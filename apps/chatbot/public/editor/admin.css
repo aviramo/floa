@@ -191,3 +191,9 @@ details.acc > summary:hover { background: #fbf6ee; border-radius: var(--r); }
   details.acc[open] > summary::before { margin-top: 9px; }
   .num { margin-top: -1px; }
 }
+
+@media (max-width: 52rem) {
+  /* the options belong to the message above them: indented from its edge */
+  .cols .opt { margin-inline-start: 1.1rem; position: relative; }
+  .cols .opt::before { content: ""; position: absolute; inset-block: 6px; inset-inline-start: -.65rem; width: 2px; border-radius: 2px; background: var(--line2); }
+}
