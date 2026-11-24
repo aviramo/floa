@@ -69,6 +69,17 @@ async function chipsFallback(apiKey: string, model: string, a: { reply: string; 
   return (raw ?? '').replace(/<[^>]*>/g, '').split(/[|\n]/).map((s) => s.trim().replace(/^[-•\d.\s]+/, '')).filter((s) => s && s.length <= 60);
 }
 
+// A quick reply is checked by a model before the visitor sees it: does it answer the kind of question asked (what, when, how, how much, why), is it said in the first person,
+// and does it sound like something a person would say. A reply that fails is written again once. Any failure of the check itself lets the replies through.
+const CHECK_MODEL = 'claude-haiku-5-5';
+async function chipsCheck(apiKey: string, reply: string, chips: string[]): Promise<boolean[]> {
+  const sys = 'בודקים תשובות מוכנות לצ׳אט. מקבלים הודעה של בוט ושתי תשובות שהאדם יכול ללחוץ עליהן. לכל תשובה עונים true רק אם כולם נכונים: (1) היא עונה על סוג השאלה בסוף ההודעה (שאלה על מה נענית במה, על מתי בזמן, על איך באופן, על עד כמה בדרגה, על למה בסיבה); (2) היא נאמרת בגוף ראשון של האדם; (3) היא נשמעת כמו משהו שאדם אומר באמת, בלי דימוי מוזר או פרט מומצא. אחרת false. עונים אך ורק במערך JSON של שני ערכים, למשל [true,false].';
+  const raw = await claude(apiKey, CHECK_MODEL, [{ type: 'text', text: sys }], [{ role: 'user', content: 'הודעת הבוט:\n' + reply + '\n\nתשובה 1: ' + chips[0] + '\nתשובה 2: ' + chips[1] }], 40);
+  const m = (raw ?? '').match(/\[[^\]]*\]/);
+  if (!m) return chips.map(() => true);
+  try { const a = JSON.parse(m[0]); return chips.map((_, i) => a[i] !== false); } catch (_) { return chips.map(() => true); }
+}
+
 const rpc = (name: string, args: Record<string, unknown>) =>
   fetch(SB_URL + '/rest/v1/rpc/' + name, { method: 'POST', headers: { apikey: SB_SERVICE, Authorization: 'Bearer ' + SB_SERVICE, 'Content-Type': 'application/json' }, body: JSON.stringify(args) });
 
@@ -267,6 +278,18 @@ Deno.serve(async (req) => {
         const more = keep(fb);
         console.log(JSON.stringify({ chips_fallback: k, writer: parsed.chips, fallback: more }));
         chips = [...new Set([...chips, ...more])].slice(0, 2);
+      }
+    }
+    if (chips.length === 2) {
+      const verdict = await chipsCheck(apiKey, reply, chips);
+      if (verdict.some((v) => !v)) {
+        const good = chips.filter((_, i) => verdict[i]);
+        const recent2 = clean.slice(-6).map((m: any) => (m.role === 'user' ? 'האדם: ' : 'הבוט: ') + String(m.content).slice(0, 300)).join('\n');
+        const hint = '\nהתשובות הקודמות נפסלו כי לא התאימו לסוג השאלה או לא נשמעו טבעיות' + (good.length ? ', חוץ מזו שנשארה: "' + good[0] + '". כתבו תשובה אחת אחרת ממנה.' : '. כתבו שתיים חדשות.');
+        const more = keep(await chipsFallback(apiKey, model, { reply, lastUser, address, recent: recent2 + hint }));
+        console.log(JSON.stringify({ chips_vetoed: chips, verdict, replaced_with: more }));
+        const merged = [...new Set([...good, ...more])].slice(0, 2);
+        if (merged.length === 2) chips = merged;
       }
     }
     // An "A or B" question is never answered by a bare yes or no, wherever the quick reply came from
