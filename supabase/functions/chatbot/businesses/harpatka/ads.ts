@@ -22,3 +22,15 @@ export const AD_PAIN: Record<string, string> = {
   "crowd": "בדידות בתוך אנשים: כל היום סביבו אנשים, אבל בערב, כשנשאר לבד, מורגש שאין חיבור אמיתי ואין מי שרואה אותו.",
   "numb": "קהות: הכול בסדר ואין תחושה. עלול לפחד שזה כך מעכשיו, או לחשוש להתחיל להרגיש. לפעמים מתחת יש געגוע לחיות."
 };
+
+// The topic of each ad in soft, indirect words: the opening mentions it lightly with these, never with the intimate words of the ad itself.
+export const SOFT_TOPIC: Record<string, string> = {
+  touch: 'להתקרב לאנשים',
+  mask: 'להרגיש בסדר כל היום',
+  lost: 'קלילות ומשחק',
+  unseen: 'להרגיש שרואים אותנו',
+  dim: 'משהו שקט בפנים',
+  years: 'הזמן שעובר',
+  crowd: 'להרגיש לבד גם בין אנשים',
+  numb: 'להרגיש פחות',
+};
