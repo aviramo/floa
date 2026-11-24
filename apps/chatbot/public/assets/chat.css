@@ -27,7 +27,7 @@ html.pg-chat body { margin: 0; background: var(--cream); color: var(--ink); font
 .ch-cta:active { color: var(--ink); }
 .ch-retry { align-self: flex-start; }
 /* שורת הכתיבה */
-.ch-bar { padding: .5rem 1rem calc(.4rem + env(safe-area-inset-bottom, 0px)); background: var(--cream); border-top: 1px solid rgba(44, 35, 29, .1); }
+.ch-bar { padding: .5rem 1rem calc(.4rem + env(safe-area-inset-bottom, 0px)); background: var(--cream); }
 .ch-form { display: flex; align-items: flex-end; gap: .5rem; }
 .ch-in { flex: 1; font: inherit; font-size: 1.05rem; line-height: 1.5; color: var(--ink); background: var(--paper); border: 1px solid rgba(44, 35, 29, .3); border-radius: var(--r); padding: .6rem .8rem; resize: none; max-height: 9rem; min-height: 44px; box-sizing: border-box; }
 .ch-in:focus-visible, .ch-chip:focus-visible, .ch-cta:focus-visible, .ch-send:focus-visible { outline: 2px solid var(--plum); outline-offset: 2px; }
