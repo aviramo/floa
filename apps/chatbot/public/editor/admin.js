@@ -149,7 +149,7 @@
       box.appendChild(b);
     });
     if (!shown) box.appendChild(el('p', 'hint', 'לא נמצאה מודעה'));
-    $('adToggle').textContent = 'מודעה: ' + S.ad;
+    $('adToggle').textContent = S.ad; $('adToggle').setAttribute('aria-label', 'מודעה ' + S.ad + ', פתיחת רשימת המודעות');
     $('adcount').textContent = term ? 'נמצאו ' + shown : '';
   }
   function render() {
