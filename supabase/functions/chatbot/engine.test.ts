@@ -244,7 +244,7 @@ Deno.test('a bare "glad that" is not a gender of the bot', () => {
 
 Deno.test('flow rules for a visitor who only clicked a quick reply', async () => {
   const { FLOW_PROMPT } = await import('./businesses/harpatka/flow.ts');
-  for (const needle of ['לא ״שכתבת״']) if (!FLOW_PROMPT.includes(needle)) throw new Error('missing ' + needle);
+  for (const needle of ['<chips>', 'בדיוק שתי תשובות']) if (!FLOW_PROMPT.includes(needle)) throw new Error('missing ' + needle);
 });
 
 Deno.test('round one of the live conversations: no machinery, no pressure, chips in the visitor gender, grammar', () => {
@@ -262,7 +262,7 @@ Deno.test('round one of the live conversations: no machinery, no pressure, chips
 
 Deno.test('the chat gives no meeting details: the site link does', async () => {
   const { FLOW_PROMPT } = await import('./businesses/harpatka/flow.ts');
-  for (const needle of ['לא מפרטים בצ\'אט תאריך, מקום או מחיר', 'ושם אפשר גם להצטרף לקבוצת הוואטסאפ']) if (!FLOW_PROMPT.includes(needle)) throw new Error('missing ' + needle);
+  for (const needle of ['תאריך, שעה, מקום ומחיר לא נמסרים', 'קבוצת הוואטסאפ']) if (!FLOW_PROMPT.includes(needle)) throw new Error('missing ' + needle);
   if (FLOW_PROMPT.includes('מספרים על המקום, התאריך, השעה והמחיר')) throw new Error('old stage text left');
   eq(asksDetails('כמה זה עולה ומתי?'), true, 'asks price');
   eq(asksDetails('אחרי יום עבודה הראש לא נרגע'), false, 'does not');
