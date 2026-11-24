@@ -23,19 +23,19 @@
   if (own) {
     try {
       var x = new XMLHttpRequest(); x.open('GET', base + own, false); x.send();
-      if (x.status === 200) { document.open(); document.write(x.responseText.replace('<head>', '<head><base href="' + base + '">')); document.close(); window.CHATBOT_PAGE = true; return; }
+      if (x.status === 200) { document.documentElement.removeAttribute('class'); document.open(); document.write(x.responseText.replace('<head>', '<head><base href="' + base + '">')); document.close(); window.CHATBOT_PAGE = true; return; }
     } catch (e) {}
   }
   window.CHATBOT = { biz: /^[a-z0-9-]{1,40}$/.test(biz) ? biz : '', base: base };
   document.write('<base href="' + base + '">');
 })();
 </script>
-<link rel="stylesheet" href="assets/chat.css?v=20261124r">
+<link rel="stylesheet" href="assets/chat.css?v=20261124q">
 </head>
 <body>
 <main class="ch-app" id="chatRoot" aria-label="שיחה עם הבוט"></main>
 <script src="/supabase.js"></script>
-<script src="assets/chat.js?v=20261124r"></script>
+<script src="assets/chat.js?v=20261124q"></script>
 <script>
 (async function () {
   if (!window.CHATBOT) return;
