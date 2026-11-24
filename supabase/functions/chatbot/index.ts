@@ -8,7 +8,7 @@ import { lastSentence, buildMessages, MAX_USER_TURNS, parse, parseOpening, quote
 import { BUSINESSES } from './businesses/index.ts';
 import { journeyOf } from './journey.ts';
 import { openingTask, sessionFacts, stableSystem, stateBlock, addressOf, turnReminder } from './prompt.ts';
-import { endOnQuestion, fullChip, revealedGender, openingMeetingFix, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, TOPIC_POOL, offersUpdates, mentionsEvening, CHAT_POOL, OPENING_POOL, padChips, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { endOnQuestion, revealedGender, openingMeetingFix, scrub, wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, TOPIC_POOL, offersUpdates, mentionsEvening, CHAT_POOL, OPENING_POOL, padChips, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 import { ctaFor, ctasOf, diffEvents, extractState, initialState, linkGender, mergeState, stateFromClient } from './state.ts';
 import type { CampaignContext, JourneyBusiness, SessionState } from './types.ts';
 
@@ -177,7 +177,7 @@ Deno.serve(async (req) => {
     }
     if (op) op.messages = op.messages.map((m) => fixAddress(neutralize(m), addressOf(fromLink)));
     if (op) {
-      const okChip = (c: string) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && chipOk(c) && fullChip(c);
+      const okChip = (c: string) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && chipOk(c);
       const rawOpenChips = [...op.chips];
       let oc = op.chips.filter(okChip).map((c) => genderChip(c, addressOf(fromLink)));
       if (oc.length < 2) {
@@ -222,7 +222,7 @@ Deno.serve(async (req) => {
   if (address !== 'plural' && wrongSingular(parsed.reply, address)) replyFixes.push({ type: 'text', text: genderFix(address) });
   if (!parsed.reply) replyFixes.push({ type: 'text', text: '## חסר טקסט\nהתשובה הקודמת הייתה רק סימונים. כתבו הודעה קצרה לאדם לפני הסימונים.' });
   { const sf = styleFix(parsed.reply, lastUser, clean.filter((m: any) => m.role === 'user').map((m: any) => String(m.content)).join(' ')); if (sf) replyFixes.push({ type: 'text', text: sf }); }
-  { const okc = parsed.chips.filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && chipOk(c) && fullChip(c)); if (!distress && okc.length < 2) replyFixes.push({ type: 'text', text: `## תשובות מוכנות
+  { const okc = parsed.chips.filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && chipOk(c)); if (!distress && okc.length < 2) replyFixes.push({ type: 'text', text: `## תשובות מוכנות
 בסוף ההודעה חייבות להיות בדיוק שתי תשובות מוכנות בתגית chips, מופרדות ב-|. כל אחת משפט טבעי של ארבע עד שבע מילים שהאדם אומר, בלשונו, כתשובה ישירה לשאלה שכתבתם עכשיו, ושתיהן מקדמות את השיחה. בלי תשובות של מילה או שתיים.` }); }   // the writer of the reply writes its quick replies, so they fit its own question
   if (replyFixes.length) {
     const raw2 = await claude(apiKey, model, [...system, ...replyFixes], merged, 1400);
@@ -230,7 +230,7 @@ Deno.serve(async (req) => {
   }
   const pitchOk = pitchAllowed({ turns, lastUser, prevDone: prev.done, prevReadiness: prev.readiness });
   // Quick replies never name the evening or its people before the visitor may hear about them, and never offer "I have a question"
-  let chips = parsed.chips.filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && (pitchOk || !mentionsEvening(c)) && chipOk(c) && fullChip(c)).map((c) => genderChip(c, address));
+  let chips = parsed.chips.filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && (pitchOk || !mentionsEvening(c)) && chipOk(c)).map((c) => genderChip(c, address));
   let replyText = parsed.reply;
   if (!distress && !pitchAllowed({ turns, lastUser, prevDone: prev.done, prevReadiness: prev.readiness }) && mentionsEvening(replyText)) replyText = stripMeeting(replyText);   // told once already
   let reply = fixAddress(stripGreeting(neutralize(replyText)), address);
@@ -255,7 +255,7 @@ Deno.serve(async (req) => {
   const eveningSeen = putsTheEveningOnTheTable || clean.some((m: any) => m.role === 'assistant' && /\d{1,2}\.\d{1,2}/.test(String(m.content)) && /(בשעה|ש"ח)/.test(String(m.content)));
   if (next.action !== 'safety' && next.action !== 'end') {
     // The quick replies come from a short dedicated call that sees the visitor's words, the reply and the gender; the model's own are the fallback
-    const keep = (arr: string[]) => arr.filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && chipOk(c) && fullChip(c) && (pitchOk || !mentionsEvening(c))).map((c) => genderChip(c, address));
+    const keep = (arr: string[]) => arr.filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && chipOk(c) && (pitchOk || !mentionsEvening(c))).map((c) => genderChip(c, address));
     chips = keep(chips).slice(0, 2);   // the writer of the reply knows what it just asked, so its own quick replies come first
     if (chips.length < 2) {
       const recent = clean.slice(-6).map((m: any) => (m.role === 'user' ? 'האדם: ' : 'הבוט: ') + String(m.content).slice(0, 300)).join('\n');

@@ -201,8 +201,6 @@ export function revealedGender(userTexts: string[]): 'female' | 'male' | null {
 }
 export const openingMeetingFix = '## תיקון: הפתיחה בלי מפגש\nהטיוטה הזכירה את הפעילות, את המפגשים או את המנחים. כתבו שוב: ההודעה הראשונה רק ברכה והצגה כבוט של "יוצאים להרפתקה", בלי שום תיאור של הפעילות.';
 
-// A quick reply reads like a normal message: at least three words (the one-word and two-word ones were the weak ones).
-export const fullChip = (c: string) => String(c ?? '').trim().split(/\s+/).length >= 2;
 
 // Every reply ends in a question (people do not type, the quick replies answer it). When the writer tacked a statement or an invitation after its question, cut it off:
 // the text up to the last question mark stays. A goodbye or the site invitation is left alone, and a reply without any question mark is left to the retry.
