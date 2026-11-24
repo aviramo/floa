@@ -43,7 +43,7 @@
   function init(opts) {
     const root = opts.root, business = opts.business, cfg = opts.cfg, KEY = 'floa_chat_v1_' + business;
     root.innerHTML = '<div class="ch-log" id="chLog" role="log" aria-live="polite" aria-label="השיחה"></div>' +
-      '<div class="ch-bar"><div class="ch-chips" id="chChips"></div><form class="ch-form" id="chForm" autocomplete="off"><label class="sr-only" for="chIn" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">הודעה</label>' +
+      '<div class="ch-bar"><form class="ch-form" id="chForm" autocomplete="off"><label class="sr-only" for="chIn" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">הודעה</label>' +
       '<textarea class="ch-in" id="chIn" rows="1" maxlength="600" placeholder="כתיבת הודעה"></textarea>' +
       '<button class="ch-send" id="chSend" type="submit" aria-label="שליחה" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg></button></form>' +
       '</div>';
@@ -52,9 +52,17 @@
 
     const save = () => { try { sessionStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
     const scroll = () => { log.scrollTo({ top: log.scrollHeight, behavior: reduce ? 'auto' : 'smooth' }); };
-    const chipBox = root.querySelector('#chChips');
+    let chipRow = null;
+    // the quick replies sit in the conversation, right under the message they answer
+    const setChips = (chips) => {
+      if (chipRow) { chipRow.remove(); chipRow = null; }
+      if (!chips || !chips.length) return;
+      chipRow = el('div', 'ch-chips');
+      chips.slice(0, 2).forEach((t) => { const b = el('button', 'ch-chip', t); b.type = 'button'; b.addEventListener('click', () => submit(t, true)); chipRow.appendChild(b); });
+      log.appendChild(chipRow);
+    };
     let chipSeq = 0;
-    const clearExtras = () => { chipSeq++; log.querySelectorAll('.ch-ctas, .ch-retry').forEach((n) => n.remove()); chipBox.textContent = ''; };
+    const clearExtras = () => { chipSeq++; log.querySelectorAll('.ch-ctas, .ch-retry').forEach((n) => n.remove()); if (chipRow) { chipRow.remove(); chipRow = null; } };
 
     function bubble(role, text) { const b = el('div', 'ch-msg ' + (role === 'user' ? 'me' : 'bot'), text); log.appendChild(b); return b; }
     // תשובה של כמה פסקאות מוצגת כהודעות נפרדות, כמו בשיחה אמיתית (עד שלוש; הפסקאות העודפות מצטרפות לאחרונה)
@@ -74,9 +82,7 @@
       clearExtras();
       const kinds = Array.isArray(cta) ? cta : (cta ? [cta] : []);
       if (kinds.length) { const w = el('div', 'ch-ctas'); kinds.forEach((k) => { const n = ctaNode(k); if (n) w.appendChild(n); }); if (w.childNodes.length) log.appendChild(w); }
-      if (chips && chips.length) {
-        chips.slice(0, 2).forEach((t) => { const b = el('button', 'ch-chip', t); b.type = 'button'; b.addEventListener('click', () => submit(t, true)); chipBox.appendChild(b); });
-      }
+      setChips(chips);
       scroll();
     }
 
@@ -121,8 +127,7 @@
       const last = st.msgs[st.msgs.length - 1];
       if (!last || last.role !== 'assistant') return;
       last.chips = chips; save();
-      chipBox.textContent = '';
-      chips.forEach((t) => { const b = el('button', 'ch-chip', t); b.type = 'button'; b.addEventListener('click', () => submit(t, true)); chipBox.appendChild(b); });
+      setChips(chips);
       scroll();
     }
     async function ask() {

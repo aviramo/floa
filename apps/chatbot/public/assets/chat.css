@@ -36,15 +36,16 @@ html.pg-chat body { margin: 0; background: var(--cream); color: var(--ink); font
 .ch-send svg { width: 20px; height: 20px; transform: scaleX(-1); }
 .ch-note { margin: .45rem 0 0; font-size: .78rem; color: var(--muted); text-align: center; }
 .ch-note a { color: inherit; text-decoration: underline; }
-/* שתי תשובות מוכנות מעל תיבת הכתיבה: שקטות, גבול דק בלי רקע, משפט שלם */
-.ch-bar .ch-chips { flex-direction: column; align-items: flex-start; gap: .4rem; padding: 0 0 .5rem; }
-.ch-bar .ch-chips:empty { display: none; }
-.ch-bar .ch-chip { justify-content: flex-start; text-align: start; font-weight: 400; font-size: .98rem; line-height: 1.4; border-color: rgba(44, 35, 29, .25); }
 /* כפתור הקישור לאתר ושאר הצעדים: נראים בדיוק כמו התשובות המוכנות (גבול דק, בלי רקע), לא קישור קטן */
 .ch-ctas { flex-direction: column; align-items: flex-start; gap: .4rem; padding: .2rem 0 0; }
 .ch-cta, .ch-cta.alt, .ch-cta.plain { justify-content: center; padding: .45rem 1rem; border: 1px solid rgba(44, 35, 29, .25); border-radius: var(--r); background: transparent; color: var(--ink); text-decoration: none; font-size: .98rem; font-weight: 600; min-height: 44px; }
 .ch-cta:active { background: rgba(44, 35, 29, .08); }
 /* הכפתורים ברוחב הטקסט שלהם, לא ברוחב מלא (טקסט ארוך יורד שורה בתוך הכפתור) */
-.ch-bar .ch-chip, .ch-ctas .ch-cta { width: fit-content; max-width: 100%; }
+.ch-ctas .ch-cta { width: fit-content; max-width: 100%; }
 /* בלי סרגל גלילה בתיבת הכתיבה עד שהטקסט באמת חורג מהגובה המרבי */
 .ch-in { overflow-y: hidden; }
+
+/* שתי התשובות המוכנות בתוך השיחה, מתחת להודעה שהן עונות לה: בולטות, ברוחב הטקסט שלהן */
+.ch-log .ch-chips { flex-direction: column; align-items: flex-start; gap: .5rem; padding: .2rem 0 .1rem; }
+.ch-log .ch-chip { width: fit-content; max-width: 92%; justify-content: flex-start; text-align: start; font-weight: 700; font-size: 1.02rem; line-height: 1.4; background: var(--paper); color: var(--ink); border: 2px solid var(--ink); box-shadow: 0 2px 0 rgba(44, 35, 29, .18); }
+.ch-log .ch-chip:active { background: var(--ink); color: var(--paper); box-shadow: none; transform: translateY(1px); }
