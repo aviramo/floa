@@ -104,7 +104,9 @@
     node.addEventListener('input', function () { set(node.value); hint.textContent = warning(node.value, isLabel); dirty(true); });
     var box = document.createElement('div'); box.appendChild(node); box.appendChild(hint); return box;
   }
-  function area(get, set, rows) { var t = el('textarea', 'field'); t.rows = rows || 3; t.value = get(); return bindField(t, get, set, false); }
+  function fit(t) { if (!t.offsetParent) return; t.style.height = 'auto'; t.style.height = (t.scrollHeight + 2) + 'px'; }
+  function fitAll() { Array.prototype.forEach.call(document.querySelectorAll('textarea.field'), fit); }
+  function area(get, set) { var t = el('textarea', 'field'); t.rows = 1; t.value = get(); t.addEventListener('input', function () { fit(t); }); return bindField(t, get, set, false); }
   function line(get, set, label) { var t = el('input', 'field'); t.type = 'text'; t.value = get(); return bindField(t, get, set, label); }
 
   function steps() { return S.content.ads[S.ad][S.gender] || null; }
@@ -125,17 +127,21 @@
       shown++;
       var b = el('button', k === S.ad ? 'adi on' : 'adi'); b.type = 'button';
       b.appendChild(el('span', 'code', k)); if (t) b.appendChild(el('span', 'ttl', t));
-      b.addEventListener('click', function () { S.ad = k; render(); });
+      b.addEventListener('click', function () { S.ad = k; $('side').classList.remove('open'); $('adToggle').setAttribute('aria-expanded', 'false'); render(); });
       box.appendChild(b);
     });
     if (!shown) box.appendChild(el('p', 'hint', 'לא נמצאה מודעה'));
+    $('adToggle').textContent = 'מודעה: ' + S.ad + ' (' + keys.length + ')';
     $('adcount').textContent = (term ? shown + ' מתוך ' : '') + keys.length + ' מודעות';
   }
   function render() {
     var y = window.scrollY;
     renderNow();
+    fitAll();
     window.scrollTo(0, y);
   }
+  document.addEventListener('toggle', function (e) { if (e.target && e.target.open) fitAll(); }, true);
+  window.addEventListener('resize', fitAll);
   function renderNow() {
     var c = S.content;
     // the ad tabs
@@ -266,8 +272,9 @@
     $('refreshStats').addEventListener('click', function () { loadStats().then(function () { status('הנתונים עודכנו', 'ok'); }); });
     $('saveDraft').addEventListener('click', saveDraft);
     $('adq').addEventListener('input', drawAds);
+    $('adToggle').addEventListener('click', function () { var s = $('side'); s.classList.toggle('open'); $('adToggle').setAttribute('aria-expanded', s.classList.contains('open') ? 'true' : 'false'); if (s.classList.contains('open')) $('adq').focus(); });
     $('adq').addEventListener('keydown', function (e) { if (e.key === 'Enter') { var f = $('adlist').querySelector('.adi'); if (f) f.click(); } });
-    $('expandAll').addEventListener('click', function () { document.querySelectorAll('#steps details').forEach(function (d) { d.open = true; }); });
+    $('expandAll').addEventListener('click', function () { document.querySelectorAll('#steps details').forEach(function (d) { d.open = true; }); fitAll(); });
     $('collapseAll').addEventListener('click', function () { document.querySelectorAll('#steps details').forEach(function (d) { d.open = false; }); });
     $('copyUrl').addEventListener('click', function () {
       var u = pageUrl();
