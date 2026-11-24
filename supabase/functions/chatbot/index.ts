@@ -164,7 +164,9 @@ Deno.serve(async (req) => {
 
   // The opening is written by the bot: milestone one
   if (body.mode === 'opening') {
-    const openSystem = [stable, { type: 'text', text: [sessionFacts(b, { ...ctx, brief: undefined, hypothesis: undefined, profile: null } as any, null, adText, addressOf(fromLink)), openingTask(b, adText, addressOf(fromLink), ctx.profile?.title ?? '', b.softTopic?.[pain] ?? b.softTopic?.[legacyKey] ?? '')].join('\n\n') }];
+    const softOf = b.softTopic?.[pain] ?? b.softTopic?.[legacyKey] ?? '';
+    const openAd = softOf ? '' : adText;   // with a soft topic the ad's own words (hug, touch) never reach the opening
+    const openSystem = [stable, { type: 'text', text: [sessionFacts(b, { ...ctx, brief: undefined, hypothesis: undefined, profile: null } as any, null, openAd, addressOf(fromLink)), openingTask(b, openAd, addressOf(fromLink), softOf || (ctx.profile?.title ?? ''), softOf)].join('\n\n') }];
     let raw = await claude(apiKey, model, openSystem, [{ role: 'user', content: 'התחילו.' }], 800);
     let op = raw ? parseOpening(raw) : null;
     const fixes: { type: string; text: string }[] = [];
@@ -177,7 +179,12 @@ Deno.serve(async (req) => {
       if (op2 && op2.messages.length) op = op2;
     }
     if (op) op.messages = op.messages.map((m) => fixAddress(neutralize(m), addressOf(fromLink)));
-    if (op) op.chips = padChips(op.chips.filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && chipOk(c) && fullChip(c)), OPENING_POOL, 2).slice(0, 2);   // "לא יודע/ת" is gendered; the plain filter misses the slash form
+    if (op) {
+      const okChip = (c: string) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && chipOk(c) && fullChip(c);
+      let oc = op.chips.filter(okChip).map((c) => genderChip(c, addressOf(fromLink)));
+      if (oc.length < 2) { const g2 = (await chipsFor(apiKey, model, { reply: op.messages[op.messages.length - 1], lastUser: '', address: addressOf(fromLink), pitchOk: false })).filter(okChip).map((c) => genderChip(c, addressOf(fromLink))); oc = [...new Set([...oc, ...g2])]; }
+      op.chips = oc.slice(0, 2);
+    }   // "לא יודע/ת" is gendered; the plain filter misses the slash form
     if (!op || !op.messages.length) return json(b, origin, { error: 'upstream' }, 502);
     const st: SessionState = { ...initialState(journey, fromLink), meta };
     persist(b, session, src, campaignId, op.messages.map((content) => ({ role: 'assistant', content })), null, st, []);
@@ -245,12 +252,15 @@ Deno.serve(async (req) => {
     // The quick replies come from a short dedicated call that sees the visitor's words, the reply and the gender; the model's own are the fallback
     const recent = clean.slice(-6).map((m: any) => (m.role === 'user' ? 'האדם: ' : 'הבוט: ') + String(m.content).slice(0, 300)).join('\n');
     const keep = (arr: string[]) => arr.filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && chipOk(c) && fullChip(c) && (pitchOk || !mentionsEvening(c))).map((c) => genderChip(c, address));
-    let rawGen = await chipsFor(apiKey, model, { reply, lastUser, address, pitchOk, recent });
-    let gen = keep(rawGen);
+    // The writer of the reply knows what it just asked, so its own quick replies come first; the dedicated call only fills in when they do not pass
+    const own = keep(chips);
+    let rawGen: string[] = [];
+    let gen = own;
+    if (own.length < 2) { rawGen = await chipsFor(apiKey, model, { reply, lastUser, address, pitchOk, recent }); gen = keep(rawGen); }
     if (gen.length < 2) { const raw2 = await chipsFor(apiKey, model, { reply, lastUser, address, pitchOk, recent }, true); gen = keep(raw2); console.log(JSON.stringify({ chips_retry: true, first: rawGen, second: raw2 })); rawGen = raw2; }
     if (gen.length < 2) console.log(JSON.stringify({ chips_rejected: rawGen, kept: gen, own: chips }));
     chipDbg = { raw: rawGen, kept: gen, own: chips };
-    chips = gen.length >= 2 ? gen.slice(0, 2) : [...new Set([...gen, ...chips])].slice(0, 2);
+    chips = gen.length >= 2 ? gen.slice(0, 2) : [...new Set([...gen, ...own])].slice(0, 2);
     // An "A or B" question is never answered by a bare yes or no, wherever the quick reply came from
     const eitherOr = /\sאו\s/.test(lastSentence(reply)) && /\?\s*$/.test(lastSentence(reply));
     if (eitherOr) chips = chips.filter((c) => !/^(כן|לא)(,.*)?$/.test(c.trim()));
