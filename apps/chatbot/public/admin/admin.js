@@ -133,7 +133,7 @@
   }
 
   function start() {
-    $('signin').addEventListener('click', function () { AUTH.signIn(location.pathname + location.search); });
+    $('signin').addEventListener('click', function () { try { sessionStorage.setItem('chatbot.admin', location.search || '?business=' + BIZ); } catch (e) {} AUTH.signIn(location.origin + location.pathname + location.search); });
     Array.prototype.forEach.call($('genders').children, function (b) { b.addEventListener('click', function () { S.gender = b.getAttribute('data-g'); render(); }); });
     $('save').addEventListener('click', save);
     $('copyOther').addEventListener('click', copyOther);
