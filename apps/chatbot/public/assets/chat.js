@@ -8,7 +8,7 @@
   const ENDPOINT = SB.url + '/functions/v1/chatbot';
   const cid = (q.get('pain') || '').slice(0, 40);
   // every other parameter of the link that is a plain name is a segment dimension (gender today, maybe age later), sent separately
-  const segment = {}; q.forEach((v, k) => { if (!['pain', 's', 'c', 'engine'].includes(k) && /^[a-z][a-z0-9_]{0,29}$/.test(k)) segment[k] = String(v).slice(0, 30); });
+  const segment = {}; q.forEach((v, k) => { if (!['pain', 's', 'c', 'engine', 'mode'].includes(k) && /^[a-z][a-z0-9_]{0,29}$/.test(k)) segment[k] = String(v).slice(0, 30); });
   const segKey = Object.keys(segment).sort().map((k) => k + '=' + segment[k]).join('&');
   const src = (q.get('s') || '').slice(0, 20);
   // מזהה אקראי של המכשיר (לא טביעת אצבע), נשלח לשרת רק להגנה מניצול לרעה של הצ'אט
@@ -49,6 +49,9 @@
       '</div>';
     const log = root.querySelector('#chLog'), form = root.querySelector('#chForm'), inp = root.querySelector('#chIn'), send = root.querySelector('#chSend');
     let st = null, busy = false, openerInfo = null;
+    // The scripted mode (no AI, no database) when the business says so or the link asks for it (?mode=scripted); ?mode=agent keeps the old chat.
+    const scripted = !!window.FloaScriptChat && q.get('mode') !== 'agent' && (cfg.mode === 'scripted' || q.get('mode') === 'scripted');
+    const scriptCtx = {};
 
     const save = () => { try { sessionStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
     const scroll = () => { log.scrollTo({ top: log.scrollHeight, behavior: reduce ? 'auto' : 'smooth' }); };
@@ -93,6 +96,7 @@
 
     async function submit(text, viaChip) {
       text = String(text || '').trim().slice(0, 600);
+      if (scripted) { if (scriptCtx.onText) scriptCtx.onText(text); return; }   // the scripted chat: a free message goes to WhatsApp, never to the agent
       if (!text || busy) return;
       clearExtras();
       if (!st.msgs.some((m) => m.role === 'user')) track('ChatStart', { c: cid || 'default' });
@@ -175,6 +179,12 @@
     inp.addEventListener('focus', () => setTimeout(() => { log.scrollTop = log.scrollHeight; }, 300));
 
     (async () => {
+      if (scripted) {
+        Object.assign(scriptCtx, { log, el, cfg, business, cid, segment, src, track, reduce, KEY, scroll, bubble: (role, text) => bubble(role === 'user' ? 'user' : 'bot', text), who, typing, wait, setBusy, inp, grow });
+        await window.FloaScriptChat.run(scriptCtx);
+        log.scrollTop = log.scrollHeight;
+        return;
+      }
       openerInfo = await loadOpener(cfg);
       let saved = null; try { saved = JSON.parse(sessionStorage.getItem(KEY) || 'null'); } catch (e) {}
       st = saved && saved.c === cid + '|' + segKey && Array.isArray(saved.msgs) ? saved : { c: cid + '|' + segKey, session: uuid(), msgs: [] };
