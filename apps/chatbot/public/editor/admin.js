@@ -9,7 +9,7 @@
   var pm = location.pathname.match(/^\/(?:chatbot\/)?([a-z0-9-]+)\/admin\/?$/);
   var BIZ = ((pm && pm[1]) || q.get('business') || 'harpatka').replace(/[^a-z0-9_-]/gi, '') || 'harpatka';
   var ADS = { opening_up: 'רוצה קרבה אבל ברגע האמת משהו בך נסגר?', stress_overload: 'הגוף כבר במיטה והראש עדיין רץ', loneliness: 'איך זה להיות מוקף באנשים ועדיין להרגיש לבד?', lost_joy: 'הכול מסודר בחיים, אז למה שום דבר כבר לא מרגש?', low_confidence: 'הכי כואב להסתכל במראה ולא לאהוב את מי שרואים' };
-  var ACTIONS = { site: 'האתר', updates: 'קבוצת העדכונים בוואטסאפ', whatsapp: 'כתיבה להדר ואופיר' };
+  var DEF = {};
   var S = { content: null, version: null, published: null, ad: q.get('ad') || '', gender: q.get('gender') === 'male' ? 'male' : 'female', dirty: false };
 
   var $ = function (id) { return document.getElementById(id); };
@@ -109,6 +109,12 @@
   function area(get, set) { var t = el('textarea', 'field'); t.rows = 1; t.value = get(); t.addEventListener('input', function () { fit(t); }); return bindField(t, get, set, false); }
   function line(get, set, label) { var t = el('input', 'field'); t.type = 'text'; t.value = get(); return bindField(t, get, set, label); }
 
+  function linkOf(o) { return o.url || DEF[o.action] || ''; }
+  function link(o) {
+    var t = el('input', 'field'); t.type = 'text'; t.dir = 'ltr'; t.placeholder = 'https://'; t.value = linkOf(o);
+    t.addEventListener('input', function () { o.url = t.value.trim(); dirty(true); });
+    return t;
+  }
   function steps() { return S.content.ads[S.ad][S.gender] || null; }
   var OPEN = {}, PENDING = null, PH = null, STATS = { opens: [], shown: [], clicks: [] };
   function num(list, ad, g, step, opt) { var n = 0; list.forEach(function (x) { if (x.ad === ad && x.gender === g && (step == null || x.step === step) && (opt == null || x.opt === opt)) n += x.n; }); return n; }
@@ -180,22 +186,21 @@
       var drawChips = function () { chips.textContent = ''; m.options.forEach(function (o) { chips.appendChild(el('span', 'chip', cut(o.label, 24))); }); tt.textContent = cut(m.say, 90); };
       drawChips();
       var body = el('div', 'body'), cols = el('div', 'cols');
-      var first = el('div'); first.appendChild(el('label', 'lbl', i === 4 ? 'ההודעה האחרונה (פעולות)' : 'ההודעה'));
+      var first = el('div'); first.appendChild(el('label', 'lbl', i === 4 ? 'ההודעה האחרונה (קישורים)' : 'ההודעה'));
       first.appendChild(area(function () { return m.say; }, function (v) { m.say = v; drawChips(); }, 5));
       cols.appendChild(first);
       m.options.forEach(function (o, k) {
         var op = el('div', 'opt'); var oh = el('h3', '', 'אפשרות ' + (k + 1)); if (!blank) { var cn = num(STATS.clicks, S.ad, S.gender, i + 1, k + 1), sh = num(STATS.shown, S.ad, S.gender, i + 1, null); oh.appendChild(el('span', 'cnt', cn + ' לחיצות' + (sh ? ' (' + Math.round(cn * 100 / sh) + '%)' : ''))); } op.appendChild(oh);
-        var row = el('div', i === 4 ? 'row2 act' : 'row2');
+        var row = el('div', 'row2');
         row.appendChild(line(function () { return o.label; }, function (v) { o.label = v; drawChips(); }, true));
-        if (i === 4) {
-          var sel = el('select', 'field');
-          Object.keys(ACTIONS).forEach(function (a2) { var opt = el('option', '', ACTIONS[a2]); opt.value = a2; if (o.action === a2) opt.selected = true; sel.appendChild(opt); });
-          sel.addEventListener('change', function () { o.action = sel.value; dirty(true); });
-          row.appendChild(sel);
-        }
         op.appendChild(row);
-        op.appendChild(el('label', 'lbl', i === 4 ? 'תגובה בלחיצה (לא חובה)' : 'התגובה לאפשרות'));
-        op.appendChild(area(function () { return o.reply || ''; }, function (v) { o.reply = v; }, 3));
+        if (i === 4) {
+          op.appendChild(el('label', 'lbl', 'הקישור'));
+          op.appendChild(link(o));
+        } else {
+          op.appendChild(el('label', 'lbl', 'התגובה לאפשרות'));
+          op.appendChild(area(function () { return o.reply || ''; }, function (v) { o.reply = v; }, 3));
+        }
         cols.appendChild(op);
       });
       body.appendChild(cols); card.appendChild(body);
@@ -237,6 +242,7 @@
       var st = ads[ks[x]][g]; if (!st) continue;
       for (var i = 0; i < st.length; i++) {
         var empty = !String(st[i].say || '').trim() || st[i].options.some(function (o) { return !String(o.label || '').trim(); });
+        if (!empty && i === 4) empty = st[i].options.some(function (o) { return !/^https?://S+$/i.test(linkOf(o)); });
         if (empty) return { ad: ks[x], g: g, i: i };
       }
     }
@@ -264,6 +270,11 @@
     render(); dirty(true, true);
   }
 
+  fetch('businesses/' + BIZ + '.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (c) {
+    if (!c) return;
+    DEF = { site: c.siteUrl || '', updates: c.updatesLink || '', whatsapp: c.whatsapp ? 'https://wa.me/' + c.whatsapp + '?text=' + encodeURIComponent(c.whatsappText || '') : '' };
+    if (S.content) render();
+  }).catch(function () {});
   function start() {
     $('signin').addEventListener('click', function () { try { sessionStorage.setItem('chatbot.admin', location.pathname + location.search); } catch (e) {} AUTH.signIn(location.origin + location.pathname + location.search); });
     Array.prototype.forEach.call($('genders').children, function (b) { b.addEventListener('click', function () { S.gender = b.getAttribute('data-g'); render(); }); });

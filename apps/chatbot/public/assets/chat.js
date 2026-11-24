@@ -4,7 +4,7 @@
    The address has two parameters: ad (the code of the ad, always) and gender (female, male, or empty for the version for both).
    The business comes from the address (chatbot.floa.co.il/<business>?ad=<code>&gender=<female|male>); its look and links from businesses/<business>.json.
    Content: { greeting, defaultAd, ads: { <code>: { ad, female: [message x5], male: [message x5], both: [message x5] } } }, where a message is
-   { say, options: [{ label, reply }] x3 } and the last one has { label, action: site|updates|whatsapp, reply? } options.
+   { say, options: [{ label, reply }] x3 } and the last one has { label, url, action? } options (url is the link; action is the older way and only the fallback).
    It is read from the database (the published version, through the chat function) and falls back to the file of the repo when the function does not answer.
    Edited in the editor at /admin/. The only measurement is the Facebook pixel. */
 (function () {
@@ -59,6 +59,7 @@
     let row = null;
     const clearRow = () => { if (row) { row.remove(); row = null; } };
     const siteUrl = () => { const u = new URL(cfg.siteUrl); if (src) u.searchParams.set('s', src); return u.href; };
+    const withSrc = (s) => { try { const u = new URL(s); if (src) u.searchParams.set('s', src); return u.href; } catch (e) { return s; } };
     const waUrl = () => 'https://wa.me/' + cfg.whatsapp + '?text=' + encodeURIComponent(cfg.whatsappText);
 
     async function say(role, text, instant) {
@@ -73,10 +74,11 @@
       const step = steps[i], last = i === steps.length - 1;
       row = el('div', 'ch-chips');
       step.options.forEach((o, k) => {
-        if (last && o.action) {
-          const href = o.action === 'site' ? siteUrl() : o.action === 'updates' ? cfg.updatesLink : waUrl();
+        if (last && (o.action || o.url)) {
+          const own = /^https?:///i.test(o.url || '') ? o.url.trim() : '';
+          const href = own ? (o.action === 'site' ? withSrc(own) : own) : o.action === 'site' ? siteUrl() : o.action === 'updates' ? cfg.updatesLink : waUrl();
           const a = el('a', 'ch-chip', o.label); a.href = href; a.target = '_blank'; a.rel = 'noopener';
-          a.addEventListener('click', () => { track('ChatCTA', { kind: o.action, ad: cid || 'default' }); record('cta', i + 1, k + 1, o.label); if (o.reply) { bubble('bot', o.reply); scroll(); } });
+          a.addEventListener('click', () => { track('ChatCTA', { kind: o.action || 'link', ad: cid || 'default' }); record('cta', i + 1, k + 1, o.label); if (o.reply) { bubble('bot', o.reply); scroll(); } });
           row.appendChild(a);
         } else {
           const b = el('button', 'ch-chip', o.label); b.type = 'button';
