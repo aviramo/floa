@@ -233,10 +233,19 @@ Deno.serve(async (req) => {
     const askLine = 'השאלה האחרונה של הבוט: ' + (questionR || '(פתיחה)') + '\nמה האדם ענה (' + (viaText ? 'בכתיבה חופשית' : 'בלחיצה על כפתור') + '): ' + textR;
     const rawR = await claude(apiKey, MODEL, [{ type: 'text', text: sysR }], [{ role: 'user', content: [genderLine, adLine, histLine, askLine].filter(Boolean).join('\n\n') }], 80);
     let reaction = cleanReaction(rawR, addressR, b, 6);
-    if (reaction && firstAnswer && !/(נפוץ|הרבה אנשים)/.test(reaction)) reaction += ', וזה נפוץ אצל הרבה אנשים';
-    if (reaction && thirdAnswer && !/לעזור/.test(reaction)) reaction += ', ואולי יש משהו שיכול לעזור';   // after the answer to "what would help" only: a hedged lead-in to the next message   // after the first question only, in all ads: a few words that it is common
     if (!reaction) console.log(JSON.stringify({ react_dropped: true, raw: String(rawR ?? '').slice(0, 160) }));
     return json(b, origin, { reaction, ...(device.startsWith('selftest') ? { dbg: String(rawR ?? '').slice(0, 200) } : {}) });
+  }
+
+  if (body.mode === 'script') {
+    // the static texts of the scripted chat (the published version): read-only content, nothing about the visitor is saved
+    if (!SB_SERVICE || !SB_URL) return json(b, origin, { error: 'config' }, 503);
+    const rs = await rpc('chatbot_script', { p_business: b.key });
+    const ds = rs.ok ? await rs.json() : null;
+    if (!ds || !ds.content) return json(b, origin, { error: 'none' }, 404);
+    const out = json(b, origin, ds);
+    out.headers.set('Cache-Control', 'public, max-age=30');
+    return out;
   }
 
   const use = await usageHit(b, device, ip === 'unknown' ? '' : ip, body.mode === 'opening' ? 'opening' : 'chat');

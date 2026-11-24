@@ -12,8 +12,17 @@
   async function run(c) {
     const { log, el, cfg, business, cid, segment, src, track, reduce, KEY, scroll, bubble, typing, wait, setBusy, inp, grow, endpoint, anonKey, device } = c;
     const g = segment.gender === 'female' ? 'female' : 'male';
+    // the static texts: the published version from the database through the chat function; the file of the repo is the fallback when the function does not answer
     let data = null;
-    try { const r = await fetch('businesses/' + business + '.script.json', { cache: 'no-cache' }); if (r.ok) data = await r.json(); } catch (e) { /* the page shows the fixed error below */ }
+    if (endpoint) {
+      const ctl0 = new AbortController(), t0 = setTimeout(() => ctl0.abort(), 3500);
+      try {
+        const r = await fetch(endpoint, { method: 'POST', signal: ctl0.signal, headers: { 'Content-Type': 'application/json', apikey: anonKey, Authorization: 'Bearer ' + anonKey }, body: JSON.stringify({ business, mode: 'script' }) });
+        const d = r.ok ? await r.json().catch(() => null) : null;
+        if (d && d.content && d.content.pains) data = d.content;
+      } catch (e) { /* the file below */ } finally { clearTimeout(t0); }
+    }
+    if (!data) { try { const r = await fetch('businesses/' + business + '.script.json', { cache: 'no-cache' }); if (r.ok) data = await r.json(); } catch (e) { /* the page shows the fixed error below */ } }
     if (!data || !data.pains) { bubble('bot', cfg.errorText); return; }
     const pain = data.pains[cid] || data.pains[data.defaultPain] || Object.values(data.pains)[0];
     const T = (t) => pick(t, g);
@@ -109,7 +118,10 @@
       const [res] = await Promise.all([steps[i].noAgent && source === 'button' ? { reaction: null } : react(text, source, question, i), wait(reduce ? 0 : 900)]);
       t.remove();
       if (res.safety) { st.log.push({ r: 'bot', t: data.common.crisis.say }); save(); await say('bot', data.common.crisis.say, true); crisis(); busyNow = false; return; }
-      const ack = res.reaction || staticAck || T(data.common.fallbackAck);
+      // after the first and the third questions the content adds a few words (common among many people, something might help) to the agent's reflection
+      const suf = data.common.suffix && data.common.suffix['s' + (i + 1)];
+      let ack = res.reaction || staticAck || T(data.common.fallbackAck);
+      if (res.reaction && suf && !/(נפוץ|הרבה אנשים|לעזור)/.test(res.reaction)) ack = res.reaction + T(suf);
       st.log.push({ r: 'bot', t: ack }); save();
       await say('bot', ack, true);
       if (i + 1 >= steps.length) { showOptions(steps.length - 1); busyNow = false; return; }   // a message after the last one: only a reflection, the three actions stay
