@@ -323,7 +323,7 @@ Deno.test('round eight: the visitor own words about gender win over the link; th
 
 Deno.test('round ten: no "what you wrote" after a few words or a tap', () => {
   if (!styleFix('מה שכתבת מוכר מאוד', 'מוכר מאוד')) throw new Error('missed');
-  if (styleFix('מה שכתבת מוכר מאוד', 'יש סביבי אנשים ובכל זאת חסר משהו וגם בבית יש עומס')) throw new Error('false alarm after a long message');
+  if (styleFix('מה שכתבת מוכר מאוד, נכון?', 'יש סביבי אנשים ובכל זאת חסר משהו וגם בבית יש עומס')) throw new Error('false alarm after a long message');
 });
 
 Deno.test('round eleven: "בעיקר" does not count as asking about price', () => {
@@ -353,4 +353,10 @@ Deno.test('round eleven: no price or schedule in chat, no generic chips, no bot-
 Deno.test('round eleven: a question that lists three options is sent back', () => {
   if (!styleFix('נשמע כבד בערב. מה היה עושה לכם טוב? שיחה, אנשים סביב, או משהו אחר לגמרי?', 'קצת משניהם שלי')) throw new Error('list of options missed');
   if (styleFix('מה היה עושה לכם טוב בערבים האלה?', 'קצת משניהם שלי')) throw new Error('false alarm on an open question');
+});
+
+Deno.test('round eleven: a reply must end in a question, except a goodbye or the site invitation', () => {
+  if (!styleFix('חום של אנשים. אם תרצו, אפשר לספר לי מתי הרגשתם את זה הכי חזק', 'הגעגוע לחום')) throw new Error('invitation missed');
+  if (styleFix('חום של אנשים. מתי הרגשתם את זה הכי חזק?', 'הגעגוע לחום')) throw new Error('false alarm on a question');
+  if (styleFix('הכול כתוב באתר, אפשר להציץ שם.', 'כן')) throw new Error('false alarm on the site line');
 });

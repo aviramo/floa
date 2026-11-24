@@ -62,12 +62,13 @@ async function claude(apiKey: string, model: string, system: unknown[], messages
 
 // The model gave fewer than three quick replies: ask once, in a short call, for answers to the last question of this very message.
 // A fixed list can never fit every question, so it is only the last resort.
-async function chipsFor(apiKey: string, model: string, a: { reply: string; lastUser: string; address: 'female' | 'male' | 'plural'; pitchOk: boolean }): Promise<string[]> {
+async function chipsFor(apiKey: string, model: string, a: { reply: string; lastUser: string; address: 'female' | 'male' | 'plural'; pitchOk: boolean; recent?: string }, strict = false): Promise<string[]> {
   const lang = a.address === 'female' ? 'נקבה' : a.address === 'male' ? 'זכר' : 'ניטרלית (בלי פעלים או תארים בגוף ראשון שמסמנים מגדר)';
   const sys = 'כותבים תשובות מוכנות לצ׳אט. עונים בשורה אחת בלבד: שתי תשובות בדיוק, מופרדות ב-|. כל תשובה היא משפט שלם וטבעי (ארבע עד שבע מילים, לא מילה אחת או שתיים) שהאדם עצמו אומר, כמו הודעה רגילה שהיה כותב, בגוף ראשון, כתשובה בדיוק לשאלה האחרונה בהודעת הבוט. לא ניסוח של הבוט ולא שאלה אל הבוט (חוץ מ״איך זה נראה בפועל״ ו״איך נרשמים״), לא נקטע באמצע, בלי נקודתיים ובלי ״יש לי שאלה״. לשון האדם: ' + lang + '. בשאלת בחירה (א או ב) התשובות הן א, ב ועוד אחת. ' +
-    'שתי התשובות מקדמות את השיחה לצעד הבא, כל אחת בדרך אחרת (לשתף עוד, לשאול, לרצות להמשיך). בלי סירוב, בלי ״לא כרגע״ ובלי ״לא יודע״. ' + (a.pitchOk ? 'אחת התשובות מקדמת בעדינות: ״רוצה לשמוע עוד״ או ״איך נרשמים״.' : 'אסור תשובה שמזכירה מפגש, ערב או מנחים.');
-  const raw = await claude(apiKey, model, [{ type: 'text', text: sys }], [{ role: 'user', content: 'מה שהאדם כתב: ' + a.lastUser.slice(0, 200) + '\nהודעת הבוט:\n' + a.reply }], 120);
-  return (raw ?? '').replace(/<[^>]*>/g, '').split(/[|\n]/).map((s) => s.trim().replace(/^[-•\d.\s]+/, '')).filter((s) => s && s.length <= 30);
+    'שתי התשובות מקדמות את השיחה לצעד הבא, כל אחת בדרך אחרת (לשתף עוד, לשאול, לרצות להמשיך). בלי סירוב, בלי ״לא כרגע״ ובלי ״לא יודע״. ' + (a.pitchOk ? 'אחת התשובות מקדמת בעדינות: ״רוצה לשמוע עוד״ או ״איך נרשמים״.' : 'אסור תשובה שמזכירה מפגש, ערב או מנחים.') +
+    ' אם המשפט האחרון של הבוט הוא הזמנה ולא שאלה (״אם תרצו, אפשר לספר...״), התשובות הן תחילת סיפור קונקרטי של האדם (״זה קורה לי בעיקר בערב״, ״זה היה לפני כמה ימים״). כל תשובה חייבת להיות קשורה ישירות למה שהבוט כתב ולא כללית.' + (strict ? ' הניסיון הקודם נפסל כי לא הייתה בו תשובה שקשורה לטקסט: כתבו שתי תשובות שמתייחסות למילים של הבוט עצמו.' : '');
+  const raw = await claude(apiKey, model, [{ type: 'text', text: sys }], [{ role: 'user', content: (a.recent ? 'השיחה עד עכשיו:\n' + a.recent + '\n\n' : '') + 'מה שהאדם כתב: ' + a.lastUser.slice(0, 200) + '\nהודעת הבוט האחרונה (עליה עונים):\n' + a.reply }], 220);
+  return (raw ?? '').replace(/<[^>]*>/g, '').split(/[|\n]/).map((s) => s.trim().replace(/^[-•\d.\s]+/, '')).filter((s) => s && s.length <= 60);
 }
 
 const rpc = (name: string, args: Record<string, unknown>) =>
@@ -241,12 +242,16 @@ Deno.serve(async (req) => {
   const eveningSeen = putsTheEveningOnTheTable || clean.some((m: any) => m.role === 'assistant' && /\d{1,2}\.\d{1,2}/.test(String(m.content)) && /(בשעה|ש"ח)/.test(String(m.content)));
   if (next.action !== 'safety' && next.action !== 'end') {
     // The quick replies come from a short dedicated call that sees the visitor's words, the reply and the gender; the model's own are the fallback
-    const gen = (await chipsFor(apiKey, model, { reply, lastUser, address, pitchOk })).filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && chipOk(c) && fullChip(c) && (pitchOk || !mentionsEvening(c))).map((c) => genderChip(c, address));
+    const recent = clean.slice(-6).map((m: any) => (m.role === 'user' ? 'האדם: ' : 'הבוט: ') + String(m.content).slice(0, 300)).join('\n');
+    const keep = (arr: string[]) => arr.filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && chipOk(c) && fullChip(c) && (pitchOk || !mentionsEvening(c))).map((c) => genderChip(c, address));
+    let rawGen = await chipsFor(apiKey, model, { reply, lastUser, address, pitchOk, recent });
+    let gen = keep(rawGen);
+    if (gen.length < 2) { const raw2 = await chipsFor(apiKey, model, { reply, lastUser, address, pitchOk, recent }, true); gen = keep(raw2); console.log(JSON.stringify({ chips_retry: true, first: rawGen, second: raw2 })); rawGen = raw2; }
+    if (gen.length < 2) console.log(JSON.stringify({ chips_rejected: rawGen, kept: gen, own: chips }));
     chips = gen.length >= 2 ? gen.slice(0, 2) : [...new Set([...gen, ...chips])].slice(0, 2);
     // An "A or B" question is never answered by a bare yes or no, wherever the quick reply came from
     const eitherOr = /\sאו\s/.test(lastSentence(reply)) && /\?\s*$/.test(lastSentence(reply));
     if (eitherOr) chips = chips.filter((c) => !/^(כן|לא)(,.*)?$/.test(c.trim()));
-    chips = padChips(chips, eitherOr ? ['קצת משניהם', 'משהו אחר', 'לא בטוח עדיין'] : (b.siteOnly ? pitchOk : eveningSeen) ? CHAT_POOL : TOPIC_POOL, 2).map((c) => genderChip(c, address)).slice(0, 2);   // last resort only
   }
   if (cta === 'register' && !(b.siteOnly ? pitchOk : eveningSeen)) cta = null;
   if (b.siteOnly && !cta && pitchOk && /(באתר|בקישור|\blink\b|website)/i.test(reply) && next.action !== 'safety') cta = 'register';   // the reply points at the site: the button is the way there
