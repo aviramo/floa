@@ -168,7 +168,6 @@
 
   function refresh() { return call('list').then(function (r) { if (r.ok) renderVersions(r.d.versions || []); }); }
   function load(version) {
-    if (S.dirty && !confirm('יש שינויים שלא נשמרו. לטעון בכל זאת?')) return Promise.resolve();
     return call('get', version ? { version: version } : {}).then(function (r) {
       if (!r.ok) { status('לא נמצא תוכן', 'err'); return; }
       var d = r.d.content;
@@ -190,7 +189,6 @@
     }).catch(function () { b.disabled = false; status('שגיאת רשת', 'err'); });
   }
   function publish(version) {
-    if (!confirm('לפרסם שוב את גרסה ' + version + '?')) return;
     call('publish', { version: version }).then(function (r) { if (r.ok && r.d.ok) { status('פורסמה גרסה ' + version, 'ok'); refresh(); } else status('לא פורסמה', 'err'); });
   }
   function copyOther() {
