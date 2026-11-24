@@ -256,6 +256,6 @@ Deno.serve(async (req) => {
   if (!cta && facts && putsTheEveningOnTheTable && !['end', 'safety'].includes(next.action) && next.readiness !== 'not_fit') cta = 'register';
 
   persist(b, session, src, campaignId, [...clean, { role: 'assistant', content: reply }], cta, next, diffEvents(prev, next));
-  return json(b, origin, { reply, chips, cta, ctas: ctasOf(cta as any, b.siteOnly ? pitchOk : !!facts && eveningSeen), state: next, hasFacts: !!facts || !!b.siteOnly, hasMeeting: !!facts });
+  return json(b, origin, { ...(device.startsWith('selftest') ? { dbg: { raw: parsed.chips } } : {}), reply, chips, cta, ctas: ctasOf(cta as any, b.siteOnly ? pitchOk : !!facts && eveningSeen), state: next, hasFacts: !!facts || !!b.siteOnly, hasMeeting: !!facts });
 });
 
