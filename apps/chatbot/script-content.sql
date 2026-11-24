@@ -3,6 +3,7 @@
 -- Same as every table of this schema: RLS on, no policy, no grant to anon or authenticated, access only through the function below (service role).
 -- Publish a new version: node scripts/chatbot-script.mjs push <business> <file.json>   (the previous one stays, so it can be put back)
 
+create schema if not exists chatbot;
 create table if not exists chatbot.script_versions (
   id bigserial primary key,
   business text not null,

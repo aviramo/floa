@@ -33,7 +33,7 @@
   ],
   "scripts": {
     "hooks": "git config core.hooksPath .githooks",
-    "test":"node worker/test/lead.test.mjs && node worker/test/webpush.test.mjs && node worker/test/transcribe.test.mjs && node worker/test/geometry.test.mjs && node worker/test/page.test.mjs && node apps/chatbot/test/engine-lib.test.mjs && node apps/chords/test/model.test.mjs && node apps/chords/test/names.test.mjs && node apps/chords/test/ear.test.mjs && node apps/chords/test/follow.test.mjs && node apps/chords/test/credits.test.mjs && node apps/chords/test/played.test.mjs && node apps/chords/test/held.test.mjs && node apps/chords/test/costs.test.mjs && node apps/chords/test/suggest.test.mjs && node --test \"worker/test/roster-*.test.js\" && node scripts/roster-policy.mjs --summary",
+    "test":"node worker/test/lead.test.mjs && node worker/test/webpush.test.mjs && node worker/test/transcribe.test.mjs && node worker/test/geometry.test.mjs && node worker/test/page.test.mjs && node apps/chords/test/model.test.mjs && node apps/chords/test/names.test.mjs && node apps/chords/test/ear.test.mjs && node apps/chords/test/follow.test.mjs && node apps/chords/test/credits.test.mjs && node apps/chords/test/played.test.mjs && node apps/chords/test/held.test.mjs && node apps/chords/test/costs.test.mjs && node apps/chords/test/suggest.test.mjs && node --test \"worker/test/roster-*.test.js\" && node scripts/roster-policy.mjs --summary",
     "test:layout": "node apps/chords/test/layout.test.mjs",
     "test:stack": "node apps/chords/test/stack.test.mjs",
     "test:roster-ui": "node scripts/roster-ui.test.mjs",

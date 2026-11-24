@@ -5,7 +5,6 @@ html.pg-chat body { margin: 0; background: var(--cream); color: var(--ink); font
 .ch-app { flex: 1; min-height: 0; display: flex; flex-direction: column; width: 100%; max-width: 40rem; margin: 0 auto; }
 .ch-log { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 1.25rem 1rem .5rem; display: flex; flex-direction: column; gap: .6rem; scrollbar-width: none; }
 .ch-log::-webkit-scrollbar { display: none; }
-.ch-who { font-size: .8rem; color: var(--muted); padding-inline: .25rem; margin-top: .4rem; }
 .ch-msg { max-width: 86%; padding: .7rem .95rem; border-radius: var(--r); font-size: 1.05rem; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
 .ch-msg.bot { align-self: flex-start; background: var(--paper); border: 1px solid rgba(44, 35, 29, .12); }
 .ch-msg.me { align-self: flex-end; background: var(--ink); color: var(--paper); }
@@ -18,43 +17,18 @@ html.pg-chat body { margin: 0; background: var(--cream); color: var(--ink); font
 @media (prefers-reduced-motion: reduce) { .ch-typing i { animation: none; opacity: .6; } }
 /* תשובות מוכנות וכפתורי המשך */
 .ch-chips { display: flex; flex-wrap: wrap; gap: .5rem; padding-top: .2rem; }
-.ch-chip, .ch-cta { font: inherit; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: .45rem 1rem; border-radius: var(--r); }
+.ch-chip { font: inherit; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: .45rem 1rem; border-radius: var(--r); }
 .ch-chip { background: transparent; color: var(--ink); border: 1px solid rgba(44, 35, 29, .35); font-weight: 600; }
 .ch-chip:active { background: rgba(44, 35, 29, .08); }
 /* צעדים להמשך: שורת קישורים שקטה, לא כפתורים */
-.ch-ctas { display: flex; flex-wrap: wrap; gap: .1rem 1.1rem; align-items: center; padding: .1rem .3rem; }
-.ch-cta { font: inherit; font-size: .9rem; font-weight: 600; border: 0; background: none; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; min-height: 44px; display: inline-flex; align-items: center; padding: 0; }
-.ch-cta:active { color: var(--ink); }
-.ch-retry { align-self: flex-start; }
 /* שורת הכתיבה */
-.ch-bar { padding: .5rem 1rem calc(.4rem + env(safe-area-inset-bottom, 0px)); background: var(--cream); }
-.ch-form { display: flex; align-items: flex-end; gap: .5rem; }
-.ch-in { flex: 1; font: inherit; font-size: 1.05rem; line-height: 1.5; color: var(--ink); background: var(--paper); border: 1px solid rgba(44, 35, 29, .3); border-radius: var(--r); padding: .6rem .8rem; resize: none; max-height: 9rem; min-height: 44px; box-sizing: border-box; }
-.ch-in:focus-visible, .ch-chip:focus-visible, .ch-cta:focus-visible, .ch-send:focus-visible { outline: 2px solid var(--plum); outline-offset: 2px; }
-.ch-send { flex: 0 0 auto; width: 44px; height: 44px; border: 0; border-radius: var(--r); background: var(--err); color: var(--paper); display: grid; place-items: center; cursor: pointer; }
-.ch-send:disabled { opacity: .4; cursor: default; }
-.ch-send svg { width: 20px; height: 20px; transform: scaleX(-1); }
+.ch-chip:focus-visible { outline: 2px solid var(--plum); outline-offset: 2px; }
 .ch-note { margin: .45rem 0 0; font-size: .78rem; color: var(--muted); text-align: center; }
 .ch-note a { color: inherit; text-decoration: underline; }
 /* כפתור הקישור לאתר ושאר הצעדים: נראים בדיוק כמו התשובות המוכנות (גבול דק, בלי רקע), לא קישור קטן */
-.ch-ctas { flex-direction: column; align-items: flex-start; gap: .4rem; padding: .2rem 0 0; }
-.ch-cta, .ch-cta.alt, .ch-cta.plain { justify-content: center; padding: .45rem 1rem; border: 1px solid rgba(44, 35, 29, .25); border-radius: var(--r); background: transparent; color: var(--ink); text-decoration: none; font-size: .98rem; font-weight: 600; min-height: 44px; }
-.ch-cta:active { background: rgba(44, 35, 29, .08); }
 /* הכפתורים ברוחב הטקסט שלהם, לא ברוחב מלא (טקסט ארוך יורד שורה בתוך הכפתור) */
-.ch-ctas .ch-cta { width: fit-content; max-width: 100%; }
-/* בלי סרגל גלילה בתיבת הכתיבה עד שהטקסט באמת חורג מהגובה המרבי */
-.ch-in { overflow-y: hidden; }
 
 /* שלוש האפשרויות בתוך השיחה: כל אחת בשורה אחת, בגובה של שורת הודעה, ברוחב התוכן שלה. אחת אחרי השנייה באותה שורה, ואפשר לרדת לשורה הבאה. כהות, טקסט לבן, בלי מסגרת */
 .ch-log .ch-chips { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: flex-start; gap: .5rem; width: 100%; padding: .2rem 0 .1rem; direction: rtl; }
 .ch-log .ch-chip { width: auto; max-width: 100%; min-height: 0; padding: .7rem .95rem; font-size: 1.05rem; line-height: 1.6; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: var(--ink); color: var(--paper); border: 0; box-shadow: none; }
 .ch-log .ch-chip:active { background: #4a3c33; transform: translateY(1px); }
-/* תיבת הכתיבה וכפתור השליחה: אותו גובה בדיוק (46px כולל גבול), על אותו קו, ולכפתור גבול בצבע הרקע שלו, כמו לתיבה */
-.ch-form { align-items: flex-end; }
-.ch-in { min-height: 46px; box-sizing: border-box; }
-.ch-send { width: 46px; height: 46px; box-sizing: border-box; border: 1px solid var(--err); }
-/* כפתור השליחה בצבע שלו (כמו קודם), עם גבול באותו צבע, ובדיוק באותו גובה ובאותה נקודת התחלה כמו שדה ההודעה */
-.ch-send { background: var(--err); color: var(--paper); border: 1px solid var(--err); }
-.ch-send:disabled { opacity: .4; }
-.ch-form { align-items: flex-end; }
-.ch-in { height: 46px; min-height: 46px; box-sizing: border-box; border-color: rgba(44, 35, 29, .3); }
