@@ -144,6 +144,7 @@ Deno.serve(async (req) => {
   (ctx as any).brief = b.painBriefs?.[pain] ?? b.painBriefs?.[legacyKey ?? ''];   // the pain's briefing, from the owner's research   // not a campaign: maybe an old ad key
   const journey = journeyOf(ctx.journey);
   const adText = tx(ctx.campaign.creative?.ad) || quoteSafe(tx(body.adText).slice(0, 300));
+  if (!adText) console.warn(JSON.stringify({ missing_ad_text: true, business: b.key, pain }));   // every campaign of every business must carry the text of its ad (creative.ad)
   const meta = { campaign: campaignId, journeyType: journey.type, topicId: ctx.campaign.topic_id, segment: ctx.campaign.segment_filters, contentVersionId: ctx.content_version_id, journeyVersion: journey.version };
   const fromLink = linkGender(ctx.campaign.segment_filters) ?? linkGender(segment);   // the link itself says the gender even when no campaign row exists for it
   const stable = { type: 'text', text: b.flowPrompt ?? stableSystem(b, journey), cache_control: { type: 'ephemeral' } };
@@ -153,9 +154,7 @@ Deno.serve(async (req) => {
 
   // The opening is written by the bot: milestone one
   if (body.mode === 'opening') {
-    const softOf = b.softTopic?.[pain] ?? b.softTopic?.[legacyKey] ?? '';
-    const openAd = softOf ? '' : adText;   // with a soft topic the ad's own words (hug, touch) never reach the opening
-    const openSystem = [stable, { type: 'text', text: [sessionFacts(b, { ...ctx, brief: undefined, hypothesis: undefined, profile: null } as any, null, openAd, addressOf(fromLink)), openingTask(b, openAd, addressOf(fromLink), softOf || (ctx.profile?.title ?? ''), softOf)].join('\n\n') }];
+    const openSystem = [stable, { type: 'text', text: [sessionFacts(b, { ...ctx, brief: undefined, hypothesis: undefined, profile: null } as any, null, adText, addressOf(fromLink)), openingTask(b, adText, addressOf(fromLink), ctx.profile?.title ?? '')].join('\n\n') }];
     let raw = await claude(apiKey, model, openSystem, [{ role: 'user', content: 'התחילו.' }], 800);
     let op = raw ? parseOpening(raw) : null;
     const fixes: { type: string; text: string }[] = [];

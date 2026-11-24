@@ -112,7 +112,8 @@ async function main() {
         if (!hit && !flags["allow-missing"]) fail(`אין פרופיל מחקר פעיל לנושא ${topic} ולפילוח ${segmentKey(seg)}. קודם קולטים ומפעילים גרסת מחקר, או מוסיפים --allow-missing כדי ליצור קמפיין בלי מחקר (שיחה כללית).`);
         if (hit) console.log(`נמצא פרופיל: ${hit.title} (ראיות ${hit.evidence ?? "?"})`);
       }
-      const creative = flags.ad ? { ad: String(flags.ad) } : {};
+      if (!flags.ad) { console.error('campaign create needs --ad "the ad sentence": every campaign must carry the text of its ad, or the bot cannot know what the visitor saw'); process.exit(1); }
+      const creative = { ad: String(flags.ad) };
       sql(`insert into chatbot.campaigns (id, business, journey_type, topic_id, segment_filters, status, creative, note)
            values (${dollar(id)}, ${dollar(business)}, 'pain', ${topic ? dollar(topic) : "null"}, ${lit(seg)}::jsonb, 'draft', ${lit(creative)}::jsonb, ${flags.note ? dollar(String(flags.note)) : "null"})`);
       console.log(`נוצרה טיוטת קמפיין ${id}. להפעלה: node scripts/chatbot.mjs campaign activate ${id}\nהקישור: ${campaignLink(business, topic ?? "", seg)}`);

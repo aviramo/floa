@@ -62,7 +62,6 @@ export interface JourneyBusiness<Ctx = unknown> {
   origins: string[];
   testOrigin?: string;
   ageRange: string;
-  softTopic?: Record<string, string>;
   painBriefs?: Record<string, string>;
   bioBrief?: string;
   siteOnly?: boolean;                                // meeting details (date, place, price) are never given in the chat: the site has them
