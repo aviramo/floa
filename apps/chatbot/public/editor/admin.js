@@ -171,6 +171,7 @@
     $('generalSum').textContent = 'ברכה: ' + String(c.greeting || '').slice(0, 40);
     $('preview').href = pageUrl() + '&fresh=' + Date.now();
     var g = $('greeting'); g.value = c.greeting || ''; g.oninput = function () { c.greeting = g.value; dirty(true); };
+    var it = $('intro'); it.value = typeof c.intro === 'string' ? c.intro : ''; it.oninput = function () { c.intro = it.value; dirty(true); };
 
     var box = $('steps'); box.textContent = '';
     var list = steps(), blank = false;

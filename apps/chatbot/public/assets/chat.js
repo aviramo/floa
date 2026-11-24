@@ -3,7 +3,7 @@
    It looks like a live chat: a typing indicator, then the bubble; the three options appear at once under the message.
    The address has two parameters: ad (the code of the ad, always) and gender (female, male, or empty for the version for both).
    The business comes from the address (chatbot.floa.co.il/<business>?ad=<code>&gender=<female|male>); its look and links from businesses/<business>.json.
-   Content: { greeting, defaultAd, ads: { <code>: { ad, female: [message x5], male: [message x5], both: [message x5] } } }, where a message is
+   Content: { greeting, intro?, defaultAd, ads: { <code>: { ad, female: [message x5], male: [message x5], both: [message x5] } } }, where a message is
    { say, options: [{ label, reply }] x3 } and the last one has { label, url, action? } options (url is the link; action is the older way and only the fallback).
    It is read from the database (the published version, through the chat function) and falls back to the file of the repo when the function does not answer.
    Edited in the editor at /admin/. Taps are recorded only for visits from a Meta ad (fbclid or the Facebook/Instagram in-app browser). */
@@ -122,7 +122,11 @@
     } else {
       const hello = data.greeting || 'היי';
       await say('bot', hello);
-      st.log.push({ r: 'bot', t: hello }, { r: 'bot', t: steps[0].say }); save();
+      st.log.push({ r: 'bot', t: hello });
+      // the opening message: a bubble of its own after the greeting, before message 1, shared by every ad and gender (empty = none)
+      const intro = String(typeof data.intro === 'string' ? data.intro : '').trim();
+      if (intro) { await say('bot', intro); st.log.push({ r: 'bot', t: intro }); }
+      st.log.push({ r: 'bot', t: steps[0].say }); save();
       await say('bot', steps[0].say);
       showOptions(0);
     }

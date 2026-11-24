@@ -47,14 +47,6 @@
         <span class="opens" id="opens"></span>
       </div>
     </div>
-    <div class="genderbar">
-      <div class="seg" id="genders" role="tablist" aria-label="מגדר">
-        <button type="button" data-g="female" class="on">אישה</button>
-        <button type="button" data-g="male">גבר</button>
-        <button type="button" data-g="both">שני המינים</button>
-      </div>
-    </div>
-
     <details class="acc" id="general">
       <summary><span class="sum"><span class="t">הגדרות כלליות</span><span class="kind" id="generalSum"></span></span></summary>
       <div class="settings">
@@ -63,8 +55,20 @@
           <p class="hint">הכתובת: ad=קוד המודעה, ובנוסף gender=female או male. בלי gender מוצגת גרסת שני המינים.</p>
           <input class="field" id="greeting" type="text">
         </div>
+        <div>
+          <label class="lbl" for="intro">הודעת פתיחה אחרי הברכה (בועה נפרדת לפני הודעה 1, משותפת לכל המודעות והמגדרים. ריק = לא מוצגת)</label>
+          <input class="field" id="intro" type="text">
+        </div>
       </div>
     </details>
+
+    <div class="genderbar">
+      <div class="seg" id="genders" role="tablist" aria-label="מגדר">
+        <button type="button" data-g="female" class="on">אישה</button>
+        <button type="button" data-g="male">גבר</button>
+        <button type="button" data-g="both">שני המינים</button>
+      </div>
+    </div>
 
     <div class="draftbar" id="draftbar" hidden></div>
 
@@ -99,6 +103,6 @@
 <script src="/supabase.js"></script>
 <script src="/auth.js"></script>
 <script src="editor/stats.js?v=4"></script>
-<script src="editor/admin.js?v=25"></script>
+<script src="editor/admin.js?v=26"></script>
 </body>
 </html>
