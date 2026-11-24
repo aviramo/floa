@@ -273,6 +273,7 @@ Deno.serve(async (req) => {
   if (/\sאו\s/.test(lastSentence(reply))) chips = chips.filter((c) => !/^(כן|לא)(,.*)?$/.test(c.trim()));
 
   const next = { ...mergeState(prev, incoming, journey), meta };
+  if (distress) next.action = 'safety';   // detected from the visitor's words, not left to the model
   if (!distress && next.action !== 'safety' && next.action !== 'end') reply = endOnQuestion(reply);   // the reply always ends on its question
   if (!incoming) next.action = 'continue';      // a reply without a state block advances nothing
   if (distress) { next.action = 'safety'; next.readiness = 'concerned'; }
