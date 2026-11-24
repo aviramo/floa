@@ -131,8 +131,8 @@
       box.appendChild(b);
     });
     if (!shown) box.appendChild(el('p', 'hint', 'לא נמצאה מודעה'));
-    $('adToggle').textContent = 'מודעה: ' + S.ad + ' (' + keys.length + ')';
-    $('adcount').textContent = (term ? shown + ' מתוך ' : '') + keys.length + ' מודעות';
+    $('adToggle').textContent = 'מודעה: ' + S.ad;
+    $('adcount').textContent = term ? 'נמצאו ' + shown : '';
   }
   function render() {
     var y = window.scrollY;

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>עריכת הצ'אט</title>
-<link rel="stylesheet" href="editor/admin.css?v=12">
+<link rel="stylesheet" href="editor/admin.css?v=15">
 </head>
 <body>
 <header class="top">
@@ -26,7 +26,7 @@
       <input class="field" id="adq" type="search" placeholder="חיפוש מודעה לפי קוד או כותרת">
       <div class="count" id="adcount"></div>
       <div class="adlist" id="adlist" role="listbox" aria-label="מודעות"></div>
-      <button type="button" class="btn ghost" id="newAd">מודעה חדשה</button>
+      <div class="adacts"><button type="button" class="btn ghost" id="newAd">מודעה חדשה</button><button type="button" class="btn ghost" id="delAd">מחק מודעה</button></div>
     </aside>
     <div class="mainc">
     <div class="filters">
@@ -44,7 +44,6 @@
         <div><label class="lbl" for="adcode">קוד המודעה בכתובת</label><input class="field" id="adcode" type="text" dir="ltr" maxlength="30"></div>
         <div><label class="lbl" for="adtextin">כותרת המודעה (לעצמנו)</label><input class="field" id="adtextin" type="text"></div>
         <span class="opens" id="opens"></span>
-        <button type="button" class="btn ghost" id="delAd">מחק מודעה</button>
       </div>
     </div>
     <div class="genderbar">
@@ -90,6 +89,6 @@
 
 <script src="/supabase.js"></script>
 <script src="/auth.js"></script>
-<script src="editor/admin.js?v=17"></script>
+<script src="editor/admin.js?v=19"></script>
 </body>
 </html>

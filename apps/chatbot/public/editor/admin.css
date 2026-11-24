@@ -93,7 +93,7 @@ details.acc > summary:hover { background: #fbf6ee; border-radius: var(--r); }
 .opt h3 { display: flex; justify-content: space-between; align-items: center; }
 .cnt { color: var(--ink); background: var(--accent-soft); border-radius: 99px; padding: 0 .5rem; font-size: .75rem; font-weight: 700; }
 .opens { color: var(--muted); font-size: .85rem; white-space: nowrap; }
-.adset { grid-template-columns: 11rem 1fr auto auto; }
+.adset { grid-template-columns: 11rem 1fr auto; }
 
 /* phone and small tablet: one column, the ads as a strip you scroll sideways, the page itself never scrolls sideways */
 @media (max-width: 52rem) {
@@ -103,12 +103,16 @@ details.acc > summary:hover { background: #fbf6ee; border-radius: var(--r); }
   .topr { gap: .8rem; }
   main { padding: 0 .8rem calc(6rem + env(safe-area-inset-bottom, 0px)); }
   .layout { grid-template-columns: minmax(0, 1fr); gap: .6rem; padding-top: .6rem; }
-  .side { position: static; max-height: none; display: flex; flex-direction: column; gap: .4rem; }
+  .side { position: static; max-height: none; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .4rem; align-items: center; }
+  .side #adq, .side .count, .side .adlist { grid-column: 1 / -1; }
+  .adtoggle { grid-column: 1; grid-row: 1; min-width: 0; overflow: hidden; }
+  .adacts { grid-column: 2; grid-row: 1; flex-wrap: nowrap; gap: .3rem; }
+  .adacts .btn { flex: none; font-size: .8rem; padding: 0 .55rem; }
   .adtoggle { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 44px; padding: 0 .9rem; font: inherit; font-weight: 700; color: var(--ink); background: var(--paper); border: 1px solid var(--line2); border-radius: var(--r); cursor: pointer; direction: ltr; }
   .adtoggle::after { content: ''; width: 8px; height: 8px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); transition: transform .12s; }
   .side.open .adtoggle::after { transform: rotate(-135deg); }
   .side:not(.open) #adq, .side:not(.open) .count, .side:not(.open) .adlist { display: none; }
-  .side #newAd { min-height: 38px; align-self: flex-start; }
+  .adacts .btn { min-height: 40px; }
   .adlist { flex-direction: column; overflow-y: auto; overflow-x: hidden; max-height: 50vh; min-height: 0; padding: 4px; }
   .adi { width: 100%; min-height: 44px; }
   .filters { padding: .4rem 0; }
@@ -119,7 +123,6 @@ details.acc > summary:hover { background: #fbf6ee; border-radius: var(--r); }
   .tools { margin-inline-start: 0; flex-wrap: wrap; gap: .4rem; }
   .tools .btn { flex: 1 1 auto; justify-content: center; min-height: 38px; }
   .adset { grid-template-columns: minmax(0, 1fr); gap: .5rem; }
-  .adset .btn { justify-self: start; }
   .field, select.field { font-size: 16px; min-height: 40px; }
   .settings { grid-template-columns: minmax(0, 1fr); }
   .cols { grid-template-columns: minmax(0, 1fr); }
@@ -152,7 +155,6 @@ details.acc > summary:hover { background: #fbf6ee; border-radius: var(--r); }
   .tools .btn { min-height: 36px; font-size: .8rem; padding: 0 .6rem; }
   .adtoggle { min-height: 40px; }
   .adset { gap: .35rem; }
-  .adset .btn { min-height: 36px; }
   .genderbar { padding: .35rem 0; margin-bottom: .5rem; }
   .seg button { min-height: 36px; }
   details.acc { margin-bottom: .35rem; }
@@ -165,3 +167,8 @@ details.acc > summary:hover { background: #fbf6ee; border-radius: var(--r); }
   .savebar { padding: .4rem .5rem calc(.4rem + env(safe-area-inset-bottom, 0px)); }
   .savebar .btn { min-height: 40px; }
 }
+
+.adacts { display: flex; gap: .4rem; flex-wrap: wrap; }
+.adacts .btn { flex: 1 1 auto; justify-content: center; }
+
+.side .count:empty { display: none; }
