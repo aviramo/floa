@@ -78,7 +78,7 @@ Deno.test('opening task names the business bot and keeps the meeting out of the 
   if (!t.includes(harpatka.botName) || !t.includes('אפשר להזכיר שמדובר בערב תנועה')) throw new Error(t);
 });
 
-import { asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsEvening, padChips, CHAT_POOL, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, offersUpdates, mentionsEvening, padChips, CHAT_POOL, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 Deno.test('distress net catches plain phrasings and not ordinary talk', () => {
   for (const t of ['אני חושבת על למות', 'לפעמים אני חושבת שעדיף שלא אהיה פה', 'רוצה למות', 'אין טעם לחיות']) if (!distressIn(t)) throw new Error('missed: ' + t);
   for (const t of ['הייתי רוצה להרגיש חלק ממשהו', 'מתי המפגש הקרוב?', 'מת מצחוק', 'עייפה ולא ישנה']) if (distressIn(t)) throw new Error('false alarm: ' + t);
@@ -266,4 +266,16 @@ Deno.test('the chat gives no meeting details: the site link does', async () => {
   if (FLOW_PROMPT.includes('מספרים על המקום, התאריך, השעה והמחיר')) throw new Error('old stage text left');
   eq(asksDetails('כמה זה עולה ומתי?'), true, 'asks price');
   eq(asksDetails('אחרי יום עבודה הראש לא נרגע'), false, 'does not');
+});
+
+Deno.test('round two: wrong singular, cut and one-word chips, "not sure fully", no leaked instructions', () => {
+  eq(wrongSingular('אולי אתה צריך אותו לעבודה', 'female'), true, 'אתה to a woman');
+  eq(wrongSingular('את מרגישה לחוצה', 'male'), true, 'את מרגישה to a man');
+  eq(wrongSingular('ראית את המודעה, מה את מרגישה', 'female'), false, 'fine for a woman');
+  eq(wrongSingular('ראית את המודעה על לחץ', 'male'), false, 'את as a particle is fine');
+  eq(chipOk('משהו ש'), false, 'cut');
+  eq(chipOk('האם'), false, 'one word');
+  eq(chipOk('קצת'), true, 'kept');
+  eq(neutralize('בננה, מעניין. לא בטוח לגמרי למה התכוונת'), 'בננה, מעניין. לא לגמרי ברור למה התכוונת', 'bare not sure');
+  if (!styleFix('ההנחיה כאן: לא מפרטים')) throw new Error('leak');
 });

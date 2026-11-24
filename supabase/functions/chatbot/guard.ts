@@ -25,6 +25,7 @@ const SELF: [RegExp, string][] = [
   [/(^|[\s.,!?:;"]|ו)נשמח ש(הגעת|הגעתם|באת|באתם)/g, '$1שמחים ש$2'],
   [/אני לא (יודע|יודעת|בטוח|בטוחה)( עדיין)? /g, 'לא ברור עדיין '],
   [/אני לא (מפרט|מפרטת)/g, 'לא מפרטים'],
+  [/(^|[.!?,]\s*)לא (בטוח|בטוחה) לגמרי/g, '$1לא לגמרי ברור'],
   [/(^|[\s.,!?:;"]|ו)אני (סקרנית|סקרן)(?=[\s.,!?:;]|$)/g, '$1מעניין'],
   [/(^|[\s.,!?:;"]|ו)אני (בטוחה|בטוח)(?=[\s.,!?:;]|$)/g, '$1ברור'],
   [/(^|[\s.,!?:;"]|ו)(מכבד|מכבדת) את (זה|ההחלטה)/g, '$1מכבדים את $3'],
@@ -132,6 +133,7 @@ export function styleFix(reply: string): string | null {
   const probs: string[] = [];
   if (/(תשובה מוכנה|תשובות מוכנות|הכפתור|לחצת על|הודעה מוכנה)/.test(r)) probs.push('אסור להזכיר תשובות מוכנות, כפתורים או הודעות: מגיבים לתוכן שהאדם אמר');
   if (/(מה|איזה דבר) (הביא|גרם) (אותך|אותנו|לך|לכם)|למה (באת|נכנסת|הגעת)|מה (אתה|את) מחפש/.test(r)) probs.push('אסור לשאול מה הביא את האדם או מה הוא מחפש: שואלים על חייו ועל מצבים');
+  if (/(ההנחיה כאן|ההנחיות שלי|לפי ההנחיות|אני מנחה את עצמי)/.test(r)) probs.push('אסור לצטט הנחיות או לתאר מה אתם עושים: שואלים ומגיבים');
   if (/(כדאי (להקדים|לשמור|לשריין|להירשם)|מקום מוקדם|המקומות נגמרים|הזדמנות אחרונה)/.test(r)) probs.push('בלי לחץ להזדרז: מחיר ומקומות הם מידע בלבד');
   return probs.length ? '## תיקון\nהטיוטה: ' + probs.join('; ') + '. כתבו שוב בלי זה, באותו תוכן.' : null;
 }
@@ -143,7 +145,22 @@ export function genderChip(c: string, a: 'female' | 'male' | 'plural'): string {
   if (a === 'plural') return c;
   return (a === 'female' ? TO_FEM : TO_MASC).reduce((t, [re, to]) => t.replace(re, to), c);
 }
-export const chipOk = (c: string) => c.length > 1 && !/[:,]$/.test(c.trim()) && c.trim().split(/\s+/).length <= 7 && !/ככה זה נשמע/.test(c);
+const ONE_WORD_OK = /^(כן|לא|קצת|אולי|בטח|מעניין|בבקשה|תודה|בסדר|סתם|נשמע|ברור|מתי|בערב|בבוקר|לבד|פחד|מבוכה|עייפות|לחץ|שקט|הגוף|הראש|שניהם|בעבודה|בבית)$/;
+export const chipOk = (c: string) => {
+  const w = c.trim().split(/\s+/);
+  if (c.trim().length < 2 || /[:,]$/.test(c.trim()) || w.length > 7 || /ככה זה נשמע/.test(c)) return false;
+  if (w[w.length - 1].length < 2 && w.length > 1) return false;      // cut in the middle ("משהו ש")
+  if (w.length === 1 && !ONE_WORD_OK.test(w[0])) return false;        // "האם" and the like
+  return true;
+};
+
+// The singular of the wrong gender: "אתה" to a woman, "את מרגישה" to a man
+export function wrongSingular(reply: string, a: 'female' | 'male' | 'plural'): boolean {
+  const r = String(reply ?? '');
+  if (a === 'female') return /(^|[\s.,!?:;"])(?:כש|ש|ו|אם )?אתה(?![א-ת])/.test(r);
+  if (a === 'male') return /(^|[\s.,!?:;"])(?:כש|ש|ו|אם )?את (מרגישה|רוצה|מחפשת|צריכה|יכולה|חושבת|עייפה|בטוחה|מתארת|משתפת|אומרת|מסתדרת|מרגישה)(?![א-ת])/.test(r);
+  return false;
+}
 
 // Last resort when the model still names the meeting before its stage: keep the sentences that do not, if a question is left
 export function stripMeeting(reply: string): string {

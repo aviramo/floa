@@ -8,7 +8,7 @@ import { lastSentence, buildMessages, MAX_USER_TURNS, parse, parseOpening, quote
 import { BUSINESSES } from './businesses/index.ts';
 import { journeyOf } from './journey.ts';
 import { openingTask, sessionFacts, stableSystem, stateBlock, addressOf, turnReminder } from './prompt.ts';
-import { asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, TOPIC_POOL, offersUpdates, mentionsEvening, CHAT_POOL, OPENING_POOL, padChips, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
+import { wrongSingular, asksDetails, styleFix, genderChip, chipOk, stripMeeting, deadEndChip, TOPIC_POOL, offersUpdates, mentionsEvening, CHAT_POOL, OPENING_POOL, padChips, assertsCondition, campaignKey, conditionFix, distressIn, earlyPitchFix, genderFix, neutralize, parseSegment, pitchAllowed, pluralAddress, putsEveningOnTable, repeatedWord, stripGreeting, toSingular } from './guard.ts';
 import { ctaFor, ctasOf, diffEvents, extractState, initialState, linkGender, mergeState, stateFromClient } from './state.ts';
 import type { CampaignContext, JourneyBusiness, SessionState } from './types.ts';
 
@@ -62,8 +62,11 @@ async function claude(apiKey: string, model: string, system: unknown[], messages
 
 // The model gave fewer than three quick replies: ask once, in a short call, for answers to the last question of this very message.
 // A fixed list can never fit every question, so it is only the last resort.
-async function chipsFor(apiKey: string, model: string, reply: string): Promise<string[]> {
-  const raw = await claude(apiKey, model, [{ type: 'text', text: 'כותבים תשובות מוכנות לצ׳אט. עונים רק בשורה אחת: שלוש עד ארבע תשובות קצרות (עד ארבע מילים כל אחת), מופרדות ב-|. כל תשובה היא מה שאדם יכול לענות בדיוק על השאלה האחרונה בהודעה. בלי מגדר בגוף ראשון, בלי ״יש לי שאלה״, ובלי להזכיר מפגש, ערב או אנשים אלא אם ההודעה עצמה מזכירה אותם.' }], [{ role: 'user', content: 'ההודעה:\n' + reply }], 120);
+async function chipsFor(apiKey: string, model: string, a: { reply: string; lastUser: string; address: 'female' | 'male' | 'plural'; pitchOk: boolean }): Promise<string[]> {
+  const lang = a.address === 'female' ? 'נקבה' : a.address === 'male' ? 'זכר' : 'ניטרלית (בלי פעלים או תארים בגוף ראשון שמסמנים מגדר)';
+  const sys = 'כותבים תשובות מוכנות לצ׳אט. עונים בשורה אחת בלבד: שלוש עד ארבע תשובות, מופרדות ב-|. כל תשובה היא משפט קצר (שתיים עד חמש מילים) שהאדם עצמו אומר, בגוף ראשון, כתשובה בדיוק לשאלה האחרונה בהודעת הבוט. לא ניסוח של הבוט ולא שאלה אל הבוט (חוץ מ״איך זה נראה בפועל״ ו״איך נרשמים״), לא נקטע באמצע, בלי נקודתיים ובלי ״יש לי שאלה״. לשון האדם: ' + lang + '. בשאלת בחירה (א או ב) התשובות הן א, ב ועוד אחת. ' +
+    (a.pitchOk ? 'אחת התשובות מקדמת בעדינות: ״רוצה לשמוע עוד״ או ״איך נרשמים״.' : 'אסור תשובה שמזכירה מפגש, ערב או מנחים.');
+  const raw = await claude(apiKey, model, [{ type: 'text', text: sys }], [{ role: 'user', content: 'מה שהאדם כתב: ' + a.lastUser.slice(0, 200) + '\nהודעת הבוט:\n' + a.reply }], 120);
   return (raw ?? '').replace(/<[^>]*>/g, '').split(/[|\n]/).map((s) => s.trim().replace(/^[-•\d.\s]+/, '')).filter((s) => s && s.length <= 30);
 }
 
@@ -203,6 +206,7 @@ Deno.serve(async (req) => {
   const replyFixes: { type: string; text: string }[] = [];
   if (address !== 'plural' && pluralAddress(parsed.reply)) replyFixes.push({ type: 'text', text: genderFix(address) });
   if (!distress && (putsEveningOnTable(parsed.reply) || mentionsEvening(parsed.reply)) && !pitchAllowed({ turns, lastUser, prevDone: prev.done, prevReadiness: prev.readiness })) replyFixes.push({ type: 'text', text: earlyPitchFix });
+  if (address !== 'plural' && wrongSingular(parsed.reply, address)) replyFixes.push({ type: 'text', text: genderFix(address) });
   { const sf = styleFix(parsed.reply); if (sf) replyFixes.push({ type: 'text', text: sf }); }
   if (replyFixes.length) {
     const raw2 = await claude(apiKey, model, [...system, ...replyFixes], merged, 800);
@@ -233,10 +237,9 @@ Deno.serve(async (req) => {
   // The link to the site appears only once the evening was actually put on the table (this reply or an earlier one), never before
   const eveningSeen = putsTheEveningOnTheTable || clean.some((m: any) => m.role === 'assistant' && /\d{1,2}\.\d{1,2}/.test(String(m.content)) && /(בשעה|ש"ח)/.test(String(m.content)));
   if (next.action !== 'safety' && next.action !== 'end') {
-    if (chips.length < 3) {
-      const extra = (await chipsFor(apiKey, model, reply)).filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && (pitchOk || !mentionsEvening(c)));
-      chips = [...new Set([...chips, ...extra])].slice(0, 4);
-    }
+    // The quick replies come from a short dedicated call that sees the visitor's words, the reply and the gender; the model's own are the fallback
+    const gen = (await chipsFor(apiKey, model, { reply, lastUser, address, pitchOk })).filter((c) => !c.includes('/') && !repeatedWord(c) && !deadEndChip(c) && chipOk(c) && (pitchOk || !mentionsEvening(c))).map((c) => genderChip(c, address));
+    chips = gen.length >= 3 ? gen.slice(0, 4) : [...new Set([...gen, ...chips])].slice(0, 4);
     chips = padChips(chips, (b.siteOnly ? pitchOk : eveningSeen) ? CHAT_POOL : TOPIC_POOL);   // last resort only
   }
   if (cta === 'register' && !(b.siteOnly ? pitchOk : eveningSeen)) cta = null;
