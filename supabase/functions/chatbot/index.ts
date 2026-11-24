@@ -65,7 +65,7 @@ async function claude(apiKey: string, model: string, system: unknown[], messages
 async function chipsFor(apiKey: string, model: string, a: { reply: string; lastUser: string; address: 'female' | 'male' | 'plural'; pitchOk: boolean }): Promise<string[]> {
   const lang = a.address === 'female' ? 'נקבה' : a.address === 'male' ? 'זכר' : 'ניטרלית (בלי פעלים או תארים בגוף ראשון שמסמנים מגדר)';
   const sys = 'כותבים תשובות מוכנות לצ׳אט. עונים בשורה אחת בלבד: שלוש עד ארבע תשובות, מופרדות ב-|. כל תשובה היא משפט קצר (שתיים עד חמש מילים) שהאדם עצמו אומר, בגוף ראשון, כתשובה בדיוק לשאלה האחרונה בהודעת הבוט. לא ניסוח של הבוט ולא שאלה אל הבוט (חוץ מ״איך זה נראה בפועל״ ו״איך נרשמים״), לא נקטע באמצע, בלי נקודתיים ובלי ״יש לי שאלה״. לשון האדם: ' + lang + '. בשאלת בחירה (א או ב) התשובות הן א, ב ועוד אחת. ' +
-    (a.pitchOk ? 'אחת התשובות מקדמת בעדינות: ״רוצה לשמוע עוד״ או ״איך נרשמים״.' : 'אסור תשובה שמזכירה מפגש, ערב או מנחים.');
+    'לפחות אחת התשובות ממשיכה את השיחה בכיוון חיובי או סקרן ולא רק סירוב. ' + (a.pitchOk ? 'אחת התשובות מקדמת בעדינות: ״רוצה לשמוע עוד״ או ״איך נרשמים״.' : 'אסור תשובה שמזכירה מפגש, ערב או מנחים.');
   const raw = await claude(apiKey, model, [{ type: 'text', text: sys }], [{ role: 'user', content: 'מה שהאדם כתב: ' + a.lastUser.slice(0, 200) + '\nהודעת הבוט:\n' + a.reply }], 120);
   return (raw ?? '').replace(/<[^>]*>/g, '').split(/[|\n]/).map((s) => s.trim().replace(/^[-•\d.\s]+/, '')).filter((s) => s && s.length <= 30);
 }
@@ -163,13 +163,13 @@ Deno.serve(async (req) => {
   // The opening is written by the bot: milestone one
   if (body.mode === 'opening') {
     const openSystem = [stable, { type: 'text', text: [sessionFacts(b, ctx, null, adText, addressOf(fromLink)), openingTask(b, adText, addressOf(fromLink), ctx.profile?.title ?? '')].join('\n\n') }];
-    let raw = await claude(apiKey, model, openSystem, [{ role: 'user', content: 'התחילו.' }], 500);
+    let raw = await claude(apiKey, model, openSystem, [{ role: 'user', content: 'התחילו.' }], 800);
     let op = raw ? parseOpening(raw) : null;
     const fixes: { type: string; text: string }[] = [];
     if (fromLink && op && op.messages.some(pluralAddress)) fixes.push({ type: 'text', text: genderFix(fromLink) });   // a woman or a man was addressed in the plural
     if (op && op.messages.some(assertsCondition)) fixes.push({ type: 'text', text: conditionFix });                   // the opening stated the visitor's condition
     if (op && fixes.length) {   // one more try, told exactly why
-      const raw2 = await claude(apiKey, model, [...openSystem, ...fixes], [{ role: 'user', content: 'התחילו.' }], 500);
+      const raw2 = await claude(apiKey, model, [...openSystem, ...fixes], [{ role: 'user', content: 'התחילו.' }], 800);
       const op2 = raw2 ? parseOpening(raw2) : null;
       if (op2 && op2.messages.length) op = op2;
     }
@@ -197,8 +197,8 @@ Deno.serve(async (req) => {
   const distress = distressIn(lastUser);
   if (distress) system.push({ type: 'text', text: '## זוהתה מצוקה קשה בהודעה האחרונה\nזה קודם לכל דבר אחר: action=safety. עונים באמפתיה ובקצרה, ער"ן 1201 ושיחה עם המנחים, בלי מפגש, מחיר, הרשמה או שאלות על המודעה.' });
 
-  let raw = await claude(apiKey, model, system, merged, 800);
-  if (raw === null) raw = await claude(apiKey, model, system, merged, 800);   // one more try: an upstream hiccup must not end a conversation
+  let raw = await claude(apiKey, model, system, merged, 1400);
+  if (raw === null) raw = await claude(apiKey, model, system, merged, 1400);   // one more try: an upstream hiccup must not end a conversation
   if (raw === null) return json(b, origin, { error: 'upstream' }, 502);
   let { text, state: incoming } = extractState(raw);
   let parsed = parse(text);
@@ -209,7 +209,7 @@ Deno.serve(async (req) => {
   if (address !== 'plural' && wrongSingular(parsed.reply, address)) replyFixes.push({ type: 'text', text: genderFix(address) });
   { const sf = styleFix(parsed.reply); if (sf) replyFixes.push({ type: 'text', text: sf }); }
   if (replyFixes.length) {
-    const raw2 = await claude(apiKey, model, [...system, ...replyFixes], merged, 800);
+    const raw2 = await claude(apiKey, model, [...system, ...replyFixes], merged, 1400);
     if (raw2) { const o2 = extractState(raw2), p2 = parse(o2.text); if (p2.reply) { text = o2.text; incoming = o2.state; parsed = p2; } }
   }
   const pitchOk = pitchAllowed({ turns, lastUser, prevDone: prev.done, prevReadiness: prev.readiness });
@@ -243,6 +243,7 @@ Deno.serve(async (req) => {
     chips = padChips(chips, (b.siteOnly ? pitchOk : eveningSeen) ? CHAT_POOL : TOPIC_POOL);   // last resort only
   }
   if (cta === 'register' && !(b.siteOnly ? pitchOk : eveningSeen)) cta = null;
+  if (b.siteOnly && !cta && pitchOk && /(באתר|בקישור)/.test(reply) && next.action !== 'safety') cta = 'register';   // the reply points at the site: the button is the way there
   if (b.siteOnly && !cta && pitchOk && asksDetails(lastUser) && next.action !== 'safety') cta = 'register';   // asked when, how much, how to register: the site link is the answer
   if (!cta && offersUpdates(reply) && next.action !== 'safety') cta = 'updates';
   if (!cta && facts && putsTheEveningOnTheTable && !['end', 'safety'].includes(next.action) && next.readiness !== 'not_fit') cta = 'register';

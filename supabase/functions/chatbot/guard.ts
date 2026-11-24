@@ -26,6 +26,7 @@ const SELF: [RegExp, string][] = [
   [/אני לא (יודע|יודעת|בטוח|בטוחה)( עדיין)? /g, 'לא ברור עדיין '],
   [/אני לא (מפרט|מפרטת)/g, 'לא מפרטים'],
   [/(^|[.!?,]\s*)לא (בטוח|בטוחה) לגמרי/g, '$1לא לגמרי ברור'],
+  [/אני לא (יכול|יכולה|אוכל) /g, 'אי אפשר '],
   [/(^|[\s.,!?:;"]|ו)אני (סקרנית|סקרן)(?=[\s.,!?:;]|$)/g, '$1מעניין'],
   [/(^|[\s.,!?:;"]|ו)אני (בטוחה|בטוח)(?=[\s.,!?:;]|$)/g, '$1ברור'],
   [/(^|[\s.,!?:;"]|ו)(מכבד|מכבדת) את (זה|ההחלטה)/g, '$1מכבדים את $3'],
@@ -99,10 +100,11 @@ export const putsEveningOnTable = (reply: string) => /\d{1,2}\.\d{1,2}/.test(Str
 
 // The evening is offered after a bridge the visitor reacted to, or when they ask, or when they would rather not talk, or by their fourth message.
 // A reply that offers it earlier is asked again once. Never a jump from "I want quiet" straight to a date and a price.
+const ASKS_ABOUT_IT = /(מתי (זה|המפגש|הערב|הבא)|כמה (זה )?עולה|בכמה|מחיר|יקר|כסף|תשלום|הרשמ|נרשמ|קישור|תאריך|איפה (זה|המפגש|הערב|מתקיים)|מה זה|מה זו|מי אתם|מה אתם|מה בדיוק מוכרים|מוכרים|על מה (זה|המפגש|הערב)|כת|רמא|מה עושים|מי מנחה|המנחים)/;
 export function pitchAllowed(a: { turns: number; lastUser: string; prevDone: string[]; prevReadiness: string }): boolean {
   // Only an explicit question about the evening, or a conversation that really got through connect, desire and motivation (or a long one), opens the door.
   // A "yes", a chip or a message count alone does not: the visitor learned from the ad about a pain, not about a meeting.
-  const asked = /(מתי (זה|המפגש|הערב|הבא)|כמה (זה )?עולה|מחיר|הרשמ|נרשמ|קישור|תאריך|איפה (זה|המפגש|הערב|מתקיים)|מה זה (מפגש|הערב|הפעילות)|על מה (המפגש|הערב))/.test(a.lastUser);
+  const asked = ASKS_ABOUT_IT.test(a.lastUser);
   const gotThere = ['connect', 'desire', 'motivation'].every((d) => a.prevDone.includes(d)) || a.prevDone.includes('bridge');
   return a.turns >= 5 || asked || gotThere;
 }
@@ -135,6 +137,7 @@ export function styleFix(reply: string): string | null {
   if (/(מה|איזה דבר) (הביא|גרם) (אותך|אותנו|לך|לכם)|למה (באת|נכנסת|הגעת)|מה (אתה|את) מחפש/.test(r)) probs.push('אסור לשאול מה הביא את האדם או מה הוא מחפש: שואלים על חייו ועל מצבים');
   if (/(ההנחיה כאן|ההנחיות שלי|לפי ההנחיות|אני מנחה את עצמי)/.test(r)) probs.push('אסור לצטט הנחיות או לתאר מה אתם עושים: שואלים ומגיבים');
   if (/(כדאי (להקדים|לשמור|לשריין|להירשם)|מקום מוקדם|המקומות נגמרים|הזדמנות אחרונה)/.test(r)) probs.push('בלי לחץ להזדרז: מחיר ומקומות הם מידע בלבד');
+  if (r.split(/[.!?]\s/).filter(Boolean).length > 4 || r.length > 520) probs.push('ארוך מדי: עד שלושה משפטים ושאלה אחת');
   return probs.length ? '## תיקון\nהטיוטה: ' + probs.join('; ') + '. כתבו שוב בלי זה, באותו תוכן.' : null;
 }
 
@@ -171,4 +174,4 @@ export function stripMeeting(reply: string): string {
 }
 
 // The visitor asks for the details or wants to register: the site link is the answer
-export const asksDetails = (t: string) => /(מתי (זה|המפגש|הערב|הבא)|כמה (זה )?עולה|מחיר|הרשמ|נרשמ|קישור|תאריך|איפה (זה|המפגש|הערב|מתקיים)|פרטים|לשלוח)/.test(String(t ?? ''));
+export const asksDetails = (t: string) => /(מתי (זה|המפגש|הערב|הבא)|כמה (זה )?עולה|בכמה|מחיר|יקר|כסף|תשלום|הרשמ|נרשמ|קישור|תאריך|איפה (זה|המפגש|הערב|מתקיים)|פרטים|לשלוח)/.test(String(t ?? ''));

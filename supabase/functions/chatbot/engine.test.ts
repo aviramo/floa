@@ -279,3 +279,11 @@ Deno.test('round two: wrong singular, cut and one-word chips, "not sure fully", 
   eq(neutralize('בננה, מעניין. לא בטוח לגמרי למה התכוונת'), 'בננה, מעניין. לא לגמרי ברור למה התכוונת', 'bare not sure');
   if (!styleFix('ההנחיה כאן: לא מפרטים')) throw new Error('leak');
 });
+
+Deno.test('round three: objections may name the meeting, no "I cannot", long replies are shortened', () => {
+  eq(pitchAllowed({ turns: 1, lastUser: 'זה נשמע כמו כת', prevDone: [], prevReadiness: '' }), true, 'suspicion is answered with facts');
+  eq(pitchAllowed({ turns: 1, lastUser: 'זה יקר', prevDone: [], prevReadiness: '' }), true, 'price objection');
+  eq(pitchAllowed({ turns: 1, lastUser: 'יום עמוס מדי', prevDone: [], prevReadiness: '' }), false, 'plain pain');
+  eq(neutralize('אני לא יכול לומר כאן מה המחיר'), 'אי אפשר לומר כאן מה המחיר', 'I cannot');
+  if (!styleFix('א. ב. ג. ד. ה. ו. ז.')) throw new Error('long reply');
+});
