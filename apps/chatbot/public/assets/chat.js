@@ -6,7 +6,7 @@
    Content: { greeting, defaultAd, ads: { <code>: { ad, female: [message x5], male: [message x5], both: [message x5] } } }, where a message is
    { say, options: [{ label, reply }] x3 } and the last one has { label, url, action? } options (url is the link; action is the older way and only the fallback).
    It is read from the database (the published version, through the chat function) and falls back to the file of the repo when the function does not answer.
-   Edited in the editor at /admin/. The only measurement is the Facebook pixel. */
+   Edited in the editor at /admin/. Taps are recorded only for visits from a Meta ad (fbclid or the Facebook/Instagram in-app browser). */
 (function () {
   'use strict';
   const SB = window.SUPABASE;
@@ -46,7 +46,10 @@
     const g = ad[gp] ? gp : ad.both ? 'both' : ad.female ? 'female' : 'male';
     const steps = ad[g];
 
-    const record = (kind, step, opt, label) => { try { fetch(ENDPOINT, { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json', apikey: SB.anonKey, Authorization: 'Bearer ' + SB.anonKey }, body: JSON.stringify({ business, mode: 'click', ad: cid || 'default', gender: g, kind, step, opt, label: label || '', visit }) }).catch(() => {}); } catch (e) {} };
+    // Only a visit that came from a Meta ad is recorded: a click id from the ad in the address, or the in-app browser of Facebook or Instagram.
+    // Our own tests, the editor's preview and links shared elsewhere leave no trace in the statistics.
+    const fromMeta = q.has('fbclid') || /FBAN|FBAV|FB_IAB|FBIOS|Instagram/i.test(navigator.userAgent || '');
+    const record = (kind, step, opt, label) => { if (!fromMeta) return; try { fetch(ENDPOINT, { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json', apikey: SB.anonKey, Authorization: 'Bearer ' + SB.anonKey }, body: JSON.stringify({ business, mode: 'click', ad: cid || 'default', gender: g, kind, step, opt, label: label || '', visit }) }).catch(() => {}); } catch (e) {} };
     const SKEY = KEY + ':script2:' + (cid || 'default') + ':' + g;
     // the test page loads the chat with ?fresh=<time>: that always starts the conversation from the beginning
     if (q.get('fresh')) { try { sessionStorage.removeItem(SKEY); } catch (e) {} }
