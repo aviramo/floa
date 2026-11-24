@@ -244,7 +244,7 @@ Deno.serve(async (req) => {
   // Priority one, second net: the visitor's last message shows severe distress. The model is told too, and its reply stands.
   const lastUser = [...clean].reverse().find((m) => m.role === 'user')?.content ?? '';
   const distress = distressIn(lastUser);
-  if (distress) system.push({ type: 'text', text: '## זוהתה מצוקה קשה בהודעה האחרונה\nזה קודם לכל דבר אחר: action=safety. עונים באמפתיה ובקצרה, ער"ן 1201 ושיחה עם המנחים, בלי מפגש, מחיר, הרשמה או שאלות על המודעה.' });
+  if (distress) system.push({ type: 'text', text: '## זוהתה מצוקה קשה בהודעה האחרונה\nזה קודם לכל דבר אחר: action=safety. עונים באמפתיה ובקצרה, ומפנים אך ורק לשיחה עכשיו עם הדר ואופיר (בני אדם אמיתיים). לא מזכירים ער"ן, קו חם או איש מקצוע. בלי מפגש, מחיר, הרשמה או שאלות על המודעה.' });
 
   let raw = await claude(apiKey, model, system, merged, 1400);
   if (raw === null) raw = await claude(apiKey, model, system, merged, 1400);   // one more try: an upstream hiccup must not end a conversation
@@ -281,7 +281,7 @@ Deno.serve(async (req) => {
   if (b.flowPrompt && cta) next.action = cta === 'whatsapp' ? 'guide' : cta;
   if (next.action === 'safety' || next.action === 'end') { cta = null; chips = []; }
   // Someone is never left with only a text box: when the model sent no quick replies, neutral ones are offered
-  if (next.action === 'safety') { cta = 'whatsapp'; chips = ['אני אתקשר עכשיו', 'יש לי מישהו לדבר איתו', 'אני לא בסכנה, רק קשה לי']; }   // in a crisis too, answers to tap and not only a text box
+  if (next.action === 'safety') { cta = 'whatsapp'; chips = ['אני רוצה לדבר עם הדר ואופיר עכשיו', 'יש לי מישהו לדבר איתו', 'אני לא בסכנה, רק קשה לי']; }   // in a crisis too, answers to tap and not only a text box
   // Registrations are the point of the paid ad: the page offers the evening from the third message of the visitor, or at once when the reply itself
   // gives the date and the price, unless the visitor ended it or said no
   const putsTheEveningOnTheTable = /\d{1,2}\.\d{1,2}/.test(reply) && /(בשעה|ש"ח)/.test(reply);

@@ -331,11 +331,11 @@ Deno.test('round eleven: never comment on a short answer', () => {
 
 Deno.test('round eleven: no hotline for silence or a bare question mark', () => {
   if (!styleFix('אני כאן. אם קשה, אפשר להתקשר לער"ן 1201', '?')) throw new Error('missed');
-  if (styleFix('אני כאן. אפשר להתקשר לער"ן 1201 בכל שעה', 'אני רוצה למות')) throw new Error('blocked a real crisis');
+  if (!styleFix('אני כאן. אפשר להתקשר לער"ן 1201 בכל שעה', 'אני רוצה למות')) throw new Error('a hotline is blocked even in a crisis');
 });
 
 Deno.test('round eleven: hotline stays allowed in a conversation that had real distress earlier', () => {
-  if (styleFix('אם אתה בסכנה התקשר ל-101', 'לא יודע', 'אני לא רוצה לחיות יותר לא יודע')) throw new Error('blocked a hotline inside an ongoing crisis');
+  if (!styleFix('אם אתה בסכנה התקשר ל-101', 'לא יודע', 'אני לא רוצה לחיות יותר לא יודע')) throw new Error('a hotline is blocked in an ongoing crisis too');
 });
 
 Deno.test('round eleven: no price or schedule in chat, no generic chips, no bot-voice chips', () => {
@@ -384,5 +384,5 @@ Deno.test('round eleven: a question that asks whether they want to share is sent
 });
 Deno.test('round eleven: the hard rules sit in one titled set', async () => {
   const { FLOW_PROMPT } = await import('./businesses/harpatka/flow.ts');
-  for (const needle of ['כללים שאסור לעבור עליהם', 'שאלה אחת בלבד בכל הודעה', 'לא ממציאים דבר על חיי האדם', 'תאריך, שעה, מקום ומחיר לא נמסרים', 'ער"ן 1201']) if (!FLOW_PROMPT.includes(needle)) throw new Error('missing ' + needle);
+  for (const needle of ['כללים שאסור לעבור עליהם', 'שאלה אחת בלבד בכל הודעה', 'לא ממציאים דבר על חיי האדם', 'תאריך, שעה, מקום ומחיר לא נמסרים', 'הדר ואופיר']) if (!FLOW_PROMPT.includes(needle)) throw new Error('missing ' + needle);
 });
