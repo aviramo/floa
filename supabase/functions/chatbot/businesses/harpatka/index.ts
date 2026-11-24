@@ -96,7 +96,6 @@ export const harpatka: JourneyBusiness<MeetingInfo> = {
   adPain: AD_PAIN,
   softTopic: SOFT_TOPIC,
   painBriefs: PAIN_BRIEFS,
-  bioBrief: BIODANZA_BRIEF,
   loadFacts: loadMeeting,
   factsBlock,
   rpc: { usage: 'harpatka_chat_usage_hit' },

@@ -104,11 +104,12 @@ export function sessionFacts(b: JourneyBusiness<any>, ctx: CampaignContext, fact
   const parts: string[] = [addressBlock(address)];
   if (adText) parts.push(`## המודעה שהאדם ראה\nהמודעה שאליה לחץ היא: "${adText}"\nהשיחה כבר נפתחה בהתייחסות אליה, ולכן לא מצטטים אותה שוב.`);
   const hyp = ctx.hypothesis;
+  const hasBrief = !!(ctx as any).brief;
   if (ctx.profile) {
     parts.push(`## מחקר על הכאב הזה ועל הקהל של המודעה (השערות לבדיקה, לא עובדות על האדם${ctx.profile.evidence ? `; רמת ראיות ${ctx.profile.evidence}` : ''})\n${ctx.profile.title}\n${ctx.profile.summary ?? JSON.stringify(ctx.profile.profile)}`);
-  } else if (hyp) {
+  } else if (hyp && !hasBrief) {
     parts.push(`## השערה על הכאב שמאחורי המודעה (לבדיקה מול מה שהאדם כותב, לא לומר לו ולא לנחש בשמו)\n${hyp}`);
-  } else {
+  } else if (!hasBrief) {
     parts.push('## מחקר\nאין פרופיל מחקר תואם למודעה ולפילוח הזה. אל תמציאו ידע על קבוצה או על כאב: שוחחו על מה שהאדם אומר.');
   }
   const brief = (ctx as any).brief as string | undefined;
