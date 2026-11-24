@@ -53,7 +53,8 @@
     const save = () => { try { sessionStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
     const scroll = () => { log.scrollTo({ top: log.scrollHeight, behavior: reduce ? 'auto' : 'smooth' }); };
     const chipBox = root.querySelector('#chChips');
-    const clearExtras = () => { log.querySelectorAll('.ch-ctas, .ch-retry').forEach((n) => n.remove()); chipBox.textContent = ''; };
+    let chipSeq = 0;
+    const clearExtras = () => { chipSeq++; log.querySelectorAll('.ch-ctas, .ch-retry').forEach((n) => n.remove()); chipBox.textContent = ''; };
 
     function bubble(role, text) { const b = el('div', 'ch-msg ' + (role === 'user' ? 'me' : 'bot'), text); log.appendChild(b); return b; }
     // תשובה של כמה פסקאות מוצגת כהודעות נפרדות, כמו בשיחה אמיתית (עד שלוש; הפסקאות העודפות מצטרפות לאחרונה)
@@ -101,6 +102,29 @@
       const am = a >= 0 ? st.msgs[a] : null;
       return { shown: am && Array.isArray(am.chips) ? am.chips : [], clicked: st.msgs[u].viaChip ? st.msgs[u].content : '', offer: am && am.offer ? { stage: am.offer, text: am.content } : null };
     }
+    // The quick replies are the second step of a turn: they are made from the message exactly as it is shown, and appear when ready.
+    // If the visitor already moved on (typed, tapped, sent), a late answer is dropped.
+    async function loadChips(fallback) {
+      const seq = ++chipSeq;
+      let chips = [];
+      try {
+        const r = await fetch(ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: SB.anonKey, Authorization: 'Bearer ' + SB.anonKey },
+          body: JSON.stringify({ business, mode: 'chips', pain: cid, segment, device, session: st.session, messages: st.msgs.map((m) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content })) }),
+        });
+        const d = await r.json().catch(() => ({}));
+        if (r.ok && Array.isArray(d.chips)) chips = d.chips.map(String).slice(0, 2);
+      } catch (e) {}
+      if (seq !== chipSeq) return;
+      if (!chips.length && fallback) chips = fallback.slice(0, 2);
+      const last = st.msgs[st.msgs.length - 1];
+      if (!last || last.role !== 'assistant') return;
+      last.chips = chips; save();
+      chipBox.textContent = '';
+      chips.forEach((t) => { const b = el('button', 'ch-chip', t); b.type = 'button'; b.addEventListener('click', () => submit(t, true)); chipBox.appendChild(b); });
+      scroll();
+    }
     async function ask() {
       const t = typing(), t0 = Date.now();
       try {
@@ -118,8 +142,9 @@
         const ps = parts(d.reply);
         who(); bubble('bot', ps[0]);
         for (const x of ps.slice(1)) { const t2 = typing(); await wait(2000); t2.remove(); bubble('bot', x); scroll(); }
-        st.msgs.push({ role: 'assistant', content: d.reply, chips: d.chips || [], cta: (d.ctas && d.ctas.length ? d.ctas : d.cta) || null, offer: d.offer || null }); save();
+        st.msgs.push({ role: 'assistant', content: d.reply, chips: d.chips || [], noChips: !d.chipsPending && !(d.chips && d.chips.length), cta: (d.ctas && d.ctas.length ? d.ctas : d.cta) || null, offer: d.offer || null }); save();
         extras(d.chips, d.ctas && d.ctas.length ? d.ctas : d.cta);
+        if (d.chipsPending) loadChips();
       } catch (e) {
         t.remove();
         bubble('bot', cfg.errorText);
@@ -156,7 +181,7 @@
         log.innerHTML = '';
         if (op && op.state) st.state = op.state;
         const msgs = op && op.messages.length ? op.messages : openerInfo.opening;
-        const chips = op && op.messages.length ? (op.chips || []) : openerInfo.chips;   // the server's chips answer its own question; the fixed ones only when the server is down
+        const chips = op && op.messages.length ? [] : openerInfo.chips;   // the server's opening has its quick replies made in the second step; the fixed ones only when the server is down
         msgs.forEach((m, i) => { st.msgs.push({ role: 'assistant', content: m, opener: true, chips: i === msgs.length - 1 ? chips : [] }); });
         track('ChatOpen', { ad: cid, source: op ? 'agent' : 'fallback' });
       }
@@ -167,7 +192,7 @@
         if (m.role === 'assistant') parts(m.content).forEach((x) => bubble('assistant', x)); else bubble(m.role, m.content);
       });
       const last = st.msgs[st.msgs.length - 1];
-      if (last.role === 'assistant') extras(last.chips, last.cta);
+      if (last.role === 'assistant') { extras(last.chips, last.cta); if (!(last.chips && last.chips.length) && !last.noChips) loadChips(last.opener ? openerInfo.chips : null); }
       else { setBusy(true); await ask(); }
       log.scrollTop = log.scrollHeight;
     })();
