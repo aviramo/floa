@@ -1,6 +1,6 @@
 import fs from "fs"; import { launch } from "./lib.mjs";
 const W = +process.argv[2] || 1300; const b = await launch(W, 850);
-const probe = `JSON.stringify([].map.call(document.querySelectorAll("[data-vrow]"),function(r){var q=r.getBoundingClientRect(); if(!q.width) return null; function x(s){var e=r.querySelector(s); if(!e) return "-"; var k=e.getBoundingClientRect(); return Math.round(k.left-q.left)+"+"+Math.round(k.width)} return (r.closest("#hl")?"home":"liked")+" h="+Math.round(q.height)+" heart "+x("[data-likev], .rrow__trail")+" main "+x(".rrow__main")+" cnt "+x(".bio-vcnt")+" menu "+x(".bio-vm")}).filter(Boolean))`;
+const probe = `JSON.stringify([].map.call(document.querySelectorAll("[data-vrow]"),function(r){var q=r.getBoundingClientRect(); if(!q.width) return null; function x(s){var e=r.querySelector(s); if(!e) return "-"; var k=e.getBoundingClientRect(); return Math.round(k.left-q.left)+"+"+Math.round(k.width)} return (r.closest("#hl")?"home":"liked")+" h="+Math.round(q.height)+" heart "+x("[data-likev], .rrow__trail")+" main "+x(".rrow__main")+" cnt "+x(".bio-vcnt")+" menu "+x("[data-vm]")}).filter(Boolean))`;
 try {
   await b.send("Page.enable"); await b.send("Page.addScriptToEvaluateOnNewDocument", { source: fs.readFileSync(new URL("./stub.js", import.meta.url), "utf8") });
   await b.send("Runtime.enable"); await b.send("Emulation.setDeviceMetricsOverride", { width: W, height: 850, deviceScaleFactor: 1, mobile: W < 700 });

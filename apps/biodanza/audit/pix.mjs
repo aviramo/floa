@@ -4,9 +4,9 @@ const tag = process.argv[2] || "x";
 for (const W of [430, 1300]) {
   const b = await launch(W, 850);
   try {
-    await b.send("Page.enable"); await b.send("Page.addScriptToEvaluateOnNewDocument", { source: fs.readFileSync(new URL("./stub.js", import.meta.url), "utf8") });
+    await b.send("Page.enable"); await b.send("Page.addScriptToEvaluateOnNewDocument", { source: "try{localStorage.clear()}catch(e){};\n" + fs.readFileSync(new URL("./stub.js", import.meta.url), "utf8") });
     await b.send("Runtime.enable"); await b.send("Emulation.setDeviceMetricsOverride", { width: W, height: 850, deviceScaleFactor: 1, mobile: W < 700 });
-    await b.send("Page.navigate", { url: "http://localhost:5191/biodanza/" }); await b.sleep(3000);
+    await b.send("Page.navigate", { url: "" + (process.env.BIO_BASE || "http://localhost:5191") + "/biodanza/" }); await b.sleep(3000);
     const c = (js) => b.ev(`(function(){var e=${js}; if(e) e.click()})()`);
     const sh = async (n) => { await b.sleep(1500); await b.ev("document.querySelectorAll('*').forEach(function(e){e.style.caretColor='transparent'})"); await b.shot(`C:/tmp/bio/pix_${tag}_${W}_${n}.png`); };
     await sh("home");

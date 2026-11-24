@@ -34,6 +34,7 @@
   --icon: 20px;  --icon-w: 2;             /* the existing icon set, ONE stroke width at every size */
   --busy-tint: 30%;  --busy-tint-still: 14%;   /* law 7: the strength of the wait's shimmer (the moving band, and the still tint under reduced motion), of the primary colour */
   --w: 400px;               /* THE popup width: dialogs, menus, anchored popups, side drawers (a phone sheet is the full width) */
+  --card-min: 21rem;        /* the narrowest a card of a card grid may be: the grid makes as many columns as fit */
 
   /* ---- shape ---- */
   --r: 12px;  --r-round: 999px;   /* ONE radius for everything that is not fully round */
@@ -216,9 +217,24 @@ button.bio-c__tx { flex: 0 1 auto; margin: 0; padding: 0; border: 0; background:
 /* ============================ ADD BUTTON (FAB): one per list screen, physical LEFT, bottom ============================ */
 /* LARGE ICON (law 11): ONE object type for every large action (the add button, the player's play/pause): a filled circle --fab with a --icon glyph centred, role colours; the touch area is the whole circle.
    .rfab is the same object, placed (fixed) over the corner of a list screen; any other large action in a row of controls uses .ricon-lg and is placed by its parent's gap. */
+/* THE ICON (type: icon): a drawing, not pressable. --icon square, the svg fills it. --primary / --muted when the icon marks a role. */
+.ricon { display: grid; place-items: center; flex: none; width: var(--icon); height: var(--icon); }
+.ricon > svg { display: block; width: 100%; height: 100%; stroke-width: var(--icon-w); }
+.ricon--primary { color: var(--primary); }   .ricon--muted { color: var(--text-muted); }
 .ricon-lg, .rfab { position: relative; display: grid; place-items: center; flex: none; box-sizing: border-box; width: var(--fab); height: var(--fab); padding: 0; border: 1px solid var(--primary); border-radius: var(--r-round); background: var(--primary); color: var(--on-primary);
   box-shadow: var(--shadow-lg); cursor: pointer; transition: transform var(--t-base) var(--ease), opacity var(--t-base) var(--ease); }
 .rfab { position: fixed; left: max(var(--gap), var(--inset-l)); bottom: calc(var(--gap) + var(--inset-b)); z-index: var(--z-sticky); }
+/* THE CARD GRID: cards side by side, as many columns as fit (--card-min), --gap between. --pad when the grid itself is the padded level. */
+.rgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(var(--card-min), 100%), 1fr)); gap: var(--gap); align-items: stretch; }
+.rgrid--pad { padding: var(--gap); }
+/* THE SLIDER (type: range): a round thumb of --icon on a --gap-tight track, filled up to --p in --c. --c is the filled colour (role colour), --track the empty part. One skin for the song bar, the volume and every other range input. */
+input[type=range].rrange { -webkit-appearance: none; appearance: none; box-sizing: border-box; background: transparent; height: var(--icon); margin: 0; padding: 0; cursor: pointer; direction: ltr; touch-action: none; --p: 0%; --c: var(--primary); }
+input[type=range].rrange::-webkit-slider-runnable-track { height: var(--gap-tight); border-radius: calc(var(--gap-tight) / 2); background: linear-gradient(to right, var(--c) var(--p), var(--track, var(--surface)) var(--p)); }
+input[type=range].rrange::-webkit-slider-thumb { -webkit-appearance: none; width: var(--icon); height: var(--icon); margin-top: calc((var(--gap-tight) - var(--icon)) / 2); border: 0; border-radius: var(--r-round); background: var(--c); }
+input[type=range].rrange::-moz-range-track { height: var(--gap-tight); border-radius: calc(var(--gap-tight) / 2); background: var(--track, var(--surface)); }
+input[type=range].rrange::-moz-range-progress { height: var(--gap-tight); border-radius: calc(var(--gap-tight) / 2); background: var(--c); }
+input[type=range].rrange::-moz-range-thumb { width: var(--icon); height: var(--icon); border: 0; border-radius: var(--r-round); background: var(--c); }
+input[type=range].rrange:focus, input[type=range].rrange:focus-visible { outline: none; }
 .ricon-lg > svg, .rfab > svg { width: var(--icon-lg); height: var(--icon-lg); stroke-width: var(--icon-w); }
 .ricon-lg:active, .rfab:active { transform: translateY(1px); }   .ricon-lg:focus-visible, .rfab:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 .ricon-lg:disabled, .ricon-lg[aria-disabled="true"], .rfab:disabled, .rfab[aria-disabled="true"] { opacity: .45; cursor: default; }   .rfab[hidden] { display: none; }
