@@ -207,6 +207,7 @@ Deno.serve(async (req) => {
   if (address !== 'plural' && pluralAddress(parsed.reply)) replyFixes.push({ type: 'text', text: genderFix(address) });
   if (!distress && (putsEveningOnTable(parsed.reply) || mentionsEvening(parsed.reply)) && !pitchAllowed({ turns, lastUser, prevDone: prev.done, prevReadiness: prev.readiness })) replyFixes.push({ type: 'text', text: earlyPitchFix });
   if (address !== 'plural' && wrongSingular(parsed.reply, address)) replyFixes.push({ type: 'text', text: genderFix(address) });
+  if (!parsed.reply) replyFixes.push({ type: 'text', text: '## חסר טקסט\nהתשובה הקודמת הייתה רק סימונים. כתבו הודעה קצרה לאדם לפני הסימונים.' });
   { const sf = styleFix(parsed.reply); if (sf) replyFixes.push({ type: 'text', text: sf }); }
   if (replyFixes.length) {
     const raw2 = await claude(apiKey, model, [...system, ...replyFixes], merged, 1400);
@@ -218,7 +219,7 @@ Deno.serve(async (req) => {
   let replyText = parsed.reply;
   if (!distress && !pitchAllowed({ turns, lastUser, prevDone: prev.done, prevReadiness: prev.readiness }) && mentionsEvening(replyText)) replyText = stripMeeting(replyText);   // told once already
   const reply = fixAddress(stripGreeting(neutralize(replyText)), address);
-  if (!reply) return json(b, origin, { error: 'empty' }, 502);
+  if (!reply) return json(b, origin, { reply: 'מובן. אם בא לך להמשיך, אני כאן', chips: ['קצת עוד', 'איך זה נראה בפועל', 'לא כרגע'], cta: null, ctas: [], state: prev, hasFacts: !!b.siteOnly, hasMeeting: false });   // the model sent only marks twice: a short human line, never an error page
   // A question that offers a choice ("A or B") is not answered by a bare yes or no
   if (/\sאו\s/.test(lastSentence(reply))) chips = chips.filter((c) => !/^(כן|לא)(,.*)?$/.test(c.trim()));
 

@@ -298,3 +298,11 @@ Deno.test('round five: "ומתי" is a question about the meeting, "שאני מ�
   eq(asksDetails('מתי בפעם האחרונה הרגשתי חופשי'), false, 'a memory is not a question');
   eq(neutralize('אני רוצה לוודא שאני מבינה נכון'), 'אני רוצה לוודא שהבנתי נכון', 'understand');
 });
+
+Deno.test('round six: masculine verb forms to a woman and the reverse, "מה שהביא"', () => {
+  eq(wrongSingular('אם תרצה, אפשר לדבר', 'female'), true, 'תרצה to a woman');
+  eq(wrongSingular('אם תרצי, אפשר לדבר', 'female'), false, 'תרצי to a woman');
+  eq(wrongSingular('ספרי לי עוד', 'male'), true, 'ספרי to a man');
+  eq(wrongSingular('ספר לי עוד', 'male'), false, 'ספר to a man');
+  if (!styleFix('אם מה שהביא אותך לכאן הוא סקרנות')) throw new Error('what brought you with ש');
+});
