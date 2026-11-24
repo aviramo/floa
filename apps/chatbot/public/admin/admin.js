@@ -21,7 +21,38 @@
     });
   }
   function status(text, cls) { var s = $('status'); s.textContent = text || ''; s.className = 'status' + (cls ? ' ' + cls : ''); }
-  function dirty(v) { S.dirty = v; if (v) status('יש שינויים שלא נשמרו'); }
+  // Undo: one step back each time, for everything on the page (text, options, ads, versions). Typing is grouped into one step per pause.
+  var HIST = [], CUR = '', CURV = { ad: '', g: 'female' }, tmr = null;
+  function updUndo() { var b = $('undo'); if (b) { b.disabled = !HIST.length; b.textContent = 'בטל' + (HIST.length ? ' (' + HIST.length + ')' : ''); } }
+  function commitNow() {
+    clearTimeout(tmr); tmr = null;
+    if (!S.content) return;
+    var now = JSON.stringify(S.content);
+    if (CUR && now !== CUR) { HIST.push({ c: CUR, ad: CURV.ad, g: CURV.g }); if (HIST.length > 200) HIST.shift(); }
+    if (now !== CUR) { CUR = now; }
+    CURV = { ad: S.ad, g: S.gender }; updUndo();
+  }
+  function commitSoon(now) { if (now) commitNow(); else { clearTimeout(tmr); tmr = setTimeout(commitNow, 700); } }
+  function undo() {
+    commitNow();
+    var h = HIST.pop(); if (!h) return;
+    S.content = JSON.parse(h.c); CUR = h.c; CURV = { ad: h.ad, g: h.g };
+    S.ad = S.content.ads[h.ad] ? h.ad : Object.keys(S.content.ads)[0]; S.gender = h.g;
+    render(); S.dirty = true; updUndo();
+    status('בוטל. נשארו ' + HIST.length + ' צעדים אחורה');
+  }
+  document.addEventListener('keydown', function (e) {
+    var t = e.target && e.target.tagName;
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'z' || e.key === 'ז') && t !== 'INPUT' && t !== 'TEXTAREA') { e.preventDefault(); undo(); }
+  });
+  // the only confirmation in the editor: deleting an ad. Closing the window (outside, Esc) cancels.
+  function askDelete(text, ok) {
+    var d = $('dlg'); $('dlgMsg').textContent = text;
+    $('dlgOk').onclick = function () { d.close(); ok(); };
+    d.onclick = function (e) { if (e.target === d) d.close(); };
+    d.showModal();
+  }
+  function dirty(v, now) { S.dirty = v; if (v) { status('יש שינויים שלא נשמרו'); commitSoon(now); } }
   window.addEventListener('beforeunload', function (e) { if (S.dirty) { e.preventDefault(); e.returnValue = ''; } });
 
   // soft warnings only: the rules of the texts that reach the visitor (no dashes, no special characters, no full stop at the end)
@@ -80,7 +111,7 @@
     if (!list) {
       var em = el('section', 'card empty'); em.appendChild(el('p', '', 'אין עדיין גרסה של ' + GN[S.gender] + ' במודעה הזאת.'));
       var mk = el('button', 'btn', 'צור אותה כעותק של ' + (firstOther() ? GN[firstOther()] : '')); mk.type = 'button';
-      mk.addEventListener('click', function () { var o = firstOther(); if (!o) return; cur[S.gender] = JSON.parse(JSON.stringify(cur[o])); render(); dirty(true); });
+      mk.addEventListener('click', function () { var o = firstOther(); if (!o) return; cur[S.gender] = JSON.parse(JSON.stringify(cur[o])); render(); dirty(true, true); });
       if (firstOther()) em.appendChild(mk);
       box.appendChild(em); return;
     }
@@ -142,7 +173,8 @@
       if (!r.ok) { status('לא נמצא תוכן', 'err'); return; }
       var d = r.d.content;
       if (!d || !d.ads) { status('הגרסה הזאת בפורמט ישן ואי אפשר לערוך אותה כאן', 'err'); return; }
-      S.content = d; S.version = r.d.version; S.published = r.d.published;
+      if (S.content) { commitNow(); HIST.push({ c: CUR, ad: CURV.ad, g: CURV.g }); }
+      S.content = d; S.version = r.d.version; S.published = r.d.published; CUR = JSON.stringify(d); CURV = { ad: S.ad, g: S.gender }; updUndo();
       if (!d.ads[S.ad]) S.ad = Object.keys(d.ads)[0];
       render(); dirty(false); status('נטענה גרסה ' + r.d.version + (r.d.published ? ' (מפורסמת)' : ''));
     });
@@ -163,10 +195,9 @@
   }
   function copyOther() {
     var other = firstOther(); if (!other) return;
-    if (!confirm('להחליף את כל ההודעות של ' + GN[S.gender] + ' במודעה הזאת בעותק של ' + GN[other] + '?')) return;
     var a = S.content.ads[S.ad];
     a[S.gender] = JSON.parse(JSON.stringify(a[other]));
-    render(); dirty(true);
+    render(); dirty(true, true);
   }
 
   function start() {
@@ -174,6 +205,7 @@
     Array.prototype.forEach.call($('genders').children, function (b) { b.addEventListener('click', function () { S.gender = b.getAttribute('data-g'); render(); }); });
     $('save').addEventListener('click', save);
     $('copyOther').addEventListener('click', copyOther);
+    $('undo').addEventListener('click', undo);
     $('adq').addEventListener('input', drawAds);
     $('adq').addEventListener('keydown', function (e) { if (e.key === 'Enter') { var f = $('adlist').querySelector('.adi'); if (f) f.click(); } });
     $('expandAll').addEventListener('click', function () { document.querySelectorAll('#steps details').forEach(function (d) { d.open = true; }); });
@@ -192,22 +224,24 @@
       if (ads[v]) { status('כבר יש מודעה עם הקוד הזה', 'err'); $('adcode').value = S.ad; return; }
       var next = {}; Object.keys(ads).forEach(function (k) { next[k === S.ad ? v : k] = ads[k]; });
       if (S.content.defaultAd === S.ad) S.content.defaultAd = v;
-      S.content.ads = next; S.ad = v; render(); dirty(true);
+      S.content.ads = next; S.ad = v; render(); dirty(true, true);
     });
     $('newAd').addEventListener('click', function () {
       var v = (prompt('קוד למודעה החדשה (אותיות קטנות באנגלית)') || '').trim();
       if (!v) return;
       if (!KEYRE.test(v) || S.content.ads[v]) { status('קוד לא תקין או שכבר קיים', 'err'); return; }
       var src = JSON.parse(JSON.stringify(S.content.ads[S.ad])); src.ad = '';
-      S.content.ads[v] = src; S.ad = v; render(); dirty(true);
+      S.content.ads[v] = src; S.ad = v; render(); dirty(true, true);
     });
     $('delAd').addEventListener('click', function () {
       var ks = Object.keys(S.content.ads);
       if (ks.length < 2) { status('אי אפשר למחוק את המודעה האחרונה', 'err'); return; }
-      if (!confirm('למחוק את המודעה ' + S.ad + ' עם כל ההודעות שלה? (אפשר להחזיר גרסה קודמת)')) return;
-      delete S.content.ads[S.ad];
-      if (S.content.defaultAd === S.ad) S.content.defaultAd = Object.keys(S.content.ads)[0];
-      S.ad = Object.keys(S.content.ads)[0]; render(); dirty(true);
+      askDelete('למחוק את המודעה ' + S.ad + ' עם כל ההודעות שלה? אפשר לבטל עם "בטל"', function () {
+        commitNow();
+        delete S.content.ads[S.ad];
+        if (S.content.defaultAd === S.ad) S.content.defaultAd = Object.keys(S.content.ads)[0];
+        S.ad = Object.keys(S.content.ads)[0]; render(); dirty(true, true);
+      });
     });
     if (!AUTH.signedIn()) { $('who').textContent = ''; return; }
     $('who').textContent = AUTH.email();

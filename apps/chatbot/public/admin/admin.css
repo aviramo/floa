@@ -75,3 +75,7 @@ details.acc > summary:hover { background: #fbf6ee; border-radius: var(--r); }
 .adi .ttl { font-size: .72rem; opacity: .7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .filters { top: var(--toph, 40px); }
 .settings { grid-template-columns: 1fr; }
+
+.dlg { border: 1px solid var(--line2); border-radius: var(--r); padding: 1rem 1.2rem; background: var(--paper); color: var(--ink); box-shadow: 0 10px 40px rgba(42, 33, 27, .3); max-width: 24rem; }
+.dlg::backdrop { background: rgba(42, 33, 27, .45); }
+.dlg p { margin: 0 0 .8rem; font-weight: 600; }
