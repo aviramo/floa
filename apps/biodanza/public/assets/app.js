@@ -599,7 +599,7 @@
       var who = nmEl.dataset.who, ttl = loaded ? curTitle : (last && last.t) || "", art = loaded ? curArtist : (last && last.a) || "", eid = nmEl.getAttribute("data-edit");
       if (!ttl && !art) return;
       var acb = dock.querySelector("[data-addcur]"), canAdd = !!acb && !acb.hidden, addTo = canAdd ? ((acb.querySelector("[data-addcur-label]") || {}).textContent || "") : "";   /* a phone: adding the song that plays is here, not in the player */
-      var headH = '<div class="rmenu__head"><div dir="auto" style="font:var(--fw-bold) var(--fs-m)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(ttl) + '</div>' + (art ? '<div dir="auto" style="margin-top:0;color:var(--text-muted);font:var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(art) + '</div>' : '') + '</div>';
+      var headH = '<div class="rmenu__head"><div dir="auto" style="font:var(--fw-bold) var(--fs-m)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(ttl) + '</div>' + (art ? '<div dir="auto" style="margin-top:0;color:var(--text-muted);font:var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(art) + '</div>' : '') + songTimeHtml() + '</div>';
       if (wide()) {   /* a computer: a menu that comes out of the name, upwards */
         var openMenu = function (sn) {
         var mi = (who ? [{ label: simLabel(sn), ghost: true, disabled: sn === 0, fn: function () { if (sn !== 0) similarToPlaying(who); } }] : []).concat(eid ? [{ label: "עריכת שם ומבצע", fn: function () { editFromDock(); } }] : []).concat(canAdd ? [{ label: "הוספה", primary: true, fn: function () { acb.click(); } }] : []);
@@ -611,7 +611,7 @@
       var idlg = document.getElementById("songInfoDlg");
       if (!idlg) { idlg = document.createElement("dialog"); idlg.id = "songInfoDlg"; document.body.appendChild(idlg); }
       RosterSheet.render(idlg, { title: "המוסיקה שמתנגנת", from: "bottom", size: "s",
-        body: '<div class="pad" style="gap:0"><div dir="auto" style="font:var(--fw-bold) var(--fs-l)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(ttl) + '</div>' + (art ? '<div dir="auto" style="margin-top:0;color:var(--text-muted);font:var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(art) + '</div>' : '') + '</div>',
+        body: '<div class="pad" style="gap:0"><div dir="auto" style="font:var(--fw-bold) var(--fs-l)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(ttl) + '</div>' + (art ? '<div dir="auto" style="margin-top:0;color:var(--text-muted);font:var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font);overflow-wrap:anywhere;text-align:start">' + esc(art) + '</div>' : '') + songTimeHtml() + '</div>',
         foot: (canAdd || eid || who) ? (who ? '<button class="rbtn rbtn--block" type="button" id="sisim">' + simLabel(null) + '</button>' : '') + (eid ? '<button class="rbtn rbtn--block" type="button" id="siedit">עריכת שם ומבצע</button>' : '') + (canAdd ? '<button class="rbtn rbtn--block rbtn--primary" type="button" id="siadd">הוספה</button>' : '') : undefined });
       if (who) api("/rest/v1/music?audio_object=eq." + encodeURIComponent(who) + "&select=id&limit=1").then(function (rows) {   /* the heart of the song that plays: loved or not, at the left of the header */
         var mr = rows && rows[0], hd = idlg.querySelector(".sheet-head"); if (!mr || !hd || hd.querySelector("[data-like]")) return;
@@ -969,6 +969,8 @@
     document.querySelectorAll("a[data-yt]").forEach(function (x) { x.style.color = ytColor(x.dataset.yt); });
   });
 
+  function songTimeHtml() { var n = window.__bioNow || {}; return n.d ? '<div data-songtime dir="auto" style="margin-top:var(--gap-tight);color:var(--text-muted);font:var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font);font-variant-numeric:tabular-nums;text-align:start">' + songTimeText() + '</div>' : ''; }
+  function songTimeText() { var n = window.__bioNow || {}; return clock(Math.floor(n.t || 0)) + ' מתוך ' + clock(Math.round(n.d || 0)); }
   function clock(sec) { return Math.floor(sec / 60) + ":" + ("0" + (sec % 60)).slice(-2); }
   /* poetics and guidance: this item's own text if the facilitator changed it, else the catalog's (the catalog itself is never touched) */
   function itemName(it) { return it.title || name(it.exercises || {}); }
@@ -1109,7 +1111,7 @@
     syncSt = { m: mode, t: text };
     if (!syncEl) {
       var st = document.createElement("style");
-      st.textContent = "@keyframes bioDl { 0% { transform: translateY(-3px); opacity: 0 } 40% { opacity: 1 } 100% { transform: translateY(4px); opacity: 0 } } .bio-sync { color: var(--danger) } .bio-sync[data-m=\"run\"] .bio-sync__a { animation: bioDl 1.1s ease-in infinite } .bio-sync[data-m=\"stop\"] { color: var(--danger) } @media (prefers-reduced-motion: reduce) { .bio-sync[data-m=\"run\"] .bio-sync__a { animation: none } }";
+      st.textContent = ".bio-dock [data-dockmore] { position: relative } .bio-dock .bio-sync { position: absolute; inset-inline: 0; bottom: 100%; margin-inline: auto; width: var(--icon); height: var(--icon); color: var(--on-primary); pointer-events: none; order: 0 } .bio-dock .bio-sync[data-m] { color: var(--on-primary) } .bio-dock .bio-sync svg { width: 100%; height: 100% } @keyframes bioDl { 0% { transform: translateY(-3px); opacity: 0 } 40% { opacity: 1 } 100% { transform: translateY(4px); opacity: 0 } } .bio-sync { color: var(--danger) } .bio-sync[data-m=\"run\"] .bio-sync__a { animation: bioDl 1.1s ease-in infinite } .bio-sync[data-m=\"stop\"] { color: var(--danger) } @media (prefers-reduced-motion: reduce) { .bio-sync[data-m=\"run\"] .bio-sync__a { animation: none } }";
       document.head.appendChild(st);
       syncEl = document.createElement("span"); syncEl.className = "rbtn__tail bio-sync"; syncEl.hidden = true;
     }
@@ -1119,12 +1121,10 @@
       : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18h16"/><g class="bio-sync__a"><path d="M12 5v9M8 10.5l4 4 4-4"/></g></svg>';
     syncPlace(document);
   }
-  function syncPlace(root) {
+  function syncPlace() {   /* the status of the download: a white mark above the three dots of the player, laid over so it takes no room and the bar of the player never changes width */
     if (!syncEl) return;
-    var h = (root || document).querySelector(".rhead"); if (!h) return;
-    var bs = h.querySelectorAll(":scope > button, :scope > .rgroup > button"), last = bs[bs.length - 1] || h.lastElementChild;   /* a mark at the upper right corner of the last button of the header (the three dots), not a button of its own */
-    if (!last || last.contains(syncEl)) return;
-    last.appendChild(syncEl);   /* law 10: the status mark is the tail of that button (kit.css .rbtn__tail), not an element laid over it */
+    var d = document.querySelector(".bio-dock [data-dockmore]"); if (!d || d.contains(syncEl)) return;
+    d.appendChild(syncEl);
   }
   function show(html, wire, pane) { if (!wide() && pane === "d") return itemSheet(html, wire);   /* narrow: the exercise is a popup from the bottom, not a page */
     var isPrev = html.indexOf('data-act="doswap"') >= 0;   /* a catalog exercise (it has the add button) is the one thing on the left that stays lit while the catalog is open */
@@ -1621,10 +1621,8 @@
     }
     paint();
     var sh = document.createElement("div"); sh.style.cssText = "position:fixed;inset:0;z-index:var(--z-menu);background:transparent;touch-action:none";   /* an open menu blocks everything outside it: a touch there only closes the menu */
-    document.body.appendChild(sh); document.body.appendChild(m);
-    /* a popup (a modal dialog) is in the browser's top layer, above anything in the page: the menu and its shield go up there too, or they are drawn behind it */
-    [sh, m].forEach(function (n) { n.setAttribute("popover", "manual"); n.style.setProperty("pointer-events", "auto"); });
-    try { sh.showPopover(); m.showPopover(); } catch (x) { [sh, m].forEach(function (n) { n.removeAttribute("popover"); }); }   /* the shield first, the menu after it: the later one is the upper one */
+    /* a popup (a modal dialog) makes everything outside it inert and keeps its own layer above the page: the menu and its shield are put INSIDE the upper popup, or a tap on them falls through to what is under */
+    var hostDlg = [].slice.call(document.querySelectorAll("dialog[open]")).pop() || document.body; hostDlg.appendChild(sh); hostDlg.appendChild(m);
     sh.style.cssText += ";margin:0;padding:0;border:0;width:100%;height:100%;overflow:visible";
     m.style.setProperty("right", "auto"); m.style.setProperty("bottom", "auto"); m.style.setProperty("margin", "0");
     btn.setAttribute("aria-expanded", "true");   /* the button that opened the menu stays shown while it is open */
@@ -2903,7 +2901,7 @@
   }
   /* the time of a music card: the place in the song and its whole length, "1:23 / 3:40"; the player keeps it up to date (the bioaudio event) */
   document.addEventListener("bioaudio", function (ev) {
-    var d = ev.detail || {}; window.__bioNow = { name: d.name || "", t: d.t || 0, d: d.d || 0 };
+    var d = ev.detail || {}; window.__bioNow = { name: d.name || "", t: d.t || 0, d: d.d || 0 }; document.querySelectorAll("[data-songtime]").forEach(function (el) { el.textContent = songTimeText(); });
     window.__bioNow.playing = !!d.playing;
     document.querySelectorAll("[data-recv] .bio-card").forEach(function (c) {   /* in the start and end music the song that plays has the green frame */
       var pb = c.querySelector("[data-audio]"), on = !!d.playing && !!pb && pb.dataset.audio === d.name;
@@ -3216,7 +3214,7 @@
   function bleedCss(id) {
     var v = 'var(--bleed, var(--gap))', q = '#' + id;
     /* the body is as wide as the popup, its content keeps the title's side room, and a row pulls back out to the edges, so its background and stripe reach the popup's walls */
-    return '<style>' + q + ' .sheet { padding-inline: 0 } ' + q + ' .sheet-head, ' + q + ' .sheet-foot { padding-inline: var(--gap) } ' + q + ' .sheet-body { overflow-x: hidden; padding-inline: 0 } ' + q + ' .sheet-body > * { padding-inline: ' + v + ' } ' + q + ' #iscroll { padding-inline: 0 !important } ' +   /* the popup already pads the sides: the song cards and the fields of an exercise do not pad them again */
+    return '<style>' + q + ' .sheet { padding-inline: 0 } ' + q + ' .sheet-head, ' + q + ' .sheet-foot { padding-inline: var(--gap) } ' + q + ' .sheet-body { overflow-x: hidden; padding-inline: 0 } ' + q + ' .sheet-body > * { padding-inline: ' + v + ' } ' +   /* the popup already pads the sides: the song cards and the fields of an exercise do not pad them again */
       q + ' #ipg { padding-inline: 0 } ' + q + ' #iscroll { padding-inline: ' + v + ' } ' +   /* the exercise page's scroller is as wide as the popup and pads the sides itself: a scroller clips a shadow at its padding box, so the cards' shadow gets its room */
       q + ' .rrow { padding-inline: ' + v + ' } ' + q + ' .rrow[aria-current="true"] { background: var(--surface); box-shadow: inset 3px 0 0 var(--primary) }</style>';
   }
@@ -3536,7 +3534,7 @@
         ml.addEventListener("click", function (ev) {   /* the same as before: a tap on a card plays, the chip adds an exercise with no name and that song */
           if (ev.target.closest("[data-audio], a")) return;
           var bt = ev.target.closest("[data-sg]");
-          if (!bt) { var cd = ev.target.closest("[data-sgc]"), pb = cd && cd.querySelector("[data-audio]"), fx = cd && cd.querySelector("[data-sg]"); if (pb) pb.click(); if (fx && cd.getAttribute("aria-current") !== "true") fx.click(); return; }   /* a tap on a song: it plays, and its exercises open, as if the curve button of the card was pressed */
+          if (!bt) { var cd = ev.target.closest("[data-sgc]"), pb = cd && cd.querySelector("[data-audio]"), fx = cd && cd.querySelector("[data-sg]"); if (pb) pb.click(); if (fx && wide() && cd.getAttribute("aria-current") !== "true") fx.click(); return; }   /* a tap on a song: it plays; on a wide screen its exercises open beside it, as if the curve button was pressed; on a phone only the curve button opens them */
           var m = mById[bt.dataset.sg]; if (m) previewMusic(m);
         });
       }

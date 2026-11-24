@@ -50,3 +50,7 @@ dialog.rsheet .sheet:has(> .sheet-body > .rlist > .rrow) > .sheet-head { padding
 
 /* adjacent icon buttons stand --gap apart everywhere (law 3, by the owner): a header pair, a section group */
 .rgroup { gap: var(--gap); }
+
+/* the popup of a song's exercises: its rows and its card grids pad themselves (--gap each side), so the popup does not pad the sides a second time */
+#mpDlg .sheet { padding-inline: 0; }
+#mpDlg .sheet-head { padding-inline: var(--gap); }
