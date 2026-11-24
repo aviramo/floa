@@ -24,7 +24,7 @@
   function status(text, cls) { var s = $('status'); s.textContent = text || ''; s.className = 'status' + (cls ? ' ' + cls : ''); }
   // Undo: one step back each time, for everything on the page (text, options, ads, versions). Typing is grouped into one step per pause.
   var HIST = [], CUR = '', CURV = { ad: '', g: 'female' }, tmr = null;
-  function updUndo() { var b = $('undo'); if (b) { b.disabled = !HIST.length; b.textContent = 'בטל' + (HIST.length ? ' (' + HIST.length + ')' : ''); } }
+  function updUndo() { var b = $('undo'); if (b) { b.disabled = !HIST.length; b.setAttribute('data-n', HIST.length ? String(HIST.length) : ''); b.title = 'בטל צעד אחורה' + (HIST.length ? ' (' + HIST.length + ')' : ''); } }
   function commitNow() {
     clearTimeout(tmr); tmr = null;
     if (!S.content) return;
@@ -271,7 +271,7 @@
     $('undo').addEventListener('click', undo);
     $('refreshStats').addEventListener('click', function () { loadStats().then(function () { status('הנתונים עודכנו', 'ok'); }); });
     $('saveDraft').addEventListener('click', saveDraft);
-    $('adq').addEventListener('input', drawAds);
+    $('adq').addEventListener('input', function () { drawAds(); if ($('adq').value.trim()) { $('side').classList.add('open'); $('adToggle').setAttribute('aria-expanded', 'true'); } });
     $('adToggle').addEventListener('click', function () { var s = $('side'); s.classList.toggle('open'); $('adToggle').setAttribute('aria-expanded', s.classList.contains('open') ? 'true' : 'false'); if (s.classList.contains('open')) $('adq').focus(); });
     $('adq').addEventListener('keydown', function (e) { if (e.key === 'Enter') { var f = $('adlist').querySelector('.adi'); if (f) f.click(); } });
     $('expandAll').addEventListener('click', function () { document.querySelectorAll('#steps details').forEach(function (d) { d.open = true; }); fitAll(); });

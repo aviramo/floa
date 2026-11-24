@@ -172,3 +172,22 @@ details.acc > summary:hover { background: #fbf6ee; border-radius: var(--r); }
 .adacts .btn { flex: 1 1 auto; justify-content: center; }
 
 .side .count:empty { display: none; }
+
+.btn.icon { width: 38px; min-height: 36px; padding: 0; justify-content: center; position: relative; }
+.btn.icon svg { display: block; }
+#undo[data-n]:not([data-n=""])::after { content: attr(data-n); position: absolute; top: -5px; inset-inline-end: -5px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 99px; background: var(--accent); color: #fff; font-size: .65rem; font-weight: 700; line-height: 16px; text-align: center; }
+@media (max-width: 52rem) {
+  .tools { flex-wrap: nowrap; justify-content: space-between; }
+  .tools .btn.icon { flex: 1 1 0; width: auto; min-height: 40px; }
+  /* the search row sits above the ad picker and is always there; the list under the picker opens and closes */
+  .side #adq { grid-column: 1 / -1; grid-row: 1; }
+  .adtoggle { grid-row: 2; }
+  .adacts { grid-row: 2; }
+  .side .count { grid-row: 3; }
+  .side .adlist { grid-row: 4; }
+  .side:not(.open) #adq { display: block; }
+  /* the arrow of an accordion sits on the line of its title */
+  details.acc > summary::before { margin-top: 4px; }
+  details.acc[open] > summary::before { margin-top: 9px; }
+  .num { margin-top: -1px; }
+}
