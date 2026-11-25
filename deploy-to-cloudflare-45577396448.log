@@ -1,0 +1,6 @@
+workflow:   Deploy to Cloudflare
+conclusion: success
+commit:     0053aa8fea2c4f56aa630cd7eb0f110a0b805ec3
+run:        https://github.com/aviramo/floa/actions/runs/45577396448
+at:         2026-11-25T08:34:40Z
+
