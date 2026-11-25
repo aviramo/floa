@@ -1471,7 +1471,7 @@
   /* my vivencias, with my role and my order in each */
   function loadVivs() {
     var uid = FLOA_AUTH.userId();
-    return Promise.all([api("/rest/v1/vivencias?select=id,title,updated_at,is_public,vivencia_items(count)&vivencia_items.backlog=not.is.true"), api("/rest/v1/vivencia_owners?user_id=eq." + uid + "&select=vivencia_id,position"),
+    return Promise.all([api("/rest/v1/vivencias?select=id,title,created_at,updated_at,is_public,vivencia_items(count)&vivencia_items.backlog=not.is.true"), api("/rest/v1/vivencia_owners?user_id=eq." + uid + "&select=vivencia_id,position"),
       api("/rest/v1/vivencia_shares?email=eq." + encodeURIComponent(FLOA_AUTH.email().toLowerCase()) + "&select=vivencia_id,role,position"),
       api("/rest/v1/rpc/vivencia_partners", { method: "POST", json: {} }).catch(function () { return []; })]).then(function (r) {
       var partners = {}; (r[3] || []).forEach(function (x) { partners[x.vivencia_id] = x.names || []; });   /* a card's description: its partners (owners and who it is shared with for editing) */
@@ -1566,7 +1566,9 @@
       : '<span class="bio-vcnt" role="img" aria-label="' + vt + '" title="' + vt + '"><span class="bio-vcnt__c" aria-hidden="true">' + (pub ? I.globe : I.lock) + '</span></span>';   /* where the exercise count was: who can see it (owner 2026-11-25) */
     var more = state.offline ? '' : '<button type="button" class="rbtn rbtn--icon" data-vm="' + v.id + '" aria-haspopup="dialog" aria-label="שכפול" title="שכפול">' + I.copy + '</button>';   /* the card's one action: a copy, with its popup (owner 2026-11-25); sharing and leaving are in the vivencia's own menu */
     var sub = (v.partners || []).join(", ");   /* the title is the name; the description is who its partners are */
-    return cardSlots({ cls: "bio-vcard", attrs: 'data-vrow="' + v.id + '" ' + mainAttr + '="' + v.id + '" role="button" tabindex="0"', title: v.title || "ויוונסיה ללא שם", sub: sub, act1: cnt + more });
+    var made = ""; try { if (v.created_at) made = new Date(v.created_at).toLocaleDateString("he-IL", { day: "numeric", month: "numeric", year: "numeric" }); } catch (e) { /* no date */ }
+    var when = made ? '<span class="bio-vdate" title="תאריך יצירה" style="color:var(--text-muted);font:var(--fw-regular) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums;white-space:nowrap">' + made + '</span>' : '';   /* the date it was made, at the end of the second row (owner 2026-11-25) */
+    return cardSlots({ cls: "bio-vcard", attrs: 'data-vrow="' + v.id + '" ' + mainAttr + '="' + v.id + '" role="button" tabindex="0"', title: v.title || "ויוונסיה ללא שם", sub: sub, act1: cnt + more, act2: when });
   }
   function vivGrid(list, mainAttr) { return '<div class="rgrid rgrid--pad">' + list.map(function (v) { return vivRow(v, mainAttr); }).join("") + '</div>'; }
   function applyVq() {   /* the rows whose name does not match what is typed are not shown */
@@ -2151,14 +2153,14 @@
     BioOffline.sync(state.vivs, function (v) {
       return Promise.all([itemsOf(v.id), api("/rest/v1/rpc/vivencia_members", { method: "POST", json: { v: v.id } })]).then(function (r) {
         var items = r[0] || [];
-        return { id: v.id, row: { id: v.id, title: v.title, updated_at: v.updated_at, partners: v.partners || [], is_public: v.is_public, vivencia_items: [{ count: items.filter(function (i) { return !i.backlog; }).length }] }, role: v.role, pos: v.pos, items: items, members: r[1] || [], reception: recvRows(v.id), opening: openCache[v.id] || [] };
+        return { id: v.id, row: { id: v.id, title: v.title, created_at: v.created_at, updated_at: v.updated_at, partners: v.partners || [], is_public: v.is_public, vivencia_items: [{ count: items.filter(function (i) { return !i.backlog; }).length }] }, role: v.role, pos: v.pos, items: items, members: r[1] || [], reception: recvRows(v.id), opening: openCache[v.id] || [] };
       });
     });
   }
   function refreshOffline(v) {   /* an open vivencia is already read: its copy is made current from that, quietly */
     if (state.offline || !window.BioOffline || v.role === "public") return;   /* somebody else's public vivencia is not kept on this device */
     api("/rest/v1/rpc/vivencia_members", { method: "POST", json: { v: v.id } }).then(function (mm) {
-      return BioOffline.update({ id: v.id, row: { id: v.id, title: v.title, updated_at: v.updated_at, partners: v.partners || [], is_public: v.is_public, vivencia_items: [{ count: state.items.filter(function (i) { return !i.backlog; }).length }] }, role: v.role, pos: v.pos, items: state.items, members: mm || [], reception: recvRows(v.id), opening: openCache[v.id] || [] });
+      return BioOffline.update({ id: v.id, row: { id: v.id, title: v.title, created_at: v.created_at, updated_at: v.updated_at, partners: v.partners || [], is_public: v.is_public, vivencia_items: [{ count: state.items.filter(function (i) { return !i.backlog; }).length }] }, role: v.role, pos: v.pos, items: state.items, members: mm || [], reception: recvRows(v.id), opening: openCache[v.id] || [] });
     }, function () { /* the old copy stays */ });
   }
   /* coming back to the app, or the internet coming back, is another comparison (not more than once a minute) */
