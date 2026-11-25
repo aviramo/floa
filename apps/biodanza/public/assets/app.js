@@ -1297,7 +1297,7 @@
   document.addEventListener("click", function (ev) { var ab = ev.target.closest && ev.target.closest("[data-addex]"); if (ab) {   /* the plus beside the exercises' title: an empty exercise at the end of the numbered ones, opened to be filled in */
       if (!state.viv || !state.items || ab.disabled) return;
       if (!ab.dataset.go) {   /* the plus asks which: an empty new exercise, or one from the catalog */
-        menu(ab, [{ label: "תרגיל חדש", icon: I.plus, fn: function () { ab.dataset.go = "1"; ab.click(); } }]);
+        menu(ab, [{ label: "תרגיל חדש", icon: I.plus, fn: function () { ab.dataset.go = "1"; ab.click(); } }, { label: "תרגיל מהקטלוג", icon: I.catalog, fn: function () { openCatalog("ex"); } }]);
         return;
       }
       delete ab.dataset.go; ab.disabled = true;
@@ -2151,15 +2151,7 @@
     refreshPrevLabel();
     var l = document.getElementById("list"); if (!l || !l.hasAttribute("data-fab-room")) return;   /* only the vivencia's own list: the catalog picker has a list too */
     var cnt = state.viv && pl.querySelector('[data-vc="' + state.viv.id + '"] [data-nn]'); if (cnt) cnt.textContent = state.items.filter(function (i) { return !i.backlog; }).length;
-    var vis = state.items;   /* the order of the list IS the curve: no phase is kept on an item */
-    if (!vis.length) {
-      /* an empty vivencia: the words, and an arrow from them down to the + button (only for somebody who can add) */
-      l.style.position = "relative";
-      l.innerHTML = ph("הוויוונסיה ריקה", canEdit() ? "לחצו על + כדי להוסיף תרגיל מהקטלוג" : "");
-      if (l.firstElementChild) l.firstElementChild.style.marginBlock = "auto";   /* the arrow is a second child: the words are centred by hand */
-      if (canEdit()) { arrowTo(l); setTimeout(function () { arrowTo(l); }, 350); }
-      return;
-    }
+    /* an empty vivencia is drawn in its usual shape (reception music, opening, the exercises with their +, the end), never as an empty-state page: the owner's word, 2026-11-25 */
     var main = state.items.filter(function (i) { return !i.backlog; }), back = state.items.filter(function (i) { return i.backlog; });
     var rowOf = function (i, tile) {
       var m = i.music;
@@ -3509,10 +3501,10 @@
           all.forEach(function (e, i) { var k = e.category || ""; if (top[k] == null) top[k] = i; });
           cats.sort(function (a, b) { return (top[a] == null ? 1e9 : top[a]) - (top[b] == null ? 1e9 : top[b]); });
         }
-        if (!q) {   /* with no search: always the most songs first, inside every category, and the categories by their best exercise (a search keeps its own order, nearest first) */
-          var dir = -1, cn = function (e) { return e.exercise_music && e.exercise_music[0] ? e.exercise_music[0].count : 0; }, best = {};
-          cats.forEach(function (k) { by[k].sort(function (a, b) { return dir * (cn(a) - cn(b)); }); best[k] = cn(by[k][0]); });
-          cats.sort(function (a, b) { return dir * (best[a] - best[b]); });
+        if (!q) {   /* with no search: inside every category the most songs first, and the categories by how many exercises they hold, the most first (a search keeps its own order, nearest first) */
+          var dir = -1, cn = function (e) { return e.exercise_music && e.exercise_music[0] ? e.exercise_music[0].count : 0; };
+          cats.forEach(function (k) { by[k].sort(function (a, b) { return dir * (cn(a) - cn(b)); }); });
+          cats.sort(function (a, b) { return dir * (by[a].length - by[b].length); });
         }
         catBy = by;
         hint(r.querySelector("#q"), catFind("").length, "תרגיל", "תרגילים");
