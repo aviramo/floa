@@ -1409,8 +1409,8 @@
   }
   /* the home list shows ONE of two lists, never the same vivencia in both (owner 2026-11-25):
      mine: I own it or I am a partner in it; the others': public ones of other people and ones shared with me for viewing only.
-     Mine is the default; the choice is remembered on this device. */
-  function showPubs() { if (state.offline) return false; try { var s = localStorage.getItem("biodanza.others"); if (s != null) return s === "1"; } catch (e) { /* none */ } return !!state.othersOn; }
+     All is the default; the choice is remembered on this device. */
+  function showPubs() { if (state.offline) return false; try { var s = localStorage.getItem("biodanza.all"); if (s != null) return s === "1"; } catch (e) { /* none */ } return state.othersOn !== false; }   /* all is the default (owner 2026-11-25); a new key, so an older "mine" choice does not hide it */
   function homeTitle() { return showPubs() ? "כל הוויוונסיות" : "הוויוונסיות שלי"; }
   function pubTip() { return showPubs() ? "מוצגות כל הוויוונסיות. לחיצה: רק שלי" : "מוצגות הוויוונסיות שלי. לחיצה: כל הוויוונסיות"; }
   function pubBtn() { var t = pubTip(); return '<button class="rbtn rbtn--icon" data-act="pubs" aria-pressed="' + showPubs() + '" aria-label="' + t + '" title="' + t + '">' + (showPubs() ? I.globe : I.me) + '</button>'; }
@@ -1429,7 +1429,7 @@
       var plus0 = r.querySelector('[data-act="new"]'), dx0 = null; try { dx0 = localStorage.getItem("biodanza.plusdx"); } catch (e) { /* none */ }
       if (plus0 && dx0 != null && dx0 !== "") plus0.style.transform = "translateX(" + dx0 + "px)";   /* in its place from the first moment, before the list is here */
       on(r, "pubs", function (b) {   /* only mine, or also the public vivencias of the others: remembered on this device */
-        var on2 = !showPubs(); state.othersOn = on2; try { localStorage.setItem("biodanza.others", on2 ? "1" : "0"); } catch (e) { /* only for this visit */ }
+        var on2 = !showPubs(); state.othersOn = on2; try { localStorage.setItem("biodanza.all", on2 ? "1" : "0"); } catch (e) { /* only for this visit */ }
         var t = pubTip(); b.setAttribute("aria-pressed", String(showPubs())); b.setAttribute("aria-label", t); b.title = t; b.innerHTML = showPubs() ? I.globe : I.me;
         var tx = r.querySelector(".rhead .rhead__text"), h1 = r.querySelector(".rhead h1.rhead__title");
         if (h1) h1.textContent = homeTitle(); else if (tx && tx.__title != null) tx.__title = '<h1 class="rhead__title">' + esc(homeTitle()) + '</h1>';   /* the title says which list; while searching, the title that comes back does */
