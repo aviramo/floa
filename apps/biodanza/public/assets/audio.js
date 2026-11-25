@@ -268,10 +268,10 @@
     player: function () { return el; }, bus: hub,
     targets: function () {
       var t = [];
-      document.querySelectorAll('.bio-mcard.is-play, .bio-mcard:has([data-audio][data-st="pause"])').forEach(function (c) { t.push({ host: c, kind: "curve" }); });
+      document.querySelectorAll('.bio-mcard.is-play, .bio-mcard:has([data-audio][data-st="pause"]), .bio-icard.is-play, .bio-icard.is-play-opt, .bio-icard:has([data-audio][data-st="pause"])').forEach(function (c) { t.push({ host: c, kind: "curve" }); });
       document.querySelectorAll(".bio-tab.is-play > .bio-tab__n").forEach(function (n) { t.push({ host: n, kind: "ring" }); });
       var g = document.querySelector("#vgo:not([hidden]) #vgon"); if (g) t.push({ host: g, kind: "ring" });
-      document.querySelectorAll(".bio-vsym > .bio-vsym__n").forEach(function (n) { if (n.textContent) t.push({ host: n, kind: "ring" }); });   /* the number on the row of the vivencia that plays */
+      document.querySelectorAll(".bio-vcard.is-vplay").forEach(function (c) { t.push({ host: c, kind: "curve" }); });   /* the card of the vivencia whose song plays */
       return t;
     }
   });

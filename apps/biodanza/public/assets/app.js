@@ -1535,12 +1535,10 @@
   }
   function paintVivPlay() {
     alignPlus();   /* a small mark at the left of the vivencia's row: the number of the exercise that plays over the curve */
-    document.querySelectorAll("[data-vrow]").forEach(function (r) {
-      var on = !!(nowViv.playing && nowViv.id && nowViv.id === r.dataset.vrow), sym = r.querySelector(".bio-vsym"), vc = r.querySelector(".bio-vcnt");
-      if (!on) { if (sym) sym.remove(); return; }
-      if (!sym) { sym = document.createElement("span"); sym.className = "bio-vsym"; sym.setAttribute("role", "img"); sym.setAttribute("aria-label", "המוסיקה שמתנגנת היא מהוויוונסיה הזאת"); var tt = r.querySelector(".rtitle"); (tt || r).appendChild(sym); }
-      var h = '<span class="bio-vsym__n">' + esc(nowViv.num || "") + '</span>';   /* the number only, with the sound ring round it (sound.js), as in the header of a vivencia on a computer */
-      if (sym.dataset.h !== h) { sym.dataset.h = h; sym.innerHTML = h; }
+    document.querySelectorAll("[data-vrow]").forEach(function (r) {   /* the card of the vivencia whose song plays carries the sound's curve, like an exercise card that plays (owner 2026-11-25); no number on it */
+      var on = !!(nowViv.playing && nowViv.id && nowViv.id === r.dataset.vrow);
+      r.classList.toggle("is-vplay", on);
+      var old = r.querySelector(".bio-vsym"); if (old) old.remove();
     });
   }
   window.addEventListener("resize", function () { paintVivPlay(); });
