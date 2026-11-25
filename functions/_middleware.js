@@ -54,7 +54,10 @@ async function sharedVivencia(url, shell, at) {
     });
     const p = r.ok ? await r.json() : null;
     if (!p || !p.title) return shell;
-    const title = String(p.title).trim(), desc = (p.items || []).filter(Boolean).join(", ");
+    const title = String(p.title).trim(), seq = (p.items || []).filter(Boolean).join(", ");
+    /* the description opens with who leads it (owner 2026-11-25): "ויוונסיה של א, ב וג: <the exercises>"; the title stays the name */
+    const ld = (p.leaders || []).filter(Boolean), by = ld.length > 1 ? ld.slice(0, -1).join(", ") + " ו" + ld[ld.length - 1] : ld[0] || "";
+    const desc = by ? "ויוונסיה של " + by + (seq ? ": " + seq : "") : seq;
     const set = (v) => ({ element(el) { el.setAttribute("content", v); } });
     let rw = new HTMLRewriter()
       .on('meta[property="og:title"], meta[name="twitter:title"]', set(title))

@@ -207,6 +207,11 @@ button.bio-c__tx { flex: 0 1 auto; margin: 0; padding: 0; border: 0; background:
 .rgroup { display: flex; align-items: center; gap: var(--gap-section); flex: none; }   /* adjacent icon buttons: --gap-section so their touch areas touch and never overlap */
 .rhead__sub { display: block; color: var(--text-muted); font: var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font); }
 .rhead__text--row { flex-direction: row; align-items: center; justify-content: flex-start; gap: var(--gap); }   /* the title block as one line (title, then a tag), not stacked */
+/* a description under a title, out of the flow (owner 2026-11-25): the header, the title and the buttons stay exactly where they are without it;
+   the description hangs right under the title's letters, smaller, and is cut with dots when it is long */
+.rhead__tw { display: flex; align-items: center; flex: 0 1 auto; min-width: 0; }
+.rhead__text:has(> .rhead__tw > .rhead__sub--under) { position: relative; }   /* the description is as wide as the whole title area (up to the buttons), not as wide as the title (owner 2026-11-25) */
+.rhead__sub--under { position: absolute; inset-inline: 0; top: calc(50% + var(--fs-l) * .36); font-size: var(--fs-s); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
 .rhead__title--clip { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.4; text-box: normal; }   /* a title that is cut with dots instead of wrapping; the box keeps the line height so the letters are not clipped */
 .rbtn--icon.rbtn--accent { color: var(--primary); }   /* an icon button in the role colour, where its neighbours are plain text colour */
 /* ONE header on every page (owner 2026-11-13, "identical, colour, page colour and all"): the same surface as the filter block of the participants page (--page), a 2px --border under it, no shadow, no rounded corners; the icon button is a 44px tile in --surface, 16px from the top and the side; a subtitle is part of the title block, which is centred on the tile. The ground under the header is --surface (see manager.css). */
