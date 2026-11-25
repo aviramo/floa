@@ -29,11 +29,43 @@ const SPA = new Set(HOSTS.filter((h) => h.spa).map((h) => h.host));
 const TEST = new Set(HOSTS.filter((h) => h.test).map((h) => h.host));
 const SLUGS = new Set(HOSTS.filter((h) => h.slugs).map((h) => h.host));
 const RESERVED = ["admin", "connect", "me", "api", "assets", "new", "index"];
-const DOMAIN_FILES = new Set(["/supabase.js", "/auth.js", "/kit.css", "/sheet.js", "/sound.js", "/favicon.ico", "/favicon.svg", "/apple-touch-icon.png", "/sw.js", "/robots.txt", "/404.html", "/__test-env.js"]);
+const DOMAIN_FILES = new Set(["/supabase.js", "/auth.js", "/kit.css", "/sheet.js", "/favicon.ico", "/favicon.svg", "/apple-touch-icon.png", "/sw.js", "/robots.txt", "/404.html", "/__test-env.js"]);
 const SLUG_PAGES = { "": "admin", connect: "connect", me: "me" };
 /* longest folder first, so /tal/ia is not taken for /tal */
 const OLD = HOSTS.filter((h) => !h.test).flatMap((h) => [h.folder, ...(h.old || [])].map((f) => ["/" + f.replace(/\/$/, ""), h.host]))
   .sort((a, b) => b[0].length - a[0].length);
+
+/* A shared vivencia (biodanza.floa.co.il/<id>, WhatsApp, Facebook): a crawler runs no script and is not signed in,
+   so its preview is written here. The title is the vivencia's name, the description its exercises in order, joined by
+   commas; the picture stays the app's. The answer comes from biodanza.share_preview (apps/biodanza/share-preview.sql),
+   which gives the name and the sequence only, through the public key that /supabase.js carries. Anything that fails
+   leaves the page exactly as it was. */
+async function sharedVivencia(url, shell, at) {
+  const id = url.pathname.split("/").filter(Boolean)[0] || "";
+  if (shell.status !== 200 || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return shell;
+  try {
+    const js = await (await at("/supabase.js")).text();
+    const base = (js.match(/url:\s*"([^"]+)"/) || [])[1], key = (js.match(/anonKey:\s*"([^"]+)"/) || [])[1];
+    if (!base || !key) return shell;
+    const r = await fetch(base + "/rest/v1/rpc/share_preview", {
+      method: "POST", signal: AbortSignal.timeout(2500),
+      headers: { apikey: key, authorization: "Bearer " + key, "content-type": "application/json", "content-profile": "biodanza", "accept-profile": "biodanza" },
+      body: JSON.stringify({ v: id }),
+    });
+    const p = r.ok ? await r.json() : null;
+    if (!p || !p.title) return shell;
+    const title = String(p.title).trim(), desc = (p.items || []).filter(Boolean).join(", ");
+    const set = (v) => ({ element(el) { el.setAttribute("content", v); } });
+    let rw = new HTMLRewriter()
+      .on('meta[property="og:title"], meta[name="twitter:title"]', set(title))
+      .on('meta[property="og:url"]', set(url.origin + url.pathname))
+      .on("title", { element(el) { el.setInnerContent(title); } });
+    if (desc) rw = rw.on('meta[property="og:description"], meta[name="twitter:description"], meta[name="description"]', set(desc));
+    const out = rw.transform(shell);
+    const h = new Headers(out.headers); h.set("cache-control", "no-store");
+    return new Response(out.body, { status: 200, headers: h });
+  } catch (x) { return shell; }
+}
 
 export async function onRequest({ request, next, env }) {
   const url = new URL(request.url);
@@ -126,7 +158,9 @@ export async function onRequest({ request, next, env }) {
   /* an app that routes by the address itself (Chords: a playlist, an editor, a
      song written a minute ago) gets its front page, and reads the address */
   if (SPA.has(url.hostname) && !/\.[a-z0-9]{1,8}$/i.test(url.pathname)) {
-    return at(home);
+    const shell = await at(home);
+    if (home === "/biodanza/") return sharedVivencia(url, shell, at);
+    return shell;
   }
   /* a clean sub-domain has nothing more to try, and a redirect here would only
      be sent back by the strip rule above: a loop */
