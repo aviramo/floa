@@ -1,4 +1,4 @@
-// The shape of the static content, checked on every save: five messages, three options each; every ad has the version for both genders,
+// The shape of the static content, checked on every save: five messages, three options each (the last one: one to three links); every ad has the version for both genders,
 // or one for each gender. The last message's options are actions.
 const KEY = /^[a-z][a-z0-9_]{0,29}$/;
 
@@ -15,7 +15,7 @@ export function scriptProblem(c: any): string | null {
       for (let i = 0; i < 5; i++) {
         const m = steps[i];
         if (!m || typeof m.say !== 'string' || !m.say.trim()) return key + ' ' + g + ' message ' + (i + 1) + ': text missing';
-        if (!Array.isArray(m.options) || m.options.length !== 3) return key + ' ' + g + ' message ' + (i + 1) + ': three options are needed';
+        if (i === 4 ? !Array.isArray(m.options) || m.options.length < 1 || m.options.length > 3 : !Array.isArray(m.options) || m.options.length !== 3) return key + ' ' + g + ' message ' + (i + 1) + (i === 4 ? ': one to three links are needed' : ': three options are needed');
         for (const o of m.options) {
           if (!o || typeof o.label !== 'string' || !o.label.trim()) return key + ' ' + g + ' message ' + (i + 1) + ': an option has no text';
           if (i === 4 && !['site', 'updates', 'whatsapp'].includes(o.action)) return key + ' ' + g + ' message 5: an option has no valid action';

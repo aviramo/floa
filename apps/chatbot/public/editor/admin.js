@@ -178,7 +178,7 @@
     PENDING = null; PH = null;
     if (!list) {
       blank = true;
-      list = [0, 1, 2, 3, 4].map(function (i) { return { say: '', options: [0, 1, 2].map(function (k) { var o = { label: '', reply: '' }; if (i === 4) o.action = ['site', 'updates', 'whatsapp'][k]; return o; }) }; });
+      list = [0, 1, 2, 3, 4].map(function (i) { return { say: '', options: i === 4 ? [{ label: '', reply: '', action: 'site' }] : [0, 1, 2].map(function () { return { label: '', reply: '' }; }) }; });
       PENDING = { target: cur, g: S.gender, list: list };
       var oth = firstOther(), flat = [];
       if (oth) cur[oth].forEach(function (m) { flat.push(m.say); m.options.forEach(function (o) { flat.push(o.label, o.reply || ''); }); });
@@ -203,7 +203,7 @@
       first.appendChild(area(function () { return m.say; }, function (v) { m.say = v; drawChips(); }, 5));
       cols.appendChild(first);
       m.options.forEach(function (o, k) {
-        var op = el('div', 'opt'); var oh = el('h3', '', 'אפשרות ' + (k + 1)); if (!blank) { var cn = num(STATS.clicks, S.ad, S.gender, i + 1, k + 1), sh = num(STATS.shown, S.ad, S.gender, i + 1, null); oh.appendChild(el('span', 'cnt', cn + ' לחיצות' + (sh ? ' (' + Math.round(cn * 100 / sh) + '%)' : ''))); } op.appendChild(oh);
+        var op = el('div', 'opt'); var oh = el('h3', '', m.options.length === 1 ? 'הכפתור' : 'אפשרות ' + (k + 1)); if (!blank) { var cn = num(STATS.clicks, S.ad, S.gender, i + 1, k + 1), sh = num(STATS.shown, S.ad, S.gender, i + 1, null); oh.appendChild(el('span', 'cnt', cn + ' לחיצות' + (sh ? ' (' + Math.round(cn * 100 / sh) + '%)' : ''))); } op.appendChild(oh);
         var row = el('div', 'row2');
         row.appendChild(line(function () { return o.label; }, function (v) { o.label = v; drawChips(); }, true));
         op.appendChild(row);

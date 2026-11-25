@@ -19,3 +19,11 @@ Deno.test('five messages, three options, an action on the last', () => {
 Deno.test('the ad code is a plain name', () => {
   assertEquals(scriptProblem({ ads: { 'Bad Code': { both: five() } } })?.includes('bad ad code'), true);
 });
+Deno.test('the last message may have a single link, but not none and not four', () => {
+  const one = five(); one[4].options = [{ label: 'לאתר', action: 'site' }] as any;
+  assertEquals(scriptProblem({ ads: { a: { both: one } } }), null);
+  const none = five(); none[4].options = [];
+  assertEquals(scriptProblem({ ads: { a: { both: none } } })?.includes('one to three'), true);
+  const two = five(); two[1].options = two[1].options.slice(0, 1);
+  assertEquals(scriptProblem({ ads: { a: { both: two } } })?.includes('three options'), true);
+});
