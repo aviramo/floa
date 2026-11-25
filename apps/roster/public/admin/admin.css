@@ -2818,3 +2818,9 @@ html.is-loading #menuBtn, html.is-loading #mSel svg { visibility: hidden; }
 .mfimg-del { position: absolute; top: var(--sp-1); inset-inline-end: var(--sp-1); display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; background: var(--bg); color: var(--text); cursor: pointer; }
 .mfimg-del[hidden] { display: none; }
 .mfimg-pick:focus-visible { outline: 2px solid var(--text); outline-offset: -2px; }
+/* the meetings menu has three count columns: meetings (only on "all" and on a type), arrived (or paid, on a meeting not yet held), people. Each count keeps its column on every row */
+#mMenu .mtr.mrow2 { grid-template-columns: 38% 1fr 43px 43px 43px 1fr var(--ib); }
+#mMenu .mtr.mrow2 > .mc.mc1 { grid-column: 3; }
+#mMenu .mtr.mrow2 > .mc.mc2 { grid-column: 4; }
+#mMenu .mtr.mrow2 > .mc.mc3 { grid-column: 5; }
+#mMenu .mtr.mrow2 > .medit, #mMenu .mtr.mrow2 > span:empty { grid-column: 7; }
