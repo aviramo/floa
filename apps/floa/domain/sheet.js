@@ -182,8 +182,8 @@
     dlg.classList.add("rsheet");
     if (dlg.hasAttribute("data-title") || dlg.hasAttribute("data-rs-shell")) {
       shell(dlg, opts);
-      dlg.addEventListener("click", function (e) { if (e.target.closest && e.target.closest(".rs-x") && dlg.contains(e.target)) dlg.close(); });
     }
+    dlg.addEventListener("click", function (e) { if (e.target.closest && e.target.closest(".rs-x") && dlg.contains(e.target)) dlg.close(); });   /* every sheet's X closes it, also a sheet drawn by render() (its X is hidden to the eye on a computer, but a keyboard or a screen reader still presses it) */
     if (opts.from) dlg.setAttribute("data-from", opts.from);
     else if (!dlg.hasAttribute("data-from")) dlg.setAttribute("data-from", "bottom");
 

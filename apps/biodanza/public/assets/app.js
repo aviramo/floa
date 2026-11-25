@@ -1281,7 +1281,13 @@
     if (layerStack.length) {   /* a layer over another: it slides off, removed when it is gone, and the one below is as it was (still open, its left side still dark) */
       var up = catLayer; up.classList.remove("is-open"); up.querySelector(".catbody").setAttribute("inert", "");   /* both halves leave together with the layer (its left part is left alone) */
       var usc = up.__scrim; if (usc) { usc.classList.remove("is-on"); setTimeout(function () { usc.remove(); }, 400); }   /* the scrim fades out where it is */
-      popLayer(); setTimeout(function () { up.remove(); }, 400); saveCat(); return;
+      popLayer(); setTimeout(function () { up.remove(); }, 400);
+      if (!catPanel) {   /* no catalog was open under it (it was opened from an exercise of the vivencia): the screen under it is lit again, exactly as it was */
+        state.pickerShow = false; pd.classList.remove("bio-dim");
+        document.querySelectorAll("[data-catopen]").forEach(function (b) { b.setAttribute("aria-pressed", "false"); });
+        if (typeof refreshPrevLabel === "function") refreshPrevLabel();
+      }
+      saveCat(); return;
     }
     catPanel = null; state.pickerShow = false; pd.classList.remove("bio-dim");
     document.querySelectorAll("[data-catopen]").forEach(function (b) { b.setAttribute("aria-pressed", "false"); });
