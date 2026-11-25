@@ -247,3 +247,7 @@ details.acc > summary:hover { background: #fbf6ee; border-radius: var(--r); }
 .layout > .mainc { grid-column: 2; grid-row: 2; }
 .layout > .mainc .filters { padding-top: 0; }
 @media (max-width: 52rem) { .layout > .bar, .layout > .side, .layout > .mainc { grid-column: auto; grid-row: auto; } }
+/* an ad in the comparison is tappable: it shows its details below */
+.prow.tap { cursor: pointer; }
+.prow.tap:hover { border-color: var(--accent); }
+.prow.tap:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }

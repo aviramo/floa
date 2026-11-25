@@ -44,9 +44,30 @@
     return box;
   }
 
+  // the details below the comparison are of one ad and one gender, picked inside the window (they start as the editor's)
+  var last = [];
+  function pick(ad, g) {
+    ctx.ad = ad;
+    if (g) ctx.gender = g;
+    else if (!last.some(function (v) { return v.ad === ad && v.gender === ctx.gender; })) {
+      var n = {}; last.forEach(function (v) { if (v.ad === ad) n[v.gender] = (n[v.gender] || 0) + 1; });
+      var best = Object.keys(n).sort(function (a, b) { return n[b] - n[a]; })[0]; if (best) ctx.gender = best;
+    }
+    var body = $('statsBody'); draw(last);
+    var d = $('statsDetail'); if (d) body.scrollTo({ top: d.offsetTop - body.offsetTop, behavior: reduce() ? 'auto' : 'smooth' });
+  }
+
   function draw(rows) {
+    last = rows || [];
     var body = $('statsBody'); body.textContent = '';
     compare(body, rows || []);
+    var head = section('פירוט של ' + ctx.ad, 'לחיצה על מודעה למעלה מחליפה את המודעה כאן.'); head.id = 'statsDetail';
+    var seg = el('div', 'seg'); seg.setAttribute('role', 'tablist'); seg.setAttribute('aria-label', 'מגדר');
+    ['female', 'male', 'both'].forEach(function (k) {
+      var b = el('button', k === ctx.gender ? 'on' : '', ctx.gn[k]); b.type = 'button'; b.setAttribute('aria-selected', k === ctx.gender ? 'true' : 'false');
+      b.addEventListener('click', function () { pick(ctx.ad, k); }); seg.appendChild(b);
+    });
+    head.appendChild(seg); body.appendChild(head);
     var vs = (rows || []).filter(function (v) { return v.ad === ctx.ad && v.gender === ctx.gender; }).map(shape);
     var here = ' (' + ctx.ad + ', ' + ctx.gn[ctx.gender] + ')';
     if (!vs.length) {
@@ -103,10 +124,13 @@
       a.n++; g.n++; if (v.far >= 5) a.end++; if (v.cta) { a.cta++; g.cta++; }
     });
     var list = Object.keys(by).map(function (k) { return by[k]; }).sort(function (x, y) { return y.n - x.n || (x.ad < y.ad ? -1 : 1); });
-    var sec = section('השוואה בין המודעות', 'סקירה של כל המודעות, כל המגדרים יחד. הפס הוא אחוז הביקורים שהסתיימו בלחיצה על קישור.');
+    var sec = section('השוואה בין המודעות', 'כל המודעות, כל המגדרים יחד. הפס הוא אחוז הביקורים שהסתיימו בלחיצה על קישור. לחיצה על מודעה מציגה את הפירוט שלה.');
     if (!rows.length) { sec.appendChild(el('p', 'hint', 'אין עדיין נתונים. נספרים רק ביקורים שהגיעו ממודעה בפייסבוק או באינסטגרם.')); body.appendChild(sec); return; }
     list.forEach(function (a) {
-      var r = el('div', 'prow' + (a.ad === ctx.ad ? ' cur' : ''));
+      var r = el('div', 'prow tap' + (a.ad === ctx.ad ? ' cur' : ''));
+      r.setAttribute('role', 'button'); r.tabIndex = 0; r.setAttribute('aria-label', 'הצג פירוט של ' + a.ad);
+      r.addEventListener('click', function () { pick(a.ad); });
+      r.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(a.ad); } });
       var t = el('div', 'frow'); var name = el('b', 'code', a.ad); if (ctx.titles && ctx.titles[a.ad]) name.title = ctx.titles[a.ad];
       t.appendChild(name); t.appendChild(el('span', '', a.n + ' ביקורים'));
       var bar = el('div', 'fbar'), fill = el('i'); fill.style.width = pct(a.cta, a.n) + '%'; bar.appendChild(fill); t.appendChild(bar);
@@ -138,7 +162,7 @@
 
   function open(c) {
     ctx = c; var d = $('statsDlg'), my = ++seq;
-    $('statsSub').textContent = 'כל המודעות, ומתחת המודעה הפתוחה בעורך';
+    $('statsSub').textContent = 'כל המודעות, ומתחת פירוט של מודעה אחת';
     skeleton();
     if (!d.open) { d.showModal(); requestAnimationFrame(function () { requestAnimationFrame(function () { d.classList.add('in'); }); }); }
     clearInterval(timer); timer = setInterval(refresh, LIVE_MS);
