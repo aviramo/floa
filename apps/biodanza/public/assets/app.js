@@ -1411,12 +1411,12 @@
      mine: I own it or I am a partner in it; the others': public ones of other people and ones shared with me for viewing only.
      Mine is the default; the choice is remembered on this device. */
   function showPubs() { if (state.offline) return false; try { var s = localStorage.getItem("biodanza.others"); if (s != null) return s === "1"; } catch (e) { /* none */ } return !!state.othersOn; }
-  function homeTitle() { return showPubs() ? "ויוונסיות של אחרים" : "הוויוונסיות שלי"; }
-  function pubTip() { return showPubs() ? "מוצגות ויוונסיות של אחרים. לחיצה: הוויוונסיות שלי" : "מוצגות הוויוונסיות שלי. לחיצה: ויוונסיות של אחרים"; }
+  function homeTitle() { return showPubs() ? "כל הוויוונסיות" : "הוויוונסיות שלי"; }
+  function pubTip() { return showPubs() ? "מוצגות כל הוויוונסיות. לחיצה: רק שלי" : "מוצגות הוויוונסיות שלי. לחיצה: כל הוויוונסיות"; }
   function pubBtn() { var t = pubTip(); return '<button class="rbtn rbtn--icon" data-act="pubs" aria-pressed="' + showPubs() + '" aria-label="' + t + '" title="' + t + '">' + (showPubs() ? I.globe : I.me) + '</button>'; }
   function homeList() {   /* the vivencias of the list now shown */
     var mine = function (v) { return v.role === "owner" || v.role === "edit"; };
-    return showPubs() ? state.vivs.filter(function (v) { return !mine(v); }).concat(state.pubs || []) : state.vivs.filter(mine);
+    return showPubs() ? state.vivs.filter(mine).concat(state.vivs.filter(function (v) { return !mine(v); }), state.pubs || []) : state.vivs.filter(mine);   /* all: mine first, then the others' (owner 2026-11-25); each one once */
   }
   function home() {
     curLeave();
@@ -1581,7 +1581,7 @@
   function renderVivs() {
     var l = document.getElementById("hl"); if (!l) return;
     var list = homeList();
-    l.innerHTML = list.length ? vivGrid(list, "data-id") : showPubs() ? ph("אין ויוונסיות של אחרים", "כאן יופיעו ויוונסיות ציבוריות של מאפשרים אחרים, וויוונסיות ששותפו איתך לצפייה") : (state.offline ? ph("אין ויוונסיות שמורות", "שמרו ויוונסיה מהתפריט שלה כשיש חיבור, והיא תהיה כאן גם בלי אינטרנט") : ph("עוד אין ויוונסיות", "פתחו את התפריט ובחרו ביצירת ויוונסיה"));
+    l.innerHTML = list.length ? vivGrid(list, "data-id") : showPubs() ? ph("עוד אין ויוונסיות", "פתחו את התפריט ובחרו ביצירת ויוונסיה") : (state.offline ? ph("אין ויוונסיות שמורות", "שמרו ויוונסיה מהתפריט שלה כשיש חיבור, והיא תהיה כאן גם בלי אינטרנט") : ph("עוד אין ויוונסיות", "פתחו את התפריט ובחרו ביצירת ויוונסיה"));
     if (!list.length) { l.style.position = "relative"; if (l.firstElementChild) l.firstElementChild.style.marginBlock = "auto"; arrowTo(l); setTimeout(function () { arrowTo(l); }, 350); }   /* the arrow is a second child, so the words are centred by hand (the kit does it only for an only child) */
     l.querySelectorAll("[data-id]").forEach(function (b) { b.addEventListener("click", function () { openViv(b.dataset.id); }); b.addEventListener("keydown", function (e) { if ((e.key === "Enter" || e.key === " ") && e.target === b) { e.preventDefault(); openViv(b.dataset.id); } }); });   /* a card is a button: the keyboard opens it too */
     l.querySelectorAll("[data-vm]").forEach(function (b) { b.addEventListener("click", function (ev) { ev.stopPropagation(); var v0 = state.vivs.concat(state.pubs || []).filter(function (x) { return x.id === b.dataset.vm; })[0]; if (v0) dupPopup(v0); }); }); l.querySelectorAll("[data-vvis]").forEach(function (b) { b.addEventListener("click", function (ev) { ev.stopPropagation(); var v0 = state.vivs.filter(function (x) { return x.id === b.dataset.vvis; })[0]; if (v0) sharePopup(v0); }); });   /* the dots on a row of the list: that vivencia's menu */
