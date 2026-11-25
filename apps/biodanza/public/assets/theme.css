@@ -65,8 +65,9 @@ dialog.rsheet .sheet:has(> .sheet-body > .rlist > .rrow) > .sheet-head { padding
 /* the main part of a row that is a button: no button look */
 button.rrow__main { background: none; border: 0; padding: 0; text-align: start; cursor: pointer; font: inherit; color: inherit; }
 
-/* a short popup (a name, a confirmation): its title, its field and its button stand against each other, no gap between the parts (owner); the popup pads around them */
+/* a short popup (a name, a confirmation): its title and its text or field stand against each other, no gap (owner); the button keeps the gutter above it (owner, 2026-11-25); the popup pads around them */
 dialog.rsheet[data-size="s"] .sheet { gap: 0; }
+dialog.rsheet[data-size="s"] .sheet > .sheet-foot { margin-block-start: var(--gap); }
 
 /* a card whose song plays stays white, and so does everything on it: what shows the sound is the kit's picture (sound.js, kit.css .req) */
 /* the exercise tabs of a phone keep room for the ring round the number (above it, and between it and the name, a small gap left under the ring), so nothing moves when a song starts */
