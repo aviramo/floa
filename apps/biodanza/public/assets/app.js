@@ -521,7 +521,7 @@
       }
       return el;
     }
-    function showLeftEl(el) { placeHist(); requestAnimationFrame(function () { el.classList.add("is-open"); }); syncLayers(); }
+    function showLeftEl(el) { placeHist(); requestAnimationFrame(function () { if (leftStack.indexOf(el) >= 0) el.classList.add("is-open"); }); syncLayers(); }   /* a layer closed before its first frame never opens: no panel is left on the screen without its overlay */
     function popLeft(quiet) {
       var el = leftStack.pop(); if (!el) return;
       el.classList.remove("is-open");
@@ -1371,7 +1371,7 @@
         var l = r.querySelector("#likv"), list = (rows || []).map(function (x) { return state.vivs.filter(function (v) { return v.id === x.vivencia_id; })[0]; }).filter(Boolean);
         l.innerHTML = list.length ? vivGrid(list, "data-open") : ph("עוד אין ויוונסיות שאהבת", "לחצו על הלב ליד ויוונסיה כדי לשמור אותה כאן");
         l.querySelectorAll("[data-open]").forEach(function (b) { b.addEventListener("click", function () { closeLiked(); openViv(b.dataset.open); }); });
-        l.querySelectorAll("[data-vm]").forEach(function (b) { b.addEventListener("click", function (ev) { ev.stopPropagation(); var v0 = state.vivs.concat(state.pubs || []).filter(function (x) { return x.id === b.dataset.vm; })[0]; if (v0) vivMenu(v0, b); }); });
+        l.querySelectorAll("[data-vm]").forEach(function (b) { b.addEventListener("click", function (ev) { ev.stopPropagation(); var v0 = state.vivs.concat(state.pubs || []).filter(function (x) { return x.id === b.dataset.vm; })[0]; if (v0) dupPopup(v0); }); }); l.querySelectorAll("[data-vvis]").forEach(function (b) { b.addEventListener("click", function (ev) { ev.stopPropagation(); var v0 = state.vivs.filter(function (x) { return x.id === b.dataset.vvis; })[0]; if (v0) sharePopup(v0); }); });
       }, fail);
     });
   }
@@ -1562,9 +1562,11 @@
   }
   /* THE VIVENCIA CARD (owner 2026-11-25: the list is cards): the name, under it who it is shared by, at the end the exercise count with its wave glyph and the menu. ONE builder for the home list and the liked list; mainAttr is the only difference (what the card opens). */
   function vivRow(v, mainAttr) {
-    var n = v.vivencia_items && v.vivencia_items[0] ? v.vivencia_items[0].count : 0;
-    var cnt = '<span class="bio-vcnt" data-vc="' + v.id + '" aria-label="' + n + ' תרגילים" title="' + n + ' תרגילים"><span data-nn>' + n + '</span><span class="bio-vcnt__c" aria-hidden="true">' + I.curve + '</span></span>';
-    var more = state.offline ? '' : '<button type="button" class="rbtn rbtn--icon" data-vm="' + v.id + '" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>';
+    var pub = v.is_public !== false, vt = pub ? "ציבורית: כל המאפשרים רואים אותה" : "פרטית: רק מי שהיא משותפת איתו רואה אותה";
+    var cnt = v.role === "owner" && !state.offline
+      ? '<button type="button" class="rbtn rbtn--icon" data-vvis="' + v.id + '" aria-haspopup="dialog" aria-label="' + vt + '. לחיצה לשינוי" title="' + vt + '. לחיצה לשינוי">' + (pub ? I.globe : I.lock) + '</button>'   /* the owner changes it right here, with the same popup as in the vivencia's header */
+      : '<span class="bio-vcnt" role="img" aria-label="' + vt + '" title="' + vt + '"><span class="bio-vcnt__c" aria-hidden="true">' + (pub ? I.globe : I.lock) + '</span></span>';   /* where the exercise count was: who can see it (owner 2026-11-25) */
+    var more = state.offline ? '' : '<button type="button" class="rbtn rbtn--icon" data-vm="' + v.id + '" aria-haspopup="dialog" aria-label="שכפול" title="שכפול">' + I.copy + '</button>';   /* the card's one action: a copy, with its popup (owner 2026-11-25); sharing and leaving are in the vivencia's own menu */
     var sub = (v.partners || []).join(", ");   /* the title is the name; the description is who its partners are */
     return cardSlots({ cls: "bio-vcard", attrs: 'data-vrow="' + v.id + '" ' + mainAttr + '="' + v.id + '" role="button" tabindex="0"', title: v.title || "ויוונסיה ללא שם", sub: sub, act1: cnt + more });
   }
@@ -1582,7 +1584,7 @@
     l.innerHTML = list.length ? vivGrid(list, "data-id") : showPubs() ? ph("אין ויוונסיות של אחרים", "כאן יופיעו ויוונסיות ציבוריות של מאפשרים אחרים, וויוונסיות ששותפו איתך לצפייה") : (state.offline ? ph("אין ויוונסיות שמורות", "שמרו ויוונסיה מהתפריט שלה כשיש חיבור, והיא תהיה כאן גם בלי אינטרנט") : ph("עוד אין ויוונסיות", "פתחו את התפריט ובחרו ביצירת ויוונסיה"));
     if (!list.length) { l.style.position = "relative"; if (l.firstElementChild) l.firstElementChild.style.marginBlock = "auto"; arrowTo(l); setTimeout(function () { arrowTo(l); }, 350); }   /* the arrow is a second child, so the words are centred by hand (the kit does it only for an only child) */
     l.querySelectorAll("[data-id]").forEach(function (b) { b.addEventListener("click", function () { openViv(b.dataset.id); }); b.addEventListener("keydown", function (e) { if ((e.key === "Enter" || e.key === " ") && e.target === b) { e.preventDefault(); openViv(b.dataset.id); } }); });   /* a card is a button: the keyboard opens it too */
-    l.querySelectorAll("[data-vm]").forEach(function (b) { b.addEventListener("click", function (ev) { ev.stopPropagation(); var v0 = state.vivs.concat(state.pubs || []).filter(function (x) { return x.id === b.dataset.vm; })[0]; if (v0) vivMenu(v0, b); }); });   /* the dots on a row of the list: that vivencia's menu */
+    l.querySelectorAll("[data-vm]").forEach(function (b) { b.addEventListener("click", function (ev) { ev.stopPropagation(); var v0 = state.vivs.concat(state.pubs || []).filter(function (x) { return x.id === b.dataset.vm; })[0]; if (v0) dupPopup(v0); }); }); l.querySelectorAll("[data-vvis]").forEach(function (b) { b.addEventListener("click", function (ev) { ev.stopPropagation(); var v0 = state.vivs.filter(function (x) { return x.id === b.dataset.vvis; })[0]; if (v0) sharePopup(v0); }); });   /* the dots on a row of the list: that vivencia's menu */
     if (state.vivs.length) enableDrag(l, "[data-id]", persistVivs);
     paintSel(); paintVivPlay(); applyVq();
     pl.style.setProperty("--sbw", Math.max(0, l.offsetWidth - l.clientWidth) + "px");   /* the header gives its side the room this list's scrollbar takes: its buttons are over the rows' buttons, and no scrollbar left over from another screen moves them */
@@ -1726,34 +1728,51 @@
   }
 
   /* sharing: only with accounts of the allowlist (chosen from it, never typed), as a viewer or an editor */
+  /* SHARING SETTINGS (owner 2026-11-25), the side panel on a computer, a sheet on a phone:
+     public or private; the partners (shared for editing); the viewers (shared for viewing), shown only while it is private.
+     Making it public keeps the viewers in the database, so making it private again brings them back as they were. */
   function sharePopup(v) {
     var dlg = document.getElementById("shareDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "shareDlg"; document.body.appendChild(dlg); }
     var shares = [], cands = [], ready = false;   /* ready: the list has arrived (until then the skeleton stays, typing does not draw an empty state) */
-    var shareBody = '<div class="pad"><label class="rfield"><span>הוספת אדם (אימייל או שם)</span><input id="sq" type="search" placeholder=" " autocomplete="off"></label></div><div id="slist"><div class="rskel rskel--title"></div></div>';
-    if (wide() && window.__showLeft) window.__showLeft(head("שיתוף", "", true) + '<div class="rlist">' + shareBody + '</div>', function (r) { dlg = r; on(r, "back", closeLeft); });   /* law 6: a long window is the side panel, the same left layer as the history and the liked lists */
-    else RosterSheet.render(dlg, { title: "שיתוף", from: "bottom", body: shareBody });
+    var shareBody = '<div id="svis"></div><div class="pad"><label class="rfield"><span>הוספת אדם (אימייל או שם)</span><input id="sq" type="search" placeholder=" " autocomplete="off"></label></div><div id="slist"><div class="rskel rskel--title"></div></div>';
+    if (wide() && window.__showLeft) window.__showLeft(head(v.title || "ויוונסיה ללא שם", "", true) + '<div class="rlist">' + shareBody + '</div>', function (r) { dlg = r; on(r, "back", closeLeft); });   /* law 6: a long window is the side panel, the same left layer as the history and the liked lists */
+    else RosterSheet.render(dlg, { title: v.title || "ויוונסיה ללא שם", from: "bottom", body: shareBody });   /* the title is the vivencia's name (owner 2026-11-25) */
+    function isPub() { return v.is_public !== false; }
     function who(e) { var c = cands.filter(function (x) { return x.email === e; })[0]; return c && c.note ? c.note : e; }
+    function paintVis() {   /* the two choices, the one that holds is pressed */
+      var row = function (pub, label, sub) { var on = isPub() === pub; return '<button type="button" class="rpick" data-svis="' + (pub ? 1 : 0) + '" aria-pressed="' + on + '"><span aria-hidden="true" class="ricon">' + (pub ? I.globe : I.lock) + '</span><span class="rpick__t" style="white-space:normal">' + label + '<br><span style="color:var(--text-muted);font-size:var(--fs-s)">' + sub + '</span></span>' + (on ? '<span aria-hidden="true" class="ricon ricon--primary">' + I.check + '</span>' : '') + '</button>'; };
+      var box = dlg.querySelector("#svis");
+      box.innerHTML = '<div class="pad" style="display:flex;flex-direction:column;gap:var(--gap-tight)">' + row(true, "ציבורית", "כל המאפשרים רואים אותה, לצפייה בלבד") + row(false, "פרטית", "רק השותפים והצופים שבחרת רואים אותה") + '</div>';
+      box.querySelectorAll("[data-svis]").forEach(function (b) { b.addEventListener("click", function () {
+        var pub = b.dataset.svis === "1"; if (pub === isPub()) return;
+        busy(b, api("/rest/v1/vivencias?id=eq." + v.id, { method: "PATCH", json: { is_public: pub } })).then(function () {
+          v.is_public = pub; state.vivs.forEach(function (x) { if (x.id === v.id) x.is_public = pub; }); if (state.viv && state.viv.id === v.id) state.viv.is_public = pub;
+          toast(pub ? "הוויוונסיה ציבורית" : "הוויוונסיה פרטית"); paintVis(); paintS(); renderVivs();
+          document.querySelectorAll('[data-act="vis"]').forEach(function (h) { var t = visTip(v); h.setAttribute("aria-label", t); h.title = t; h.innerHTML = pub ? I.globe : I.lock; });
+        }, fail);
+      }); });
+    }
     function paintS() {
       if (!ready) return;
       var q = fold(dlg.querySelector("#sq").value.trim()), l = dlg.querySelector("#slist");
       var have = {}; shares.forEach(function (x) { have[x.email] = 1; });
-      var mine = shares.filter(function (x) { return !q || fz(x.email + " " + who(x.email), q); });
+      var hit = function (x) { return !q || fz(x.email + " " + who(x.email), q); };
+      var partners = shares.filter(function (x) { return x.role === "edit" && hit(x); }), viewers = isPub() ? [] : shares.filter(function (x) { return x.role !== "edit" && hit(x); });
       var rest = q ? cands.filter(function (c) { return !have[c.email] && fz(c.email + " " + (c.note || ""), q); }) : [];   /* the people who are not shared yet show only when you search for them */
       var title2 = function (t) { return '<div class="rdiv"><span class="rdiv__l">' + t + '</span></div>'; };   /* the group label is the list's divider (the one divider type), not a row of its own */
-      var html = "";
-      if (mine.length) {
-        html += title2("משותף עם") + '<div class="rgrid rgrid--pad">' + mine.map(function (x) {
-          var nm = who(x.email), chip = '<button type="button" class="rchip rchip--info rchip--s" data-chiprole="' + esc(x.email) + '" aria-haspopup="menu">' + (x.role === "edit" ? "שותף" : "צפייה") + '</button>';   /* the permission is the chip: it opens the choice, like the users' cards */
-          return cardSlots({ attrs: 'data-scard="' + esc(x.email) + '" role="button" tabindex="0"', title: nm, sub: nm !== x.email ? x.email : "", chip: chip });
-        }).join("") + '</div>';
-      }
+      var cards = function (list) { return '<div class="rgrid rgrid--pad">' + list.map(function (x) {
+        var nm = who(x.email), chip = isPub() ? '' : '<button type="button" class="rchip rchip--info rchip--s" data-chiprole="' + esc(x.email) + '" aria-haspopup="menu">' + (x.role === "edit" ? "שותף" : "צפייה") + '</button>';   /* while private the chip moves a person between partner and viewer */
+        return cardSlots({ attrs: 'data-scard="' + esc(x.email) + '" role="button" tabindex="0"', title: nm, sub: nm !== x.email ? x.email : "", chip: chip });
+      }).join("") + '</div>'; };
+      var none = function (t) { return '<div class="pad" style="color:var(--text-muted)">' + t + '</div>'; };
+      var html = title2("שותפים לעריכה") + (partners.length ? cards(partners) : none(q ? "לא נמצא שותף" : "עוד אין שותפים"));
+      if (!isPub()) html += title2("צופים") + (viewers.length ? cards(viewers) : none(q ? "לא נמצא צופה" : "עוד אין צופים"));
       if (rest.length) {
         html += title2("הוספה") + '<div class="rgrid rgrid--pad">' + rest.map(function (c) {
           return cardSlots({ attrs: 'data-add="' + esc(c.email) + '" role="button" tabindex="0"', title: c.note || c.email, sub: c.note ? c.email : "", act1: '<span aria-hidden="true" class="ricon ricon--primary">' + I.plus + '</span>' });
         }).join("") + '</div>';
-      }
-      if (!html) html = q ? ph("לא נמצא", "אפשר לשתף רק עם חשבונות מרשימת המורשים.") : ph("עוד לא שיתפתם", "חפשו אדם לפי שם או אימייל כדי להוסיף אותו.");
+      } else if (q && !partners.length && !viewers.length) html += ph("לא נמצא", "אפשר לשתף רק עם חשבונות מרשימת המורשים.");
       l.innerHTML = html;
       l.querySelectorAll("[data-chiprole]").forEach(function (b) { b.addEventListener("click", function (e) {
         e.stopPropagation(); var em = b.dataset.chiprole, cur = (shares.filter(function (x) { return x.email === em; })[0] || {}).role;
@@ -1763,14 +1782,14 @@
         function open() { var em = c.dataset.scard; menu(c, [{ label: "הסרה", icon: I.trash, tone: "danger", fn: function () { api("/rest/v1/vivencia_shares?vivencia_id=eq." + v.id + "&email=eq." + encodeURIComponent(em), { method: "DELETE" }).then(load, fail); } }], { fit: true }); }
         c.addEventListener("click", open); c.addEventListener("keydown", function (e) { if (e.target === c && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); open(); } });
       });
-      l.querySelectorAll("[data-add]").forEach(function (b) { b.addEventListener("click", function () { busy(b, api("/rest/v1/vivencia_shares", { method: "POST", prefer: "return=minimal", json: { vivencia_id: v.id, email: b.dataset.add, role: "view" } }).then(function () { dlg.querySelector("#sq").value = ""; return load(); }, fail)); }); });
+      l.querySelectorAll("[data-add]").forEach(function (b) { b.addEventListener("click", function () { busy(b, api("/rest/v1/vivencia_shares", { method: "POST", prefer: "return=minimal", json: { vivencia_id: v.id, email: b.dataset.add, role: isPub() ? "edit" : "view" } }).then(function () { dlg.querySelector("#sq").value = ""; return load(); }, fail)); }); });   /* public: a new person is a partner (everybody sees it anyway); private: a viewer, the chip makes a partner */
     }
     function setRole(e, role) { return api("/rest/v1/vivencia_shares?vivencia_id=eq." + v.id + "&email=eq." + encodeURIComponent(e), { method: "PATCH", json: { role: role } }).then(load, fail); }
     function load() {
       return Promise.all([api("/rest/v1/vivencia_shares?vivencia_id=eq." + v.id + "&select=email,role&order=created_at"), api("/rest/v1/rpc/share_candidates", { method: "POST", json: {} })]).then(function (r) { shares = r[0] || []; cands = r[1] || []; ready = true; paintS(); }, function (er) { if (!ready) dlg.querySelector("#slist").innerHTML = ph("לא הצלחנו לטעון", "בדקו את החיבור ונסו שוב."); fail(er); });
     }
     dlg.querySelector("#sq").addEventListener("input", paintS);
-    load();
+    paintVis(); load();
   }
 
   /* removing an exercise from a vivencia is asked in the kit's popup, one action; the catalog's exercise is untouched */
@@ -2092,10 +2111,10 @@
       '', function (r) {   /* on a wide screen the way to the catalog is a green banner down the side, added by show() */
       on(r, "back", back); on(r, "add", function () { resetPk(); pk.tab = "ex"; if (wide()) goSub(picker); else { pickerSheet(); if (catApi) catApi.goKind("ex"); } });
       on(r, "vmore", function (b) {
-        menu(b, (v.role === "view" || v.role === "public" ? [] : [{ label: "עריכת שם", icon: I.pen, fn: function () { namePopup(v, false, b); } }]).concat([{ label: "הדפסה", icon: I.print || '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><path d="M6 18H4a1 1 0 0 1-1-1v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a1 1 0 0 1-1 1h-2"/><rect x="6" y="14" width="12" height="7"/></svg>', fn: function () { printOpening(); } }]).concat(v.role === "owner" ? [{ label: "מחיקה", icon: I.trash, tone: "danger", fn: function () { confirmDelete(v); } }] : []));
+        menu(b, (v.role === "view" || v.role === "public" ? [] : [{ label: "עריכת שם", icon: I.pen, fn: function () { namePopup(v, false, b); } }]).concat([{ label: "הדפסה", icon: I.print || '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><path d="M6 18H4a1 1 0 0 1-1-1v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a1 1 0 0 1-1 1h-2"/><rect x="6" y="14" width="12" height="7"/></svg>', fn: function () { printOpening(); } }]).concat(state.offline ? [] : v.role === "owner" ? [{ label: "הגדרות שיתוף", icon: I.share, fn: function () { sharePopup(v); } }] : v.role === "view" || v.role === "edit" ? [{ label: "הסרה שלי מהוויוונסיה", icon: I.out, tone: "danger", fn: function () { confirmLeave(v); } }] : []).concat(v.role === "owner" ? [{ label: "מחיקה", icon: I.trash, tone: "danger", fn: function () { confirmDelete(v); } }] : []));
       });
       on(r, "more", function (b) { vivMenu(v, b); });
-      on(r, "vis", function (b) { visPopup(v, b); });
+      var vb = r.querySelector('[data-act="vis"]'); if (vb) vb.addEventListener("click", function (ev) { ev.stopPropagation(); sharePopup(v); });   /* the click must not reach the dark side's "tap closes the layer", or the panel it opens is closed at once */
     });
     /* the exercises come from the device's copy at once (the skeleton only when there is none); the cloud's answer then corrects them */
     var local = Promise.resolve(null);
@@ -2123,23 +2142,6 @@
   /* public or private: only an owner sees the button and switches it (the database lets nobody else) */
   function visTip(v) { return v.is_public === false ? "פרטית: רק מי ששיתפת איתו רואה אותה" : "ציבורית: כל המאפשרים רואים אותה"; }
   function visBtn(v) { return '<button type="button" class="rbtn rbtn--icon" data-act="vis" aria-haspopup="dialog" aria-label="' + visTip(v) + '" title="' + visTip(v) + '">' + (v.is_public === false ? I.lock : I.globe) + '</button>'; }
-  function visPopup(v, b) {
-    var dlg = document.getElementById("confirmDlg");
-    if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "confirmDlg"; document.body.appendChild(dlg); }
-    var toPub = v.is_public === false;
-    RosterSheet.render(dlg, { kind: "confirm",
-      title: toPub ? "להפוך לציבורית?" : "להפוך לפרטית?", from: "bottom", size: "s",
-      body: '<div class="pad"><span>' + (toPub ? "כל המאפשרים המחוברים יוכלו לראות את \"" + esc(v.title || "ויוונסיה ללא שם") + "\" ברשימה שלהם, לצפייה בלבד. רק מי ששיתפת איתו יוכל לערוך." : "רק מי ששיתפת איתו יוכל לראות את \"" + esc(v.title || "ויוונסיה ללא שם") + "\". שאר המאפשרים לא יראו אותה יותר.") + '</span></div>',
-      foot: '<button class="rbtn rbtn--block" type="button" id="cvis">' + (toPub ? "הפיכה לציבורית" : "הפיכה לפרטית") + '</button>'
-    });
-    dlg.querySelector("#cvis").addEventListener("click", function () {
-      busy(dlg.querySelector("#cvis"), api("/rest/v1/vivencias?id=eq." + v.id, { method: "PATCH", json: { is_public: toPub } })).then(function () {
-        v.is_public = toPub; state.vivs.forEach(function (x) { if (x.id === v.id) x.is_public = toPub; });
-        dlg.close(); toast(toPub ? "הוויוונסיה ציבורית" : "הוויוונסיה פרטית");
-        var t = visTip(v); b.setAttribute("aria-label", t); b.title = t; b.innerHTML = toPub ? I.globe : I.lock;
-      }, fail);
-    });
-  }
   /* a confirmation is the kit's popup with ONE action: closing it is the cancel */
   /* somebody a vivencia was shared with takes themselves off it; it stays with its owner and the others */
   /* every vivencia is kept on the device, always: at each open the cloud and the device are compared and made equal (also what somebody else changed in a vivencia shared with me) */
