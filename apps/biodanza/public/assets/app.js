@@ -1575,7 +1575,7 @@
     var l = document.getElementById("hl"); if (!l) return; var q = state.vq || "";
     l.querySelectorAll("[data-vrow]").forEach(function (row) {
       var v = state.vivs.concat(state.pubs || []).filter(function (x) { return x.id === row.dataset.vrow; })[0];
-      row.style.display = !q || !v || fz(v.title || "", q) ? "" : "none";
+      row.style.display = !q || !v || fz((v.title || "") + " " + (v.partners || []).join(" "), q) ? "" : "none";   /* the name, or a facilitator shown on the card (owner 2026-11-25) */
     });
   }
   function renderVivs() {
