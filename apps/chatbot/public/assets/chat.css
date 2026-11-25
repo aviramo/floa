@@ -32,3 +32,12 @@ html.pg-chat body { margin: 0; background: var(--cream); color: var(--ink); font
 .ch-log .ch-chips { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: flex-start; gap: .5rem; width: 100%; padding: .2rem 0 .1rem; direction: rtl; }
 .ch-log .ch-chip { width: auto; max-width: 100%; min-height: 0; padding: .7rem .95rem; font-size: 1.05rem; line-height: 1.6; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: var(--ink); color: var(--paper); border: 0; box-shadow: none; }
 .ch-log .ch-chip:active { background: #4a3c33; transform: translateY(1px); }
+
+/* the last message: its link buttons sit in the middle and stand out, in the business's action colors (--cta-from/--cta-to, --cta-ring, --cta-shadow in its theme; without them the usual dark) */
+.ch-log .ch-chips.ch-end { justify-content: center; padding-top: .6rem; }
+.ch-log .ch-chip.ch-cta { display: inline-flex; align-items: center; gap: .5rem; padding: .85rem 1.8rem; font-size: 1.15rem; font-weight: 700; color: #FFFDF9;
+  background: linear-gradient(120deg, var(--cta-from, var(--ink)) 0%, var(--cta-to, var(--ink)) 100%);
+  box-shadow: 0 0 0 6px var(--cta-ring, transparent), 0 14px 30px -14px var(--cta-shadow, transparent); }
+.ch-log .ch-chip.ch-cta:active { background: var(--cta-from, var(--ink)); transform: none; }
+.ch-log .ch-chip.ch-cta:focus-visible { outline: 2px solid var(--cta-from, var(--ink)); outline-offset: 8px; }
+.ch-arr { font-size: 1.2rem; line-height: 1; }

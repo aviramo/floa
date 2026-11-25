@@ -10,7 +10,11 @@
     "--muted": "#4A3D33",
     "--plum": "#9A2D5E",
     "--err": "#C8411B",
-    "--r": "10px"
+    "--r": "10px",
+    "--cta-from": "#C8411B",
+    "--cta-to": "#E5562D",
+    "--cta-ring": "rgba(229,86,45,.16)",
+    "--cta-shadow": "rgba(229,86,45,.85)"
   },
   "pixel": "429806621602468",
   "siteUrl": "https://harpatka.co.il/",

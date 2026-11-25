@@ -75,12 +75,12 @@
     function showOptions(i) {
       clearRow();
       const step = steps[i], last = i === steps.length - 1;
-      row = el('div', 'ch-chips');
+      row = el('div', last ? 'ch-chips ch-end' : 'ch-chips');   // the last message: its link buttons in the middle, in the business's action colors
       step.options.forEach((o, k) => {
         if (last && (o.action || o.url)) {
           const own = /^https?:[/][/][^ ]+$/i.test((o.url || '').trim()) ? o.url.trim() : '';
           const href = own ? (o.action === 'site' ? withSrc(own) : own) : o.action === 'site' ? siteUrl() : o.action === 'updates' ? cfg.updatesLink : waUrl();
-          const a = el('a', 'ch-chip', o.label); a.href = href; a.target = '_blank'; a.rel = 'noopener';
+          const a = el('a', 'ch-chip ch-cta', o.label); const arr = el('span', 'ch-arr', '←'); arr.setAttribute('aria-hidden', 'true'); a.appendChild(arr); a.href = href; a.target = '_blank'; a.rel = 'noopener';
           a.addEventListener('click', () => { track('ChatCTA', { kind: o.action || 'link', ad: cid || 'default' }); record('cta', i + 1, k + 1, o.label); if (o.reply) { bubble('bot', o.reply); scroll(); } });
           row.appendChild(a);
         } else {
