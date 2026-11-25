@@ -7,6 +7,7 @@
   /* Every vivencia and every exercise has an address of its own, in the path (no # in the bar): /<vivencia> and /<vivencia>/<exercise>.
      On localhost the app lives under /biodanza/, so the same addresses carry that prefix there. */
   var BASE = /^(localhost|127[.]|192[.]168[.]|10[.])/.test(location.hostname) ? "/biodanza/" : "/";
+  try { var inv0 = new URLSearchParams(location.search).get("invite"); if (inv0) sessionStorage.setItem("biodanza.invite", inv0); } catch (x) { /* none */ }   /* a one-time link is kept for this tab: the Google sign-in comes back to the address without it */
   var popping = false, pending = null;   /* pending: an address the page was opened on, waiting for the list to load */
   /* HISTORY. One entry per screen (home, vivencia, exercise), each carrying its depth in history.state.d (home is 0), and one marker entry
      (same address, state.bk) per open popup or menu, so the browser's Back closes the top popup only and goes one level up otherwise.
@@ -1737,6 +1738,11 @@
   /* SHARING SETTINGS (owner 2026-11-25), the side panel on a computer, a sheet on a phone:
      public or private; the partners (shared for editing); the viewers (shared for viewing), shown only while it is private.
      Making it public keeps the viewers in the database, so making it private again brings them back as they were. */
+  function giveLink(url, title, done) {
+    if (navigator.share && !wide()) return navigator.share({ title: title, url: url }).catch(function (e) { if (e && e.name === "AbortError") return; return copyIt(); });
+    return copyIt();
+    function copyIt() { return navigator.clipboard.writeText(url).then(function () { toast(done); }, function () { window.prompt("העתקת הקישור", url); }); }
+  }
   function sharePopup(v) {
     var dlg = document.getElementById("shareDlg");
     if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "shareDlg"; document.body.appendChild(dlg); }
@@ -1749,7 +1755,14 @@
     function paintVis() {   /* the two choices, the one that holds is pressed */
       var row = function (pub, label, sub) { var on = isPub() === pub; return '<button type="button" class="rpick" data-svis="' + (pub ? 1 : 0) + '" aria-pressed="' + on + '"><span aria-hidden="true" class="ricon">' + (pub ? I.globe : I.lock) + '</span><span class="rpick__t" style="white-space:normal">' + label + '<br><span style="color:var(--text-muted);font-size:var(--fs-s)">' + sub + '</span></span>' + (on ? '<span aria-hidden="true" class="ricon ricon--primary">' + I.check + '</span>' : '') + '</button>'; };
       var box = dlg.querySelector("#svis");
-      box.innerHTML = '<div class="pad" style="display:flex;flex-direction:column;gap:var(--gap-tight)">' + row(true, "ציבורית", "כל המאפשרים רואים אותה, לצפייה בלבד") + row(false, "פרטית", "רק השותפים והצופים שבחרת רואים אותה") + '</div>';
+      var linkBtn = '<button type="button" class="rbtn rbtn--block" data-slink style="margin-top:var(--gap)">' + I.share + '<span>' + (isPub() ? "שיתוף קישור" : "קישור חד פעמי לצפייה") + '</span></button>';   /* public: its own address; private: a link that works once, for one viewer (owner 2026-11-25) */
+      box.innerHTML = '<div class="pad" style="display:flex;flex-direction:column;gap:var(--gap-tight)">' + row(true, "ציבורית", "כל המאפשרים רואים אותה, לצפייה בלבד") + row(false, "פרטית", "רק השותפים והצופים שבחרת רואים אותה") + linkBtn + '</div>';
+      box.querySelector("[data-slink]").addEventListener("click", function () {
+        var lb = this, base = location.origin + BASE + v.id;
+        var made = isPub() ? Promise.resolve(base)
+          : api("/rest/v1/vivencia_invites", { method: "POST", prefer: "return=representation", json: { vivencia_id: v.id } }).then(function (r) { return base + "?invite=" + encodeURIComponent(r[0].token); });
+        busy(lb, made.then(function (url) { return giveLink(url, v.title || "ויוונסיה", isPub() ? "הקישור הועתק" : "הקישור הועתק. הוא עובד פעם אחת, לאדם אחד"); })).then(null, fail);
+      });
       box.querySelectorAll("[data-svis]").forEach(function (b) { b.addEventListener("click", function () {
         var pub = b.dataset.svis === "1"; if (pub === isPub()) return;
         busy(b, api("/rest/v1/vivencias?id=eq." + v.id, { method: "PATCH", json: { is_public: pub } })).then(function () {
@@ -2111,7 +2124,7 @@
   }
   function editor() {
     var v = state.viv; setUrl(BASE + v.id); curJoin(v.id); refreshPrevLabel();
-    var vbtns = heartBtnViv(v.id, "") + (v.role === "owner" && !state.offline ? visBtn(v) : "") + '<button type="button" class="rbtn rbtn--icon" data-act="vmore" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>';   /* the heart, and the three dots: rename, print, delete */
+    var vbtns = heartBtnViv(v.id, "") + (state.offline ? "" : v.role === "owner" ? visBtn(v) : v.is_public !== false ? '<button type="button" class="rbtn rbtn--icon" data-act="vshare" aria-label="שיתוף קישור" title="שיתוף קישור">' + I.share + '</button>' : "") + '<button type="button" class="rbtn rbtn--icon" data-act="vmore" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button>';   /* the heart, and the three dots: rename, print, delete */
     show(head(v.title || "ויוונסיה חדשה", "", true, wide() ? '<span id="vtimer" hidden aria-live="off" style="flex:none;margin-left:var(--gap);font:var(--fw-bold) var(--fs-l)/var(--lh-tight) var(--font);font-variant-numeric:tabular-nums;color:var(--text);direction:ltr"></span>' + vbtns : vbtns, null, '<button type="button" id="vgo" class="rbtn rbtn--icon" hidden aria-label="לתרגיל שמתנגן" title="לתרגיל שמתנגן" style="display:none;flex:none;flex-direction:column;gap:0;color:var(--danger);background:transparent;border-color:transparent"><span id="vgon" style="font:var(--fw-bold) var(--fs-l)/1 var(--font);font-variant-numeric:tabular-nums"></span></button>') +   /* the mark of the exercise that plays sits beside the name; the way to the catalog is a word in the header, not a floating button */
       '<div class="rlist" data-fab-room id="list"><div class="rskel rskel--title"></div></div>' +
       '', function (r) {   /* on a wide screen the way to the catalog is a green banner down the side, added by show() */
@@ -2120,6 +2133,7 @@
         menu(b, (v.role === "view" || v.role === "public" ? [] : [{ label: "עריכת שם", icon: I.pen, fn: function () { namePopup(v, false, b); } }]).concat([{ label: "הדפסה", icon: I.print || '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><path d="M6 18H4a1 1 0 0 1-1-1v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a1 1 0 0 1-1 1h-2"/><rect x="6" y="14" width="12" height="7"/></svg>', fn: function () { printOpening(); } }]).concat(state.offline ? [] : v.role === "owner" ? [{ label: "הגדרות שיתוף", icon: I.share, fn: function () { sharePopup(v); } }] : v.role === "view" || v.role === "edit" ? [{ label: "הסרה שלי מהוויוונסיה", icon: I.out, tone: "danger", fn: function () { confirmLeave(v); } }] : []).concat(v.role === "owner" ? [{ label: "מחיקה", icon: I.trash, tone: "danger", fn: function () { confirmDelete(v); } }] : []));
       });
       on(r, "more", function (b) { vivMenu(v, b); });
+      var sb = r.querySelector('[data-act="vshare"]'); if (sb) sb.addEventListener("click", function (ev) { ev.stopPropagation(); giveLink(location.origin + BASE + v.id, v.title || "ויוונסיה", "הקישור הועתק"); });   /* a public vivencia of somebody else: anyone who sees it can pass on its address (owner 2026-11-25) */
       var vb = r.querySelector('[data-act="vis"]'); if (vb) vb.addEventListener("click", function (ev) { ev.stopPropagation(); sharePopup(v); });   /* the click must not reach the dark side's "tap closes the layer", or the panel it opens is closed at once */
     });
     /* the exercises come from the device's copy at once (the skeleton only when there is none); the cloud's answer then corrects them */
@@ -4445,7 +4459,16 @@
     api("/rest/v1/rpc/me", { method: "POST", json: {} }).then(function (me) {
       state.me = me; try { localStorage.setItem("biodanza.admin", me && me.admin ? "1" : "0"); localStorage.setItem("biodanza.super", me && me.super ? "1" : "0"); } catch (x) { /* none */ }
       if (!me || !me.allowed) return gate("לחשבון " + FLOA_AUTH.email() + " אין הרשאה להיכנס. אפשר לבקש מהמנהל להוסיף אותו.", true);
-      return Promise.all([api("/rest/v1/lines?select=key,name_he&order=sort"), api("/rest/v1/phases?select=key,name_he&order=sort"), api("/rest/v1/levels?select=key,name_he&order=rank").catch(function () { return []; })]).then(function (r) { state.lines = r[0]; state.phases = r[1]; state.levels = r[2]; if (!localHome) home(); startRealtime(); setTimeout(restoreCatMobile, 700); api("/rest/v1/song_likes?select=music_id").then(function (ls) { likes = {}; (ls || []).forEach(function (x) { likes[x.music_id] = true; }); }, function () { /* no hearts this time */ });
+      var inv = new URLSearchParams(location.search).get("invite");   /* a one-time link: it is used now and is gone; the address keeps only the vivencia */
+      if (!inv) try { inv = sessionStorage.getItem("biodanza.invite"); } catch (x) { /* none */ }   /* it came before the sign-in, which returns without it */
+      try { sessionStorage.removeItem("biodanza.invite"); } catch (x) { /* none */ }
+      var redeemed = Promise.resolve();
+      if (inv) {
+        history.replaceState(history.state, "", location.pathname);
+        redeemed = api("/rest/v1/rpc/redeem_invite", { method: "POST", json: { t: inv } }).then(function () { toast("נוספת לוויוונסיה כצופה"); },
+          function (e) { toast(/invalid/.test(String(e && (e.message || e.body || e))) ? "הקישור כבר נוצל או שאינו קיים" : "לא הצלחנו להשתמש בקישור"); });
+      }
+      return Promise.all([api("/rest/v1/lines?select=key,name_he&order=sort"), api("/rest/v1/phases?select=key,name_he&order=sort"), api("/rest/v1/levels?select=key,name_he&order=rank").catch(function () { return []; })]).then(function (r) { state.lines = r[0]; state.phases = r[1]; state.levels = r[2]; redeemed.then(function () { if (!localHome) home(); else loadVivs().then(renderVivs, function () { /* next load */ }); }); startRealtime(); setTimeout(restoreCatMobile, 700); api("/rest/v1/song_likes?select=music_id").then(function (ls) { likes = {}; (ls || []).forEach(function (x) { likes[x.music_id] = true; }); }, function () { /* no hearts this time */ });
         api("/rest/v1/vivencia_likes?select=vivencia_id").then(function (ls) { likesViv = {}; (ls || []).forEach(function (x) { likesViv[x.vivencia_id] = true; }); if (state.vivsLoaded) renderVivs(); }, function () { /* no hearts this time */ });
         api("/rest/v1/exercise_likes?select=exercise_id").then(function (ls) { likesEx = {}; (ls || []).forEach(function (x) { likesEx[x.exercise_id] = true; }); return api("/rest/v1/item_likes?select=item_id"); }).then(function (ls) { (ls || []).forEach(function (x) { likesEx["item:" + x.item_id] = true; }); }, function () { /* no hearts this time */ }); });
     }).catch(function (e) {
