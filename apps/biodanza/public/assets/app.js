@@ -1491,6 +1491,15 @@
       var rows = (r[0] || []).map(function (v) { v.pos = pos[v.id]; v.role = role[v.id] || "public"; v.partners = partners[v.id] || []; return v; });
       state.vivs = rows.filter(function (v) { return v.role !== "public"; });   /* mine and shared with me: my order, kept on the device */
       state.pubs = rows.filter(function (v) { return v.role === "public"; }).sort(function (a, b) { return a.updated_at < b.updated_at ? 1 : -1; });   /* somebody else's public ones: read only, after mine, newest first, never kept on the device */
+      if (state.viv) {   /* the open vivencia was drawn from the device's copy (or before the list came): its partners and its sharing state come with the cloud's answer, and its header is drawn again if they changed */
+        var cur0 = rows.filter(function (x) { return x.id === state.viv.id; })[0];
+        if (cur0) {
+          var was = (state.viv.partners || []).join(", "), pubWas = state.viv.is_public;
+          state.viv.partners = cur0.partners; state.viv.is_public = cur0.is_public;
+          var lst = document.getElementById("list");
+          if ((was !== (cur0.partners || []).join(", ") || pubWas !== cur0.is_public) && lst && lst.hasAttribute("data-fab-room") && !(liveItem && liveItem.root && liveItem.root.isConnected)) setTimeout(editor, 0);
+        }
+      }
       /* my own order; a vivencia I have not placed yet (a new one) comes first, newest first */
       state.vivs.sort(function (a, b) { var pa = a.pos == null ? -1 : a.pos, pb = b.pos == null ? -1 : b.pos; return pa - pb || (a.updated_at < b.updated_at ? 1 : -1); });
       syncOffline();   /* the device is made equal to the cloud, in the background (not more than every 30 seconds unless asked) */
