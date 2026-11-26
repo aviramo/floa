@@ -823,7 +823,7 @@
   /* the mixer button carries the same mark as every chosen button (the bar along its bottom edge) when a filter of the popup, a sort or a display choice is active */
   /* ONE question for two things: is there anything to reset? The reset button is enabled, and the mixer shows its bar, exactly when the answer is yes. */
   const rowChipPay = () => state.paidF === 'r' || state.paidF === 'u';   // "משוריינים" is a button of the row, not a filter of the popup
-  const canReset = () => !!(state.pay || (state.paidF && !rowChipPay()) || state.bal || state.srcF || state.ageF || state.mcF || state.updF || state.regF || state.sort !== 'last' || state.sortDir !== 'desc');   // the four buttons of the row (reserved, arrived, women, men) and the mark button have their own marks: they never count here
+  const canReset = () => !!(state.pay || (state.paidF && !rowChipPay()) || state.bal || state.srcF || state.ageF || state.mcF || state.updF || state.regF || state.sort !== defaultSort() || state.sortDir !== 'desc');   // the four buttons of the row (reserved, arrived, women, men) and the mark button have their own marks: they never count here
   const mixOn = canReset;
   const syncReset = () => { const vc = $('#viewClear'); if (vc) vc.disabled = !canReset(); };
   const filterBtnHtml = () => '<button type="button" class="fspair' + (mixOn() ? ' on' : '') + '" id="filtBtn" aria-pressed="' + mixOn() + '" aria-haspopup="menu" aria-expanded="' + !$('#viewMenu').hidden + '" aria-label="העדפות' + (mixOn() ? ' (יש בחירה פעילה)' : '') + '" title="העדפות">' + icon('mixer') + '</button>';   // לחיצה אחת פותחת את פופאפ הסינון; שני הסמלים צמודים
@@ -972,7 +972,9 @@
   /* הצגה בשורת הצ'יפים (7.11.26): לכל מנהל, בכל התצוגות; נשמר ב-view_scopes._g. chipHide: מפתחות של צ'יפי ברירת המחדל שמוסתרים (res, arr, male, female); tagHide: מפתחות של תגיות שמוסתרות. צ'יף שהוסתר נשאר מוסתר גם כשהסינון שלו פעיל */
   ['chipHide', 'tagHide'].forEach((prop) => Object.defineProperty(state, prop, { get() { const c = state.viewScopes._g; return Array.isArray(c && c[prop]) ? c[prop] : []; }, set(v) { (state.viewScopes._g || (state.viewScopes._g = {}))[prop] = v; }, enumerable: true }));
   Object.defineProperty(state, 'sortDir', { get() { const c = state.viewScopes._g; return c && c.sortDir === 'asc' ? 'asc' : 'desc'; }, set(v) { (state.viewScopes._g || (state.viewScopes._g = {})).sortDir = v === 'asc' ? 'asc' : 'desc'; }, enumerable: true });   // כיוון המיון: desc = ברירת המחדל של כל מיון (חדש, עדכני,  גבוהה קודם), asc = הפוך; לחיצה נוספת על המיון שנבחר הופכת
-  Object.defineProperty(state, 'sort', { get() { const c = state.viewScopes._g; return c && c.sort && c.sort !== 'pers' && c.sort !== 'pay' ? c.sort : 'last'; }, set(v) { (state.viewScopes._g || (state.viewScopes._g = {})).sort = v; }, enumerable: true });
+  /* ברירת המחדל של המיון (26.11.26): בכל המשתתפים (ובסוג מפגש) לפי הרשמה, מהחדש לישן; בתוך מפגש לפי מפגש אחרון. מיון שהוא ברירת המחדל של התצוגה לא נשמר (sort ריק), ולכן במעבר לתצוגה אחרת מקבלים את ברירת המחדל שלה. sortV: 2 מסמן שמירה מהגרסה הזאת; 'last' שנשמר לפניה היה רק ברירת המחדל הישנה ונחשב כברירת מחדל */
+  const defaultSort = () => state.filter ? 'last' : 'new';
+  Object.defineProperty(state, 'sort', { get() { const c = state.viewScopes._g, s = c && c.sort; return s && s !== 'pers' && s !== 'pay' && !(s === 'last' && c.sortV !== 2) ? s : defaultSort(); }, set(v) { const g = state.viewScopes._g || (state.viewScopes._g = {}); g.sortV = 2; if (v === defaultSort()) delete g.sort; else g.sort = v; }, enumerable: true });
   function applyViewPrefs() { const pr = state.prefs[emailOf()] || {}; state.viewScopes = (pr.view_scopes && typeof pr.view_scopes === 'object') ? JSON.parse(JSON.stringify(pr.view_scopes)) : {}; }
   async function saveViewPrefs() {
     const em = emailOf(), body = { email: em, view_scopes: state.viewScopes };
@@ -1137,7 +1139,7 @@
       const n = new Map(state.participants.map((p) => [p.id, meetCountOf(p)]));
       return (a, b) => { const x = n.get(a.id) || 0, y = n.get(b.id) || 0; if (!x || !y) return !x && !y ? byName(a, b) : !x ? 1 : -1; return (asc ? x - y : y - x) || byName(a, b); };
     }
-    if (state.sort === 'last') {   // מפגש אחרון (ברירת מחדל): לפי המפגש האחרון שהמשתתף משויך אליו (בתוך מפגש: לפי מועד השיוך למפגש הזה); מי שלא משויך לאף מפגש בסוף
+    if (state.sort === 'last') {   // מפגש אחרון (ברירת המחדל בתוך מפגש): לפי המפגש האחרון שהמשתתף משויך אליו (בתוך מפגש: לפי מועד השיוך למפגש הזה); מי שלא משויך לאף מפגש בסוף
       const key = new Map(state.participants.map((p) => {
         if (state.filter) { const l = linkOf(p.id, state.filter); return [p.id, l ? String(l.created_at || '') : '']; }
         const ms = linksOf(p.id).map((l) => meetOf(l.meeting_id)).filter(Boolean).map((m) => String(m.meeting_date) + ' ' + String(m.meeting_time || '')); return [p.id, ms.length ? ms.sort().pop() : ''];
@@ -4373,7 +4375,7 @@
     d.addEventListener('close', () => { if (!m.hidden) cl(); });
   });
   /* איפוס: the filters and the sort (back to the default: the last meeting, newest first). The display (which buttons the row shows) is a preference and stays. */
-  $('#viewClear').addEventListener('click', () => { { const keep = { g: state.gender, a: state.arrF, p: rowChipPay() ? state.paidF : null, w: waFilter() }; clearFilters(); state.gender = keep.g; state.arrF = keep.a; state.paidF = keep.p; if (keep.w) waSetFilter(keep.w); } state.sort = 'last'; state.sortDir = 'desc'; saveViewPrefs(); renderChipRow(); render(); syncUrl(); renderViewMenu(); });
+  $('#viewClear').addEventListener('click', () => { { const keep = { g: state.gender, a: state.arrF, p: rowChipPay() ? state.paidF : null, w: waFilter() }; clearFilters(); state.gender = keep.g; state.arrF = keep.a; state.paidF = keep.p; if (keep.w) waSetFilter(keep.w); } state.sort = defaultSort(); state.sortDir = 'desc'; saveViewPrefs(); renderChipRow(); render(); syncUrl(); renderViewMenu(); });
   /* a tag's actions: a tap on its cell opens a small menu: בחירה, בחירה הפוכה, צבע, שם, מחיקה */
   function openTagMenu(key, cell) {
     let m = document.getElementById('tagActMenu');
@@ -4409,7 +4411,7 @@
     const vte = e.target.closest('[data-vtshow]'); if (vte && vte.dataset.vtshow) { const k = vte.dataset.vtshow, hid = state.tagHide.includes(k); state.tagHide = hid ? state.tagHide.filter((x) => x !== k) : state.tagHide.concat(k); saveViewPrefs(); renderViewMenu(); return; }
     if (e.target.closest('[data-vtadd]')) { vtAdding = true; renderViewMenu(); const i = $('#viewMenu .vtname'); if (i) { i.focus(); try { i.scrollIntoView({ block: 'center' }); } catch (x) {} } return; }
     const vs = e.target.closest('[data-vshow]'); if (vs) { const k = vs.dataset.vshow, cur = state.chipHide.filter((x) => x !== k && !(k === 'gen' && (x === 'male' || x === 'female'))); state.chipHide = vs.getAttribute('aria-pressed') === 'true' ? cur.concat(k) : cur; saveViewPrefs(); renderChipRow(); renderViewMenu(); return; }   // shown (pressed) -> hide it from the row
-    const st = e.target.closest('[data-stri]'); if (st) { updFrozen = null; const k = st.dataset.stri; if (state.sort !== k) { state.sort = k; state.sortDir = 'desc'; } else if (state.sortDir === 'desc') state.sortDir = 'asc'; else { state.sort = 'last'; state.sortDir = 'desc'; } render(); saveViewPrefs(); renderViewMenu(); return; }
+    const st = e.target.closest('[data-stri]'); if (st) { updFrozen = null; const k = st.dataset.stri; if (state.sort !== k) { state.sort = k; state.sortDir = 'desc'; } else if (state.sortDir === 'desc') state.sortDir = 'asc'; else { state.sort = defaultSort(); state.sortDir = 'desc'; } render(); saveViewPrefs(); renderViewMenu(); return; }
     if (mk) { const f = FK[mk.dataset.mk], v = mk.dataset.mv; if (f) { const cur = payKeys(state[f]); state[f] = (cur.includes(v) ? cur.filter((x) => x !== v) : (f === 'gender' || f === 'updF' || f === 'regF' ? [v] : cur.concat(v))).join(',') || null; } syncUrl(); return after(); }
     const mp = e.target.closest('[data-mp]');
     if (mp) { const v = mp.dataset.mv; if (mp.dataset.mp === 'pay') state.paidF = state.paidF === v ? null : v; else state.bal = state.bal === v ? null : v; syncUrl(); return after(); }   // תשלום או קרדיט: בחירה אחת
