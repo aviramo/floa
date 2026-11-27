@@ -1,0 +1,25 @@
+/* Button: ui/docs/button.md, "כפתור אייקון", "כפתור טקסט", "כפתור מלא" */
+.rbtn { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: var(--gap-tight); min-height: var(--ctl); padding: 0 var(--gap); border: 1px solid var(--primary); border-radius: var(--r);
+  background: var(--primary); color: var(--on-primary); font: var(--fw-bold) var(--fs-m)/1 var(--font); white-space: nowrap; text-decoration: none; transition: box-shadow var(--t-base) var(--ease), opacity var(--t-base) var(--ease); }
+.rbtn > svg { width: var(--icon); height: var(--icon); flex: none; stroke-width: var(--icon-w); }
+.rbtn--block { display: flex; width: 100%; }
+.rbtn--ghost { background: var(--surface); border-color: var(--surface); color: var(--text); font-weight: var(--fw-regular); }
+.rbtn__label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rbtn:has(> .rbtn__label) { max-width: 100%; min-width: 0; }
+.rbtn--icon { box-sizing: border-box; flex: none; width: var(--icon); height: var(--icon); min-height: 0; padding: 0; border-width: 0; border-radius: var(--r-round); background: transparent; color: var(--text); }
+.rbtn--text { position: relative; display: inline-flex; align-items: center; flex: none; min-height: 0; padding: 0; border: 0; border-radius: var(--r-round); background: transparent; color: var(--primary); font: var(--fw-bold) var(--fs-m)/var(--lh-tight) var(--font); white-space: nowrap; }
+.rbtn--text { isolation: isolate; }
+.rbtn--text:has(> .ricon) { gap: var(--gap-tight); }
+.rbtn--text[aria-busy="true"] { pointer-events: none; animation: rk-breath var(--busy-breath-t) ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .rbtn--text[aria-busy="true"] { animation: none; opacity: var(--busy-breath-low); } }
+.rbtn--icon { isolation: isolate; }
+.rbtn--icon.rbtn--muted { color: var(--text-muted); }
+.rbtn--icon.rbtn--accent { color: var(--primary); }
+.rbtn--icon[aria-pressed="true"] { color: var(--primary); }
+.rbtn--icon.is-play { color: var(--accent-2); }
+.rbtn--icon.rbtn--fill[aria-pressed="true"] > svg { fill: currentColor; }
+.rcard .rbtn--icon::before { height: var(--row-card); }
+.rbtn--icon[aria-busy="true"] { pointer-events: none; }
+.rbtn--icon[aria-busy="true"] > svg { animation: rk-breath var(--busy-breath-t) ease-in-out infinite; }
+@keyframes rk-breath { 50% { opacity: var(--busy-breath-low); } }
+@media (prefers-reduced-motion: reduce) { .rbtn--icon[aria-busy="true"] > svg { animation: none; opacity: var(--busy-breath-low); } }

@@ -1,0 +1,104 @@
+/* Window (sheet) and short window: ui/docs/window.md, "חלון קצר" */
+@media (min-width: 760px) {
+  dialog.rsheet .sheet-head > .rs-x { position: absolute; width: 1px; height: 1px; margin: 0; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+}
+@media (width < 760px) {
+  dialog.rsheet:has(> .rs-grab):not([data-from="top"]) .sheet { padding-top: 0; }
+}
+@media (width < 760px) {
+  dialog:has(> .grab) .sheet-head > .dclose, dialog.rsheet:has(> .rs-grab) .sheet-head > .rs-x {
+    position: absolute; width: 1px; height: 1px; margin: 0; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+}
+dialog.rsheet {
+  --rs-bg: var(--page);
+  --rs-text: var(--text);
+  --rs-scrim: var(--scrim);
+  --rs-pill: var(--border-strong);
+  border: 0; padding: 0; margin-inline: auto;
+  width: 100%; max-width: var(--w);
+  max-height: calc(var(--rs-vvh, 100dvh) - 12px);
+  overflow: hidden; overscroll-behavior: contain;
+  border-radius: var(--r) !important;
+  background: var(--rs-bg); color: var(--rs-text);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(var(--rs-dy, 0px));
+  touch-action: pan-y;
+}
+dialog.rsheet[open] { display: flex; flex-direction: column; }
+dialog.rsheet[data-from="bottom"], dialog.rsheet:not([data-from]) { border-radius: var(--r) var(--r) 0 0 !important; }
+dialog.rsheet[data-from="top"] { border-radius: 0 0 var(--r) var(--r) !important; }
+dialog.rsheet:focus { outline: none; }
+dialog.rsheet::backdrop { background: var(--rs-scrim); }
+dialog.rsheet::backdrop { transition: opacity .2s cubic-bezier(.2, .8, .2, 1); }
+dialog.rsheet.rs-closing::backdrop { opacity: 0; }
+dialog.rsheet:is([data-size="s"], [data-size="sm"], [data-anchored])::backdrop { background: transparent; }
+dialog.rsheet[data-from="top"] { margin-block: var(--rs-top, 0px) auto; }
+dialog.rsheet[data-from="bottom"], dialog.rsheet:not([data-from]) { margin-block: auto var(--rs-kb, 0px); }
+html.rs-kbd dialog.rsheet:not([data-from="top"]):has(:is(input, textarea, select, [contenteditable="true"]):focus) { margin-block-end: calc(var(--rs-kb, 0px) + var(--kbd-strip)); }
+dialog.rsheet.rs-dragging { transition: none; }
+dialog.rsheet.rs-settle { transition: transform .2s cubic-bezier(.2, .8, .2, 1); }
+dialog.rsheet > :not(.rs-grab) { flex: 1 1 auto; min-height: 0; }
+dialog.rsheet[data-from="top"] { padding-top: var(--safe-t); }
+dialog.rsheet[data-from="top"] > :not(.rs-grab) { order: 1; }
+.rs-grab { flex: 0 0 auto; height: 44px; display: grid; place-items: center; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+.rs-grab::before { content: ""; width: 44px; height: 4px; background: var(--rs-pill); }
+dialog.rsheet[data-from="top"] > .rs-grab { order: 2; }
+dialog.rsheet[data-from="bottom"] > .rs-grab, dialog.rsheet:not([data-from]) > .rs-grab { order: -1; height: var(--gap); }
+[data-rs-drag] { touch-action: none; }
+dialog.rsheet { --rs-end: max(var(--sheet-b), calc(var(--bar-b) + var(--gap))); }
+dialog.rsheet[data-from="top"] { --rs-end: var(--gap); }
+.rpanel { --rs-end: var(--end-pad); }
+dialog.rsheet .sheet { padding-top: var(--gap); }
+dialog.rsheet .sheet-head { position: relative; z-index: 1; }
+dialog.rsheet[data-size="s"] .sheet-head, dialog.rsheet[data-size="sm"] .sheet-head { min-height: var(--ctl); }
+.rlayout--surface > .rlayout__body:has(.rlist):not(:has(> .rfields:only-child > .rlist:last-child)) > :not(style, script, template) { flex: 1 1 auto; min-height: 0; display: flex; }
+dialog.rsheet .rlayout__body :focus-visible { outline-offset: calc(var(--bw) * -2); }
+dialog.rsheet .rlayout__body > :not(.rempty) { flex: 0 0 auto; }
+dialog.rsheet.confirm .sheet-foot { border-top: 0; }
+dialog.rsheet.confirm .rs-text[data-err] { display: flex; align-items: center; gap: var(--gap-tight); }
+dialog.rsheet.confirm .rs-text[data-err] > svg { flex: none; width: var(--icon); height: var(--icon); }
+dialog.rsheet[data-size] { max-width: min(var(--w), 94vw); }
+html.rs-lock { overflow: hidden; overscroll-behavior: none; }
+body.rs-lock { position: fixed; inset-inline: 0; width: 100%; overflow: hidden; }
+@keyframes rs-in-top { from { transform: translateY(-100%); } }
+@keyframes rs-in-bottom { from { transform: translateY(100%); } }
+@keyframes rs-fade { from { opacity: 0; } }
+dialog.rsheet[open][data-from="top"] { animation: rs-in-top .24s cubic-bezier(.2, .8, .2, 1); }
+dialog.rsheet[open][data-from="bottom"], dialog.rsheet[open]:not([data-from]) { animation: rs-in-bottom .24s cubic-bezier(.2, .8, .2, 1); }
+dialog.rsheet[open]::backdrop { animation: rs-fade .24s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  dialog.rsheet, dialog.rsheet[open], dialog.rsheet[open]::backdrop, dialog.rsheet.rs-settle { animation: none !important; transition: none !important; }
+}
+@media (min-width: 760px) {
+  dialog.rsheet, dialog.rsheet[data-from] {
+    margin: auto; transform: none; touch-action: auto; padding-top: 0;
+    max-height: calc(100dvh - 48px);
+  }
+  dialog.rsheet > .rs-grab { display: none; }
+  dialog.rsheet > :not(.rs-grab) { order: 0; }
+  dialog.rsheet[data-from] .sheet, dialog.rsheet .sheet { padding-top: var(--gap); }
+  dialog.rsheet, dialog.rsheet[data-from] { --rs-end: var(--sheet-b); }
+  dialog.rsheet[open], dialog.rsheet[open][data-from], dialog.rsheet[open]:not([data-from]) { animation: rs-in-center .2s cubic-bezier(.2, .8, .2, 1); }
+  dialog.rsheet[data-desktop="side"] { position: fixed; inset: 0 auto 0 0; margin: 0; width: min(var(--w), 92vw); max-width: none; max-height: none; height: auto; box-shadow: var(--shadow-lg); }
+  dialog.rsheet[open][data-desktop="side"] { animation: rs-in-side .26s cubic-bezier(.2, .8, .2, 1); }
+}
+@media (min-width: 760px) {
+  dialog.rsheet, dialog.rsheet[data-from] { border-radius: var(--r) !important; }
+  dialog.rsheet[data-desktop="side"] { border-radius: 0 var(--r) var(--r) 0 !important; }
+  dialog.rsheet[open][data-anchored] { animation: none !important; }
+  dialog.rsheet[data-anchored] { position: fixed; inset-inline-end: auto; inset-block-end: auto; margin: 0; width: max-content; min-width: 0; max-width: min(var(--w), calc(100vw - var(--gap) * 2)); max-height: calc(100dvh - var(--gap) * 2); }
+}
+@keyframes rs-in-center { from { transform: translateY(100%); } }
+@keyframes rs-in-side { from { transform: translateX(-100%); } }
+@media (min-width: 760px) and (prefers-reduced-motion: reduce) { dialog.rsheet[open], dialog.rsheet[open][data-from] { animation: none !important; } }
+dialog.rsheet .sheet-head > .rs-act[aria-busy="true"] { pointer-events: none; }
+@media (width < 760px) {
+  dialog.rsheet:not([data-size="s"]):not([data-size="sm"]) { height: var(--rs-vvh, 100dvh); max-height: var(--rs-vvh, 100dvh); max-width: none; border-radius: 0 !important; }
+  dialog.rsheet:not([data-size="s"]):not([data-size="sm"])[data-from="top"] { margin-block: 0; }
+  dialog.rsheet:is([data-size="s"], [data-size="sm"]) { max-height: var(--rs-vvh, 100dvh); }
+  html.rs-kbd dialog.rsheet:not([data-size="s"]):not([data-size="sm"]), html.rs-kbd dialog.rsheet:not([data-size="s"]):not([data-size="sm"])[data-from] { margin-block: var(--rs-top, 0px) 0; }
+}
+@media (width < 760px) {
+  dialog.rsheet, dialog.rsheet[data-size] { width: 100%; max-width: none; margin-inline: 0; }
+  dialog.rsheet:not([data-size="s"], [data-size="sm"], [data-anchored]) { border-radius: 0 !important; }
+}

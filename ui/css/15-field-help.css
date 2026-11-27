@@ -1,0 +1,4 @@
+/* Field help slot: ui/docs/field.md */
+.rfield .rf-help { display: block; color: var(--text-muted); font: var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font); }
+.rfield .rf-help .rf-ex b { font-weight: var(--fw-bold); }
+.rfield .rf-help .rf-ex { display: inline-block; font-weight: var(--fw-regular); color: var(--text); unicode-bidi: isolate; direction: ltr; }

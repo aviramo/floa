@@ -1,0 +1,8 @@
+/* Form container: ui/docs/field.md. The fields over a list are the list's top block, the tile (ui/css/40b-list-top.css, data-rquick) */
+/* Layout (ui/docs/field.md): .rfields is rlayout (a column, --gap); .rfields__row is rlayout rlayout--row, each field in it rlayout__grow (two equal halves) */
+.rfields__row { align-items: stretch; }   /* two fields side by side are as tall as each other, as when this was a grid */
+/* The field in place (ui/docs/realtime.md "עריכה במקום מעיפרון"): a one-line field that stands in for a name inside the name's own element, with no label slot
+   (the label is its aria-label) and the name's typography (font: inherit), so nothing jumps. The line under it is the field's line, as a shadow (no height of its own). */
+.rfield.rfield--inline { display: inline-flex; vertical-align: baseline; inline-size: 100%; max-inline-size: 100%; font: inherit; color: inherit; }
+.rfield.rfield--inline > input { block-size: auto; padding: 0; border: 0; font: inherit; letter-spacing: inherit; color: inherit; text-align: start; box-shadow: 0 var(--bw) 0 var(--rf-line); }
+.rfield.rfield--inline > input:focus { box-shadow: 0 var(--focus-w) 0 var(--rf-ink); }

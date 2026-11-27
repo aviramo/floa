@@ -29,8 +29,9 @@ const SPA = new Set(HOSTS.filter((h) => h.spa).map((h) => h.host));
 const TEST = new Set(HOSTS.filter((h) => h.test).map((h) => h.host));
 const SLUGS = new Set(HOSTS.filter((h) => h.slugs).map((h) => h.host));
 const RESERVED = ["admin", "connect", "me", "api", "assets", "new", "index"];
-const DOMAIN_FILES = new Set(["/supabase.js", "/auth.js", "/kit.css", "/sheet.js", "/sound.js", "/favicon.ico", "/favicon.svg", "/apple-touch-icon.png", "/sw.js", "/robots.txt", "/404.html", "/__test-env.js"]);
+const DOMAIN_FILES = new Set(["/supabase.js", "/auth.js", "/roster-site.js", "/media.js", "/kit.css", "/layout.js", "/sheet.js", "/sound.js", "/menu.js", "/card.js", "/section.js", "/tabs.js", "/swipe.js", "/list.js", "/field.js", "/search.js", "/range.js", "/audio.js", "/print.js", "/live.js", "/app.js", "/icons.svg", "/favicon.ico", "/favicon.svg", "/apple-touch-icon.png", "/sw.js", "/robots.txt", "/404.html", "/__test-env.js"]);
 const SLUG_PAGES = { "": "admin", connect: "connect", me: "me" };
+const NOT_FOUND = '<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>הדף לא נמצא</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;padding:16px;font:16px/1.6 system-ui,sans-serif;color:#1a1a1a;background:#fff;text-align:center}a{color:#0b57d0}@media (prefers-color-scheme:dark){body{background:#111;color:#eee}a{color:#8ab4f8}}</style></head><body><main><h1>הדף הזה לא קיים</h1><p><a href="/">לדף הבית</a></p></main></body></html>';
 /* longest folder first, so /tal/ia is not taken for /tal */
 const OLD = HOSTS.filter((h) => !h.test).flatMap((h) => [h.folder, ...(h.old || [])].map((f) => ["/" + f.replace(/\/$/, ""), h.host]))
   .sort((a, b) => b[0].length - a[0].length);
@@ -146,6 +147,11 @@ export async function onRequest({ request, next, env }) {
   /* the few files that belong to the DOMAIN, not to an app */
   if (DOMAIN_FILES.has(url.pathname) || url.pathname.startsWith("/floa/")) {
     const atRoot = await at(url.pathname);
+    /* a stamped domain file (/icons.svg?v=…, build.mjs) never changes under its address: kept for good, not asked again (_headers can match a path only) */
+    if (atRoot.status === 200 && /[?&]v=\w/.test(url.search) && url.pathname !== "/sw.js") {
+      const h = new Headers(atRoot.headers); h.set("cache-control", "public, max-age=31536000, immutable");
+      return new Response(atRoot.body, { status: 200, headers: h });
+    }
     if (atRoot.status !== 404) return atRoot;
   }
 
@@ -171,8 +177,11 @@ export async function onRequest({ request, next, env }) {
     return Response.redirect(url.origin + home.slice(0, -1) + url.pathname + url.search, 307);
   }
   if (CLEAN.has(url.hostname)) {
-    const page = await at("/404.html");
-    return new Response(page.body, { status: 404, headers: page.headers });
+    /* the app's own 404.html, asked for as <folder>404 (Pages 308s the .html address); else a page naming no business */
+    const own = await at(home + "404");
+    const h = new Headers(own.status === 200 ? own.headers : { "content-type": "text/html; charset=utf-8" });
+    h.delete("location"); h.set("x-robots-tag", "noindex");
+    return new Response(own.status === 200 ? own.body : NOT_FOUND, { status: 404, headers: h });
   }
   return inApp;
 }

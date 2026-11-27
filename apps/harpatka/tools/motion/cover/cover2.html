@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="fredoka.css">
+<style>
+  :root { --terra:#C96F52; --ink:#3F382F; --paper:#FFFDF9; --sage:#9A9A75; --sand:#E8D5BE; --dusty:#C98D86; --cream:#F6EFE4; }
+  html, body { margin:0; background:#000; }
+  .card { position:relative; width:1080px; height:1920px; overflow:hidden;
+    background: var(--sand); }
+  /* the quiet background of the invitation, the same shapes as in the video (tools/invite_bg.py) */
+  .bg1 { position:absolute; left:570px; top:-180px; width:660px; height:660px; border-radius:50%; background:var(--cream); opacity:.75; }
+  .bg2 { position:absolute; left:-40px; top:1500px; width:330px; height:460px; border-radius:165px 165px 0 0; background:var(--cream); opacity:.75; }
+  .bg3 { position:absolute; left:860px; top:1680px; width:300px; height:300px; border-radius:50%; background:var(--cream); opacity:.5; }
+  .safe { position:absolute; left:0; top:285px; width:1080px; height:1350px; }   /* the 4:5 safe area in the middle of the 9:16 frame */
+  .paper { position:absolute; left:30px; top:30px; right:30px; bottom:30px; background:var(--paper); border-radius:36px; overflow:hidden; box-shadow:0 14px 60px rgba(63,56,47,.18); }
+  /* two soft organic shapes like the ad images, very light */
+  .blob1 { position:absolute; width:520px; height:520px; border-radius:50%; background:var(--cream); right:-170px; bottom:-150px; }
+  .blob2 { position:absolute; width:300px; height:380px; border-radius:150px 150px 0 0; background:var(--cream); left:-90px; top:520px; }
+
+  .hz { position:absolute; right:110px; top:70px; font-family:'Amatic SC'; font-weight:700; font-size:176px; line-height:1; color:var(--terra); }
+  .stamp { position:absolute; left:110px; top:84px; width:150px; height:176px; box-sizing:border-box; background:var(--sand);
+    border:9px dotted var(--paper); outline:2px solid var(--sand); transform:rotate(-5deg); box-shadow:0 2px 0 rgba(63,56,47,.06); }
+  .stamp svg { position:absolute; left:9px; top:18px; width:114px; height:124px; }
+  /* postmark waves, no number */
+  .waves { position:absolute; left:226px; top:120px; width:190px; height:110px; transform:rotate(-8deg); opacity:.55; }
+
+  .q { position:absolute; left:70px; right:70px; top:290px; height:740px; display:flex; flex-direction:column; justify-content:center; align-items:center;
+    text-align:center; font-family:Fredoka, 'Noto Sans Hebrew', sans-serif; }
+  .q .hook { font-weight:700; font-size:200px; line-height:1; color:var(--terra); letter-spacing:-.01em; }
+  .q .rest { margin-top:30px; font-weight:600; font-size:132px; line-height:1.13; color:var(--ink); }
+  .q .rest div { white-space:nowrap; display:block; }
+  .q .dots { color:var(--terra); }
+  .rule { width:170px; border-top:8px dotted var(--sage); margin:54px auto 0; }
+
+  /* the name as a search field, as on the ad images and at the end of the video (one magnifier, in the button) */
+  .search { position:absolute; bottom:104px; left:50%; transform:translateX(-50%); height:124px; display:flex; align-items:center; gap:26px;
+    padding:0 46px 0 18px; border-radius:999px; background:var(--paper); border:4px solid rgba(63,56,47,.17); box-shadow:0 10px 30px rgba(63,56,47,.18); white-space:nowrap; box-sizing:border-box; }
+  .search .sq { font-family:Rubik, 'Noto Sans Hebrew', sans-serif; font-size:60px; font-weight:600; color:var(--ink); line-height:1; display:flex; align-items:center; }
+  .search .sq b { color:var(--terra); font-weight:700; }
+  .search .caret { display:inline-block; width:5px; height:66px; border-radius:3px; background:var(--terra); margin-right:16px; }
+  .search .go { width:88px; height:88px; border-radius:50%; background:var(--terra); display:grid; place-items:center; flex:none; margin-right:6px; }
+  .search .go svg { width:44px; height:44px; }
+</style>
+</head>
+<body>
+<div class="card" id="card">
+<div class="bg1"></div><div class="bg2"></div><div class="bg3"></div>
+<div class="safe">
+  <div class="paper"><div class="blob1"></div><div class="blob2"></div></div>
+  <div class="hz">הזמנה</div>
+  <div class="stamp"><svg viewBox="0 0 48 52"><g stroke="#C96F52" stroke-width="1.8" stroke-linecap="round" fill="none"><path d="M15 21Q8 17 6 9"/><path d="M15 21Q21 18 24 12"/><path d="M34 22Q40 17 42 11"/><path d="M34 22Q29 19 27 14"/></g><circle cx="15" cy="12" r="3.4" fill="#C96F52"/><path d="M15 17C9 22 8 33 5 42L25 42C22 33 21 22 15 17Z" fill="#C96F52"/><circle cx="34" cy="13" r="3.2" fill="#C98D86"/><path d="M34 18C28.5 23 28 33 26 42L42 42C40 33 39.5 23 34 18Z" fill="#9A9A75"/></svg></div>
+  <svg class="waves" viewBox="0 0 190 110" fill="none" stroke="#9A9A75" stroke-width="5" stroke-linecap="round">
+    <path d="M4 22 q 23 -16 46 0 t 46 0 t 46 0 t 46 0"/><path d="M4 55 q 23 -16 46 0 t 46 0 t 46 0 t 46 0"/><path d="M4 88 q 23 -16 46 0 t 46 0 t 46 0 t 46 0"/>
+  </svg>
+  <div class="q" id="q"></div>
+  <div class="search"><span class="sq">יוצאים&nbsp;<b>להרפתקה</b><span class="caret"></span></span>
+    <span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="#FFFDF9" stroke-width="2.8" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg></span></div>
+</div>
+</div>
+<script>
+  const p = new URLSearchParams(location.search);
+  const hook = p.get('hook') || 'ומה אם';
+  const rest = (p.get('rest') || '').split('|').filter(Boolean);
+  const q = document.getElementById('q');
+  const h = document.createElement('div'); h.className = 'hook'; h.textContent = hook; q.appendChild(h);
+  const r = document.createElement('div'); r.className = 'rest';
+  // one line if it fits at a good size, otherwise two lines split at the space nearest the middle
+  const words = rest.join(' ').split(' ').filter(Boolean);
+  const render = lines => { r.innerHTML = ''; lines.forEach((l, i) => { const e = document.createElement('div'); e.textContent = l; r.appendChild(e); }); };
+  const fit = () => { let f = 132; r.style.fontSize = f + 'px';
+    while (f > 70 && Math.max(...[...r.children].map(e => e.getBoundingClientRect().width)) > 880) { f -= 2; r.style.fontSize = f + 'px'; } return f; };
+  q.appendChild(r);
+  render([words.join(' ')]); let fs = fit();
+  if (fs < 124 && words.length > 1) {
+    let best = 1, bd = 1e9;
+    for (let k = 1; k < words.length; k++) { const x = words.slice(0, k).join(' ').length, y = words.slice(k).join(' ').length, d = Math.abs(x - y); if (d < bd) { bd = d; best = k; } }
+    render([words.slice(0, best).join(' '), words.slice(best).join(' ')]); fs = fit();
+  }
+  document.body.dataset.fs = fs;
+</script>
+</body>
+</html>

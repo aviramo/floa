@@ -2,9 +2,41 @@
   Cache-Control: public, max-age=0, must-revalidate
 /auth.js
   Cache-Control: public, max-age=0, must-revalidate
+/roster-site.js
+  Cache-Control: public, max-age=0, must-revalidate
+/media.js
+  Cache-Control: public, max-age=0, must-revalidate
 /kit.css
   Cache-Control: public, max-age=0, must-revalidate
+/layout.js
+  Cache-Control: public, max-age=0, must-revalidate
 /sheet.js
+  Cache-Control: public, max-age=0, must-revalidate
+/menu.js
+  Cache-Control: public, max-age=0, must-revalidate
+/section.js
+  Cache-Control: public, max-age=0, must-revalidate
+/tabs.js
+  Cache-Control: public, max-age=0, must-revalidate
+/swipe.js
+  Cache-Control: public, max-age=0, must-revalidate
+/list.js
+  Cache-Control: public, max-age=0, must-revalidate
+/field.js
+  Cache-Control: public, max-age=0, must-revalidate
+/search.js
+  Cache-Control: public, max-age=0, must-revalidate
+/range.js
+  Cache-Control: public, max-age=0, must-revalidate
+/audio.js
+  Cache-Control: public, max-age=0, must-revalidate
+/print.js
+  Cache-Control: public, max-age=0, must-revalidate
+/live.js
+  Cache-Control: public, max-age=0, must-revalidate
+/app.js
+  Cache-Control: public, max-age=0, must-revalidate
+/icons.svg
   Cache-Control: public, max-age=0, must-revalidate
 /sw.js
   Cache-Control: public, max-age=0, must-revalidate

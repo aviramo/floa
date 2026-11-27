@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="he" dir="rtl">
+<html lang="he" dir="rtl" data-rs-history="app">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -26,7 +26,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap"></noscript>
 <link rel="stylesheet" href="/kit.css">
-<link rel="stylesheet" href="assets/theme.css">
+<script>document.write('<link rel="stylesheet" href="assets/theme.css">')</script><!-- written, not parsed: the preload scanner reads a plain <link> before the <base> above is written, and fetched assets/theme.css under a deep route (/biodanza/<id>/<id>), a 404 (the same as the scripts below and as music/ and catalog14/) -->
 <style>
 /* The page shell: a column the height of the window, so the page never scrolls and only .rlist does. On a wide screen the list of
    vivencias is the right pane and the open vivencia the left one, with a line between them that can be dragged (roster's split).
@@ -34,20 +34,15 @@
 html, body { height: 100%; }   /* the page itself never scrolls (the shell is exactly the window's height): only .rlist and a popup's body do. No overflow:hidden on the root: it switches off the browser's own pull-down to refresh. */
 body { margin: 0; display: flex; flex-direction: column; height: 100dvh; background: var(--page); color: var(--text); font: var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font); }
 #app { position: relative; display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
-#pl, #pd { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; min-width: 0; }
-#pl > .rlist, #pd > .rlist { flex: 1 1 auto; }
+/* #pl and #pd, each pane, are a Layout surface (the kit's .rlayout--surface: head, ONE body; ui/docs/layout.md, stage 2): their column is the kit's */
 #pd, #sh { display: none; }
-.pad { padding: var(--gap); display: flex; flex-direction: column; gap: var(--gap); }
-dialog.rsheet .pad { padding: 0; }   /* a popup pads its content itself (law 2): the block inside it adds nothing */
-.bar { display: flex; flex-direction: column; gap: var(--gap); padding: var(--gap) var(--gap) var(--end-pad); border-top: 1px solid var(--border); }
 @media (min-width: 760px) {
-  :root { --listw: 50vw; }
+  :root { --listw: 50vw; --split: var(--listw); }   /* --split: the kit's divider (its side popups stop at it) */
   #app { display: grid; grid-template-columns: var(--listw) 1fr; }
   #pl { border-inline-end: 1px solid var(--border); }
-  #pl .rfab { left: calc(100vw - var(--listw) + var(--gap)); }   /* the add button keeps the same gap to the pane's side and bottom edges as to the window's */
   #pd { display: flex; }
-  #sh { display: block; position: absolute; top: 0; bottom: 0; right: calc(var(--listw) - var(--gap-tight)); z-index: var(--z-menu); width: var(--handle-w); cursor: col-resize; touch-action: none; }
-  #sh::after { content: ""; position: absolute; top: 0; bottom: 0; right: var(--gap-tight); width: calc(var(--bw) * 2); background: transparent; transition: background var(--t-base); }
+  #sh { display: block; position: absolute; inset-block: 0; inset-inline-start: calc(var(--listw) - var(--gap-tight)); z-index: var(--z-menu); width: var(--handle-w); cursor: col-resize; touch-action: none; }
+  #sh::after { content: ""; position: absolute; inset-block: 0; inset-inline-start: calc(var(--gap-tight) - var(--bw) * 2); width: calc(var(--bw) * 2); background: transparent; transition: background var(--t-base); }
   #sh:hover::after, #sh:focus-visible::after, html.split-drag #sh::after { background: var(--border-strong); }
   #sh:focus-visible { outline: none; }
   html.split-drag, html.split-drag * { cursor: col-resize !important; user-select: none !important; }
@@ -56,11 +51,24 @@ dialog.rsheet .pad { padding: 0; }   /* a popup pads its content itself (law 2):
   <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebSite", "name": "ביודנסה", "url": "https://biodanza.floa.co.il/"}</script>
 </head>
 <body>
-<div id="app"><div id="pl"></div><div id="pd"></div><div id="sh" role="separator" aria-orientation="vertical" aria-label="רוחב הרשימה (גרירה, חצים במקלדת, לחיצה כפולה לברירת המחדל)" title="גרירה לשינוי הרוחב · לחיצה כפולה: ברירת מחדל" tabindex="0"></div></div>
+<div id="app"><div id="pl" class="rlayout rlayout--surface" data-pane="start"></div><div id="pd" class="rlayout rlayout--surface" data-pane="end"></div><div id="sh" role="separator" aria-orientation="vertical" aria-label="רוחב הרשימה (גרירה, חצים במקלדת, לחיצה כפולה לברירת המחדל)" title="גרירה לשינוי הרוחב · לחיצה כפולה: ברירת מחדל" tabindex="0"></div></div>
 <script src="/supabase.js"></script>
 <script src="/auth.js"></script>
+<script src="/live.js"></script>
+<script src="/layout.js"></script>
 <script src="/sheet.js"></script>
+<script src="/menu.js"></script>
+<script src="/card.js"></script>
+<script src="/section.js"></script>
+<script src="/field.js"></script>
+<script src="/search.js"></script>
+<script src="/range.js"></script>
+<script src="/list.js"></script>
+<script src="/swipe.js"></script>
 <script src="/sound.js?v=2"></script>
+<script src="/audio.js"></script>
+<script src="/print.js"></script>
+<script src="/app.js"></script>
 <!-- The two scripts are written by a script, like the base tag above: the browser looks ahead in the page for scripts and fetches them before that tag exists, from the wrong folder on an address like /<vivencia>/<exercise> (a 404 in the console). -->
 <script>document.write('<script src="assets/audio.js"><\/script><script src="assets/offline.js"><\/script><script src="assets/app.js"><\/script>')</script>
 <script>

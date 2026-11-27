@@ -1,0 +1,27 @@
+/* Layout: ui/docs/layout.md */
+@layer rlayout {
+  .rlayout { --rl-gap: var(--gap); display: flex; flex-direction: column; gap: var(--rl-gap); min-width: 0; }
+  .rlayout--row { flex-direction: row; align-items: center; }
+  .rlayout--wrap { flex-wrap: wrap; }
+  .rlayout--grid { --rl-col: var(--card-min); display: grid; grid-template-columns: repeat(auto-fill, minmax(min(var(--rl-col), 100%), 1fr)); }   /* --rl-col: the narrowest column, Layout's own; a media grid and a collage write --media-min in it (21-grid.css) */
+  .rlayout--unit { --rl-gap: var(--gap-tight); }
+  .rlayout--bars { --rl-gap: 0px; }
+  .rlayout--pad { padding: var(--gap); }
+  .rlayout--pad-x { padding-inline: var(--gap); }
+  .rlayout__grow { flex: 1 1 0; min-width: 0; }
+  .rlayout > :is([hidden], :empty):not(input, textarea, select, img, svg, video, canvas, iframe, .rf-rich, .rload, .rlayout__body) { display: none; }
+  .rlayout--surface { --rl-gap: 0px; flex: 1 1 auto; min-height: 0; }
+  .rlayout--surface > :is(.rlayout__head, .rlayout__bar, .rlayout__foot) { flex: 0 0 auto; }
+  .rlayout--surface > .rlayout__body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: var(--gap); overflow-y: auto; overscroll-behavior-y: contain; padding: var(--gap) var(--gap) var(--rs-end, var(--end-pad)); }
+  .rlayout--surface > .rlayout__body:has(+ .rlayout__foot) { --rs-end: var(--gap); }
+  .rlayout--surface > .rlayout__body.rempty { overflow: visible; }
+  .rlayout--surface > .rlayout__body:has(> :is(.rrow, .racc, .rmenu__item), > * > :is(.rrow, .racc)) { padding-inline: 0; }
+  /* a body whose first shown child is a bar (a row, a section), or a box that starts with one, has no top padding; a strip with a shadowed main button (.rmid) keeps --gap so its shadow is not cut (owner 2026-11-26); a <style>, <script> or <template> before it is not a child that shows */
+  .rlayout--surface > .rlayout__body:not(.rmenu__list):has(> :nth-child(1 of :not(style, script, template)):is(.rrow, .racc), > :nth-child(1 of :not(style, script, template)) > :nth-child(1 of :not(style, script, template)):is(.rrow, .racc)) { padding-block-start: 0; }
+  .rlayout--surface > .rlayout__body:has(> :is(.rrow, .rmenu__item)) { gap: 0; }
+  .rlayout--surface > .rlayout__body:has(.rlist):not(:has(> .rfields:only-child > .rlist:last-child)) { padding: 0; overflow: hidden; }
+  .rlayout--surface > .rlayout__foot { display: flex; gap: var(--gap); align-items: center; padding: 0 var(--gap) var(--rs-end, var(--end-pad)); }
+  .rlayout--surface.rlayout--stack { --rl-gap: var(--gap); padding-bottom: var(--rs-end, var(--gap)); }
+  .rlayout--stack > .rlayout__body, .rlayout--stack > .rlayout__foot { padding: 0 var(--gap); }
+  .rlayout--stack > .rlayout__body:empty { display: none; }
+}

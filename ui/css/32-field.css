@@ -1,0 +1,84 @@
+/* Field: ui/docs/field.md */
+:root { --kbd-strip: 20px;   --ring-over: calc(var(--gap-tight) * 2);   --row-card: calc(var(--icon) + var(--gap-tight));   --field-max-h: calc(var(--ctl) * 6);   --rf-label-top: var(--gap-tight); --rf-line-h: calc(var(--fs-m) * var(--lh-tight));   --rf-scale: .75;   --rf-label-h: calc(var(--rf-line-h) * var(--rf-scale));   --rf-pad-top: calc(var(--rf-label-top) + var(--rf-label-h));   --rf-line: var(--border-strong); --rf-ink: var(--text); --rf-ink-2: var(--text-muted); }
+.rfield[hidden], .rfield > [hidden] { display: none !important; }
+.rfield { overflow-x: clip; }
+.rfield { position: relative; display: flex; flex-direction: column; gap: var(--gap-tight); min-width: 0; margin: 0;   /* Layout: rlayout rlayout--unit. The display, direction and gap here are Layout's, kept only while an app still writes a field without the Layout classes: they go when none does (ui/docs/field.md) */
+  font-family: var(--font, "Heebo", system-ui, sans-serif); }
+.rfield:has(> .rf-rich[contenteditable="false"]:empty), .rfield:has(> :is(input:where(:not([type="checkbox"], [type="radio"])), textarea)[readonly][placeholder]:placeholder-shown) { display: none; }
+.rfield:has(> :is(input:where(:not([type="checkbox"], [type="radio"])), select, textarea, .rf-rich)) > span:first-child {
+  position: absolute; z-index: 1; top: var(--rf-label-top); inset-inline: 0 calc(100% - 100% / var(--rf-scale)); margin: 0; font-size: var(--fs-m); line-height: var(--rf-line-h); font-weight: var(--fw-regular); color: var(--rf-ink-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;
+  transform: scale(var(--rf-scale)); transform-origin: 100% 0; transition: transform var(--t-base) var(--ease), color var(--t-base) var(--ease); }
+html[dir="ltr"] .rfield:has(> :is(input:where(:not([type="checkbox"], [type="radio"])), select, textarea, .rf-rich)) > span:first-child { transform-origin: 0 0; }
+.rfield:not([data-rf]):has(> :is(input:where(:not([type="checkbox"], [type="radio"])), textarea)[placeholder]:placeholder-shown:not(:focus):not(:-webkit-autofill)) > span:first-child { transform: translateY(var(--rf-label-h)); inset-inline-end: 0; }
+.rfield:not([data-rf]):has(> .rf-rich:empty:not(:focus)) > span:first-child { transform: translateY(var(--rf-label-h)); inset-inline-end: 0; }
+.rfield[data-rf="e"]:not(:focus-within) > span:first-child { transform: translateY(var(--rf-label-h)); inset-inline-end: 0; }
+.rfield:is(:focus-within, :has(> select[aria-expanded="true"])) > span:first-child { color: var(--rf-ink); }
+.rfield:has(> [aria-invalid="true"], > .bad) > span:first-child { color: var(--rf-ink); }
+.rfield > :is(input:where(:not([type="checkbox"], [type="radio"])), select, textarea) {
+  display: block; box-sizing: border-box; width: 100%; height: var(--ctl); margin: 0; padding: var(--rf-pad-top) 0 0; border: 0; border-bottom: var(--bw) solid var(--rf-line); border-radius: 0; background-color: transparent; color: var(--rf-ink);
+  font: var(--fw-regular) var(--fs-m)/var(--rf-line-h) var(--font, "Heebo", system-ui, sans-serif); text-align: start; transition: border-color var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease); }
+.rfield > :is(input:where(:not([type="checkbox"], [type="radio"])), select, textarea):focus { outline: none; border-bottom-color: var(--rf-ink); box-shadow: 0 var(--bw) 0 var(--rf-ink); }
+.rfield > :is(input:where(:not([type="checkbox"], [type="radio"])), textarea)::placeholder { color: var(--rf-ink-2); opacity: 1; }
+.rfield > :is(input:where(:not([type="checkbox"], [type="radio"])), textarea)[data-hint]:not(:focus)::placeholder { color: transparent; }
+.rfield > :is(input:where(:not([type="checkbox"], [type="radio"])), select, textarea)[aria-invalid="true"], .rfield > .bad { border-bottom-color: var(--rf-ink); box-shadow: 0 var(--bw) 0 var(--rf-ink); }
+.rfield > :is(input[type="tel"], input[type="email"], input[type="url"], input.ltr, textarea.ltr) { direction: ltr; }
+.rfield:where(:dir(rtl)) > :is(input[type="tel"], input[type="email"], input[type="url"], input.ltr, textarea.ltr) { text-align: right; }   .rfield:where(:dir(ltr)) > :is(input[type="tel"], input[type="email"], input[type="url"], input.ltr, textarea.ltr) { text-align: left; }   /* a left-to-right island aligned to the PAGE's side: a pair by the direction (ui/SKILL.md "כיוונים לוגיים בלבד", exception 2) */
+.rfield--ltr > :is(input, textarea) { direction: ltr; }
+.rfield--ltr:where(:dir(rtl)) > :is(input, textarea) { text-align: right; }   .rfield--ltr:where(:dir(ltr)) > :is(input, textarea) { text-align: left; }
+.rfield:where(:dir(rtl)) > :is(input.ltr, textarea.ltr)::placeholder { text-align: right; }   .rfield:where(:dir(ltr)) > :is(input.ltr, textarea.ltr)::placeholder { text-align: left; }
+.rfield > .rf-rich { display: block; box-sizing: content-box; width: 100%; min-height: calc(var(--fs-m) * var(--lh-text)); margin: 0; padding: var(--rf-pad-top) 0 0; border: 0; border-bottom: var(--bw) solid var(--rf-line); border-radius: 0; background-color: transparent; color: var(--rf-ink);
+  font: var(--fw-regular) var(--fs-m)/var(--lh-text) var(--font, "Heebo", system-ui, sans-serif); text-align: start; white-space: pre-wrap; overflow-wrap: anywhere; overflow-y: auto; transition: border-color var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease); }
+.rfield > .rf-rich:focus { outline: none; border-bottom-color: var(--rf-ink); box-shadow: 0 var(--bw) 0 var(--rf-ink); }
+.rfield > .rf-rich b { font-weight: var(--fw-bold); }
+.rfield > textarea { height: auto; min-height: var(--ctl); max-height: var(--field-max-h); resize: none; overflow-y: auto; field-sizing: content; line-height: var(--lh-text); }
+.rfield > select { -webkit-appearance: none; appearance: none; cursor: pointer; background-image: none; }
+.rfield > select[aria-haspopup="listbox"] { pointer-events: none; }
+.rfield:has(> select[aria-haspopup="listbox"]) { cursor: pointer; }
+.rfield:has(> select[aria-haspopup="listbox"]:disabled) { cursor: default; }
+.rfield:has(> select[aria-haspopup="listbox"]) > :is(.rf-help, .rf-err, .rf-note) { cursor: auto; }
+.rfield > select[aria-expanded="true"] { border-bottom-color: var(--rf-ink); box-shadow: 0 var(--bw) 0 var(--rf-ink); }
+.rfield > input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+.rfield > input[type="number"]::-webkit-outer-spin-button, .rfield > input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.rfield > :is(input[type="date"], input[type="time"]) { position: relative; -webkit-appearance: none; appearance: none; cursor: pointer; direction: ltr; padding: var(--rf-pad-top) 0 0; background-image: none; }
+.rfield > :is(input[type="date"], input[type="time"])::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; opacity: 0; cursor: pointer; }
+.rfield > :is(input[type="date"], input[type="time"])::-webkit-date-and-time-value { margin: 0; }
+.rfield:where(:dir(rtl)) > :is(input[type="date"], input[type="time"]), .rfield:where(:dir(rtl)) > :is(input[type="date"], input[type="time"])::-webkit-date-and-time-value { text-align: right; }   .rfield:where(:dir(ltr)) > :is(input[type="date"], input[type="time"]), .rfield:where(:dir(ltr)) > :is(input[type="date"], input[type="time"])::-webkit-date-and-time-value { text-align: left; }
+.rfield > :is(input:where(:not([type="checkbox"], [type="radio"])), textarea)[readonly], .rfield > .ro, .rfield > .rf-rich[contenteditable="false"] { color: var(--rf-ink); cursor: text; border-bottom-color: transparent; box-shadow: none; }
+.rfield:has(> :is(input, textarea)[readonly], > .ro, > .rf-rich[contenteditable="false"]) > span:first-child { transform: scale(var(--rf-scale)); inset-inline-end: calc(100% - 100% / var(--rf-scale)); }
+.rfield > :is(input:where(:not([type="checkbox"], [type="radio"])), textarea)[readonly]:focus, .rfield > .ro:focus { border-bottom-color: transparent; box-shadow: none; outline: none; }
+.rfield > :is(input:where(:not([type="checkbox"], [type="radio"])), textarea)[readonly]:focus-visible, .rfield > .ro:focus-visible { outline: var(--focus-w) solid var(--primary); outline-offset: var(--focus-w); }
+.rfield:has(> :is(input:where(:not([type="checkbox"], [type="radio"])), select, textarea):disabled) { opacity: var(--disabled); }
+.rfield > :is(input:where(:not([type="checkbox"], [type="radio"])), select, textarea):disabled { cursor: default; }
+.rfield > .rf-help, .rfield > .rf-err { display: block; margin: 0; font-size: var(--fs-s); line-height: var(--lh-tight); color: var(--rf-ink-2); }
+.rfield > .rf-err { color: var(--rf-ink); }
+.rfield > .rf-err:has(> svg) { display: flex; align-items: center; gap: var(--gap-tight); }
+.rfield > .rf-err > svg { flex: none; width: var(--icon); height: var(--icon); }
+.rfield > .rf-err:empty { display: none; }
+.rfield:has(> .rf-err) > .rf-help { display: none; }
+.rf-ex b { font-weight: var(--fw-bold); }
+.rf-ex { display: inline-block; font-weight: var(--fw-regular); color: var(--rf-ink); unicode-bidi: isolate; direction: ltr; }
+.rfield > .rf-note { display: block; margin: 0; font-size: var(--fs-s); line-height: var(--lh-tight); font-weight: var(--fw-bold); color: var(--rf-ink-2); }
+.rfield:has(> .rf-end:not(:empty)) { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--gap-tight); row-gap: var(--gap-tight); }
+.rfield:has(> .rf-end > .rbtn:first-child) { column-gap: var(--gap); }
+.rfield:has(> .rf-end > .rbtn) { overflow: clip; overflow-clip-margin: var(--gap); }
+.rfield:has(> .rf-end:not(:empty)) > * { grid-column: 1 / -1; }
+.rfield:has(> .rf-end:not(:empty)) > .rf-end { grid-column: 2; grid-row: 1; }
+.rfield:has(> .rf-end:not(:empty)) > :is(input, textarea, span:first-child) { grid-column: 1; grid-row: 1; }
+.rfield:has(> .rf-end:not(:empty)) > :is(select, input[type="date"], input[type="time"]) { grid-column: 1 / -1; grid-row: 1; }
+.rfield:has(> .rf-end:not(:empty)) > select { padding-inline-end: calc(var(--icon) + var(--gap-tight)); }
+.rfield:where(:dir(rtl)):has(> .rf-end:not(:empty)) > :is(input[type="date"], input[type="time"]) { padding-left: calc(var(--icon) + var(--gap-tight)); }
+html[dir="ltr"] .rfield:has(> .rf-end:not(:empty)) > :is(input[type="date"], input[type="time"]) { padding-left: 0; padding-right: calc(var(--icon) + var(--gap-tight)); }
+.rf-end { grid-column: 2; grid-row: 1; align-self: start; display: flex; align-items: center; gap: var(--gap-tight); box-sizing: border-box; height: var(--ctl); padding: var(--rf-pad-top) 0 var(--bw); color: var(--rf-ink-2); pointer-events: none; }
+.rf-end:empty { display: none; }
+.rf-end > .rf-unit { font: var(--fw-regular) var(--fs-m)/var(--rf-line-h) var(--font, "Heebo", system-ui, sans-serif); white-space: nowrap; }
+.rf-end > .ricon { color: inherit; }
+.rf-end > .rbtn { pointer-events: auto; }
+.rfield:has(> .rf-end:not(:empty)) > :is(input, select, textarea), .rfield:has(> .rf-end:not(:empty)) > :is(input, select, textarea):is(:focus, [aria-invalid="true"]) { border-bottom-color: transparent; box-shadow: none; }
+.rfield:not(.rfield--search, :has(> :is(input, textarea)[readonly], > .ro)):has(> .rf-end:not(:empty))::after { content: ""; grid-column: 1 / -1; grid-row: 1; align-self: end; height: var(--bw); background: var(--rf-line); pointer-events: none; transition: background-color var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease); }
+.rfield:has(> .rf-end:not(:empty)):is(:focus-within, :has(> select[aria-expanded="true"]))::after { background: var(--rf-ink); box-shadow: 0 var(--bw) 0 var(--rf-ink); }
+.rfield:has(> .rf-end:not(:empty)):has(> [aria-invalid="true"], > .bad)::after { background: var(--rf-ink); box-shadow: 0 var(--bw) 0 var(--rf-ink); }
+.rfield:has(> :is(input, textarea)[readonly], > .ro) > .rf-end > :is(.ricon, .rf-clear), .rfield:has(> :is(input, select, textarea):disabled) > .rf-end > .rf-clear { display: none; }
+.rfield > input:is([dir="ltr"], [inputmode="decimal"], [inputmode="numeric"], [type="number"]) { direction: ltr; }
+.rfield:where(:dir(rtl)) > input:is([dir="ltr"], [inputmode="decimal"], [inputmode="numeric"], [type="number"]) { text-align: right; }
+html[dir="ltr"] .rfield > input:is([dir="ltr"], [inputmode="decimal"], [inputmode="numeric"], [type="number"]) { text-align: left; }

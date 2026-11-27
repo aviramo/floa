@@ -1,0 +1,18 @@
+/* Side panel: ui/docs/window.md, ui/docs/split.md */
+.rpanel-box { position: fixed; top: 0; bottom: var(--bar-b, 0px); pointer-events: none;
+  clip-path: inset(0 min(0px, var(--rp-s) * var(--rp-flip, 1) * 100vw) 0 min(0px, var(--rp-s) * var(--rp-flip, 1) * -100vw)); }
+.rpanel-box[data-side="start"], .rpanel-scrim[data-side="start"] { inset-inline-start: 0; width: var(--split, min(var(--w), 92vw)); }
+.rpanel-box[data-side="end"], .rpanel-scrim[data-side="end"] { inset-inline-end: 0; width: calc(100% - var(--split, calc(100% - min(var(--w), 92vw)))); }
+.rpanel-box.is-under { visibility: hidden; }
+.rpanel-box > :is(.rmenu, .rmenu-shield) { pointer-events: auto; }
+.rpanel-box { --rp-s: -1; }
+.rpanel-box[data-side="end"], .rpanel-box[data-side="start"][data-from] { --rp-s: 1; }
+.rpanel-box[data-side="end"][data-from] { --rp-s: -1; }
+:root[dir="rtl"] .rpanel-box { --rp-flip: -1; }
+.rpanel { position: absolute; inset: 0; display: flex; flex-direction: column; min-height: 0; background: var(--page); box-shadow: var(--shadow-lg); pointer-events: auto; transform: translateX(calc(var(--rp-s) * var(--rp-flip, 1) * 100%)); transition: transform var(--t-base) var(--ease); }
+.rpanel.is-open { transform: none; }
+.rpanel-scrim { position: fixed; background: var(--scrim); opacity: 0; transition: opacity var(--t-base) var(--ease); }
+.rpanel-scrim:not([data-side]) { inset: 0; }
+.rpanel-scrim[data-side] { top: 0; bottom: var(--bar-b, 0px); }
+.rpanel-scrim.is-on { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .rpanel, .rpanel-scrim { transition: none; } }

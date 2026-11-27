@@ -75,6 +75,12 @@ export const BUSINESSES = {
       "דף נחיתה החל מ־500 ₪"
     ]
   },
+  "harpatka": {
+    "brand": "יוצאים להרפתקה",
+    "to": "LEAD_TO_HARPATKA",
+    "origins": [],
+    "pages": []
+  },
   "jobs": {
     "brand": "משרות",
     "to": "LEAD_TO",

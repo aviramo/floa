@@ -1,0 +1,11 @@
+/* Slider: ui/docs/slider.md */
+input[type=range].rrange { -webkit-appearance: none; appearance: none; box-sizing: border-box; background: transparent; color: inherit; height: var(--ctl); margin: 0; padding: 0; direction: ltr; touch-action: none; --c: var(--primary); --rr-empty: color-mix(in srgb, currentColor calc(var(--disabled) * 100%), transparent); --rr-halo: 0 0 0 calc((var(--ctl) - var(--icon)) / 2) color-mix(in srgb, var(--text) var(--press-shade), transparent); }
+input[type=range].rrange--seek { display: block; flex: 1 1 auto; min-width: 0; width: 100%; height: var(--icon); }
+input[type=range].rrange::-webkit-slider-runnable-track { height: var(--range-h); border-radius: var(--r-round); background: linear-gradient(to right, var(--c) var(--p, 0%), var(--rr-empty) var(--p, 0%)); }
+input[type=range].rrange::-webkit-slider-thumb { -webkit-appearance: none; width: var(--icon); height: var(--icon); margin-top: calc((var(--range-h) - var(--icon)) / 2); border: 0; border-radius: var(--r-round); background: var(--c); }
+input[type=range].rrange::-moz-range-track { height: var(--range-h); border-radius: var(--r-round); background: var(--rr-empty); }
+input[type=range].rrange::-moz-range-progress { height: var(--range-h); border-radius: var(--r-round); background: var(--c); }
+input[type=range].rrange::-moz-range-thumb { width: var(--icon); height: var(--icon); border: 0; border-radius: var(--r-round); background: var(--c); }
+input[type=range].rrange:focus-visible { border-radius: var(--r-round); }   /* the ring's shape; the ring itself is the shared click rule (03b-interaction.css) */
+input[type=range].rrange:disabled::-webkit-slider-runnable-track { background: var(--rr-empty); }
+input[type=range].rrange:disabled::-moz-range-progress { background: transparent; }

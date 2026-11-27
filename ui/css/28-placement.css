@@ -1,0 +1,2 @@
+/* Place next to a control: ui/docs/layout.md "מיקום ליד פקד" */
+[data-rplace] { position: fixed; margin: 0; inset-inline-start: var(--rplace-s); inset-block-start: var(--rplace-t); inset-inline-end: auto; inset-block-end: auto; }

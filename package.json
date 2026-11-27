@@ -33,7 +33,7 @@
   ],
   "scripts": {
     "hooks": "git config core.hooksPath .githooks",
-    "test":"node worker/test/lead.test.mjs && node worker/test/webpush.test.mjs && node worker/test/transcribe.test.mjs && node worker/test/geometry.test.mjs && node worker/test/page.test.mjs && node apps/chords/test/model.test.mjs && node apps/chords/test/names.test.mjs && node apps/chords/test/ear.test.mjs && node apps/chords/test/follow.test.mjs && node apps/chords/test/credits.test.mjs && node apps/chords/test/played.test.mjs && node apps/chords/test/held.test.mjs && node apps/chords/test/costs.test.mjs && node apps/chords/test/suggest.test.mjs && node --test \"worker/test/roster-*.test.js\" && node scripts/roster-policy.mjs --summary",
+    "test":"node worker/test/lead.test.mjs && node worker/test/transcribe.test.mjs && node worker/test/geometry.test.mjs && node worker/test/page.test.mjs && node apps/chords/test/model.test.mjs && node apps/chords/test/names.test.mjs && node apps/chords/test/ear.test.mjs && node apps/chords/test/follow.test.mjs && node apps/chords/test/credits.test.mjs && node apps/chords/test/played.test.mjs && node apps/chords/test/held.test.mjs && node apps/chords/test/costs.test.mjs && node apps/chords/test/suggest.test.mjs && node --test worker/test/biodanza-audio.test.js && node --test \"worker/test/roster-*.test.js\" && node --test \"worker/test/live-*.test.js\" && node scripts/roster-policy.mjs --summary && node worker/test/media.test.mjs",
     "test:layout": "node apps/chords/test/layout.test.mjs",
     "test:stack": "node apps/chords/test/stack.test.mjs",
     "test:roster-ui": "node scripts/roster-ui.test.mjs",
@@ -41,7 +41,6 @@
     "build": "node build.mjs",
     "dev": "node build.mjs --serve",
     "dev:test": "node build.mjs --serve --test",
-    "test:env": "node scripts/test-env.mjs --apply",
     "watch": "node build.mjs --watch",
     "cv": "node build.mjs && node scripts/gen_cv_pdf.mjs && node build.mjs"
   }

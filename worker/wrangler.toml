@@ -56,6 +56,19 @@ preview_urls = false
 binding = "AUDIO"
 bucket_name = "biodanza-audio"
 
+# The live relay (worker/LIVE.md): one Durable Object per room. SQLite-backed because the free plan allows only that kind.
+# It writes nothing to storage (no alarm either); the migration only declares the class. It runs with the first deploy.
+[[durable_objects.bindings]]
+name = "LIVE"
+class_name = "LiveRoom"
+
+[[migrations]]
+tag = "live-v1"
+new_sqlite_classes = ["LiveRoom"]
+# Phase 2 (POST /live/notify, from the database through pg_net) needs a SECRET, never in this file:
+#   npx wrangler secret put LIVE_NOTIFY_SECRET     (random, 32+ bytes; the same value as the Vault secret live_notify_secret)
+# Without it /live/notify answers 503 and nothing else changes. The test Worker gets none: the database calls api.floa.co.il only.
+
 # Non-secret configuration. The API KEY IS NOT HERE. It is a secret, set with
 # `wrangler secret put` and never committed. See README.md.
 #

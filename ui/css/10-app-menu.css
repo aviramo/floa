@@ -1,0 +1,10 @@
+/* App menu button: ui/docs/app-menu.md */
+.rbtn.rappmenu { flex: none; display: grid; place-items: center; box-sizing: border-box; width: var(--icon-lg); height: var(--icon-lg); min-height: 0; padding: 0; border: 0; border-radius: var(--r-round); background: var(--primary); color: var(--on-primary); }
+.rappmenu__i { font: var(--fw-bold) var(--fs-m)/var(--lh-tight) var(--font); }
+dialog.rsheet:is([data-size="s"], [data-size="sm"]) .rappmenu { display: none; }
+@media (width < 760px) { :is(dialog, .rpanel) .rappmenu { display: none; } }
+@media (min-width: 760px) {
+  dialog.rsheet .rappmenu { display: none; }
+  html:has([data-pane="start"]) .rhead > .rappmenu { display: none; }
+  html:has([data-pane="start"]) [data-pane="start"] > .rhead > .rappmenu { display: grid; }
+}

@@ -1,32 +1,25 @@
 /* ==========================================================================
    BIODANZA THEME: the app's colours, the ONE place they are written. It loads after /kit.css and overrides the kit's role tokens
-   (page, surface, border, text, primary, danger, warn, scrim, shadow); the app has no other palette and defines no token of its own.
+   (page, surface, border, text, primary, scrim, shadow); the app has no other palette and defines no token of its own.
    Everything else in the app reads these roles, so a colour is changed here and nowhere else. The app's own DERIVED SIZES (a token mixed with a number) are also named here once, below the colours.
    ========================================================================== */
 :root {
   /* derived sizes of this app: each a kit token mixed with a number, named once and used by name */
   --handle-w: calc(var(--gap-tight) * 2.5);   /* the grab strip on the edge of a resizable pane */
-  --volume-w: calc(var(--ctl) * 2.5);          /* the length of the volume slider in the player */
-  --icon-brand: calc(var(--icon) * 1.6);       /* a brand mark (the video logo) is wider than an icon, drawn at this size */
-  --bw-bar: calc(var(--bw) * 3);               /* the thickness of the bar under the current tab */
   --pane-min: calc(var(--w) - var(--ctl) * 2); /* the narrowest a resizable pane may be dragged to */
   --tile-min-h: calc(var(--chip) * 2 + var(--gap));   /* the least height of a large tappable tile (two chips and the gap between) */
   --primary: oklch(46% .13 255);  --on-primary: #FFFFFF;
   --page: oklch(97.5% .006 255);  --surface: oklch(94% .02 255);
   --border: oklch(90% .012 255);  --border-strong: oklch(62% .03 255);
   --text: oklch(24% .02 255);  --text-muted: oklch(40% .03 255);
-  --danger: var(--primary);                       /* the heart and the destructive mark are the one blue of this app */
-  --warn: var(--text);  --warn-bg: var(--surface);  /* resolved here at the root: stays the page's ink inside a re-themed region (the dimmed "choose" card) */
+  /* the second accent (ui/docs/tokens.md "צבע הדגשה שני", owner 2026-11-26, variant ב): crimson for music and for what plays now. White on it 7.2:1, it on the page 6.7:1, on --surface 6.1:1 */
+  --accent-2: oklch(48% .18 8);  --on-accent-2: #FFFFFF;
+  --accent-2-strong: oklch(42% .16 8);  --accent-2-tint: oklch(95% .022 8);
   --scrim: rgba(10, 20, 40, .5);
-  --shadow: 0 2px 10px -3px rgba(0, 0, 0, .14), 0 1px 2px rgba(0, 0, 0, .06);
+  --shadow: 0 4px 14px -3px rgba(0, 0, 0, .18), 0 1px 3px rgba(0, 0, 0, .08);   /* the card, a little more lift (owner 2026-11-26), still well under the kit's --shadow-lg */
 }
-
-/* the player bar: the page inverted. The self-referencing swap is written with the roles that are not themselves swapped (warn is the ink, page the paper) */
-.bio-dock { --surface: var(--warn); --text: var(--page); --text-muted: oklch(90% .03 255); --border: oklch(42% .09 255); --track: oklch(60% .1 255); --primary: var(--page); --on-primary: var(--warn); --danger: oklch(85% .08 255) }
-/* while a song plays the bar takes the primary blue (written out: --primary itself is swapped in this rule) */
-/* the same soft edge as under a header, on the other side: the player's top edge casts it up onto the list */
-.bio-dock::before { content: ""; position: absolute; inset-inline: 0; bottom: 100%; height: var(--gap-tight); background: linear-gradient(to top, color-mix(in srgb, var(--scrim) 25%, transparent), transparent); pointer-events: none }
-.bio-dock.playing { --primary: var(--page); --text: var(--page); --text-muted: var(--page); --surface: oklch(46% .13 255); --border: oklch(60% .15 255); --track: oklch(75% .09 255); --on-primary: var(--surface); background: var(--surface) }   /* the sign inside the light circle is the dock's own colour while it plays */
+/* the second accent's scope is music in this app (apps/biodanza/UI.md "מוזיקה בצבע השני"), so what loads there is music: the kit's note (ui/docs/loading.md); the kit already gives it the scope's red */
+.raccent-2 { --load-icon: var(--load-music); --load-icon-still: var(--load-music-still); }
 
 /* a menu is a sheet of paper over the page */
 .rmenu, .rmenu--fixed { background: var(--on-primary) !important; --page: var(--on-primary); --surface: oklch(96% .01 255) }
@@ -35,39 +28,15 @@
 #pd:has(#ipg) { --text-muted: oklch(40% .07 255); background: var(--page); color: var(--text) }
 .bio-catlayer { --text-muted: oklch(40% .07 305); color: var(--text) }
 
-/* law 6: a sheet on a narrow screen has no rounded corners at all, not even the top ones (kit.css rounds them; this overrides it for this app only) */
-@media (width < 760px) { dialog.rsheet, dialog.rsheet[data-from], dialog.rsheet:not([data-from]) { border-radius: 0 !important; } }
-/* law 15: a window's or pane's header is one row, --fab tall (the kit's is --ctl; this app follows the law) */
-dialog.rsheet .sheet-head { min-height: var(--fab); }
-.rhead { min-height: calc(var(--fab) + var(--safe-t)); }
 
 /* the page itself never pans or flings: a sideways drag that the app takes for its own would otherwise end as a browser fling, and the next tap would only stop that fling instead of clicking. Lists and fields scroll on their own touch-action */
 html, body { touch-action: none; }
 
-/* a popup whose body is rows with their own background: the rows pad themselves (--gap each side), so the popup does not pad the sides a second time; its header keeps its own gap */
-dialog.rsheet .sheet:has(> .sheet-body > .rlist > .rrow) { padding-inline: 0; }
-dialog.rsheet .sheet:has(> .sheet-body > .rlist > .rrow) > .sheet-head { padding-inline: var(--gap); }
+/* a song with no file shows two icon buttons side by side (upload, YouTube): --gap between them, as between any two icon buttons (law 3) */
+[data-upl-wrap] { display: flex; align-items: center; gap: var(--gap); }
 
-/* adjacent icon buttons stand --gap apart everywhere (law 3, by the owner): a header pair, a section group */
-.rgroup { gap: var(--gap); }
 
-/* the popup of a song's exercises: its rows and its card grids pad themselves (--gap each side), so the popup does not pad the sides a second time */
-#mpDlg .sheet { padding-inline: 0; }
-#mpDlg .sheet-head { padding-inline: var(--gap); }
 
-/* a page header (not a popup's) has no line under it: the standard soft edge shows under it while its list is scrolled, like a popup's title */
-.rhead.rhead:not(dialog *) { border-bottom: 0; position: relative; z-index: 2 }
-.rhead.rhead:not(dialog *)::after { content: ""; position: absolute; inset-inline: 0; top: 100%; height: var(--gap-tight); background: linear-gradient(color-mix(in srgb, var(--scrim) 25%, transparent), transparent); opacity: 0; transition: opacity .18s ease; pointer-events: none }
-.rhead.rhead[data-scrolled]:not(dialog *)::after { opacity: 1 }
-@media (prefers-reduced-motion: reduce) { .rhead.rhead:not(dialog *)::after { transition: none }
-}
-
-/* the main part of a row that is a button: no button look */
-button.rrow__main { background: none; border: 0; padding: 0; text-align: start; cursor: pointer; font: inherit; color: inherit; }
-
-/* a short popup (a name, a confirmation): its title and its text or field stand against each other, no gap (owner); the button keeps the gutter above it (owner, 2026-11-25); the popup pads around them */
-dialog.rsheet[data-size="s"] .sheet { gap: 0; }
-dialog.rsheet[data-size="s"] .sheet > .sheet-foot { margin-block-start: var(--gap); }
 
 /* a card whose song plays stays white, and so does everything on it: what shows the sound is the kit's picture (sound.js, kit.css .req) */
 /* the exercise tabs of a phone keep room for the ring round the number (above it, and between it and the name, a small gap left under the ring), so nothing moves when a song starts */
@@ -84,11 +53,19 @@ input[data-cattitle]:focus::placeholder { color: var(--text-muted); }
 @keyframes bio-layer-in { from { transform: translateX(100%); } }
 .bio-catlayer.bio-catlayer--over .catmain { transform: none; transition: none; }
 @media (prefers-reduced-motion: reduce) { .bio-catlayer.bio-catlayer.bio-catlayer--over, .bio-catlayer.bio-catlayer.bio-catlayer--over.is-open { transition: none; animation: none } }
-/* the title group of a header with a mark beside the name (the playing exercise's number): one centred line, not top-aligned like a title over its sub line */
-#pl > .rhead .rhead__text.rhead__text--row { align-items: center; }
-/* the name and the mark beside it (the number with the sound ring): --gap-section between them, on the group that holds both */
-.rtitle:has(> .bio-vsym), .rhead__text--row:has(> #vgo) { gap: var(--gap-section); }
+/* a row's name and the mark beside it (the number with the sound ring): --gap-section between them, on the group that holds both (in a header the mark is --gap from the title, the kit's) */
+.rtitle:has(> .bio-vsym) { gap: var(--gap-section); }
 /* the dim of the layer below a catalog layer: a scrim that stays where it is (between the two layers, over the left side) and only fades; the layer above it is what slides */
 .bio-catscrim { position: fixed; z-index: var(--z-menu); background: var(--scrim); opacity: 0; pointer-events: none; transition: opacity var(--t-base) var(--ease); }
 .bio-catscrim.is-on { opacity: 1; pointer-events: auto; }
 @media (prefers-reduced-motion: reduce) { .bio-catscrim { transition: none } }
+/* stacks inside Biodanza's own parts, on the parent (ui/docs/layout.md "עקרונות הפריסה", principle 1), never in style="": an exercise card's second row (its source, then the songs' count),
+   the play column of a song strip (the tile over its time), and the strip's lines */
+.bio-sub { display: inline-flex; align-items: center; gap: var(--gap); font-variant-numeric: tabular-nums; }
+.bio-sub__n { display: inline-flex; align-items: center; gap: var(--gap-tight); }
+.bio-pcol { flex: none; display: flex; flex-direction: column; align-items: center; gap: var(--gap); }
+.bio-lines { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: var(--gap-tight); }
+/* the music catalog's filter row (muFilterHtml in app.js), the same in the music catalog and in an exercise's music picker: two boxes a row on a phone, four on a computer */
+.mfs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap); }
+@media (min-width: 760px) { .mfs { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.pgs > .rfield { margin: 0; }

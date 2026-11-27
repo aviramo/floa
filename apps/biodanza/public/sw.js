@@ -10,9 +10,9 @@
    left to the browser: this worker never answers for it.
 
    Served at the host's root on biodanza.floa.co.il (scope "/"), and under /biodanza/ on localhost. */
-var CACHE = "biodanza-shell-v1";
+var CACHE = "biodanza-shell-v7";   /* v2: /layout.js joined the kit's files (sheet.js needs it); v3: /swipe.js joined them; v4: /audio.js (the sound engine) joined them; v5: /print.js (the print shell) joined them; v6: /live.js (the live data layer) joined them; v7: /app.js (the app's state) joined them. A new name, so no phone mixes an old shell with new kit files */
 var SCOPE = self.registration.scope;   /* "https://biodanza.floa.co.il/" or "http://localhost:5173/biodanza/" */
-var FIXED = ["kit.css", "sheet.js", "auth.js", "supabase.js", "sound.js", "favicon.ico", "favicon.png", "apple-touch-icon.png"];
+var FIXED = ["kit.css", "layout.js", "sheet.js", "auth.js", "supabase.js", "sound.js", "menu.js", "card.js", "section.js", "tabs.js", "swipe.js", "list.js", "field.js", "search.js", "range.js", "audio.js", "print.js", "live.js", "app.js", "icons.svg", "favicon.ico", "favicon.png", "apple-touch-icon.png"];
 /* the domain's files live at the root of the host, the app's own files under the scope */
 function rootUrl(name) { return new URL("/" + name, SCOPE).href; }
 
@@ -30,7 +30,12 @@ self.addEventListener("install", function (event) {
       var urls = assets.concat(FIXED.map(function (n) { return n === "favicon.ico" || n === "favicon.png" || n === "apple-touch-icon.png" ? new URL(n, SCOPE).href : rootUrl(n); }));
       return Promise.all(urls.map(function (u) { return fetch(u, { cache: "reload" }).then(function (r) { if (r.ok) return cache.put(u, r); }).catch(function () { /* one missing file does not stop the rest */ }); }));
     });
-  }).then(function () { return self.skipWaiting(); }));
+  }).then(function () { if (!self.registration.active) return self.skipWaiting(); }));   /* the first install takes over at once; a NEW version waits, and the kit (/app.js) offers "רענון" (ui/docs/app-version.md): an open tab never runs new files under old code */
+});
+
+/* the person pressed "רענון": the waiting version takes over now (the kit then loads the page once, on controllerchange) */
+self.addEventListener("message", function (event) {
+  if (event.data && event.data.type === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("activate", function (event) {
@@ -77,7 +82,7 @@ self.addEventListener("fetch", function (event) {
     }
     return;
   }
-  if (!url.pathname.startsWith(new URL(SCOPE).pathname) && !/^\/(kit\.css|sheet\.js|auth\.js|supabase\.js|favicon\.(ico|png|svg)|apple-touch-icon\.png)$/.test(url.pathname)) return;
+  if (!url.pathname.startsWith(new URL(SCOPE).pathname) && !/^\/(kit\.css|sheet\.js|auth\.js|supabase\.js|icons\.svg|favicon\.(ico|png|svg)|apple-touch-icon\.png)$/.test(url.pathname)) return;
 
   if (/^(music|catalog14)(\/|$)/.test(url.pathname.slice(new URL(SCOPE).pathname.length))) return;   /* the songs page is its own page: never the app shell, never kept as it */
 
@@ -90,7 +95,7 @@ self.addEventListener("fetch", function (event) {
   }
 
   if (/[?&]v=/.test(url.search)) {   /* a stamped file: never changes under its address */
-    event.respondWith(caches.match(req).then(function (hit) { return hit || fetch(req).then(function (r) { return store(req, r); }); }));
+    event.respondWith(caches.match(req).then(function (hit) { return hit || fetch(req).then(function (r) { return store(req, r); }, function () { return caches.match(url.origin + url.pathname, { ignoreSearch: true }).then(function (old) { return old || Response.error(); }); }); }));   /* no internet and a stamp never seen (the sprite after a new build): the copy kept of the same file */
     return;
   }
 

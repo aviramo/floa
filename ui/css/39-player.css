@@ -1,0 +1,48 @@
+/* Player: ui/docs/player.md */
+html:has(.rplayer:not([hidden])) { --bar-b: calc(var(--player-h) + var(--inset-b)); }
+html:has(.rplayer:not([hidden])) body { box-sizing: border-box; padding-bottom: var(--bar-b); }
+.rplayer { --rplayer-bg: var(--text); --rplayer-fg: var(--page);
+  position: fixed; inset: auto 0 0 0; z-index: var(--z-sticky); box-sizing: border-box; width: auto; max-width: none; height: calc(var(--player-h) + var(--inset-b)); max-height: none; margin: 0; overflow: visible;
+  display: flex; flex-wrap: nowrap; align-items: center; align-content: flex-start; gap: var(--gap); padding: var(--gap) var(--gap) calc(var(--gap) + var(--inset-b));
+  border: 0; border-radius: 0; box-shadow: var(--shadow-lg); background: var(--rplayer-bg); color: var(--rplayer-fg); font: var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font); }
+.rplayer[hidden] { display: none; }
+.rplayer[data-state="playing"] { --rplayer-bg: var(--accent-2); }
+.rplayer > * { --text: var(--rplayer-fg); --text-muted: color-mix(in srgb, var(--rplayer-bg) var(--press-shade), var(--rplayer-fg)); --primary: var(--rplayer-fg); --on-primary: var(--rplayer-bg); --accent-2: var(--rplayer-fg); --on-accent-2: var(--rplayer-bg);
+  --border: color-mix(in srgb, var(--rplayer-fg) var(--press-shade), var(--rplayer-bg)); --border-strong: color-mix(in srgb, var(--rplayer-fg) calc(var(--disabled) * 100%), var(--rplayer-bg)); }
+.rplayer > .ricon-lg { --text: var(--rplayer-bg); }
+.rplayer > [hidden] { display: none; }
+.rplayer__vol { flex: none; display: flex; align-items: center; gap: var(--gap); direction: ltr; }
+.rplayer__vol > .rrange { width: var(--volume-w); }
+.rplayer__time { flex: none; color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rplayer > .rrange--seek { flex: 1 1 0; width: auto; }
+.rplayer__info { position: relative; isolation: isolate; flex: none; min-width: 0; max-width: var(--w); display: flex; flex-direction: column; align-items: flex-end; gap: var(--gap-tight); padding: 0; border: 0; background: transparent; color: var(--text); font: inherit; text-align: start; }
+.rplayer__info::before { content: ""; position: absolute; z-index: -1; inset: calc(var(--gap-tight) * -1); border-radius: var(--r); background: transparent; transition: background var(--t-base) var(--ease); }
+.rplayer__info:not(button) { cursor: default; }
+.rplayer__info:not(button)::before { content: none; }
+.rplayer__info:focus-visible { border-radius: var(--r); }   /* the ring's shape; the ring itself is the shared click rule (03b-interaction.css) */
+.rplayer__title, .rplayer__sub { display: block; min-width: 0; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.rplayer__title { font-weight: var(--fw-bold); color: var(--text); }
+.rplayer__sub { color: var(--text-muted); }
+.rplayer__sub:empty { display: none; }
+.rplayer[data-state="error"] .rplayer__sub { display: flex; align-items: center; gap: var(--gap-tight); color: var(--text); }
+.rplayer[data-state="error"] .rplayer__sub > svg { flex: none; width: var(--icon); height: var(--icon); }
+.rplayer__none { flex: 1 1 auto; min-width: 0; text-align: center; color: var(--text-muted); }
+.rplayer:not([data-state="idle"]) > .rplayer__none { display: none; }
+.rplayer[data-state="idle"] { flex-wrap: nowrap; }
+.rplayer[data-state="idle"] > :not(.rplayer__none, .rplayer__mark) { display: none; }
+.rplayer__mark { flex: none; }
+@media (width < 760px) {
+  .rplayer:not([data-state="idle"]) { display: grid; grid-template-columns: auto auto minmax(0, 1fr); grid-template-rows: auto var(--gap) auto auto; row-gap: 0; align-items: center; }
+  .rplayer:not([data-state="idle"]):has(> :is(.rplayer__mark, .rplayer__heart):not([hidden])) { grid-template-columns: auto auto minmax(0, 1fr) auto; }
+  .rplayer:not([data-state="idle"]):has(> .rplayer__mark:not([hidden])):has(> .rplayer__heart:not([hidden])) { grid-template-columns: auto auto minmax(0, 1fr) auto auto; }
+  .rplayer > .rrange--seek { grid-row: 1; grid-column: 1 / -1; width: auto; }
+  .rplayer > .ricon-lg { grid-row: 3 / span 2; grid-column: 1; }
+  .rplayer > .rplayer__sec { grid-row: 3; grid-column: 2; align-self: end; justify-self: center; }
+  .rplayer > .rplayer__time { grid-row: 4; grid-column: 2; align-self: start; justify-self: center; }
+  .rplayer:not(:has(> .rplayer__sec:not([hidden]))) > .rplayer__time { grid-row: 3 / span 2; align-self: center; }
+  .rplayer > :is(.rplayer__info, .rplayer__mark, .rplayer__heart) { grid-row: 3 / span 2; }
+  .rplayer > .rplayer__info { grid-column: 3; }
+  .rplayer__vol { display: none; }
+  .rplayer__time { color: var(--text); font-size: var(--fs-l); font-weight: var(--fw-bold); }
+  .rplayer__info { flex: 1 1 0; max-width: none; }
+}

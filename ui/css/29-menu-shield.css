@@ -1,0 +1,3 @@
+/* Menu, shield and items: ui/docs/menu.md */
+.rmenu-shield { position: fixed; inset: 0; z-index: var(--z-menu); margin: 0; padding: 0; border: 0; width: 100%; height: 100%; background: transparent; touch-action: none; }
+.rmenu__meta { margin-inline-start: auto; display: inline-flex; align-items: center; gap: var(--gap); color: var(--text-muted); font: var(--fw-regular) var(--fs-m)/1 var(--font); font-variant-numeric: tabular-nums; }

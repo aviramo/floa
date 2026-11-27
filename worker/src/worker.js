@@ -15,3 +15,4 @@
    ========================================================================== */
 export { default } from "./index.js";
 export { ReadSong } from "./read-workflow.js";
+export { LiveRoom } from "./live/room.js";

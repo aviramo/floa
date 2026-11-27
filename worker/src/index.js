@@ -37,10 +37,10 @@
    ========================================================================== */
 import { BUSINESSES } from "./businesses.js";
 import { CV_MEDIA, parseCv } from "./cv.js";
-import { MEDIA_TYPES, readChordSheet } from "./transcribe.js";
+import { MEDIA_TYPES } from "./transcribe.js";
 import { handleAudio, isAudioPath } from "./biodanza-audio.js";
-import { measure } from "./ocr.js";          // temporary, for /boxes
-import { sendPush } from "./webpush.js";
+import { handleLive, isLivePath } from "./live/routes.js";
+import { handleMedia, isMediaPath } from "./media.js";
 import { handleRoster, isRosterPath, runRosterScheduled } from "./roster/routes.js";
 import { handleRosterAuth, isRosterAuthPath } from "./roster-auth.js";
 import { handleRosterWa, isRosterWaPath } from "./roster-wa.js";
@@ -406,73 +406,6 @@ async function handleLead(request, env, origin) {
 
 /* --- the door ------------------------------------------------------------- */
 
-/* --- the page as boxes, once ----------------------------------------------
-   TEMPORARY, and it exists so that tuning the reader stops costing anything.
-
-   Measuring a page is the only step of this that needs a key, a network and a
-   supplier. Everything after it, the rows, the direction, which token is a
-   chord, which letter it sits on, is arithmetic on a list of rectangles. Pull
-   that list out once and every version of the arithmetic can be tried against
-   the same page, offline and free, and compared against a song somebody fixed
-   by hand. See worker/test/score.mjs.
-
-   DELETE IT once the arithmetic has settled. */
-async function boxesOf(request, env) {
-  if (!env.GOOGLE_VISION_KEY) return json({ ok: false, said: "no GOOGLE_VISION_KEY" }, 200, "");
-
-  let body;
-  try { body = await request.json(); } catch { return json({ ok: false, said: "bad body" }, 400, ""); }
-  if (!body?.data) return json({ ok: false, said: "no data" }, 400, "");
-
-  try {
-    const { boxes, cost } = await measure(env, [{ media_type: body.media_type || "image/jpeg", data: body.data }]);
-    return json({ ok: true, cost, boxes }, 200, "");
-  } catch (err) {
-    return json({ ok: false, threw: String(err.message).slice(0, 400) }, 200, "");
-  }
-}
-
-/* --- one page, read by the model, on purpose ------------------------------
-   TEMPORARY, and it exists to build a reference rather than to serve anybody.
-
-   Measuring a page is what the reader does now and it is what the reader
-   should do. But a song has to be CORRECTED by a person before it can be used
-   to judge the measuring, and correcting a badly measured page is more work
-   than typing it out. The model's read is not better, it is differently wrong,
-   and it is close enough to be worth fixing by hand. So: the same reader with
-   the ruler taken out of its hands.
-
-   It answers as a slow trickle of spaces and then the song, because a read
-   takes minutes and a quiet connection is cut at a hundred seconds.
-
-   DELETE IT once there is a reference. */
-async function readByModel(request, env) {
-  let body;
-  try { body = await request.json(); } catch { return json({ ok: false, said: "bad body" }, 400, ""); }
-  if (!body?.data) return json({ ok: false, said: "no data" }, 400, "");
-
-  const files = [{ media_type: body.media_type || "image/jpeg", data: body.data }];
-
-  const stream = new ReadableStream({
-    async start(controller) {
-      const encoder = new TextEncoder();
-      const tick = setInterval(() => controller.enqueue(encoder.encode(" ")), 5000);
-      try {
-        /* the key taken away is the whole of "do not measure it" */
-        const song = await readChordSheet({ ...env, GOOGLE_VISION_KEY: "" }, files, () => {});
-        controller.enqueue(encoder.encode("\n" + JSON.stringify({ ok: true, song })));
-      } catch (err) {
-        controller.enqueue(encoder.encode("\n" + JSON.stringify({ ok: false, threw: String(err.message).slice(0, 300) })));
-      } finally {
-        clearInterval(tick);
-        controller.close();
-      }
-    },
-  });
-
-  return new Response(stream, { headers: { "content-type": "text/plain; charset=utf-8" } });
-}
-
 /* --- /parse-cv ------------------------------------------------------------
    The jobs app: one CV in, one profile out. Same guards as /transcribe, since
    every call costs money: the origin and a real signed-in Supabase user. */
@@ -510,32 +443,6 @@ async function handleParseCv(request, env, origin) {
 }
 
 
-/* --- /aum-push: browser notifications for AUM's admin ----------------------
-   Called by the database, not by a browser: aum_signup (apps/aum/schema.sql)
-   POSTs here when a new person registers, with the endpoints the admins
-   subscribed. There is no origin to check, so the shared token is the whole
-   lock, and a subscription the push service reports dead is named in the reply.
-
-   POST /aum-push  { token, endpoints: [https://...] }  ->  { ok, sent, gone: [...] }
-   Secrets: AUM_PUSH_TOKEN, VAPID_PUBLIC, VAPID_PRIVATE (see worker/README.md). */
-async function handleAumPush(request, env) {
-  const reply = (body, status) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8" } });
-  let body;
-  try { body = await request.json(); } catch { return reply({ ok: false, error: "json" }, 400); }
-
-  const want = String(env.AUM_PUSH_TOKEN || "");
-  const got = String(body.token || "");
-  let diff = want.length === got.length ? 0 : 1;
-  for (let i = 0; i < Math.max(want.length, got.length); i++) diff |= (want.charCodeAt(i) || 0) ^ (got.charCodeAt(i) || 0);
-  if (!want || diff) return reply({ ok: false, error: "forbidden" }, 403);
-
-  if (!env.VAPID_PUBLIC || !env.VAPID_PRIVATE) return reply({ ok: false, error: "vapid" }, 500);
-  const endpoints = (Array.isArray(body.endpoints) ? body.endpoints : []).filter((e) => typeof e === "string").slice(0, 20);
-  const vapid = { publicKey: env.VAPID_PUBLIC, privateKey: env.VAPID_PRIVATE, subject: env.VAPID_SUBJECT || "mailto:ofir.aviram@gmail.com" };
-  const results = await Promise.all(endpoints.map((e) => sendPush(e, vapid)));
-  return reply({ ok: true, sent: results.filter((r) => r === "sent").length, gone: endpoints.filter((_, i) => results[i] === "gone") }, 200);
-}
-
 export default {
   async fetch(request, env, ctx) {
     /* /roster/v1/* is the roster product's public API: its own door, its own
@@ -547,19 +454,13 @@ export default {
     /* the Biodanza app's music: a private R2 bucket behind sign-in and the allowlist */
     if (isAudioPath(new URL(request.url).pathname)) return handleAudio(request, env, ALLOWED_ORIGINS);
 
-    const origin = request.headers.get("origin") || "";
+    /* the live relay (worker/LIVE.md): a WebSocket per tab to the room's Durable Object, before the POST-only gate */
+    if (isLivePath(new URL(request.url).pathname)) return handleLive(request, env);
 
-    if (request.method === "POST" && new URL(request.url).pathname === "/read-model") {
-      return readByModel(request, env);
-    }
+    /* the media store (worker/MEDIA.md): its own door, CORS and errors, before the POST-only gate */
+    if (isMediaPath(new URL(request.url).pathname)) return handleMedia(request, env, ctx);
 
-    if (request.method === "POST" && new URL(request.url).pathname === "/aum-push") {
-      return handleAumPush(request, env);
-    }
-
-    if (request.method === "POST" && new URL(request.url).pathname === "/boxes") {
-      return boxesOf(request, env);
-    }
+    const origin =request.headers.get("origin") || "";
 
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(origin) });
     if (request.method !== "POST") return json({ ok: false, error: "method" }, 405, origin);

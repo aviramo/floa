@@ -1,0 +1,78 @@
+/* Print shell: ui/docs/print.md */
+:root {
+  --print-margin: 12mm;
+  --print-scale: 1.25;
+}
+.rprint { display: none; }
+.rprint { --print-w: 210mm; --print-h: 297mm; }
+.rprint[data-page="a4-landscape"] { --print-w: 297mm; --print-h: 210mm; }
+.rprint[data-page="a5-portrait"] { --print-w: 148mm; --print-h: 210mm; }
+.rprint[data-page="a5-landscape"] { --print-w: 210mm; --print-h: 148mm; }
+.rprint[data-page="letter-portrait"] { --print-w: 8.5in; --print-h: 11in; }
+.rprint[data-page="letter-landscape"] { --print-w: 11in; --print-h: 8.5in; }
+.rprint[data-measure] { display: block; position: fixed; inset-block-start: 0; inset-inline-start: 0; inline-size: var(--print-w); visibility: hidden; pointer-events: none; }
+.rprint__probe { block-size: calc(var(--print-h) - var(--print-margin) * 2); inline-size: var(--bw); }
+.rprint {
+  --page: #FFFFFF; --surface: #FFFFFF; --raised: #FFFFFF;
+  --text: #000000; --primary: #000000; --accent-2: #000000;
+  --text-muted: #404040;
+  --border: #000000; --border-strong: #000000;
+  --shadow: none; --shadow-lg: none;
+  box-sizing: border-box; padding-inline: var(--print-margin); margin: 0;
+  background: none; color: var(--text); font-family: var(--font); font-weight: var(--fw-regular);
+  font-size: calc(var(--fs-m) * var(--print-scale)); line-height: var(--lh-text); text-align: start;
+  -webkit-print-color-adjust: economy; print-color-adjust: economy;
+}
+.rprint :where(*) { box-sizing: border-box; margin: 0; padding: 0; border: 0; background: none; box-shadow: none; color: inherit; font: inherit; text-align: start; }
+.rprint :where(b, strong) { font-weight: var(--fw-bold); }
+.rprint :where(ul, ol) { padding-inline-start: var(--gap-section); }
+.rprint a { color: var(--text); text-decoration: none; }
+.rprint__sheet { inline-size: 100%; border-collapse: collapse; border-spacing: 0; }
+.rprint__space { block-size: var(--print-margin); padding: 0; }
+.rprint__cell { padding: 0; vertical-align: top; }
+.rprint__flow { display: flex; flex-direction: column; gap: var(--gap); }
+.rprint__head { display: flex; flex-direction: column; gap: var(--gap-tight); }
+.rprint__title { font-size: calc(var(--fs-xl) * var(--print-scale)); font-weight: var(--fw-bold); line-height: var(--lh-tight); }
+.rprint__sub { font-size: calc(var(--fs-l) * var(--print-scale)); font-weight: var(--fw-regular); line-height: var(--lh-tight); color: var(--text-muted); }
+.rprint__flow > * + .rprint__sec { margin-block-start: calc(var(--gap-section) - var(--gap)); }
+.rprint__sec, .rprint__lead, .rprint__item, .rprint__ihead { display: flex; flex-direction: column; gap: var(--gap); }
+.rprint__sec--items { gap: calc(var(--gap-section) * var(--print-scale)); }
+.rprint__stitle { font-size: calc(var(--fs-l) * var(--print-scale)); font-weight: var(--fw-bold); line-height: var(--lh-tight); padding-block-end: var(--gap-tight); border-block-end: var(--focus-w) solid var(--border-strong); }
+.rprint__ititle { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--gap); font-size: calc(var(--fs-l) * var(--print-scale)); font-weight: var(--fw-bold); line-height: var(--lh-tight); }
+.rprint__num { unicode-bidi: isolate; }
+.rprint__num::after { content: "."; }
+.rprint__tag { font-size: calc(var(--fs-m) * var(--print-scale)); font-weight: var(--fw-bold); color: var(--text-muted); }
+.rprint__meta { font-size: calc(var(--fs-m) * var(--print-scale)); font-weight: var(--fw-bold); line-height: var(--lh-tight); }
+.rprint__meta--sym { display: grid; grid-template-columns: auto 1fr; column-gap: var(--gap); align-items: start; }
+.rprint__symbox { display: flex; align-items: center; block-size: calc(1em * var(--lh-tight)); }
+.rprint__mi + .rprint__mi::before { content: "\00A0\00B7\00A0"; font-weight: var(--fw-regular); }
+.rprint__field { display: flex; flex-direction: column; gap: var(--gap-tight); }
+.rprint__label { font-size: calc(var(--fs-m) * var(--print-scale)); font-weight: var(--fw-bold); line-height: var(--lh-tight); color: var(--text-muted); }
+.rprint__text, .rprint__value { font-size: calc(var(--fs-m) * var(--print-scale)); line-height: var(--lh-text); orphans: 3; widows: 3; }
+.rprint__text :where(p, li), .rprint__value :where(p, li) { orphans: 3; widows: 3; }
+.rprint__img img { display: block; max-inline-size: 100%; block-size: auto; }
+.rprint :is(svg, video, audio, iframe, object, embed, .ricon, img[alt=""], button, input, select, textarea) { display: none; }
+.rprint .rprint__symbox > svg.rprint__sym { display: block; flex: none; inline-size: 1em; block-size: 1em; fill: none; stroke: currentColor; stroke-width: var(--icon-w); stroke-linecap: round; stroke-linejoin: round; overflow: visible; }
+.rprint__keep, .rprint__lead, .rprint__img, .rprint__ihead { break-inside: avoid; page-break-inside: avoid; }
+.rprint__ihead { break-after: avoid; page-break-after: avoid; }
+.rprint :is(.rprint__keep, .rprint__lead)[data-break] { break-inside: auto; page-break-inside: auto; }
+.rprint__stitle, .rprint__ititle, .rprint__meta, .rprint__label { break-after: avoid; page-break-after: avoid; }
+.rprint__sec--new { break-before: page; page-break-before: always; }
+.rprint__flow > * + .rprint__sec--new { margin-block-start: 0; }
+@page rprint-a4-portrait { size: A4 portrait; margin: 0; }
+@page rprint-a4-landscape { size: A4 landscape; margin: 0; }
+@page rprint-a5-portrait { size: A5 portrait; margin: 0; }
+@page rprint-a5-landscape { size: A5 landscape; margin: 0; }
+@page rprint-letter-portrait { size: letter portrait; margin: 0; }
+@page rprint-letter-landscape { size: letter landscape; margin: 0; }
+@media print {
+  html[data-rprint], html[data-rprint] body { display: block !important; block-size: auto !important; min-block-size: 0 !important; max-block-size: none !important; overflow: visible !important; position: static !important; margin: 0 !important; padding: 0 !important; background: #FFFFFF !important; }
+  html[data-rprint] body > :not(.rprint) { display: none !important; }
+  html[data-rprint] body > .rprint { display: block; }
+  .rprint[data-page="a4-portrait"] { page: rprint-a4-portrait; }
+  .rprint[data-page="a4-landscape"] { page: rprint-a4-landscape; }
+  .rprint[data-page="a5-portrait"] { page: rprint-a5-portrait; }
+  .rprint[data-page="a5-landscape"] { page: rprint-a5-landscape; }
+  .rprint[data-page="letter-portrait"] { page: rprint-letter-portrait; }
+  .rprint[data-page="letter-landscape"] { page: rprint-letter-landscape; }
+}

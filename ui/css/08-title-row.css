@@ -1,0 +1,4 @@
+/* Title row, a text and its chip: ui/docs/card.md */
+.rtitle { display: flex; align-items: center; gap: var(--gap); min-width: 0; }
+.rtitle > .rtitle__tx { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rtitle > .rchip { flex: none; }

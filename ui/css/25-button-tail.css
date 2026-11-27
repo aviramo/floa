@@ -1,0 +1,6 @@
+/* Icon button tail: ui/docs/button.md "כפתור אייקון" */
+.rbtn__tail { order: -1; display: inline-flex; align-items: center; flex: none;     direction: ltr; unicode-bidi: isolate; font: var(--fw-bold) var(--fs-m)/1 var(--font); font-variant-numeric: tabular-nums; }
+.rbtn__tail:empty, .rbtn__tail[hidden] { display: none; }
+.rbtn__tail > svg { display: block; width: var(--icon); height: var(--icon); stroke-width: var(--icon-w); overflow: visible; }
+.rbtn--icon:has(> .rbtn__tail:not([hidden], :empty)) { width: auto; gap: var(--gap-tight); }
+.rbtn--icon:has(> .rbtn__tail:not([hidden], :empty))::after, .rbtn--icon:has(> .rbtn__tail:not([hidden], :empty))::before { width: max(100%, var(--ctl)); inset-inline-start: calc(50% - max(100%, var(--ctl)) / 2); }

@@ -26,14 +26,11 @@ export const css = [
   "components/site-nav/site-nav.css",
   "components/section-head/section-head.css",
   "components/card/card.css",                         // THE box — every boxed item on the site
-  "components/eco-grid/eco-grid.css",                 // refines .card for the ecosystem row
   "components/quote-card/quote-card.css",
   "components/project-card/project-card.css",
   "components/solution-panel/solution-panel.css",
-  "components/flow/flow.css",
   "components/timeline/timeline.css",
   "components/faq/faq.css",
-  "components/ba-strip/ba-strip.css",
   "components/approach/approach.css",
   "components/compare/compare.css",
   "components/about/about.css",

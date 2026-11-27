@@ -5,6 +5,7 @@
 # every build, so a copy in git could only ever be a stale one — which is
 # exactly what it used to be, back when the built pages lived in the repo root.
 dist/
+dist.*
 
 # wrangler's own cache: which Cloudflare account you are logged into, and its
 # build scratch. Machine-local, churns on every login and deploy.
@@ -37,3 +38,6 @@ apps/jobs/runner/*.sessions.json
 
 # Biodanza catalogs: facilitators-only material, this repo is public. Never commit.
 apps/biodanza/catalog-source/
+
+# Harpatka ad tooling: private working data (names private raw files), never committed
+apps/harpatka/tools/ads/_data/

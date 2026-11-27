@@ -1,0 +1,4 @@
+/* Large icon and floating button, states: ui/docs/large-icon.md, ui/docs/fab.md */
+.ricon-lg > svg, .rfab > svg { width: var(--icon-lg); height: var(--icon-lg); stroke-width: var(--icon-w); }
+.rfab[hidden] { display: none; }
+.ricon-lg[aria-busy="true"], .rfab[aria-busy="true"] { pointer-events: none; }

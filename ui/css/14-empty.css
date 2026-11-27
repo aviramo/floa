@@ -1,0 +1,9 @@
+/* Empty state: ui/docs/empty.md */
+.rempty { box-sizing: border-box; flex: 1 1 auto; grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--gap); padding: var(--gap-section) var(--gap); text-align: center; color: var(--text-muted); font: var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font); }
+.rempty > b { color: var(--text); font: var(--fw-bold) var(--fs-m)/var(--lh-tight) var(--font); }
+.rempty > span { max-width: var(--w); line-height: var(--lh-text); }
+.rempty > svg { flex: none; width: var(--icon-lg); height: var(--icon-lg); color: var(--text-muted); stroke-width: var(--icon-w); }
+.rempty--line { flex: none; flex-direction: row; justify-content: center; min-height: 0; padding: 0 var(--gap); text-align: center; font-size: var(--fs-s); }
+[data-rsort-grip="item"] + .rempty--line { display: none; }
+:has(> .rempty:not(.rempty--line):only-child) { align-content: stretch !important; }
+[aria-busy="true"] > .rempty { display: none; }

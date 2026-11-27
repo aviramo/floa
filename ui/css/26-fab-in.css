@@ -1,0 +1,4 @@
+/* Floating button inside a popup, hidden under a lock: ui/docs/fab.md */
+.rfab.rfab--in { position: sticky; bottom: var(--gap); inset-inline: auto; align-self: flex-end; flex: none; }
+html.rs-lock .rfab:not(.rfab--in), html.dlg-lock .rfab:not(.rfab--in), html.kb-open .rfab { opacity: 0; transform: translateY(calc(var(--fab) + var(--gap-section))); pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .rbtn--icon[aria-busy="true"] > svg { animation: none; } }

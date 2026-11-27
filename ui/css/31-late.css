@@ -1,0 +1,7 @@
+/* Sheet end on a computer: ui/docs/window.md */
+@media (min-width: 760px) { :root { --sheet-b: max(var(--gap), var(--inset-b)); } }
+/* Toast beside the floating button: ui/docs/toast.md */
+html:has(.rfab:not(.rfab--in)) .rmsg--toast { inset-inline-end: calc(max(var(--gap), var(--inset-e)) + var(--fab) + var(--gap)); inset-inline-start: var(--gap); width: auto; bottom: calc(var(--gap) + max(var(--inset-b), var(--bar-b))); }
+html:has(.rfab:not(.rfab--in)) .rmsg--toast { box-sizing: border-box; min-height: var(--fab); align-items: center; }
+/* Row whose main part is a button: ui/docs/row.md */
+button.rrow__main { appearance: none; border: 0; background: none; padding: 0; text-align: start; font: inherit; color: inherit; }

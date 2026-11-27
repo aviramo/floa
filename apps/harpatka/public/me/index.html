@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="he" dir="rtl" class="pg-me">
+<head>
+<meta charset="utf-8" />
+<script>try { if (window.self === window.top && !window.opener && !location.hash) { const q = new URLSearchParams(location.search); if (!q.has('as') && !q.has('login')) { document.documentElement.style.visibility = 'hidden'; location.replace('../?me=1' + (q.get('m') ? '&m=' + encodeURIComponent(q.get('m')) : '')); } } } catch (e) {}</script>   <!-- כניסה ישירה ל-/me: דף הבית נטען והאזור האישי עולה עליו -->
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>האזור האישי | יוצאים להרפתקה</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;800&family=Rubik:wght@500;700;800&display=block" rel="stylesheet" />
+<link rel="stylesheet" href="../shared/meeting-box.css?v=2" />
+<link rel="stylesheet" href="../shared/person-form.css?v=1" />
+<link rel="stylesheet" href="../shared/wa-card.css?v=1" />
+<link rel="stylesheet" href="../shared/site.css?v=20261115i" />
+<script>try { if (window.self !== window.top && /[?&]embed=/.test(location.search)) document.documentElement.classList.add('embed'); } catch (e) {}</script>   <!-- בפופאפ: הרקע הטורקיז כבר בציור הראשון -->
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><h1>האזור האישי</h1><span class="chip" id="balChip" hidden></span><span class="chip wait" id="sesChip" hidden></span><button type="button" class="link" id="outBtn" hidden>יציאה</button></div>
+  <div id="app"><div class="center">טוען…</div></div>
+</div>
+<script src="../shared/config.js?v=20261121b"></script>
+<script src="/supabase.js"></script>
+<script src="/roster-site.js" data-business="harpatka" data-key="rk_pub_IXQvipmkAZevJPbdQanj6KW9M9hrQTBf" data-test-key="rk_pub_81212924b841185ddc41a8268f889b5d"></script>
+<script src="../shared/roster-bridge.js?v=20261126b"></script>
+<script src="../shared/rt.js?v=1"></script>
+<script src="../shared/person-form.js?v=20261105b"></script>
+<script src="../shared/embed-drag.js?v=20261105a"></script>
+<script>
+(() => {
+  const DB = {
+    url: 'https://ezakarwqstnldqixgreb.supabase.co',
+    key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6YWthcndxc3RubGRxaXhncmViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEyMTA3MzIsImV4cCI6MjEwNjc4NjczMn0.Bg0eFBC4zKjyJc5kBw3wLgSP-PkxLFVv3o7-4YUdq4c',
+  };
+  const $ = (s) => document.querySelector(s);
+  const linkify = (t) => esc(t).replace(/https?:\/\/[^\s<]+/g, (u) => '<a class="lnk" href="' + u + '" target="_blank" rel="noopener">' + (/\.(mp4|mov|webm)(\?|$)/i.test(u) ? 'לצפייה בסרטון' : /\.(jpe?g|png|webp|gif)(\?|$)/i.test(u) ? 'לצפייה בתמונה' : 'לפתיחה') + '</a>');
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const SKEY = 'harpatka_me_session', AKEY = 'harpatka_admin_session_v2', AS_KEY = 'harpatka_me_as';
+  const CFG = (typeof CONFIG !== 'undefined') ? CONFIG : {};
+  let lastPhone = '', session = null, data = null, asId = null, usingAdmin = false;
+
+  const jwtData = (tok) => { try { return JSON.parse(decodeURIComponent(escape(atob(tok.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))))); } catch (e) { return {}; } };
+  const sessionOk = (s) => s && s.access_token && (jwtData(s.access_token).exp || 0) * 1000 > Date.now() + 30000;
+  const store = () => (usingAdmin ? AKEY : SKEY);
+  const saveSession = (s) => { session = s; try { localStorage.setItem(store(), JSON.stringify(s)); } catch (e) {} };
+  const clearSession = () => { session = null; try { localStorage.removeItem(store()); } catch (e) {} };
+  /* רענון החיבור: בקשה אחת בכל פעם, ולפני כן בודקים אם דף הבית (או לשונית אחרת) כבר רענן: ה-refresh token של Supabase מתחלף בכל רענון, ושימוש חוזר בישן (אחרי 10 שניות) פוסל את כל החיבור,
+     והמשתמש צריך להתחבר מחדש. ב-me/ שבתוך הפופאפ יש עותק בזיכרון שנשאר ישן כשהדף הראשי מרענן */
+  let refreshP = null;
+  async function refreshSession() {
+    if (!session || !session.refresh_token) return false;
+    try { const n = JSON.parse(localStorage.getItem(store()) || 'null'); if (n && n.access_token && n.access_token !== session.access_token) { if (sessionOk(n)) { session = n; return true; } if (n.refresh_token) session = n; } } catch (e) {}   // החיבור השמור חדש יותר
+    if (refreshP) return refreshP;
+    refreshP = (async () => {
+      try {
+        const r = await fetch(DB.url + '/auth/v1/token?grant_type=refresh_token', { method: 'POST', headers: { apikey: DB.key, 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: session.refresh_token }) });
+        if (!r.ok) return false;
+        const d = await r.json(); saveSession({ access_token: d.access_token, refresh_token: d.refresh_token }); return true;
+      } catch (e) { return false; }
+    })();
+    try { return await refreshP; } finally { refreshP = null; }
+  }
+  /* מצב מוטמע (פופאפ האזור האישי בדף הבית ובדף הניהול, iframe): כניסה עם גוגל מנווטת את הדף הראשי וחוזרת אליו, והפופאפ נפתח מחדש */
+  const EMBED = window.self !== window.top && new URLSearchParams(location.search).has('embed');
+  if (EMBED) {
+    document.documentElement.classList.add('embed');
+    HarpatkaEmbedDrag('me');   // החלקה למטה מהראש סוגרת את הפופאפ, ו-Esc כשהפוקוס בתוך המסגרת (shared/embed-drag.js)
+  }
+  const goGoogle = () => {
+    try { if (asId) sessionStorage.setItem(AS_KEY, asId); } catch (e) {}
+    if (window.CONFIG && CONFIG.rosterApi && CONFIG.rosterApi.authUrl) { (EMBED ? window.top : window).location.href = '../?me=1'; return; }   // רוסטר: לא נכנסים דרך הגוגל של floa; הדף הראשי מבצע את הכניסה עם האפליקציה של הרפתקה
+    if (EMBED) { try { if (window.parent.HarpatkaMe && window.parent.HarpatkaMe.loginPopup) { window.parent.HarpatkaMe.loginPopup(''); return; } } catch (e) {} try { sessionStorage.setItem('harpatka_open_me', '1'); } catch (e) {} window.top.location.href = ((window.CONFIG && CONFIG.rosterApi && CONFIG.rosterApi.authUrl) || DB.url) + '/auth/v1/authorize?provider=google&prompt=select_account&redirect_to=' + encodeURIComponent(window.top.location.origin + window.top.location.pathname); return; }
+    location.href = ((window.CONFIG && CONFIG.rosterApi && CONFIG.rosterApi.authUrl) || DB.url) + '/auth/v1/authorize?provider=google&prompt=select_account&redirect_to=' + encodeURIComponent(location.origin + location.pathname);
+  };
+  async function rpc(name, body) {
+    const call = () => fetch(DB.url + '/rest/v1/rpc/' + name, { method: 'POST', headers: { apikey: DB.key, Authorization: 'Bearer ' + ((session && session.access_token) || DB.key), 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+    let res = await call();
+    if (res.status === 401 && session && await refreshSession()) res = await call();
+    if (res.status === 401 || res.status === 403) { clearSession(); throw new Error('auth'); }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const t = await res.text(); return t ? JSON.parse(t) : null;
+  }
+
+  const DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+  const dayParts = (iso) => { const [y, m, d] = iso.split('-').map(Number); return { day: 'יום ' + ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'][new Date(y, m - 1, d).getDay()] + "'", date: String(d).padStart(2, '0') + '.' + String(m).padStart(2, '0') }; };   // לטבלת המפגשים: שם היום, תאריך ושעה בעמודות מיושרות
+  const fmtDate = (iso) => { const [y, m, d] = iso.split('-').map(Number); return 'יום ' + DAYS[new Date(y, m - 1, d).getDay()] + ' ' + String(d).padStart(2, '0') + '.' + String(m).padStart(2, '0'); };
+  const ils = (n) => '₪' + Math.round(Math.abs(n)).toLocaleString('he-IL');
+  const G = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.3 0-9.7-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>';
+
+  const app = $('#app');
+  const toast = (el, text, bad) => { el.textContent = text; el.className = 'msg ' + (bad ? 'bad' : 'good'); };
+
+  function viewLogin() {
+    { const bc = $('#balChip'); if (bc) bc.hidden = true; }
+    if (EMBED) { if (window.__out) return; try { window.parent.postMessage({ harpatka: 'me-login' }, location.origin); } catch (e) {} app.innerHTML = '<div class="center">טוען…</div>'; return; }   // בפופאפ: בלי מסך כניסה; הדף הראשי סוגר את הפופאפ ופותח כניסה עם גוגל
+    if (EMBED) { app.innerHTML = '<div class="card"><h2>האזור האישי</h2><p class="muted" style="margin:0 0 14px">כאן אפשר לראות את המפגשים שלכם, את התשלומים והקרדיט, לשמור מקום למפגש הבא ולעדכן פרטים</p><button type="button" class="gbtn" id="gBtn">' + G + 'כניסה עם גוגל</button></div>'; $('#gBtn').onclick = goGoogle; return; }
+    /* מסך כניסה: פופאפ שיורד מלמעלה (כמו פופאפ ההרשמה) עם כפתור ההתחברות; סגירה (לחיצה בחוץ או על הפס) חוזרת לדף הבית */
+    app.innerHTML = '<div class="lgback" id="lgBack"></div><div class="lgpop" id="lgPop" role="dialog" aria-modal="true" aria-labelledby="lgT"><button type="button" class="lggrab" id="lgGrab" aria-label="סגירה"><i></i></button><h2 id="lgT">האזור האישי</h2><p class="muted" style="margin:0 0 14px">כאן אפשר לראות את המפגשים שלכם, את התשלומים והקרדיט, לשמור מקום למפגש הבא ולעדכן פרטים</p><button type="button" class="gbtn" id="gBtn">' + G + 'כניסה עם גוגל</button></div>';
+    $('#gBtn').onclick = goGoogle;
+    requestAnimationFrame(() => requestAnimationFrame(() => { $('#lgPop').classList.add('open'); $('#lgBack').classList.add('open'); }));
+    const closeLg = () => { $('#lgPop').classList.remove('open'); $('#lgBack').classList.remove('open'); setTimeout(() => { location.href = '../'; }, 280); };
+    $('#lgBack').onclick = closeLg; $('#lgGrab').onclick = closeLg;
+  }
+  function viewClaim(note) {
+    { const bc = $('#balChip'); if (bc) bc.hidden = true; }
+    if (!note) { viewSignup(''); return; }   // חשבון גוגל בלי משתתף מקושר: ישר לטופס הפרטים (יוצר משתתף, או מחבר משתתף קיים לפי הטלפון)
+    const adm = '';
+    app.innerHTML = adm + '<div class="card"><h2>חיבור לחשבון</h2><p class="muted" style="margin:0">הזינו את הטלפון שבו שמרתם מקום למפגש כדי לחבר אליו את חשבון הגוגל. החיבור מאושר על ידינו ואז האזור האישי נפתח</p>' + (note ? '<p class="msg bad">' + esc(note) + '</p>' : '') +
+      PersonForm.html('phone', { id: 'ph' }) + '<button type="button" class="btn" id="claimBtn">שליחה</button><div class="msg" id="cm"></div></div>';
+    $('#claimBtn').onclick = async () => {
+      const b = $('#claimBtn'); b.disabled = true;
+      try {
+        const r = await rpc('harpatka_me_claim', { p_phone: $('#ph').value });
+        if (r === 'not_registered') { viewSignup($('#ph').value); return; }
+        if (r === 'invalid_phone') { toast($('#cm'), 'מספר הטלפון לא תקין', true); b.disabled = false; return; }
+        lastPhone = $('#ph').value; load(false, true);
+      } catch (e) { toast($('#cm'), 'משהו השתבש, אפשר לנסות שוב', true); b.disabled = false; }
+    };
+  }
+  /* השם מחשבון הגוגל (מהטוקן), למילוי ראשוני של שם פרטי ומשפחה */
+  function googleName() {
+    try { const m = (JSON.parse(atob(session.access_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).user_metadata) || {}, full = String(m.full_name || m.name || '').trim(); return { first: m.given_name || full.split(' ')[0] || '', last: m.family_name || full.split(' ').slice(1).join(' ') }; } catch (e) { return { first: '', last: '' }; }
+  }
+  /* חשבון גוגל בלי משתתף מקושר: קודם רק טלפון (harpatka_me_phone, בלי שיוך למפגש). השרת מחבר את החשבון למשתתף עם הטלפון הזה, או יוצר משתתף עם הטלפון בלבד;
+     אחר כך האזור האישי נטען, וכשחסרים פרטים כרטיס "הפרטים שלי" נפתח מעצמו להשלמה. טלפון של משתתף שכבר מחובר לחשבון אחר: לא נשמר (והמנהלים מקבלים מייל) */
+  /* שלב הטלפון: הפוקוס בשדה והמקלדת עולה. בפופאפ של דף הבית רק כשהוא פתוח (טעינה מוקדמת מוסתרת לא מקפיצה מקלדת), ובפתיחה דף הבית קורא לזה; פעם אחת, כדי שרענון לא יקפיץ שוב את המקלדת */
+  let phoneFocused = false;
+  /* הדף הראשי סוגר את הפופאפ ומבקש שהפוקוס יורד מהשדה מתוך המסמך הזה עצמו (כך המקלדת נסגרת, וגם כשהמסגרת נשארת חיה מוסתרת) */
+  if (EMBED) window.addEventListener('message', (e) => { if (e.origin === location.origin && e.data && e.data.harpatka === 'me-blur') { const a = document.activeElement; if (a && a !== document.body && window.PersonForm) PersonForm.blurKeyboard(a); } });
+  window.harpatkaFocusPhone = () => { const i = $('#sph'); if (!i) return; phoneFocused = true; try { window.focus(); PersonForm.focusKeyboard(i); } catch (e) {} };
+  /* חשבון גוגל בלי טלפון מקושר: אין יותר שלב טלפון בתוך האזור האישי. בדף הבית האזור האישי נפתח רק אחרי שהחשבון והטלפון חוברו (פופאפ הטלפון מלמעלה, כמו בהרשמה); אם בכל זאת הגענו לכאן, מחזירים לשם */
+  function viewSignup() {
+    app.innerHTML = '';
+    if (EMBED) { if (window.__out) return; try { parent.postMessage({ harpatka: 'me-phone' }, location.origin); } catch (e) {} }   // אחרי יציאה לא פותחים הרשמה מעצמנו
+    else location.replace('../?me=1');
+  }
+  function viewPending() { app.innerHTML = '<div class="card"><h2>הבקשה התקבלה</h2><p class="muted" style="margin:0">אנחנו מאשרים את החיבור, ובקרוב האזור האישי יהיה זמין. אפשר לחזור לכאן בעוד קצת זמן</p></div>'; }
+  function viewBlocked() { app.innerHTML = '<div class="card"><h2>אין גישה</h2><p class="muted" style="margin:0">החשבון הזה לא מחובר לאזור אישי. אפשר לפנות אלינו בוואטסאפ</p></div>'; }
+
+  let keepOpenSet = new Set(), keepDetOpen = false, keepDirSet = new Set();   // מפגשים וכרטיס פרטים שהיו פתוחים בזמן רענון אוטומטי (זמן אמת)
+  let unregSure = null, unregT = 0;   // ביטול רישום שממתין ללחיצת האישור (מזהה המפגש): נשמר גם כשהרשימה מצוירת מחדש
+  const UNREG_SURE = 'לחיצה נוספת לביטול שמירת המקום';
+  let keepOpen = null, scrollTo = null;   // scrollTo: מפגש מהקישור ?m= (מדף הבית): נפתח ונגללים אליו פעם אחת   // המפגש שנפתח לפני טעינה מחדש (אחרי הרשמה או ביטול) נשאר פתוח
+  function viewMain() {
+    const p = data.participant, nx = data.next, imp = !!data.impersonating, ms = data.meetings || [];
+    const nxM = nx ? ms.find((m) => m.id === nx.id) : null;
+    const credit = Math.round(Number(data.balance) || 0);   // בשקלים שלמים: סכום זעיר (שבר או -0) לא מוצג כ"חוב 0"
+    let h = '';
+    setTitle(((p.first_name || '') + ' ' + (p.last_name || '')).trim() || String(p.phone || '').replace(/^\+972/, '0'));   // שם המשתתף מחליף את הכותרת "האזור האישי"; עוד בלי פרטים: הטלפון
+    { const bc = $('#balChip'), n = Math.round(Number(data.sessions) || 0), sc = $('#sesChip'); if (sc) sc.hidden = true;   // קרדיט כספי ומפגשי כרטיסייה בצ'יף אחד
+      if (bc) { bc.hidden = !credit && n <= 0; bc.className = 'chip ' + (credit < 0 ? 'no' : 'wait');
+        const parts = []; if (credit || n <= 0) parts.push((credit < 0 ? 'חוב ' : 'קרדיט ') + ils(Math.abs(credit))); if (n > 0) parts.push((n === 1 ? 'מפגש אחד' : n + ' מפגשים') + ' בכרטיסייה');
+        bc.textContent = parts.join(' · '); bc.title = credit < 0 ? 'חוב' : n > 0 ? 'קרדיט לטובתכם: סכום ומפגשים בכרטיסייה' : 'קרדיט לטובתכם'; } }
+    // סקשן אחד "המפגשים שלי": כל מפגש עתידי (אפשר להירשם, לשלם ולבטל) ומפגשים שהיו. כל מפגש נפתח ונסגר; הקרוב פתוח כברירת מחדל
+    const ordered = ms.slice().sort((a, b) => (String(b.date) + String(b.time)).localeCompare(String(a.date) + String(a.time))), upcoming = ordered.filter((m) => m.future);   // מהחדש לישן
+    const firstId = keepOpen && ordered.some((m) => m.id === keepOpen) ? keepOpen : null; keepOpen = null;   // אין מפגש פתוח כברירת מחדל; רק מפגש שהרגע נרשמו אליו או ביטלו נשאר פתוח
+    /* שורת מפגש קבועה (בלי פתיחה וסגירה): מימין יום, תאריך ושעה ומתחתיהם עיר ושם המפגש; משמאל מצב ההגעה ומתחתיו התשלום (עם הסכום);
+       כשצריך לשלם: כפתור תשלום גדול בפייבוקס כמו בפופאפ ההרשמה (הלחיצה מדווחת על תשלום) ו"רוצים לשלם בדרך אחרת?"; בלי הוראות הגעה */
+    const rowHtml = (m) => {
+      const paid = Number(m.paid) > 0, free = !!m.free, price = Number(m.price) || 0;
+      const rem = (paid && Number(m.due) > 0) ? Number(m.due) : 0;   // שארית אחרי ניצול חלקי של קרדיט: נשארה לתשלום בפייבוקס
+      const useCr = !paid && !free && credit > 0 && price > 0, crAmt = Math.min(credit, price), crFull = useCr && credit >= price;   // יש קרדיט שאפשר לנצל על המפגש (עד המקסימום שלו): הכפתור הראשון
+      const att = '';   // אין יותר סימון הגעה (הסטטוס במפגש הוא תווית וציון בלבד, ולא מוצג למשתתף)
+      const pay = free ? '<span class="chip">לא לתשלום</span>' : rem ? '<span class="chip no">נשאר לשלם ' + ils(rem) + '</span>' : paid ? '<span class="chip ok">שולם ' + ils(m.paid) + (m.paid_via ? ' · ' + esc(m.paid_via) : '') + '</span>'
+        : '<span class="chip no">' + (m.future ? 'טרם שולם' : 'לא שולם') + '</span>';
+      let foot = '';
+      /* כפתור אחד בכל שלב: קודם הקרדיט (עד המקסימום שלו), ורק אחרי שהשתמשו בו, ואם נשארה שארית (או שאין קרדיט), הכפתור של פייבוקס (1.11.26) */
+      if (useCr) foot += '<div class="payfold" data-pf="' + m.id + '"><div><button type="button" class="btn pay" data-paycredit="' + m.id + '">תשלום מהקרדיט · ' + ils(crAmt) + '</button>'
+        + '<p class="crnote">' + (crFull ? 'יישאר לכם קרדיט ' + ils(credit - price) : 'הקרדיט כולו ינוצל על המפגש, ונשאר לשלם ' + ils(price - credit) + ' בפייבוקס') + '</p>'
+        + '<div class="msg" data-pm="' + m.id + '"></div></div></div>';
+      else if (((!paid && !free) || rem > 0) && CFG.payboxLink) {   /* גם מפגש שהסתיים ולא שולם: אפשר לשלם ולדווח (1.11.26) */
+        const payAmt = rem || price;
+        foot += '<div class="payfold" data-pf="' + m.id + '"><div>' + (rem ? '<p class="crnote">שולם ' + ils(m.paid) + '. נשאר לשלם ' + ils(rem) + '</p>' : '') + CFG.payMenu({ key: 'm' + m.id, cls: 'btn pay', label: 'לתשלום ' + (payAmt ? payAmt + ' ₪' : ''), items: [{ pay: 'paybox', attrs: 'data-paynow="' + m.id + '"', href: esc(CFG.payboxLink), amt: payAmt ? payAmt + ' ₪' : '' }].concat(CFG.bitLink ? [{ pay: 'bit', attrs: 'data-paynow="' + m.id + '"', href: esc(CFG.bitLink), amt: payAmt ? payAmt + ' ₪' : '' }] : []), other: { attrs: 'data-other="' + m.id + '"', label: 'דרך אחרת' } }) + '<div class="msg" data-pm="' + m.id + '"></div></div></div>';
+      }
+      /* הוראות ההגעה של המפגש (אותו טקסט כמו בהודעה בדף הניהול, כולל התמונה או הסרטון): שורה עם חץ, ובלחיצה נפתחת באנימציה; מעל "ביטול רישום" */
+      const dirFold = (mm) => { const t = String(mm.directions || '').trim(); if (!t) return ''; const o = keepDirSet.has(mm.id); return '<div class="dirbox"><button type="button" class="dethead dirhead" data-dir="' + mm.id + '" aria-expanded="' + o + '" aria-controls="dir-' + mm.id + '"><span>הוראות הגעה</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="detfold' + (o ? ' open' : '') + '" id="dir-' + mm.id + '"><div><p class="dirtxt">' + linkify(t) + '</p></div></div></div>'; };
+      if (m.future) foot += dirFold(m);
+      /* אין ביטול שמירת מקום מהאזור האישי (החלטת הבעלים): ביטול רק דרך המארגנים */
+      /* אותו רכיב כמו בפופאפים ובדף הבית, עם המצב והתשלום בתוך המסגרת. מפגש שעבר: בלי תמונה ובלי כמות משתתפים */
+      return '<div class="mtg" data-mid="' + m.id + '">' + CFG.meetingBox(m.future ? m : Object.assign({}, m, { max: 0 }), '<div class="mts">' + att + pay + '</div>' + (foot ? '<div class="mtfoot">' + foot + '</div>' : '')) + '</div>';
+    };
+    /* מפגש עתידי שעוד לא נרשמו אליו: אותו רכיב, עם כפתור הרשמה ומחיר המפגש */
+    const regRow = (m) => { const price = Number(m.price) || 0; return '<div class="mtg" data-mid="' + m.id + '">' + CFG.meetingBox(m, '<div class="mtfoot"><button type="button" class="btn" data-reg="' + m.id + '">שמירת מקום' + (price ? ' · ' + ils(price) : '') + '</button><div class="msg" data-rm="' + m.id + '"></div></div>') + '</div>'; };
+    /* הסדר: המפגשים הקרובים שנרשמו אליהם (שם יש תשלום לטפל בו), אחריהם מפגשים שאפשר להירשם אליהם מהקרוב לרחוק, ובסוף מפגשים שעברו */
+    const rows = upcoming.filter((m) => m.registered).map(rowHtml).concat(upcoming.filter((m) => !m.registered).reverse().map(regRow), ordered.filter((m) => m.registered && !m.future && m.attended).map(rowHtml));
+    const meetHtml = rows.length ? rows.join('') : '<div class="card"><p class="muted" style="margin:0">עוד לא נקבע מפגש קרוב</p></div>';
+
+    const gv = p.gender || '';
+    const noName = !String(p.first_name || '').trim() || !String(p.last_name || '').trim(), gnm = {};   /* השם לא מתמלא אוטומטית מגוגל: המשתתף מקליד בעצמו */   // עוד בלי פרטים (נוצר מטלפון בלבד): השם מחשבון הגוגל כהצעה
+    const req = !p.gender || p.age == null || noName;   // חסרים פרטים: מבחינת המשתתף הוא עוד לא רשום; רואים רק את השלמת הפרטים (בלי המפגשים) עד שממלאים
+    const missing = req || keepDetOpen;   // חסר פרט חובה: הכרטיס נפתח מעצמו
+    h += '<div class="card" id="detCard"><button type="button" class="dethead" id="detHead" aria-expanded="' + missing + '" aria-controls="detBody"><h2>' + (req ? 'השלמת פרטים' : 'הפרטים שלי') + '</h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="detfold' + (missing ? ' open' : '') + '" id="detBody"><div><div class="two"><div>' + PersonForm.html('first', { id: 'fn', value: p.first_name || gnm.first }) + '</div><div>' + PersonForm.html('last', { id: 'ln', value: p.last_name || gnm.last }) + '</div></div>' + PersonForm.err('name') +
+      PersonForm.html('phone', { id: 'ph2', value: String(p.phone || '').replace(/^\+972/, '0') }) + PersonForm.err('phone') +
+      '<div class="two"><div>' + PersonForm.html('age', { id: 'ag', value: p.age }) + PersonForm.err('age') + '</div><div>' + PersonForm.html('gender', { id: 'gn', value: gv }) + PersonForm.err('gender') + '</div></div>' +
+      '<button type="button" class="btn" id="saveBtn">שמירה</button><div class="msg" id="sm"></div></div></div></div>';
+    /* רכישת כרטיסייה: הכרטיסיות שהוגדרו בסוגי המפגש. תשלום בפייבוקס רושם בקשה, והמנהל מזין את התשלום ומתווספים המפגשים לקרדיט */
+    const passes = Array.isArray(data.passes) ? data.passes : [];
+    const passHtml = (passes.length && !(Number(data.sessions) > 0)) ? '<div class="card" id="passCard"><h2>כרטיסיות</h2><p class="muted" style="margin:0 0 8px">משלמים פעם אחת ומקבלים מפגשים בקרדיט. כל שמירת מקום מורידה מפגש אחד</p>' + passes.map((x) => '<div class="passrow"><div><b>כרטיסייה ' + x.n + ' מפגשים</b><small>' + (passes.some((y) => y.type_id !== x.type_id) ? esc(x.type_name || '') + ' · ' : '') + ils(Math.round(x.price / x.n)) + ' למפגש</small></div>' + (CFG.payboxLink ? '<div class="passbtns">' + CFG.payMenu({ key: 'p' + x.type_id + '_' + x.n, cls: 'btn pay', label: ils(x.price), items: [{ pay: 'paybox', attrs: 'data-buypass="' + x.type_id + '" data-n="' + x.n + '"', href: esc(CFG.payboxLink), amt: ils(x.price) }].concat(CFG.bitLink ? [{ pay: 'bit', attrs: 'data-buypass="' + x.type_id + '" data-n="' + x.n + '"', href: esc(CFG.bitLink), amt: ils(x.price) }] : []), other: { attrs: 'data-otherpass="' + x.n + '"', label: 'דרך אחרת' } }) + '</div>' : '') + '</div>').join('') + '</div>' : '';
+    if (!req) h += passHtml + meetHtml;   // "הפרטים שלי" ראשון, ומתחתיו רשימת המפגשים (רק אחרי שהפרטים הושלמו)
+    keepOpenSet = new Set(); keepDetOpen = false; keepDirSet = new Set();
+    app.innerHTML = h;
+    if (scrollTo) { const row = app.querySelector('.mtg[data-mid="' + scrollTo + '"]'); scrollTo = null; if (row) setTimeout(() => row.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }), 120); }
+
+    app.querySelectorAll('[data-buypass]').forEach((a) => { a.addEventListener('click', () => { if (imp) return; rpc('harpatka_me_buy_pass', { p_type: a.dataset.buypass, p_n: Number(a.dataset.n) }).catch(() => {}); }); });   // הקישור נפתח בלשונית חדשה; הבקשה נרשמת במקביל
+    app.querySelectorAll('[data-reg]').forEach((rb) => { rb.onclick = async () => {
+      const id = rb.dataset.reg, msg = app.querySelector('[data-rm="' + id + '"]'); rb.disabled = true;
+      const ob = meOpt(id, { registered: true }), rel = HRT.busy(rb);
+      let fromAd = false; try { fromAd = !imp && sessionStorage.getItem('harpatka_s') === 'p'; } catch (e) {}   // הגיעו ממודעה: נרשם על ההרשמה למפגש הזה, כמו בדף הבית
+      try { const r = await rpc(fromAd ? 'harpatka_me_register_src' : 'harpatka_me_register', Object.assign({ p_meeting: id }, fromAd ? { p_src: 'p' } : {}, imp ? { p_as: asId } : {})); rel(); if (r === 'registered' || r === 'exists') { ob.done(); keepOpen = id; load(); } else { ob.fail(); toast(msg, 'אי אפשר לשמור מקום במפגש הזה', true); rb.disabled = false; } }
+      catch (e) { rel(); ob.fail(); toast(msg, 'משהו השתבש, אפשר לנסות שוב', true); rb.disabled = false; }
+    }; });
+    app.querySelectorAll('[data-unreg]').forEach((ub) => { ub.onclick = async () => {   // שני שלבים: לחיצה ראשונה מבקשת אישור
+      const id = ub.dataset.unreg, msg = app.querySelector('[data-um="' + id + '"]');
+      if (!ub.dataset.sure) {   // המצב נשמר מחוץ לכפתור, כי לחיצה בתוך הפופאפ מרעננת את הרשימה (פוקוס לחלון) והרענון היה מחזיר את הכפתור ל"ביטול רישום"
+        unregSure = id; ub.dataset.sure = '1'; ub.textContent = UNREG_SURE;
+        clearTimeout(unregT); unregT = setTimeout(() => { if (unregSure !== id) return; unregSure = null; const b = app.querySelector('[data-unreg="' + id + '"]'); if (b && !b.disabled) { delete b.dataset.sure; b.textContent = 'ביטול שמירת המקום'; } }, 8000);   // בלי אישור תוך כמה שניות: חוזר למצב הרגיל
+        return;
+      }
+      unregSure = null; clearTimeout(unregT);
+      ub.disabled = true;
+      const ob = meOpt(id, { registered: false, reported: false }), rel = HRT.busy(ub);
+      try {
+        const r = await rpc('harpatka_me_unregister', Object.assign({ p_meeting: id }, imp ? { p_as: asId } : {}));
+        rel();
+        if (r === 'cancelled' || r === 'not_registered') { ob.done(); keepOpen = id; load(); }
+        else { ob.fail(); toast(msg, 'אי אפשר לבטל את שמירת המקום למפגש הזה', true); ub.disabled = false; delete ub.dataset.sure; ub.textContent = 'ביטול שמירת המקום'; }
+      } catch (e) { rel(); ob.fail(); toast(msg, 'משהו השתבש, אפשר לנסות שוב', true); ub.disabled = false; delete ub.dataset.sure; ub.textContent = 'ביטול שמירת המקום'; }
+    }; });
+    /* תשלום מהקרדיט: הקרדיט מכסה את מחיר המפגש, ומוקצה לו (בלי פייבוקס) */
+    app.querySelectorAll('[data-paycredit]').forEach((cb) => { cb.onclick = async () => {
+      const id = cb.dataset.paycredit, msg = app.querySelector('[data-pm="' + id + '"]'), m = ms.find((x) => x.id === id); if (!m || cb.disabled) return; cb.disabled = true;
+      const price = Number(m.price) || 0, amt = Math.min(credit, price), ob = meOpt(id, { paid: amt, due: price > amt ? price - amt : null, reported: false }, false, -amt), rel = HRT.busy(cb);   // שארית (אם הקרדיט לא מכסה): מופיע מיד כפתור פייבוקס עליה
+      try {
+        const r = await rpc('harpatka_me_pay_credit', Object.assign({ p_meeting: id }, imp ? { p_as: asId } : {}));
+        rel();
+        if (r && (r.status === 'ok' || r.status === 'already')) { ob.done(); keepOpen = id; load(); }
+        else { ob.fail(); toast(msg, r && r.status === 'no_credit' ? 'אין קרדיט זמין' : 'אי אפשר לשלם מהקרדיט', true); cb.disabled = false; }
+      } catch (e) { rel(); ob.fail(); toast(msg, 'משהו השתבש, אפשר לנסות שוב', true); cb.disabled = false; }
+    }; });
+    /* לחיצה על התשלום בפייבוקס = דיווח על תשלום, אוטומטית: פייבוקס נפתח בלשונית חדשה. הדיווח מוצג רק בדף הניהול; המשתתף רואה הכול כאילו לא לחץ */
+    app.querySelectorAll('[data-paynow]').forEach((pa) => { pa.addEventListener('click', async () => {
+      const id = pa.dataset.paynow, fold = app.querySelector('[data-pf="' + id + '"]');
+      if (pa.dataset.rep) return; pa.dataset.rep = '1';
+      const ob = meOpt(id, { reported: true }, true);
+      try {
+        const r = await rpc('harpatka_me_report_payment', Object.assign({ p_meeting: id }, imp ? { p_as: asId } : {}));
+        if (r === 'ok' || r === 'reported' || r === 'already') {
+          ob.done(); keepOpen = id;
+          load();   // כפתור התשלום נשאר עד שהתשלום באמת התקבל
+        } else { ob.fail(); delete pa.dataset.rep; }
+      } catch (e) { ob.fail(); delete pa.dataset.rep; }   // הדיווח נכשל: הכפתור נשאר, ולחיצה נוספת מנסה שוב
+    }); });
+    app.querySelectorAll('[data-other]').forEach((ob) => { ob.onclick = () => {   // שמירת מקום בדרך אחרת: ישר לשיחת וואטסאפ איתנו עם הודעה מוכנה, בלי פופאפ
+      const m = ms.find((x) => x.id === ob.dataset.other); if (!m) return;
+      const text = 'היי, אני רוצה להעביר תשלום בדרך אחרת למפגש ' + fmtDate(m.date).replace(/^יום /, 'ביום ') + ' בשעה ' + m.time;
+      window.open('https://wa.me/' + CFG.whatsapp + '?text=' + encodeURIComponent(text), '_blank', 'noopener');
+    }; });
+    app.querySelectorAll('[data-otherpass]').forEach((ob) => { ob.onclick = () => {   // כרטיסייה בדרך אחרת: ישר לשיחת וואטסאפ עם הודעה מוכנה
+      const text = 'היי, אני רוצה לרכוש כרטיסייה של ' + ob.dataset.otherpass + ' מפגשים בדרך אחרת';
+      window.open('https://wa.me/' + CFG.whatsapp + '?text=' + encodeURIComponent(text), '_blank', 'noopener');
+    }; });
+    app.querySelectorAll('[data-dir]').forEach((b) => { b.onclick = () => { const f = app.querySelector('#dir-' + b.dataset.dir); if (!f) return; const on = !f.classList.contains('open'); f.classList.toggle('open', on); b.setAttribute('aria-expanded', String(on)); }; });
+    PersonForm.bind(app);
+    $('#detHead').onclick = () => { const f = $('#detBody'), on = !f.classList.contains('open'); f.classList.toggle('open', on); $('#detHead').setAttribute('aria-expanded', String(on)); };
+    $('#saveBtn').onclick = async () => {
+      const chk = PersonForm.validate(app); if (!chk.ok) return;
+      const b = $('#saveBtn'); b.disabled = true;
+      const pv = { first_name: chk.v.first, last_name: chk.v.last, age: chk.v.age, gender: chk.v.gender, phone: chk.v.phoneRaw };
+      const ob = HRT.optimistic((d) => { if (d && d.participant) Object.assign(d.participant, pv); }), rel = HRT.busy(b);
+      try {
+        const r = await rpc('harpatka_me_update', Object.assign({ p_first: chk.v.first, p_last: chk.v.last, p_age: chk.v.age, p_gender: chk.v.gender, p_phone: chk.v.phoneRaw }, imp ? { p_as: asId } : {}));
+        rel();
+        if (PersonForm.serverError(app, r)) { ob.fail(); b.disabled = false; return; }
+        const bad = { phone_taken: 'המספר הזה כבר רשום אצל משתתף אחר' }[r];
+        if (bad) { ob.fail(); toast($('#sm'), bad, true); } else { ob.done(); toast($('#sm'), 'הפרטים נשמרו'); load(true); }
+      } catch (e) { rel(); ob.fail(); toast($('#sm'), 'משהו השתבש, אפשר לנסות שוב', true); }
+      b.disabled = false;
+    };
+  }
+
+  const setTitle = (txt) => { const h1 = document.querySelector('.top h1'); if (h1) h1.textContent = txt || 'האזור האישי'; };
+  /* טעינת המצב: תוצאה ישנה (שהסתיימה אחרי חדשה יותר) נזרקת, ושינויים שלי שעוד לא נקלטו בשרת מוחלים על כל טעינה שהתחילה לפניהם (HRT.reconcile) */
+  let meSeq = 0, meApplied = 0;
+  async function meFetch() {
+    const my = ++meSeq, t0 = Date.now();
+    const d = await rpc('harpatka_me', asId ? { p_as: asId } : {});
+    if (my < meApplied) return null;
+    meApplied = my; return HRT.reconcile(d, t0);
+  }
+  /* שינוי של המשתתף על מפגש: מוצג מיד (ציור מחדש עם שמירת המפגשים הפתוחים), נשמר מול טעינות ישנות, ומתבטל אם השרת דוחה */
+  function meOpt(mid, patch, keepFold, balDelta) {
+    const apply = (d) => { const mm = ((d && d.meetings) || []).find((x) => x.id === mid); if (mm) Object.assign(mm, patch); if (balDelta && d) d.balance = (Number(d.balance) || 0) + balDelta; };   // balDelta: שינוי בקרדיט (למשל ניצול שלו לתשלום)
+    const h = HRT.optimistic(apply);
+    if (data && data.status === 'ok' && !keepFold) { keepOpenSet = new Set([...app.querySelectorAll('.mtg.open')].map((x) => x.dataset.mid)); keepDirSet = new Set([...app.querySelectorAll('.dirhead[aria-expanded="true"]')].map((x) => x.dataset.dir)); keepDetOpen = !!(app.querySelector('#detBody') && app.querySelector('#detBody').classList.contains('open')); keepOpen = mid; apply(data); viewMain(); }
+    else if (data) apply(data);
+    return { done: h.done, fail: () => { h.fail(); load(true); } };
+  }
+  async function load(keepMsg, afterClaim) {
+    if (!data) setTitle('');
+    try {
+      const nd = await meFetch(); if (!nd) return; data = nd;
+    } catch (e) { if (e.message === 'auth' || (asId && /HTTP (400|403|404)/.test(e.message))) { viewLogin(); return; } app.innerHTML = '<div class="center">הטעינה נכשלה. אפשר לרענן</div>'; return; }
+    $('#outBtn').hidden = false;
+    try { const bk = sessionStorage.getItem('harpatka_me_back'); if (bk && data && !asId) { sessionStorage.removeItem('harpatka_me_back'); const home = location.pathname.replace(/me\/?$/, ''); if (data.status === 'ok' && !data.impersonating) location.replace(home + (bk === 'reg' ? '?register=1' : '')); else if (data.status !== 'ok') location.replace(home + '?register=1'); else return; return; } } catch (e) {}   // חוזרים לדף הבית: מחוברים (עם השם בצ'יפ), או בלי רשומה לחשבון הזה: נפתח פופאפ ההרשמה   // הגיעו מהקישור "התחברות עם גוגל" בפופאפ ההרשמה: חוזרים לדף הבית והפופאפ נפתח במצב מחובר
+    if (data.status === 'ok') { const keep = keepMsg ? $('#sm') && $('#sm').textContent : ''; viewMain(); if (keep) toast($('#sm'), keep); }
+    else if (data.status === 'pending') viewPending();
+    else if (data.status === 'blocked') {   // החשבון נחסם או נותק (גם בזמן אמת, כשהדף פתוח): מנתקים את החשבון מהדפדפן, בלי שם ויתרה; בפופאפ של דף הבית הוא נסגר והדף חוזר למצב אורח
+      if (!asId) { clearSession(); if (EMBED) { try { window.parent.postMessage({ harpatka: 'me-blocked' }, location.origin); } catch (e) {} } }   // בפופאפ: דף הבית סוגר אותו ומציג פופאפ הסבר
+      setTitle(''); { const bc = $('#balChip'); if (bc) bc.hidden = true; } $('#outBtn').hidden = true; viewBlocked();
+    }
+    else if (afterClaim) viewSignup(lastPhone);
+    else viewClaim('');
+  }
+
+  /* נרשמו עכשיו בטופס באתר: האסימון מהדפדפן מחבר את המשתתף שנוצר לחשבון הגוגל, בלי הזנת טלפון */
+  async function useClaimToken() {
+    let tk = null; try { tk = localStorage.getItem('harpatka_claim_token'); } catch (e) {}
+    if (!tk) return;
+    try { await rpc('harpatka_me_claim_token', { p_token: tk }); try { localStorage.removeItem('harpatka_claim_token'); } catch (e) {} } catch (e) { /* תקלה זמנית: האסימון נשאר לניסיון הבא */ }
+  }
+  async function start() {
+    const q = new URLSearchParams(location.search);
+    if (q.get('m')) { keepOpen = q.get('m'); scrollTo = q.get('m'); try { history.replaceState(null, '', location.pathname); } catch (e) {} }   // מדף הבית: פתיחת המפגש שנבחר וגלילה אליו
+    try { asId = q.get('as') || sessionStorage.getItem(AS_KEY) || null; sessionStorage.removeItem(AS_KEY); } catch (e) { asId = q.get('as'); }
+    if (asId && CFG.viewOnly) CFG.viewOnly('[data-reg], [data-unreg], [data-paycredit], [data-paynow], [data-buypass], .wacard, #saveBtn', '#detBody input, #detBody select');   // צפייה כמשתתף: לקריאה בלבד
+    const h = new URLSearchParams(location.hash.replace(/^#/, ''));
+    if (h.get('access_token')) { saveSession({ access_token: h.get('access_token'), refresh_token: h.get('refresh_token') }); history.replaceState(null, '', location.pathname + (asId ? '?as=' + encodeURIComponent(asId) : '')); }
+    else if (h.get('error_description')) { history.replaceState(null, '', location.pathname); }
+    else { try { session = JSON.parse(localStorage.getItem(SKEY) || 'null'); } catch (e) { session = null; } }
+    if (asId) {   // התחזות: החיבור של דף הניהול קודם (גם כשבדפדפן יש חיבור של משתתף), כך שמנהל שכבר מחובר לדף הניהול נכנס בלי כניסה נוספת
+      try { const a = JSON.parse(localStorage.getItem(AKEY) || 'null'); if (a && a.access_token) { usingAdmin = true; session = a; } } catch (e) {}
+    }
+    if (session && !sessionOk(session) && !(await refreshSession())) clearSession();
+    if (h.get('access_token') && window.opener && localStorage.getItem('harpatka_login_popup')) {   // חלון כניסה קופץ מדף אחר: מסמנים שהחיבור נשמר וסוגרים
+      try { localStorage.removeItem('harpatka_login_popup'); localStorage.setItem('harpatka_login_done', String(Date.now())); } catch (e) {}
+      window.close(); return;
+    }
+    if (session && !asId) await useClaimToken();
+    if (!session) { if (q.get('login') && !asId) { if (q.get('back')) { try { sessionStorage.setItem('harpatka_me_back', q.get('back')); } catch (e) {} } goGoogle(); return; } viewLogin(); return; }   // ?login=1 (הקישור מההרשמה): ישר להתחברות עם גוגל, בלי מסך ביניים
+    if (!EMBED && !asId && window.self === window.top && !sessionStorage.getItem('harpatka_me_back')) { location.replace('../?me=1'); return; }   // חזרה מכניסה עם גוגל בלי פופאפ: לדף הבית, והאזור האישי עולה עליו
+    load();
+  }
+  $('#outBtn').onclick = () => { window.__out = true; if (EMBED) { if (!asId) clearSession(); try { window.parent.postMessage({ harpatka: 'me-logout' }, location.origin); } catch (e) {} return; } if (!usingAdmin) clearSession(); else { try { sessionStorage.removeItem(AS_KEY); } catch (e) {} } location.href = location.pathname; };
+  /* זמן אמת: אות ריק בערוץ ציבורי "me" (בבדיקות "me-test") בכל שינוי בתשלומים, בשיוכים, במפגשים ובפרטי משתתפים (admin/realtime-all.sql); HRT.channel מטפל בחיבור מחדש, חזרה ללשונית וגיבוי כל 45 שניות.
+     הרענון לא קורה בזמן הקלדה (נדחה עד עזיבת השדה), ושומר אילו מפגשים פתוחים */
+  let rtT = 0, rtDirty = false;
+  const typingNow = () => { const el = document.activeElement; return !!(el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) && app.contains(el)); };
+  const refreshNow = () => {
+    if (!data || data.status !== 'ok' || document.querySelector('dialog[open]')) return;
+    if (typingNow()) { rtDirty = true; return; }
+    rtDirty = false;
+    keepOpenSet = new Set([...app.querySelectorAll('.mtg.open')].map((x) => x.dataset.mid));
+    keepDetOpen = !!(app.querySelector('#detBody') && app.querySelector('#detBody').classList.contains('open'));
+    keepDirSet = new Set([...app.querySelectorAll('.dirhead[aria-expanded="true"]')].map((x) => x.dataset.dir));
+    load(true);
+  };
+  const scheduleRefresh = () => { clearTimeout(rtT); rtT = setTimeout(refreshNow, 250); };
+  document.addEventListener('focusout', () => { if (rtDirty) setTimeout(refreshNow, 300); });
+  { const RR = window.CONFIG && window.CONFIG.rosterApi;   // מול רוסטר: ערוץ ציבורי אחד לעסק בבסיס הנתונים של floa, בלי נתונים
+    const rr = RR && RR.authUrl;
+    HRT.channel(rr ? { url: RR.authUrl, key: RR.authKey } : { url: DB.url, key: DB.key },
+      rr ? ((RR.profile === 'roster-test' ? 'roster-test:' : 'roster:') + RR.slug) : ((window.HARPATKA_ENV && window.HARPATKA_ENV.name === 'test') ? 'me-test' : 'me'), scheduleRefresh, { poll: 45000 }); }
+  start();
+})();
+</script>
+</body>
+</html>

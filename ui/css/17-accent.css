@@ -1,0 +1,6 @@
+/* Second accent scope and the playing state: ui/docs/tokens.md "צבע הדגשה שני" */
+.raccent-2 { --rcard-on: var(--accent-2-tint); --rcard-mark: var(--accent-2); }
+.raccent-2 :is(.racc__count, .rdiv__n) { background: var(--accent-2-tint); color: var(--accent-2-strong); }
+.raccent-2:is(.rbtn, .ricon-lg, .rfab) { --primary: var(--accent-2); --on-primary: var(--on-accent-2); }
+.rcard.is-play > :not(.req) { filter: drop-shadow(0 0 .5px var(--rcard-bg)) drop-shadow(0 0 1px var(--rcard-bg)) drop-shadow(0 0 1.5px var(--rcard-bg)); }
+:is(.ricon-lg, .rfab).is-play { --primary: var(--accent-2); --on-primary: var(--on-accent-2); }

@@ -1,0 +1,3 @@
+/* Message and toast: ui/docs/toast.md */
+.rmsg { border: 1px solid var(--text); border-radius: var(--r); background: var(--text); color: var(--page); font: var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font); }   /* Layout: rlayout rlayout--row rlayout--pad (ui/docs/toast.md) */
+.rmsg--toast { position: fixed; inset-inline: var(--gap); bottom: max(var(--safe-b), calc(var(--bar-b) + var(--gap))); z-index: var(--z-toast); box-shadow: var(--shadow-lg); }

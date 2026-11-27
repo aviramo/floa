@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>מודעות</title>
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/kit.css">
+<style>
+/* The page shell: a column the window's height; the page never scrolls, only the list does (as apps/biodanza/public/music/). Tokens only. */
+html, body { height: 100%; }
+body { margin: 0; display: flex; flex-direction: column; height: 100dvh; background: var(--page); color: var(--text); font: var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font); }
+#app { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+#app > .rlayout--surface { flex: 1 1 auto; min-height: 0; }
+:is([data-block], [data-tile], [data-lc])[hidden] { display: none; }   /* a grid's or a Layout box's own display would show a hidden block or tile */
+/* THE MEDIA TILE AND THE COLLAGE: the kit has no media tile and no masonry (a gap, reported). Declared exception, pending the owner's
+   approval: a tile is a kit card (title, copyright chip, ⋯) over its picture; the picture keeps the file's own ratio (its width and height
+   attributes, or its natural size). Tokens only. */
+[data-tile] > [data-open] { display: block; inline-size: 100%; padding: 0; border: 0; background: var(--surface); border-radius: var(--r); overflow: hidden; cursor: pointer; font: inherit; color: inherit; }
+[data-tile] > [data-open] > :is(img, video) { display: block; inline-size: 100%; block-size: auto; pointer-events: none; }
+[data-tile] > [data-open]:focus-visible { outline: var(--focus-w) solid var(--primary); outline-offset: var(--focus-w); }
+[data-collage] { columns: var(--card-min); column-gap: var(--gap); }
+[data-collage] > [data-tile] { break-inside: avoid; margin-block-end: var(--gap); }
+[data-view] { display: block; inline-size: 100%; block-size: 100%; object-fit: contain; border-radius: var(--r); background: var(--surface); }   /* the viewer fills the popup body and the file fits inside it, its controls always in view */
+[data-rel] > [data-view] { block-size: auto; }   /* a staff view with the linked files under it: the file keeps its ratio and the window scrolls */
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="/supabase.js"></script>
+<script src="/auth.js"></script>
+<script src="/layout.js"></script>
+<script src="/sheet.js"></script>
+<script src="/menu.js"></script>
+<script src="/card.js"></script>
+<script src="/section.js"></script>
+<script src="/field.js"></script>
+<script src="/search.js"></script>
+<script src="/range.js"></script>
+<script src="/swipe.js"></script>
+<script src="/sound.js?v=2"></script>
+<script src="/audio.js"></script>
+<script src="/app.js"></script>
+<script src="../shared/age.js"></script>
+<script src="/media.js" data-business="harpatka"></script>
+<script src="ads.js"></script>
+</body>
+</html>

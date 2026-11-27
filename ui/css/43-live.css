@@ -1,0 +1,43 @@
+/* Live data: ui/docs/realtime.md, "אפקטים" and "עריכה משותפת". ui/live.js writes data-rfx on the element and takes it off on animationend:
+   in (a new item), out (an item leaving; it leaves the layout only after this), change (a soft flash under the text), tick-out and tick (a count rolls),
+   from and move (the FLIP of RosterMotion.flip: from holds the old place in --rfx-dx and --rfx-dy, move slides it home). transform and opacity only. */
+:root {
+  --live-t: 1200ms;   /* how long the change flash takes to fade */
+  --live-tint: color-mix(in srgb, var(--primary) 12%, var(--page));   /* the flash; --text and --text-muted keep 4.5:1 on it */
+}
+
+@keyframes rfx-in { from { opacity: 0; transform: scale(.96); } }
+@keyframes rfx-out { to { opacity: 0; transform: scale(.96); } }
+@keyframes rfx-change { from { opacity: 1; } to { opacity: 0; } }
+@keyframes rfx-tick-out { to { opacity: 0; transform: translate(0, -60%); } }
+@keyframes rfx-tick-in { from { opacity: 0; transform: translate(0, 60%); } }
+
+[data-rfx="in"] { animation: rfx-in var(--t-base) var(--ease) both; }
+[data-rfx="out"] { animation: rfx-out var(--t-base) var(--ease) forwards; pointer-events: none; }
+[data-rfx="from"] { transform: translate(var(--rfx-dx, 0px), var(--rfx-dy, 0px)); transition: none; }
+[data-rfx="move"] { transform: none; transition: transform var(--t-base) var(--ease); }
+:where([data-rfx="change"]) { position: relative; isolation: isolate; }
+[data-rfx="change"]::after { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--live-tint); pointer-events: none; animation: rfx-change var(--live-t) var(--ease) both; }
+:where([data-rfx^="tick"]) { display: inline-block; }
+[data-rfx="tick-out"] { animation: rfx-tick-out calc(var(--t-base) / 2) var(--ease) forwards; }
+[data-rfx="tick"] { animation: rfx-tick-in calc(var(--t-base) / 2) var(--ease) both; }
+
+/* reduced motion: every change is instant; at most a standing flash, there for --live-t and gone at once */
+@media (prefers-reduced-motion: reduce) {
+  [data-rfx="in"], [data-rfx="out"], [data-rfx^="tick"] { animation: none; }
+  [data-rfx="from"], [data-rfx="move"] { transform: none; transition: none; }
+  [data-rfx="change"]::after { animation: rfx-change var(--live-t) steps(1, end) both; }
+}
+
+/* the others' carets in a field (RosterLive.presence().attach, RosterField.live): one colour for everyone, --accent-2, with the first name.
+   A layer on the control's padding box that takes no tap; places come from live.js as custom properties measured from the inline start. */
+:where(:has(> .rpeer-layer)) { position: relative; }
+.rpeer-layer { position: absolute; inset-block-start: var(--rpeer-ty, 0px); inset-inline-start: var(--rpeer-tx, 0px); inline-size: var(--rpeer-tw, 100%); block-size: var(--rpeer-th, 100%); pointer-events: none; z-index: var(--z-raised); }
+.rpeer { position: absolute; inset-block-start: var(--rpeer-y); inset-inline-start: var(--rpeer-x); block-size: var(--rpeer-h); inline-size: 0; border-inline-start: var(--focus-w) solid var(--accent-2); }
+.rpeer__name { position: absolute; inset-block-end: 100%; inset-inline-start: calc(var(--focus-w) * -1); padding: 0 var(--gap-tight); border-radius: var(--r-s); background: var(--accent-2); color: var(--on-accent-2); font: var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font); white-space: nowrap; }
+.rpeer-sel { position: absolute; inset-block-start: var(--rpeer-y); inset-inline-start: var(--rpeer-x); inline-size: var(--rpeer-w); block-size: var(--rpeer-h); background: color-mix(in srgb, var(--accent-2) var(--busy-tint-still), transparent); }
+.rpeer-mirror { position: absolute; inset-block-start: 0; inset-inline-start: 0; box-sizing: border-box; inline-size: 100%; margin: 0; border: 0; padding: var(--rpeer-pad); font: var(--rpeer-font); letter-spacing: var(--rpeer-ls); white-space: pre-wrap; overflow-wrap: anywhere; visibility: hidden; transform: translate(0, calc(var(--rpeer-sy, 0px) * -1)); }
+.rpeer-mirror[data-kind="line"] { white-space: pre; }
+
+/* a co-edited field's status line (RosterField.live, data-save on .rfield): only the exceptions are written in it; empty, it takes no room */
+.rfield > .rf-note[data-rf-save]:empty { display: none; }

@@ -1,0 +1,83 @@
+/* The shared click behaviour: ui/docs/button.md, "התנהגות לחיצה משותפת". ONE rule set for every clickable kit component (the five button kinds,
+   the clickable chip, the tab, the menu item and the menu's head, the slider, the app menu button, the player's info, a row whose main part is a button):
+   1 the invisible touch area, 2 the hand, 3 pressed (with aria-expanded) and hover (a mouse only), 4 the focus ring, 5 disabled.
+   A new clickable component joins these selectors and never writes cursor, outline, a touch area or the disabled opacity itself. Each component's own
+   file keeps only its shapes: the ring's corners, a card's touch-area height. Selectors are grouped with :is() only where their specificity is equal;
+   otherwise they stand in a list, so the cascade is the one each component had in its own file. Sorted right after 03-button.css. */
+
+/* 1. The touch area: what is seen is the box; the touch area is an invisible addition centered on it (logical: start offset from the middle) */
+:is(.rbtn--icon, .rappmenu)::after { content: ""; position: absolute; top: 50%; inset-inline-start: calc(50% - var(--ctl) / 2); width: var(--ctl); height: var(--ctl); transform: translateY(-50%); }
+.rbtn--text::before { content: ""; position: absolute; z-index: -1; top: 50%; inset-inline-start: calc(var(--gap-tight) * -1); width: calc(100% + var(--gap-tight) * 2); height: var(--ctl); transform: translateY(-50%); border-radius: var(--r-round); background: transparent; transition: background var(--t-base) var(--ease); }
+.rbtn--icon::before { content: ""; position: absolute; z-index: -1; top: 50%; inset-inline-start: calc(50% - var(--ctl) / 2); width: var(--ctl); height: var(--ctl); transform: translateY(-50%); border-radius: var(--r-round); background: transparent; transition: background var(--t-base) var(--ease); pointer-events: none; }
+.rchip--button::after { content: ""; position: absolute; top: 50%; inset-inline: 0; height: var(--ctl); transform: translateY(-50%); }
+
+/* 2. The hand (never on what is disabled, waiting or not clickable: see 5) */
+:is(.rbtn, .rbtn--text, .ricon-lg, .rfab, .rtab, .rmenu__item, .rplayer__info) { cursor: pointer; }
+:is(button.rmenu__head, button.rrow__main) { cursor: pointer; }
+button.rchip--button:not(:disabled, [aria-busy="true"]) { cursor: pointer; }
+input[type=range].rrange { cursor: pointer; }
+
+/* 3. Pressed (and open: aria-expanded), hover only with a mouse: a relative shade (--press-shade); nothing moves, grows or shrinks */
+.rbtn:not(.rbtn--icon, .rbtn--text):not(:disabled, [aria-disabled="true"], [aria-busy="true"]):is(:active, [aria-expanded="true"]) { box-shadow: inset 0 0 0 var(--fab) color-mix(in srgb, var(--text) var(--press-shade), transparent); }
+@media (hover: hover) { .rbtn:not(.rbtn--icon, .rbtn--text):not(:disabled, [aria-disabled="true"], [aria-busy="true"]):hover { box-shadow: inset 0 0 0 var(--fab) color-mix(in srgb, var(--text) var(--press-shade), transparent); } }
+:is(.rbtn--text, .rbtn--icon, .rplayer__info):is(:active, [aria-expanded="true"])::before { background: color-mix(in srgb, var(--text) var(--press-shade), transparent); }
+@media (hover: hover) { :is(.rbtn--text, .rbtn--icon, .rplayer__info):hover::before { background: color-mix(in srgb, var(--text) var(--press-shade), transparent); } }
+:is(.rbtn--text, .rbtn--icon):is(:disabled, [aria-disabled="true"])::before { background: transparent; }
+.rchip--button:not(:disabled, [aria-busy="true"]):is(:active, [aria-expanded="true"]) { box-shadow: inset 0 0 0 var(--ctl) color-mix(in srgb, var(--text) var(--press-shade), transparent); }
+@media (hover: hover) { .rchip--button:not(:disabled, [aria-busy="true"]):hover { box-shadow: inset 0 0 0 var(--ctl) color-mix(in srgb, var(--text) var(--press-shade), transparent); } }
+.rtab:active { background: color-mix(in srgb, var(--text) var(--press-shade), transparent); }
+@media (hover: hover) { .rtab:hover { background: color-mix(in srgb, var(--text) var(--press-shade), transparent); } }
+:is(.ricon-lg, .rfab):not(:disabled, [aria-disabled="true"], [aria-busy="true"]):active { box-shadow: var(--shadow-lg), inset 0 0 0 var(--fab) color-mix(in srgb, var(--text) var(--press-shade), transparent); }
+@media (hover: hover) { :is(.ricon-lg, .rfab):not(:disabled, [aria-disabled="true"], [aria-busy="true"]):hover { box-shadow: var(--shadow-lg), inset 0 0 0 var(--fab) color-mix(in srgb, var(--text) var(--press-shade), transparent); } }
+input[type=range].rrange:not(:disabled):active::-webkit-slider-thumb { box-shadow: var(--rr-halo); }
+input[type=range].rrange:not(:disabled):active::-moz-range-thumb { box-shadow: var(--rr-halo); }
+@media (hover: hover) {
+  input[type=range].rrange:not(:disabled):hover::-webkit-slider-thumb { box-shadow: var(--rr-halo); }
+  input[type=range].rrange:not(:disabled):hover::-moz-range-thumb { box-shadow: var(--rr-halo); }
+}
+@media (hover: hover) { button.rmenu__head:hover { background: var(--surface); } }
+button.rmenu__head:active { background: var(--surface); }
+@media (hover: hover) { .rmenu__item:hover { background: var(--surface); } }
+
+/* 4. The keyboard focus ring: one ring, --focus-w in --primary. Outside the box; inside (a negative offset) on what reaches wall to wall (tab, menu item);
+   round around the touch area on an icon or a text button, so it never touches the symbol */
+:is(.rbtn, .rchip--button, .ricon-lg, .rfab, .rplayer__info):focus-visible, input[type=range].rrange:focus-visible { outline: var(--focus-w) solid var(--primary); outline-offset: var(--focus-w); }
+:is(.rbtn--text, .rbtn--icon):focus-visible { outline: none; }
+.rbtn--text:focus-visible::before, .rbtn--icon:focus-visible::after { outline: var(--focus-w) solid var(--primary); outline-offset: calc(var(--focus-w) * -1); }
+.rbtn--icon:focus-visible::after { border-radius: var(--r-round); }
+input[type=range].rrange:focus:not(:focus-visible) { outline: none; }
+.rtab:focus-visible, .rmenu > button.rmenu__head:focus-visible, .rmenu > .rlayout__body > .rmenu__item:focus-visible { outline: var(--focus-w) solid var(--primary); outline-offset: calc(var(--focus-w) * -1); }
+
+/* 5. Disabled: --disabled opacity, no hand, no feedback, not clickable. The opacity comes from here only, never from JS */
+:is(.rbtn, .rbtn--text, .ricon-lg, .rfab):is(:disabled, [aria-disabled="true"]), input[type=range].rrange:disabled { opacity: var(--disabled); cursor: default; }
+a.rbtn[aria-disabled="true"] { pointer-events: none; }
+:is(.rtab, .rmenu__item)[aria-disabled="true"] { opacity: var(--disabled); cursor: default; pointer-events: none; }
+:is(.rchip--button, .rfab--in):disabled { opacity: var(--disabled); }
+
+/* 6. The list's items (moved here from 05-list-row.css, 06-card.css and 20-section.css, declarations as they were): a row that opens, a choice row, a check or
+   switch row, a clickable card, a section's bar. Their own files keep only their shapes */
+@media (hover: hover) { .rrow--link:not([aria-disabled="true"], [aria-busy="true"]):not(:has(.rrow__trail:hover)):hover { background: var(--surface); } }
+.rrow--link:not([aria-disabled="true"], [aria-busy="true"]):not(:has(.rrow__trail:active)):active { background: var(--surface); }
+.rrow--link .rrow__main:focus-visible { outline: none; }
+.rrow--link .rrow__main:focus-visible::after { outline: var(--focus-w) solid var(--primary); outline-offset: calc(var(--focus-w) * -1); }
+.rrow[aria-disabled="true"] { opacity: var(--disabled); }   .rrow[aria-disabled="true"] .rrow__main { pointer-events: none; cursor: default; }
+:is(button, label).rrow { cursor: pointer; }
+@media (hover: hover) { .rrow--pick:not(:disabled, :has(> input:disabled), [aria-busy="true"]):hover { background: var(--surface); } }
+.rrow--pick:not(:disabled, :has(> input:disabled), [aria-busy="true"]):active { background: var(--surface); }
+.rrow--pick:is(:focus-visible, :has(> input:focus-visible)) { outline: var(--focus-w) solid var(--primary); outline-offset: calc(var(--focus-w) * -1); }
+.rrow--pick:is(:disabled, :has(> input:disabled)) { opacity: var(--disabled); cursor: default; }
+@media (hover: hover) { :is(.rrow--check, .rrow--switch):not(:has(:disabled), [aria-busy="true"]):hover { background: var(--surface); } }
+:is(.rrow--check, .rrow--switch):not(:has(:disabled), [aria-busy="true"]):active { background: var(--surface); }
+:is(.rrow--check, .rrow--switch):has(:focus-visible) { outline: var(--focus-w) solid var(--primary); outline-offset: calc(var(--focus-w) * -1); }
+:is(.rrow--check, .rrow--switch):has(:disabled) { opacity: var(--disabled); cursor: default; }
+.rcard[role="button"] { cursor: pointer; }
+.rcard[role="button"]:focus-visible { outline: var(--focus-w) solid var(--rcard-mark, var(--primary)); outline-offset: var(--focus-w); }
+.rcard[role="button"]:active:not(:has(:is(button, a, input, select, textarea, label):active)) { --rcard-bg: var(--rcard-on, var(--surface)); }
+@media (hover: hover) { .rcard[role="button"]:hover { --rcard-bg: var(--rcard-on, var(--surface)); } }
+.rcard[aria-disabled="true"] { opacity: var(--disabled); pointer-events: none; cursor: default; }
+.racc:not(.racc--fixed) > .racc__bar { cursor: pointer; }
+.racc__head { cursor: pointer; }
+.racc__head:focus-visible { outline: none; }
+.racc__bar:has(> .racc__h > .racc__head:focus-visible) { outline: var(--focus-w) solid var(--primary); outline-offset: calc(var(--focus-w) * -1); border-radius: 0; }
+@media (hover: hover) { .racc:not(.racc--fixed) > .racc__bar:not(:has(.racc__end :hover)):hover { background: var(--surface); } }
+.racc:not(.racc--fixed) > .racc__bar:not(:has(.racc__end :active)):active { background: var(--surface); }

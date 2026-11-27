@@ -205,7 +205,15 @@
     $('#gLogin').hidden = !!denied; $('#gBack').hidden = !denied; $('#gOut').hidden = !denied;
   }
   /* ההפעלה נגמרה (פג תוקף, או נותקה בלשונית אחרת) */
-  function sessionLost() { try { if (rtWs) rtWs.close(); } catch (e) {} showGate('הכניסה פגה, צריך להיכנס שוב'); }
+  function sessionLost() { try { if (rtWs) rtWs.close(); } catch (e) {} if (rtSig) { rtSig.close(); rtSig = null; } showGate('הכניסה פגה, צריך להיכנס שוב'); }
+  /* זמן אמת דרך הממסר שלנו (ui/docs/realtime.md, "רוסטר ואתרים חיצוניים"): חדר העסק /live/<סכמה>/<מזהה העסק>, סימן "משהו השתנה" מהדאטהבייס.
+     null כשהסכמה לא ב-SUPABASE.relayData או שאין ממסר: אז startRealtime כמו קודם. business_users ו-businesses לא מרעננים (בשבילן ה-reauth של השרת) */
+  let rtSig = null;
+  function startLive() {
+    if (rtSig) { rtSig.close(); rtSig = null; }
+    rtSig = (window.RosterLive && RosterLive.signal) ? RosterLive.signal(DB.schema, BIZ.id, (e) => { if (e && (e.tb === 'business_users' || e.tb === 'businesses')) return; scheduleRefresh(); }, { poll: 60000 }) : null;
+    if (!rtSig) startRealtime();
+  }
   /* ---------- זמן אמת (Supabase Realtime, WebSocket ישיר בלי SDK) ----------
      כל שינוי בטבלאות של העסק (מכל מכשיר ומכל מנהל) מרענן את המסך. דורש שהטבלאות ב-publication של supabase_realtime.
      INSERT ו-UPDATE מסוננים לעסק (business_id=eq.<מזהה>); מחיקה מגיעה בלי סינון, כי אירוע מחיקה נושא רק את המפתח הראשי */
@@ -214,7 +222,7 @@
   const rtSend = (o) => { if (rtWs && rtWs.readyState === 1) rtWs.send(JSON.stringify(o)); };
   function scheduleRefresh() { clearTimeout(rtDebounce); rtDebounce = setTimeout(() => load(true), 350); }
   function startRealtime() {
-    if (!BIZ.id || rtWs || !AUTH.signedIn()) return;
+    if (!BIZ.id || rtWs || rtSig || !AUTH.signedIn()) return;
     let ws;
     try { ws = new WebSocket(DB.url.replace(/^http/, 'ws') + '/realtime/v1/websocket?apikey=' + encodeURIComponent(DB.key) + '&vsn=1.0.0'); } catch (e) { return; }
     rtWs = ws;
@@ -241,7 +249,7 @@
     };
     ws.onerror = () => { try { ws.close(); } catch (x) {} };
   }
-  document.addEventListener('visibilitychange', () => { if (!document.hidden && BIZ.id && AUTH.signedIn()) { load(true); if (!rtWs) startRealtime(); } });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && BIZ.id && AUTH.signedIn()) { load(true); if (!rtWs && !rtSig) startRealtime(); } });
 
   async function startAuth() {
     const h = new URLSearchParams(location.hash.replace(/^#/, ''));
@@ -266,7 +274,7 @@
     $('#bizSwitch').hidden = !(row.is_super || mine.length > 1);   // החלפת עסק: למי שיש לו יותר מעסק אחד (הבעלים תמיד)
     document.body.classList.remove('locked'); $('#gate').hidden = true;
     load();
-    startRealtime();
+    startLive();
   }
 
 

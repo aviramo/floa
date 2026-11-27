@@ -19,91 +19,28 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
 #out, #out * { user-select: text; -webkit-user-select: text; }   /* the text can be selected and copied */
 .pad { padding: var(--gap); display: flex; flex-direction: column; gap: var(--gap); }
 dialog.rsheet .pad { padding: 0; }   /* a popup pads its content itself (law 2): the block inside it adds nothing */
-#out { display: grid; grid-template-columns: repeat(auto-fill, minmax(21rem, 1fr)); gap: var(--gap); padding: 0 var(--gap) var(--gap); align-content: start; align-items: stretch; }   /* the cards of a row are one height, so every gap is the same */
-#out > .rempty, #out > .rhint, #out > .rskel { grid-column: 1 / -1; }
-#out > .rcard { cursor: pointer; background: var(--on-primary); margin: 0;   /* white, lying on the page with the kit's card shadow (no white surface token yet: awaiting the owner's approval) */ min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.song__t, .song__a { direction: ltr; text-align: left; overflow-wrap: anywhere; }   /* every title is in a Latin script: it reads left to right and sits against the left edge */
-.song__t { font: var(--fw-bold) var(--fs-m)/var(--lh-tight) var(--font); }
-.song__a { color: var(--text-muted); font: var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font); }
-.song__d { color: var(--text-muted); font: var(--fw-regular) var(--fs-m)/1 var(--font); font-variant-numeric: tabular-nums; }   /* the time: plain text, no chip */
-.song__f { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: var(--gap-tight); }   /* the foot sits at the bottom of every card; the play button on the right, the time on the left */
-#out [data-audio] { background: var(--surface); border-color: var(--surface); width: 46px; min-height: var(--chip); height: var(--chip); padding: 0; border-radius: 999px; }   /* the size of the time chip */
-#out [data-audio][data-st="sound"] svg { display: none; }
-#out [data-audio][data-st="sound"]::before { content: ""; width: var(--icon); height: var(--icon); background: currentColor; clip-path: polygon(22% 10%, 22% 90%, 92% 50%); }
-#out [data-audio] svg { width: var(--icon) !important; height: var(--icon) !important; }
-#out > * { flex-shrink: 0; }
-#pw { flex: none; padding: 0; position: relative; z-index: var(--z-raised); }   /* the player is a footer under the list: the list ends above it */
-#pl { flex-wrap: nowrap; background: var(--surface); border: 0; border-top: var(--bw) solid var(--border); border-radius: 0; box-shadow: none; margin: 0; padding: var(--gap) var(--gap) calc(var(--gap) + var(--inset-b)); }   /* a full-width footer: square, tinted, a line on top */
-#pl .rrow__main { flex: 0 1 28rem; direction: ltr; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#pl #pa { color: var(--text-muted); font-weight: var(--fw-regular); }
-#pl #pa:not(:empty)::before { content: "· "; }
-#pl .bio-bar { flex: 1 1 8rem; min-width: 0; padding: 0; }
-@media (width < 760px) { #pl { flex-wrap: wrap; } #pl .rrow__main { flex: 1 1 100%; order: 4; } #pl .bio-bar { flex: 0 0 100%; order: 3; } }   /* the list is a column that scrolls: its rows keep their height (a row with a bar was squeezed to the minimum and the bar cut off) */
-/* the song's bar, as in the app: a thin track filled up to the place, a round thumb, red on hover */
-.bio-bar input { -webkit-appearance: none; appearance: none; background: transparent; height: 20px; margin: 0; cursor: pointer; --p: 0%; --c: var(--primary); touch-action: none }
-.bio-bar input:hover { --c: var(--danger) }
-.bio-bar input::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--c) var(--p), var(--on-primary) var(--p)) }
-.bio-bar input::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border: 0; border-radius: 50%; background: var(--c) }
-.bio-bar input::-moz-range-track { height: 4px; border-radius: 2px; background: var(--on-primary) }
-.bio-bar input::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--c) }
-.bio-bar input::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: var(--c) }
-.bio-bar input:focus, .bio-bar input:focus-visible { outline: none }
+#out { padding: 0 var(--gap) var(--gap); align-content: start; }   /* the kit's card grid (.rgrid): the cards of a row are one height */
+/* the player is the kit's (.rplayer, ui/docs/player.md): its place, height, colours and order are the kit's; the page ends above it (--bar-b) */
 </style>
 </head>
 <body>
 <div id="app"></div>
 <script src="/supabase.js"></script>
 <script src="/auth.js"></script>
+<script src="/card.js"></script>
+<script src="/search.js"></script>
+<script src="/range.js"></script>
+<script src="/audio.js"></script>
 <script>document.write('<script src="' + (/^(localhost|127[.]|192[.]168[.]|10[.])/.test(location.hostname) ? '/biodanza/' : '/') + 'assets/audio.js"><\/script>')</script>
 <script>
 (function () {
   "use strict";
   var app = document.getElementById("app");
   var HOME = /^(localhost|127[.]|192[.]168[.]|10[.])/.test(location.hostname) ? "/biodanza/" : "/";
-  var songs = [], byObj = {}, timer = 0, MAXROWS = 300;
+  var songs = [], byObj = {}, MAXROWS = 300;
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
-  function fold(t) { return String(t == null ? "" : t).normalize("NFD").replace(new RegExp("[" + String.fromCharCode(0x300) + "-" + String.fromCharCode(0x36f) + String.fromCharCode(0x591) + "-" + String.fromCharCode(0x5c7) + "]", "g"), "").toLowerCase(); }
-  /* a smart search: finds what is NEAR the words, not only what contains them. Every typed word must match some word of the text, by the
-     best of: the same word, a word that starts with it, a word that holds it, or a word one or two letters off (a slip, a missing or an
-     extra letter, two letters swapped; also for the start of a longer word). fzs() gives a score (0 = no match, more = nearer) so a list can
-     put the nearest first; fz() is the yes or no. */
-  var fzCache = {};
-  function fzTok(h) { return fzCache[h] || (fzCache[h] = h.split(/[^0-9a-z֐-׿]+/).filter(Boolean)); }
-  function fzDist(a, b, max) {
-    var n = a.length, m = b.length; if (Math.abs(n - m) > max) return max + 1;
-    var p2 = null, p1 = [], i, j;
-    for (j = 0; j <= m; j++) p1[j] = j;
-    for (i = 1; i <= n; i++) {
-      var c = [i], lo = i;
-      for (j = 1; j <= m; j++) {
-        var v = Math.min(p1[j] + 1, c[j - 1] + 1, p1[j - 1] + (a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1));
-        if (p2 && i > 1 && j > 1 && a.charAt(i - 1) === b.charAt(j - 2) && a.charAt(i - 2) === b.charAt(j - 1)) v = Math.min(v, p2[j - 2] + 1);
-        c[j] = v; if (v < lo) lo = v;
-      }
-      if (lo > max) return max + 1;
-      p2 = p1; p1 = c;
-    }
-    return p1[m];
-  }
-  function fzWord(h, toks, w) {
-    var best = 0, i, t, d, mx = w.length <= 2 ? 0 : w.length <= 4 ? 1 : 2;
-    for (i = 0; i < toks.length; i++) {
-      t = toks[i];
-      if (t === w) return 10;
-      if (t.indexOf(w) === 0) best = Math.max(best, 8);
-      else if (mx && t.length >= w.length) { d = fzDist(w, t.slice(0, w.length), mx); if (d <= mx) best = Math.max(best, 6 - d * 1.5); }
-      if (mx && best < 6) { d = fzDist(w, t, mx); if (d <= mx) best = Math.max(best, 7 - d * 1.5); }
-    }
-    if (!best && h.indexOf(w) >= 0) best = 5;
-    return best;
-  }
-  function fzs(text, q) {
-    var h = fold(text), words = fold(q).split(/\s+/).filter(Boolean), toks = fzTok(h), sum = 0, k, s;
-    if (!words.length) return 1;
-    for (k = 0; k < words.length; k++) { s = fzWord(h, toks, words[k]); if (!s) return 0; sum += s; }
-    return sum / words.length;
-  }
-  function fz(text, q) { return fzs(text, q) > 0; }
+  /* the search is the kit's (/search.js): its matching (no capitals, no marks, every word near a word) and its place in the header */
+  var fold = RosterSearch.fold, fzs = RosterSearch.score, curQ = "";
   function nearest(list, text, q) {   /* the matches of a search, nearest first (a plain order when nothing is typed) */
     if (!fold(q).trim()) return list;
     return list.map(function (x, i) { return { x: x, s: fzs(text(x), q), i: i }; }).filter(function (o) { return o.s > 0; })
@@ -111,18 +48,24 @@ dialog.rsheet .pad { padding: 0; }   /* a popup pads its content itself (law 2):
   }
   function mmss(s) { return s ? Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2) : ""; }
   function clk(s) { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2); }   /* the player's times: 0:00 is shown, not left empty */
-  function msg(title, text, btn) {
-    app.innerHTML = '<div class="rempty" style="margin-block:auto"><b>' + esc(title) + '</b><span>' + esc(text) + '</span>' + (btn || "") + '</div>';
-  }
+  /* the icons are the kit's sprite (/icons.svg, ui/docs/icon.md), never a drawing of the page's own */
+  function sym(n) { return '<svg class="rsym" aria-hidden="true" focusable="false"><use href="/icons.svg#' + n + '"/></svg>'; }
+  /* the kit's empty state with the icon of its subject (the note: this page is music); the kit centres it in its area */
+  var NOTE = sym("music");
+  function empty(title, text, btn) { return '<div class="rlayout rempty">' + NOTE + '<b>' + esc(title) + '</b>' + (text ? '<span>' + esc(text) + '</span>' : '') + (btn || "") + '</div>'; }
+  function msg(title, text, btn) { app.innerHTML = empty(title, text, btn); }
+  /* a load that failed: ONE action, "ניסיון נוסף", that asks again without reloading the page */
+  document.addEventListener("click", function (e) { if (e.target.closest && e.target.closest("[data-retry]")) { app.innerHTML = ""; start(); } });
   function shell() {
-    app.innerHTML = '<div class="pad" style="flex-direction:row;align-items:flex-end;padding-bottom:0"><label class="rfield" style="flex:1 1 auto"><span id="cnt">חיפוש שיר או מבצע</span><input id="q" type="search" placeholder=" " autocomplete="off"></label><button type="button" class="rbtn rbtn--icon rbtn--outline" id="cp" aria-label="העתקת הרשימה המוצגת" title="העתקת הרשימה המוצגת">' + ICO.copy + '</button></div>' +
-      '<div class="rlist" id="out"></div>' +
-      '<div class="pad" id="pw">' + playerHtml() + '</div>';   /* the player is fixed under the list: only the list scrolls */
-    app.querySelector("#q").addEventListener("input", function () { clearTimeout(timer); timer = setTimeout(draw, 200); });
+    app.innerHTML = '<header class="rhead"><div class="rhead__text"><span class="rhead__tw"><h1 class="rhead__title" title="המוזיקה">המוזיקה</h1></span></div><span class="rhead__acts"><button type="button" class="rbtn rbtn--icon" id="cp" aria-label="העתקת הרשימה המוצגת" title="העתקת הרשימה המוצגת">' + ICO.copy + '</button><button type="button" class="rbtn rbtn--icon" id="qs" aria-label="חיפוש" title="חיפוש">' + ICO.search + '</button></span></header>' +   /* the search is in the header, from the magnifier (the kit's), last at the far end (owner 2026-11-25) */
+      '<div class="rlist rlayout rlayout--grid rgrid" id="out" data-load="music"></div>' +
+      playerHtml();   /* the kit's player, fixed at the bottom: only the list scrolls */
+    RosterSearch.attach(app.querySelector("#qs"), app.querySelector("#out"), { label: "חיפוש שיר או מבצע", key: "biodanza.music", heavy: true, icon: NOTE,   /* a long list: it waits --search-wait for a pause in the typing */
+      onQuery: function (q) { curQ = q; if (songs.length) draw(); } });
     app.querySelector("#cp").addEventListener("click", copyAll);
   }
   function found() {
-    var words = fold(document.getElementById("q").value.trim()).split(/\s+/).filter(Boolean);
+    var words = fold(curQ).split(/\s+/).filter(Boolean);
     return { words: words, hit: nearest(songs, function (m) { return m.f; }, words.join(" ")) };
   }
   /* every song that matches the search (not only the rows drawn), one per line: name, performer, length, code, file */
@@ -136,14 +79,14 @@ dialog.rsheet .pad { padding: 0; }   /* a popup pads its content itself (law 2):
   function card(m) {
     var has = m.audio_object && window.BioAudio;
     if (has) BioAudio.info(m.audio_object, m.title || m.name, m.artist);
-    return '<div class="rcard rcard--compact"><span class="song__t">' + esc(m.title || m.name) + '</span>' + '<span class="song__a">' + (m.artist ? esc(m.artist) : '&nbsp;') + '</span>' +
-      '<div class="song__f">' + (has ? '<button type="button" class="rbtn rbtn--icon" data-audio="' + esc(m.audio_object) + '" aria-label="השמעה" title="השמעה"></button>' : '<button type="button" class="rchip rchip--s" data-up="' + esc(m.id) + '" title="העלאת קובץ לשיר, זמין לכולם" style="cursor:pointer;border:0">ללא קובץ, העלאה</button>') +
-      (len(m) ? '<span class="song__d">' + mmss(len(m)) + '</span>' : '<span></span>') + '</div></div>';
+    return RosterCard.html({ click: true, attrs: 'data-mid="' + esc(m.id) + '" data-rsearch-item', title: m.title || m.name, sub: m.artist || "", num: len(m) ? mmss(len(m)) : "",   /* the kit's card (ui/card.js): name, performer, length, and the play or upload button at the end of the second row */
+      act2: has ? '<button type="button" class="rbtn rbtn--icon" data-audio="' + esc(m.audio_object) + '" aria-label="השמעה" title="השמעה"></button>' : '<button type="button" class="rbtn rbtn--text" data-up="' + esc(m.id) + '" title="העלאת קובץ לשיר, זמין לכולם">העלאה</button>' });
   }
   /* a song with no file: choosing one here puts it in the bucket (through the Worker), attaches it to the song, and the song plays for everybody */
   var UPL = { mp3: 1, flac: 1, wav: 1, aiff: 1, aif: 1, m4a: 1 };
-  document.addEventListener("click", function (e) {
-    var b = e.target.closest && e.target.closest("[data-up]"); if (!b || b.dataset.busy) return;
+  document.addEventListener("click", function (e) { var b = e.target.closest && e.target.closest("[data-up]"); if (b) upload(b); });
+  function upload(b) {
+    if (b.dataset.busy) return;
     var id = b.dataset.up, m = songs.filter(function (x) { return x.id === id; })[0]; if (!m) return;
     var inp = document.createElement("input"); inp.type = "file"; inp.accept = "audio/*,.flac,.m4a,.aiff,.aif,.wav,.mp3";
     var label = b.textContent, say = function (t, ms) { b.textContent = t; if (ms) setTimeout(function () { b.textContent = label; delete b.dataset.busy; }, ms); };
@@ -169,12 +112,12 @@ dialog.rsheet .pad { padding: 0; }   /* a popup pads its content itself (law 2):
       }).catch(function (er) { console.error(er); say("ההעלאה נכשלה", 3000); });
     });
     inp.click();
-  });
-  /* the whole card is the button: a song with a file plays (or pauses), a song with none asks for its file; text being selected is left alone */
-  document.addEventListener("click", function (e) {
-    var c = e.target.closest && e.target.closest("#out > .rcard"); if (!c || e.target.closest("button, a")) return;
+  }
+  /* the whole card is the button (the kit's card binding: its own button does its own thing): a song with a file plays (or pauses), a song with none asks for its file; text being selected is left alone */
+  RosterCard.bind(document, "[data-mid]", function (c) {
     var sel = window.getSelection && String(window.getSelection()); if (sel) return;
-    var b = c.querySelector("[data-audio], [data-up]"); if (b) b.click();
+    var a = c.querySelector("[data-audio]"), u = c.querySelector("[data-up]");
+    if (a && window.BioAudio && BioAudio.tap) BioAudio.tap(a.dataset.audio); else if (u) upload(u);
   });
   function more() {   /* the next cards, when the list is scrolled near its end: the page draws a few dozen at a time, never all three thousand */
     var out = document.getElementById("out"); if (!out || shown >= hitList.length) return;
@@ -183,8 +126,7 @@ dialog.rsheet .pad { padding: 0; }   /* a popup pads its content itself (law 2):
   function draw() {
     var f = found(), words = f.words, out = document.getElementById("out");
     hitList = f.hit; shown = 0; out.scrollTop = 0;
-    document.getElementById("cnt").textContent = "חיפוש " + (words.length ? hitList.length + " מתוך " : "בין ") + songs.length + " מוסיקות";
-    if (!hitList.length) { out.innerHTML = '<div class="rempty"><b>לא נמצא כלום</b><span>נסו מילה אחרת</span></div>'; return; }
+    if (!hitList.length) { out.innerHTML = words.length ? "" : empty("אין מוסיקה", ""); return; }   /* nothing found by a search: the kit's "לא נמצא"; with no search the list itself is empty */
     out.innerHTML = ""; more();
     if (!out.dataset.scr) { out.dataset.scr = "1"; out.addEventListener("scroll", function () { if (out.scrollTop + out.clientHeight > out.scrollHeight - 600) more(); }, { passive: true }); }
   }
@@ -197,27 +139,32 @@ dialog.rsheet .pad { padding: 0; }   /* a popup pads its content itself (law 2):
   }
   /* ONE player, fixed above the search: play or pause, a bar to any place in the song, the place and the length in time, the song's name and performer.
      The song's buttons in the rows start it; audio.js tells this page (event "bioaudio") what plays and where it is. */
-  var cur = { name: "", t: 0, d: 0, playing: false }, dragging = false;
-  var ICO = { copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:var(--icon);height:var(--icon)"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>', done: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:var(--icon);height:var(--icon)"><path d="M5 12.5l4.5 4.5L19 7"/></svg>', play: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="width:var(--icon);height:var(--icon)"><path d="M7 4.5v15l13-7.5z"/></svg>', pause: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="width:var(--icon);height:var(--icon)"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>' };
+  var cur = { name: "", t: 0, d: 0, playing: false };
+  var ICO = { search: sym("search"), copy: sym("copy"), done: sym("check"), play: sym("play"), pause: sym("pause") };   /* play and pause: line drawings, also in the large icon (owner 2026-11-26) */
   function playerHtml() {
-    return '<div class="rrow" id="pl" style="gap:var(--gap)"><button type="button" class="rbtn rbtn--icon" id="pp" aria-label="השמעה" disabled>' + ICO.play + '</button>' +
-      '<span class="rchip rchip--s" id="pc" style="direction:ltr;font-variant-numeric:tabular-nums">0:00 / 0:00</span>' +
-      '<div class="bio-bar"><input type="range" id="pb" min="0" max="1000" value="0" step="1" aria-label="מקום בשיר" disabled style="display:block;width:100%;margin:0;direction:ltr;accent-color:var(--primary)"></div>' +
-      '<div class="rrow__main" id="pn"><b id="pt">לא נבחר שיר</b> <span id="pa"></span></div></div>';
+    return '<section class="rplayer" id="pl" data-state="idle" aria-label="נגן"><span class="rplayer__time" id="pc" dir="ltr">0:00 / 0:00</span>' +
+      '<button type="button" class="ricon-lg" id="pp" aria-label="השמעה" title="השמעה">' + ICO.play + '</button>' +
+      '<input type="range" class="rrange rrange--seek" id="pb" min="0" max="0" value="0" step="1" aria-label="מקום בשיר" disabled>' +   /* the kit's seek bar: its value in seconds */
+      '<div class="rplayer__info" id="pn"><span class="rplayer__title" id="pt" dir="auto" aria-live="polite"></span><span class="rplayer__sub" id="pa" dir="auto"></span></div>' +
+      '<span class="rplayer__none">לא נבחרה מוסיקה</span></section>';   /* the kit's slots (ui/docs/player.md): no menu here, so what plays is plain text, not a button */
   }
   function paintPlayer() {
     var pp = document.getElementById("pp"), pb = document.getElementById("pb"); if (!pp) return;
     var m = byObj[cur.name], on = !!cur.name;
-    document.getElementById("pt").textContent = on ? (m ? (m.title || m.name) : "שיר") : "לא נבחר שיר";
-    document.getElementById("pa").textContent = on && m ? (m.artist || "") : "";
-    pp.disabled = !on; pb.disabled = !on || !(cur.d > 0);
-    pp.innerHTML = cur.playing ? ICO.pause : ICO.play; pp.setAttribute("aria-label", cur.playing ? "השהיה" : "השמעה");
+    var t1 = on ? (m ? (m.title || m.name) : "מוסיקה") : "", t2 = on && m ? (m.artist || "") : "";
+    if (document.getElementById("pt").textContent !== t1) document.getElementById("pt").textContent = t1;
+    document.getElementById("pa").textContent = t2;
+    document.getElementById("pl").dataset.state = !on ? "idle" : cur.playing ? "playing" : "paused";   /* the kit shows and hides the slots by the state */
+    pb.disabled = !on || !(cur.d > 0);
+    var lab = cur.playing ? "עצירה" : "השמעה"; if (pp.getAttribute("aria-label") !== lab) { pp.innerHTML = cur.playing ? ICO.pause : ICO.play; pp.setAttribute("aria-label", lab); pp.title = lab; }
+    if (RosterRange.held(pb)) return;   /* the bar is held: the thumb and the time follow the finger, not the playback, until it is let go */
     document.getElementById("pc").textContent = clk(cur.t) + " / " + clk(cur.d);
-    if (!dragging) { pb.value = cur.d > 0 ? Math.round(cur.t / cur.d * 1000) : 0; pb.style.setProperty("--p", pb.value / 10 + "%"); }
+    var mx = String(cur.d > 0 ? Math.round(cur.d) : 0); if (pb.max !== mx) pb.max = mx;
+    RosterRange.set(pb, cur.d > 0 ? Math.floor(cur.t) : 0);
   }
   document.addEventListener("bioaudio", function (ev) { var d = ev.detail || {}; cur = { name: d.name || "", t: d.t || 0, d: d.d || 0, playing: !!d.playing }; paintPlayer(); });
   document.addEventListener("click", function (e) { if (e.target.closest && e.target.closest("#pp") && window.BioAudio) BioAudio.playPause(); });
-  /* the keyboard, as in the app: right and left move the song 5 seconds (Shift 15), up and down are the volume (Shift for five steps); in a text field they keep their own job */
+  /* the keyboard, as in the app: right and left move the song 5 seconds (Shift 15), up and down are the volume (Shift for five steps), wherever the focus is, a focused bar too (its own step is prevented: one move per press); in a text field they move the caret */
   document.addEventListener("keydown", function (e) {
     if (e.ctrlKey || e.metaKey || e.altKey || !window.BioAudio) return;
     var k = e.key, tg = e.target;
@@ -227,12 +174,11 @@ dialog.rsheet .pad { padding: 0; }   /* a popup pads its content itself (law 2):
     if (k === "ArrowRight" || k === "ArrowLeft") BioAudio.skip((k === "ArrowRight" ? 1 : -1) * (e.shiftKey ? 15 : 5));
     else BioAudio.volume((k === "ArrowUp" ? 1 : -1) * (e.shiftKey ? 0.05 : 0.01));
   });
-  document.addEventListener("pointerdown", function (e) { if (e.target.id === "pb") dragging = true; });
-  document.addEventListener("pointerup", function () { dragging = false; });
-  document.addEventListener("input", function (e) {
-    if (e.target.id !== "pb" || !window.BioAudio) return;
-    e.target.style.setProperty("--p", e.target.value / 10 + "%"); BioAudio.seek(e.target.value / 1000);
-    var t = cur.d * e.target.value / 1000; document.getElementById("pc").textContent = clk(t) + " / " + clk(cur.d);
+  /* the bar (the kit's slider): while it is dragged the time follows the thumb (the kit paints the fill); the song moves when it is let go */
+  document.addEventListener("input", function (e) { if (e.target.id === "pb") document.getElementById("pc").textContent = clk(+e.target.value) + " / " + clk(cur.d); });
+  document.addEventListener("change", function (e) {
+    var pb = e.target; if (pb.id !== "pb" || !window.BioAudio || !(+pb.max > 0)) return;
+    BioAudio.seek(pb.value / pb.max); if (BioAudio.commitSeek) BioAudio.commitSeek();
   });
   function start() {
     if (!window.FLOA_AUTH || !FLOA_AUTH.signedIn()) return msg("ניהול", "צריך להיכנס קודם דרך האפליקציה.", '<a class="rbtn" href="' + HOME + '">לאפליקציה</a>');
@@ -241,13 +187,14 @@ dialog.rsheet .pad { padding: 0; }   /* a popup pads its content itself (law 2):
     FLOA_AUTH.api("/rest/v1/rpc/me", { method: "POST", json: {} }).then(function (me) {
       if (!me || !me.admin) return msg("ניהול", "הדף הזה למנהלים בלבד.");
       shell();
-      document.getElementById("out").innerHTML = '<div class="rskel rskel--title"></div>';
+      var o0 = document.getElementById("out"); o0.innerHTML = ""; o0.classList.add("rload", "raccent-2"); o0.setAttribute("aria-busy", "true");   /* the kit's loading state: the list's area, empty, until the songs are here; a note (data-load) in the music colour (.raccent-2) */
       return songsAsk.then(function (rows) {
+        o0.classList.remove("rload", "raccent-2"); o0.removeAttribute("aria-busy");
         songs = rows.map(function (m) { m.f = fold([m.name, m.title, m.artist, m.collection].join(" ")); return m; });
         byObj = {}; songs.forEach(function (m) { if (m.audio_object) byObj[m.audio_object] = m; });
         draw();
       });
-    }).catch(function () { msg("ניהול", "לא הצלחנו לטעון. נסו שוב."); });
+    }).catch(function () { msg("לא הצלחנו לטעון", "בדקו את החיבור ונסו שוב.", '<button type="button" class="rbtn" data-retry>ניסיון נוסף</button>'); });
   }
   start();
 })();

@@ -1,0 +1,5 @@
+/* Tap highlight and text selection: ui/docs/window.md "בחירת טקסט" */
+* { -webkit-tap-highlight-color: transparent; }
+:is(html, dialog, [popover]) { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+:is(input, textarea, [contenteditable]:not([contenteditable="false"]), .rf-rich, [data-rselect]), :is(.rf-rich, [data-rselect]) * { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
+.rrow { -webkit-user-select: none; user-select: none; }

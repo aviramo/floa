@@ -19,6 +19,8 @@ crons = ["* * * * *"]
 LEAD_TO = "ofir.aviram@gmail.com"
 LEAD_FROM = "FLOA <no-reply@floa.co.il>"
 SUPABASE_URL = "https://aexmnaxvahblveejsbup.supabase.co"
+# public, like in wrangler.toml (the live relay asks /auth/v1/user and the room's rpc with it); never the service key
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleG1uYXh2YWhibHZlZWpzYnVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5NzE5MjMsImV4cCI6MjEwMTU0NzkyM30.oXPojzklAqOl9pvH5R_GNGTda6OvYruDQjMLprcBA0Y"
 ROSTER_ONLY_SCHEMA = "roster-test"
 ROSTER_TEST_MAIL_TO = "ofir.aviram@gmail.com"
 # ROSTER_TEST_FROM unset: every mail goes out as the business (<slug>@floa.co.il, under its own name) like the real Worker; test mail still reaches only ROSTER_TEST_MAIL_TO
@@ -33,3 +35,13 @@ ROSTER_WA_ORIGINS = "https://test.harpatka.co.il,http://localhost:8080,http://lo
 name = "chords-read-song-test"
 binding = "READ_SONG"
 class_name = "ReadSong"
+
+# The live relay (worker/LIVE.md): one Durable Object per room. SQLite-backed because the free plan allows only that kind.
+# It writes nothing to storage (no alarm either); the migration only declares the class. It runs with the first deploy.
+[[durable_objects.bindings]]
+name = "LIVE"
+class_name = "LiveRoom"
+
+[[migrations]]
+tag = "live-v1"
+new_sqlite_classes = ["LiveRoom"]

@@ -147,7 +147,7 @@ body { overflow-x: clip; }                  /* the bands run edge to edge; nothi
 
 .card, .card:hover,
 .project-card, .project-card:hover,
-.tl-body, .quote-card, .faq-item, .compare-card, .urgency-line, .ba-strip, .principle, .contact-panel {
+.tl-body, .quote-card, .faq-item, .compare-card, .urgency-line, .principle, .contact-panel {
   background: none;
   border: 0;
   border-radius: 0;
@@ -232,20 +232,6 @@ body { overflow-x: clip; }                  /* the bands run edge to edge; nothi
 .urgency-line::before { top: 0; }
 .urgency-line::after { bottom: 0; }
 
-/* before and after: two currents, not two boxes */
-.ba-strip { padding: 0; }
-.ba-side, .ba-side-after { background: none; border-radius: 0; padding: var(--s-6) 0 var(--s-4); position: relative; }
-.ba-side::before {
-  content: "";
-  position: absolute;
-  inset-inline: 0;
-  top: 0;
-  height: 8px;
-  background: var(--clay);
-  -webkit-mask: var(--waveline) center / 132px 10px repeat-x;
-  mask: var(--waveline) center / 132px 10px repeat-x;
-}
-.ba-side-after::before { background: var(--teal); }
 .principle { padding: var(--s-3) 0; }
 
 /* a picture dissolves into the page: no edge, no frame */
@@ -261,16 +247,6 @@ body { overflow-x: clip; }                  /* the bands run edge to edge; nothi
 .project-media img, .project-media-duo img { border-radius: 0; box-shadow: none; }
 .project-media-duo { background: none; }
 .project-body { padding-inline: 0; }
-
-/* steps in a flow: words on a current, the last one lit */
-.flow-label, .flow-step:last-child .flow-label {
-  background: none;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-  padding-inline: var(--s-2);
-}
-.flow-step:last-child .flow-label { color: var(--teal-dark); }
 
 /* the avatar is a pebble, not a circle */
 .about-avatar img { border-radius: 58% 42% 55% 45% / 52% 58% 42% 48%; }
@@ -370,7 +346,7 @@ body { overflow-x: clip; }                  /* the bands run edge to edge; nothi
 .form-success { border-color: rgba(27, 116, 179, .22); }
 
 /* ---- labels: plain words with a wave drawn under them (no chip, no drop) ---- */
-.eyebrow, .hero-chip span, .card-badge, .ba-tag, .compare-badge {
+.eyebrow, .hero-chip span, .card-badge, .compare-badge {
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -380,7 +356,7 @@ body { overflow-x: clip; }                  /* the bands run edge to edge; nothi
   border-radius: 0 !important;
   box-shadow: none !important;
 }
-.eyebrow::after, .hero-chip span::after, .card-badge::after, .ba-tag::after, .compare-badge::after {
+.eyebrow::after, .hero-chip span::after, .card-badge::after, .compare-badge::after {
   content: "";
   position: absolute;
   inset-inline: 0;
@@ -391,7 +367,7 @@ body { overflow-x: clip; }                  /* the bands run edge to edge; nothi
   -webkit-mask: var(--waveline) center / 132px 10px repeat-x;
   mask: var(--waveline) center / 132px 10px repeat-x;
 }
-.card-badge, .compare-badge, .ba-tag-after { color: var(--teal-dark); }
+.card-badge, .compare-badge { color: var(--teal-dark); }
 .chips { gap: var(--s-3) var(--s-7); }
 .chips li { position: relative; padding: 0 0 .7em; background: none; border: 0; border-radius: 0; box-shadow: none; }
 .chips li::after {
@@ -525,7 +501,6 @@ body { overflow-x: clip; }                  /* the bands run edge to edge; nothi
 .logo-mark { margin-bottom: 0; background-image: var(--wordmark-w); }
 
 /* --- the remaining hard-coded teal of the components, in the new blue ------- */
-.flow-step:last-child .flow-label { border-color: rgba(27, 116, 179, .45); }
 .project-card:hover { border-color: rgba(27, 116, 179, .3); }
 .hero-illust .bar-tint   { fill: rgba(27, 116, 179, .22); }
 .hero-illust .hub-glow   { filter: drop-shadow(0 10px 16px rgba(27, 116, 179, .4)); }

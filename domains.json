@@ -146,6 +146,18 @@
         "/favicon.ico": "favicon.ico",
         "/apple-touch-icon.png": "apple-touch-icon.png"
       }
+    },
+    {
+      "host": "harpatka.floa.co.il",
+      "project": "floa-site",
+      "enabled": true,
+      "folder": "harpatka/",
+      "clean": true,
+      "test": true,
+      "icons": {
+        "/apple-touch-icon.png": "images/apple-touch-icon-v5.png"
+      },
+      "note": "TEMPORARY preview of harpatka.co.il from inside FLOA (owner, 2026-11-26); harpatka.co.il itself is not moved by this. test: true keeps /harpatka out of the old-address redirects, because /harpatka is Harpatka's own address on other apps (chatbot.floa.co.il/harpatka is the live chat, roster.floa.co.il/harpatka its admin page), and closes this host's robots.txt so the copy is not indexed. Replace this entry at the cutover of harpatka.co.il."
     }
   ],
   "redirectOld": true,

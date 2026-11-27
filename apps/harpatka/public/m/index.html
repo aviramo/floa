@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>הוראות הגעה | יוצאים להרפתקה</title>
+  <meta name="description" content="הוראות הגעה למפגש של יוצאים להרפתקה: תמונה או סרטון." />
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#064452" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="יוצאים להרפתקה" />
+  <meta property="og:title" content="הוראות הגעה | יוצאים להרפתקה" />
+  <meta property="og:description" content="לצפייה בתמונה או בסרטון" />
+  <meta property="og:image" content="https://harpatka.co.il/images/og-v5.jpg" />
+  <link rel="icon" href="../images/favicon-v5.ico" sizes="any" />
+  <link rel="icon" type="image/png" sizes="48x48" href="../images/favicon-v5-48.png" />
+  <link rel="apple-touch-icon" href="../images/apple-touch-icon-v5.png" />
+  <style>
+    /* דף קטן שמציג תמונה או סרטון של הוראות הגעה (5.11.26). הקישור אליו נשלח בוואטסאפ במקום הקישור הארוך לאחסון (שהציג את הכתובת של supabase בכרטיס התצוגה המקדימה). הקובץ עצמו נשאר באחסון; הדף רק מציג אותו */
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body { min-height: 100dvh; background: #FFF5E8; color: #2C231D; font-family: Assistant, Arial, Helvetica, sans-serif; -webkit-text-size-adjust: 100%; }
+    .top { background: linear-gradient(120deg, #064452, #0A6170 55%, #0F8A93); padding: 14px 16px; text-align: center; }
+    .top a { color: #fff; text-decoration: none; font-weight: 700; font-size: 18px; letter-spacing: .2px; }
+    main { max-width: 760px; margin: 0 auto; padding: 20px 16px 40px; text-align: center; }
+    h1 { margin: 0 0 16px; font-size: 22px; line-height: 1.3; font-weight: 800; }
+    .media { display: block; width: 100%; max-height: 78vh; object-fit: contain; background: #fff; border-bottom: 4px solid #E5562D; border-radius: 10px; }
+    .msg { margin: 40px 0; font-size: 18px; color: #4A3D33; }
+    .home { display: inline-block; margin-top: 24px; color: #C8411B; font-weight: 700; text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="top"><a href="../">יוצאים להרפתקה</a></div>
+  <main id="app"><h1>הוראות הגעה</h1><p class="msg" id="msg">טוען...</p></main>
+  <script>
+    (function () {
+      /* הקבצים עברו לאחסון של רוסטר (העסק harpatka, 17.11.26): הנתיב הישן d/<קובץ> הוא meeting-media-d-<קובץ> בדלי roster-media. האחסון הישן נשאר כגיבוי עד שיימחק */
+      var BASE = 'https://aexmnaxvahblveejsbup.supabase.co/storage/v1/object/public/roster-media/ce70a9a1-a588-4495-a618-c3525f87cf6f/meeting-media-';
+      var OLD = 'https://ezakarwqstnldqixgreb.supabase.co/storage/v1/object/public/meeting-media/';
+      var app = document.getElementById('app'), msg = document.getElementById('msg');
+      var f = (new URLSearchParams(location.search).get('f') || '').trim();
+      // רק נתיב של קובץ בדלי של המפגשים (תיקייה וקובץ), בלי ".." ובלי כתובת חיצונית
+      if (!/^[A-Za-z0-9_-]+(\/[A-Za-z0-9_.-]+)+$/.test(f) || f.indexOf('..') >= 0) { msg.textContent = 'הקובץ לא נמצא'; return; }
+      var ext = (f.split('.').pop() || '').toLowerCase(), el;
+      if (/^(mp4|mov|webm)$/.test(ext)) { el = document.createElement('video'); el.controls = true; el.playsInline = true; el.preload = 'metadata'; }
+      else if (/^(jpe?g|png|webp|gif)$/.test(ext)) { el = document.createElement('img'); el.alt = 'הוראות הגעה'; }
+      else { msg.textContent = 'הקובץ לא נמצא'; return; }
+      el.className = 'media';
+      var tried = false;
+      el.addEventListener('error', function () { if (!tried) { tried = true; el.src = OLD + f; return; } el.remove(); msg.textContent = 'הקובץ לא נמצא'; msg.hidden = false; });
+      el.addEventListener('load', function () { msg.hidden = true; });
+      el.addEventListener('loadedmetadata', function () { msg.hidden = true; });
+      el.src = BASE + f.replace(/\//g, '-');
+      app.insertBefore(el, msg);
+      var home = document.createElement('a'); home.className = 'home'; home.href = '../'; home.textContent = 'לדף הבית';
+      app.appendChild(home);
+    })();
+  </script>
+</body>
+</html>

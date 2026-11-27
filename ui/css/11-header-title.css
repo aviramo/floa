@@ -1,0 +1,14 @@
+/* Header, the title and its description: ui/docs/header.md */
+/* the glyph ratios of --font, in em from the middle of a line: .3 = the title's baseline below it, .25 = the top of a Hebrew letter above it, .375 = the baseline below it
+   (owner 2026-11-26: 4 between the letters of the title and of the description, 12 from the description's letters to the header's bottom edge) */
+.rhead { --head-row: var(--fab); }
+dialog.rsheet:is([data-size="s"], [data-size="sm"]) .sheet-head { --head-row: var(--ctl); }
+.rhead__tw { display: flex; flex-direction: column; flex: 0 1 auto; min-width: 0; }
+.rhead__tw:has(> .rhead__sub) { margin-block-end: calc(var(--fs-l) * (var(--lh-text) / 2 - .3) - var(--gap-tight) + var(--fs-m) * (var(--lh-tight) / 2 - .25) - var(--fs-m) * var(--lh-tight)); }
+.rhead__sub { display: block; color: var(--text-muted); font: var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font); text-align: start; white-space: normal; overflow-wrap: anywhere; }
+.rhead__tw > .rhead__sub { margin-block-start: calc(var(--gap-tight) - var(--fs-l) * (var(--lh-text) / 2 - .3) - var(--fs-m) * (var(--lh-tight) / 2 - .25)); }
+/* a header with a description grows below its row: the row (title, lead, actions) stays where it is without one, the description hangs under it */
+.rhead:has(> .rhead__text > .rhead__tw > .rhead__sub) { --head-sub-b: calc(var(--fs-l) * .3 + var(--gap-tight) + var(--fs-m) * (.25 + .375) + var(--gap) - var(--head-row) / 2); padding-block-end: var(--head-sub-b); min-height: calc(var(--head-row) + var(--safe-t) + var(--head-sub-b)); }
+:is(dialog, .rpanel) .rhead:has(> .rhead__text > .rhead__tw > .rhead__sub) { min-height: calc(var(--head-row) + var(--head-sub-b)); }
+.rhead[data-wrap]:has(> .rhead__text > .rhead__tw > .rhead__sub) { padding-block-end: calc(var(--gap) - var(--fs-m) * (var(--lh-tight) / 2 - .375)); min-height: calc(var(--head-row) + var(--safe-t)); }
+:is(dialog, .rpanel) .rhead[data-wrap]:has(> .rhead__text > .rhead__tw > .rhead__sub) { min-height: var(--head-row); }

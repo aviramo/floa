@@ -1,0 +1,2 @@
+/* Search field, no native clear button: ui/docs/search.md */
+.rfield > input[type="search"]::-webkit-search-cancel-button, .rfield > input[type="search"]::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }

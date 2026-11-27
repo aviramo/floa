@@ -1,14 +1,16 @@
 /* The music of the Biodanza app is private: signed in AND on the allowlist, or nothing. */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { handleAudio, isAudioPath } from "../src/biodanza-audio.js";
+import { handleAudio, isAudioPath, _clearAudioAuthCache } from "../src/biodanza-audio.js";
 
 const ORIGINS = ["https://biodanza.floa.co.il", "http://localhost:5173"];
 const NAME = "0123456789abcdef0123456789abcdef.mp3";
 const bytes = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 
+let lastOpts = "unset";
 const bucket = {
   async get(name, opts) {
+    lastOpts = opts;
     if (name !== NAME) return null;
     const r = opts && opts.range && opts.range.get && opts.range.get("range");
     const m = r && /bytes=(\d+)-(\d*)/.exec(r);
@@ -18,8 +20,10 @@ const bucket = {
   },
 };
 
+let asked = 0;
 function env(me) {
-  globalThis.fetch = async () => (me === null ? new Response("no", { status: 401 }) : Response.json(me));
+  _clearAudioAuthCache(); asked = 0;
+  globalThis.fetch = async () => { asked++; return me === null ? new Response("no", { status: 401 }) : Response.json(me); };
   return { AUDIO: bucket, SUPABASE_URL: "https://x.supabase.co", SUPABASE_ANON_KEY: "anon" };
 }
 const ask = (path, { token = "t", origin = ORIGINS[0], method = "GET", range } = {}) =>
@@ -66,4 +70,33 @@ test("a missing object is 404, and a range is honoured", async () => {
   const part = await handleAudio(ask("/biodanza/audio/" + NAME, { range: "bytes=2-4" }), env({ allowed: true }), ORIGINS);
   assert.equal(part.status, 206);
   assert.equal(part.headers.get("content-range"), "bytes 2-4/10");
+});
+
+test("a whole-file request is a 200 and asks R2 for no range", async () => {
+  const res = await handleAudio(ask("/biodanza/audio/" + NAME), env({ allowed: true }), ORIGINS);
+  assert.equal(res.status, 200);
+  assert.equal(lastOpts, undefined);
+  assert.equal(res.headers.get("content-range"), null);
+});
+
+const jwt = (exp) => "h." + Buffer.from(JSON.stringify({ exp })).toString("base64url") + ".s";
+
+test("the allowlist answer is kept per token: many files, one question to Supabase", async () => {
+  const e = env({ allowed: true }), tok = jwt(Math.floor(Date.now() / 1000) + 3600);
+  for (let i = 0; i < 5; i++) assert.equal((await handleAudio(ask("/biodanza/audio/" + NAME, { token: tok }), e, ORIGINS)).status, 200);
+  assert.equal(asked, 1);
+  assert.equal((await handleAudio(ask("/biodanza/audio/" + NAME, { token: tok + "x" }), e, ORIGINS)).status, 200);
+  assert.equal(asked, 2, "another token asks again");
+});
+
+test("an expired token is never kept, and a Supabase error is not kept", async () => {
+  const e = env({ allowed: true }), old = jwt(Math.floor(Date.now() / 1000) - 10);
+  await handleAudio(ask("/biodanza/audio/" + NAME, { token: old }), e, ORIGINS);
+  await handleAudio(ask("/biodanza/audio/" + NAME, { token: old }), e, ORIGINS);
+  assert.equal(asked, 2);
+  _clearAudioAuthCache(); asked = 0;
+  globalThis.fetch = async () => { asked++; return new Response("down", { status: 503 }); };
+  assert.equal((await handleAudio(ask("/biodanza/audio/" + NAME, { token: "z" }), e, ORIGINS)).status, 403);
+  assert.equal((await handleAudio(ask("/biodanza/audio/" + NAME, { token: "z" }), e, ORIGINS)).status, 403);
+  assert.equal(asked, 2);
 });

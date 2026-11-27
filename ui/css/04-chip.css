@@ -1,0 +1,15 @@
+/* Chip, a row of chips (.rflow), the main action in the middle (.rmid): ui/docs/chip.md */
+.rchip { display: inline-flex; align-items: center; justify-content: center; gap: var(--gap-tight); box-sizing: border-box; height: var(--chip); min-width: 0; padding: 0 var(--gap); border: var(--bw) solid transparent; border-radius: var(--r-round); background: var(--surface); color: var(--text-muted); font: var(--fw-bold) var(--fs-s)/var(--lh-tight) var(--font); font-variant-numeric: tabular-nums; white-space: nowrap; vertical-align: middle; }
+.rchip--info { color: var(--primary); }
+.rchip--ink { color: var(--text); }
+.rchip { max-width: 100%; }   .rchip__t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* .rflow, a row of chips: rlayout rlayout--row rlayout--wrap, all of it from Layout (ui/docs/chip.md) */
+.rmid { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; column-gap: var(--gap); }
+.rmid > :first-child { grid-column: 2; }   .rmid > :nth-child(2) { grid-column: 3; justify-self: start; }
+.rchip--button { position: relative; background: transparent; border-color: var(--border-strong); color: var(--text); }
+.rchip--button:is([aria-pressed="true"], [aria-checked="true"]) { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.rchip--button[aria-busy="true"] { pointer-events: none; animation: rk-breath var(--busy-breath-t) ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .rchip--button[aria-busy="true"] { animation: none; opacity: var(--busy-breath-low); } }
+.rcard .rchip--button::after { height: var(--row-card); }
+.rchip > svg { display: block; flex: none; width: var(--icon); height: var(--icon); margin: 0; stroke-width: var(--icon-w); }
+.rchip small, .rchip b { display: inline-block; line-height: 1; }

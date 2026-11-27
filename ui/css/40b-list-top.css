@@ -1,0 +1,24 @@
+/* The list's top block, the tile that comes back on scroll: ui/docs/list.md (הבלוק העליון) and "אריח שחוזר בגלילה". The tile is the element marked data-rquick,
+   the sibling right before the list's scroll area. A free block (filters, an add form, a search), always on top, --gap to the items. Its one option: on a phone it
+   slides out on a scroll down and back on any scroll up, in one move of --t-base; on a computer it stays. JS (ui/layout.js) writes only data-rq-hide, data-rq-float
+   and --rq-h; everything else is here. After 40-list-sortable.css and before the late rules: it wins over the list and the fields above it */
+.rlayout--surface > .rlayout__bar[data-rquick] { padding: var(--gap) var(--gap) 0; }
+[data-rquick] { position: relative; z-index: var(--z-raised); background: var(--page); }
+[data-rquick]::after { content: ""; position: absolute; inset-inline: 0; top: 100%; height: var(--gap); background: var(--edge-shadow); opacity: 0; transition: opacity var(--t-base) var(--ease); pointer-events: none; }
+[data-rquick][data-rq-float]::after { opacity: 1; }   /* the list is scrolled under it: the one soft edge is the tile's, the last fixed block before the list */
+:has(> [data-rquick]:not([data-rq-hide])) > :is(.rhead, .sheet-head)::after { opacity: 0; }   /* never two edges: while the tile is there, the header has none */
+@media (width < 760px) {
+  /* the tile and the list share one cell: the tile at its top, over the list; the list starts its content under the tile (its height and --gap), so at rest all
+     is as in a plain column. Up to two slots before the tile (a header, tabs), one after the list (a foot) */
+  :has(> [data-rquick]) { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr) auto; overflow: clip; }   /* a hidden tile never shows above its column (a sheet's grab strip) */
+  :has(> [data-rquick]) > * { grid-column: 1; }
+  :has(> [data-rquick]) > :nth-child(1):has(~ [data-rquick]) { grid-row: 1; position: relative; z-index: calc(var(--z-sticky) + 1); }
+  :has(> [data-rquick]) > :nth-child(2):has(~ [data-rquick]) { grid-row: 2; position: relative; z-index: calc(var(--z-sticky) + 1); }
+  [data-rquick], [data-rquick] + * { grid-row: 3; }
+  [data-rquick] + * ~ * { grid-row: 4; }
+  [data-rquick] { align-self: start; z-index: var(--z-sticky); transition: transform var(--t-base) var(--ease); }
+  [data-rquick] + * { padding-block-start: calc(var(--rq-h, 0px) + var(--gap)); }
+  [data-rquick][data-rq-hide]:not(:focus-within):not(:has([aria-expanded="true"])) { transform: translateY(-100%); }   /* out behind what is above it; a tile with the focus, or with something open from it, stays */
+  [data-rquick]::after { inset: 0; top: 0; height: auto; background: none; box-shadow: var(--shadow-lg); z-index: -1; }   /* floating: the strong shadow of all that floats (owner 2026-11-26), not the soft edge */
+}
+@media (prefers-reduced-motion: reduce) { [data-rquick], [data-rquick]::after { transition: none; } }

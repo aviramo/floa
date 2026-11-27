@@ -1,0 +1,61 @@
+/* Tokens: ui/docs/tokens.md */
+:root {
+  --page: #FBF8F3;  --surface: #EAE3D8;
+  --raised: #FFFFFF;
+  --border: #E2DACC;  --border-strong: #8C8372;
+  --text: #1F1B16;  --text-muted: #5A5146;
+  --primary: #0F5F4F;  --on-primary: #FFFFFF;
+  --accent-2: var(--primary);  --on-accent-2: var(--on-primary);
+  --accent-2-strong: var(--primary);
+  --accent-2-tint: var(--surface);
+  --scrim: rgba(31, 27, 22, .55);
+  --gap-tight: 4px;
+  --gap: 12px;
+  --gap-section: 24px;
+  --inset-t: env(safe-area-inset-top, 0px);   --inset-b: env(safe-area-inset-bottom, 0px);   --inset-l: env(safe-area-inset-left, 0px);
+  --inset-s: env(safe-area-inset-right, 0px);   --inset-e: env(safe-area-inset-left, 0px);   /* the device's safe area on the inline start and end sides (RTL: right, left); flipped below for a left-to-right page */
+  --safe-t: var(--inset-t);
+  --safe-b: max(var(--inset-b), var(--gap));
+  --end-pad: var(--safe-b);
+  --bar-b: 0px;
+  --sheet-b: max(var(--gap), var(--safe-b));
+  --ctl: 44px;  --bw: 1px;  --chip: 24px;
+  --edge-gesture: 32px;
+  --focus-w: calc(var(--bw) * 2);
+  --mark-w: calc(var(--bw) * 3);
+  --range-h: calc(var(--bw) * 4);
+  --disabled: .45;
+  --fab: 56px;  --fab-clear: calc(var(--fab) + var(--gap-section) + var(--gap));
+  --end-pad-fab: calc(var(--fab-clear) + var(--inset-b));
+  --icon-lg: calc(var(--icon) * 1.4);
+  --load-mark: calc(var(--icon-lg) * 3.5);
+  --icon: 20px;  --icon-w: 2;
+  --busy-tint: 30%;  --busy-tint-still: 14%;
+  --press-shade: 12%;
+  --w: 400px;
+  --card-min: 21rem;
+  --media-min: 140px;   /* a media grid's and a collage's narrowest column (ui/docs/grid.md): two columns on every phone held upright; px, not rem: a tile has no text */
+  --volume-w: calc(var(--ctl) * 2.5);
+  --sw-h: calc(var(--icon) + var(--gap-tight) * 2);
+  --sw-w: calc(var(--icon) * 2 + var(--gap-tight) * 2);
+  --player-h: calc(var(--icon) + var(--fab) + var(--gap) * 3 + var(--bw));
+  --r: 12px;  --r-round: 999px;
+  --r-s: 4px;
+  --shadow: 0 6px 18px -4px rgba(63, 47, 20, .22), 0 1px 3px rgba(63, 47, 20, .10);
+  --shadow-lg: 0 1px 3px rgba(31, 27, 22, .30), 0 0 16px rgba(31, 27, 22, .20), 0 20px 48px -8px rgba(31, 27, 22, .45);
+  --font: "Heebo", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --fs-s: 12px;  --fs-m: 16px;  --fs-l: 20px;  --fs-xl: 36px;
+  --fw-regular: 400;  --fw-bold: 700;
+  --lh-tight: 1.25;  --lh-text: 1.5;
+  --t-base: .22s;  --busy-breath-t: 1.2s;  --busy-breath-low: .35;      --ease: cubic-bezier(.2, .8, .2, 1);
+  --busy-shimmer-t: 1.2s;
+  --search-wait: 150ms;
+  --hold: 400ms;
+  --skel-delay: 200ms;
+  --eq-crest: .5;  --eq-base: .06;  --eq-line: .7;  --eq-line-w: var(--focus-w);
+  --z-raised: 1;  --z-sticky: 10;  --z-menu: 20;  --z-drag: 90;
+  --z-toast: 400;
+}
+:root:dir(ltr) { --inset-s: env(safe-area-inset-left, 0px);   --inset-e: env(safe-area-inset-right, 0px); }
+@media (prefers-reduced-motion: reduce) { :root { --t-base: 0s; } }
+@media (min-width: 760px) { :root { --player-h: calc(var(--fab) + var(--gap) * 2 + var(--bw)); } }

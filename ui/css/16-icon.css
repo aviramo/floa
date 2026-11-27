@@ -1,0 +1,8 @@
+/* Icon set and icon: ui/docs/icon.md */
+svg.rsym { fill: none; stroke: currentColor; stroke-width: var(--icon-w); stroke-linecap: round; stroke-linejoin: round; overflow: visible; aspect-ratio: 1; }
+:where(svg.rsym) { flex: none; width: var(--icon); height: var(--icon); }
+.rbtn--fill[aria-pressed="true"] > svg.rsym { fill: currentColor; }
+[dir="ltr"] svg.rsym--dir { transform: scaleX(-1); }
+.ricon { display: grid; place-items: center; flex: none; width: var(--icon); height: var(--icon); }
+.ricon > svg { display: block; width: 100%; height: 100%; stroke-width: var(--icon-w); }
+.ricon--primary { color: var(--primary); }   .ricon--muted { color: var(--text-muted); }

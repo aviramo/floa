@@ -1,0 +1,14 @@
+/* פרטי מפגש: רכיב אחד לפופאפי ההרשמה ולאזור האישי (CONFIG.meetingBox ב-shared/config.js), באותו מבנה כמו כרטיס המפגש בדף הבית. במיילים אותו מבנה בפונקציה harpatka_mail_meeting_box */
+.mbox{ margin:0 0 .8rem; overflow:hidden; text-align:center; color:var(--ink,#2C231D); background:var(--paper,#FFFDF9); border:1px solid rgba(44,35,29,.14); border-bottom:4px solid var(--terra,#E5562D); border-radius:var(--r,4px); }
+.mbox-in{ display:flex; flex-direction:column; align-items:center; gap:.15rem; padding:.6rem .7rem .7rem; }
+.mbox-name{ font-weight:800; font-size:.95rem; line-height:1.25; color:var(--terra,#E5562D); }
+.mbox-when{ font-family:Rubik,sans-serif; font-weight:800; font-size:clamp(1.25rem,5.8vw,1.55rem); line-height:1.2; color:var(--ink,#2C231D); }
+.mbox-where{ display:inline-flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:.2rem .4rem; font-weight:600; font-size:.95rem; line-height:1.25; color:var(--muted,#4A3D33); }
+.mbox-where::before{ content:''; flex:none; width:.5rem; height:.5rem; background:#0F8A93; }
+.mbox-ppl{ display:inline-flex; align-items:center; gap:.25rem; margin-inline-start:-.15rem; }
+.mbox-ppl i{ font-style:normal; }
+.mbox-ppl b{ font-weight:inherit; }
+.mbox-ppl svg{ flex:none; width:1em; height:1em; }
+
+/* גודל מינימום (5.11.26) */
+.mbox-name, .mbox-where { font-size: 1rem; }

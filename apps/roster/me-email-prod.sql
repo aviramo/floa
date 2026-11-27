@@ -1,6 +1,7 @@
 -- PRODUCTION VERSION of me-email.sql (narrowed). Needs prod-columns.sql first (business_settings.email_link).
 -- The pre-link table and roster.me_link_email are new. roster.me is replaced by the production body PLUS one guarded branch: for a business whose
--- business_settings.email_link is off (the default, AUM) the branch is never entered, so me answers exactly as the production version does.
+-- business_settings.email_link is off the branch is never entered, so me answers exactly as the production version does. The switch defaults to on
+-- (prod-columns.sql), and production has it on for every business today.
 -- me_link_email also checks the switch itself and returns null when it is off.
 create table if not exists roster.member_links (
   business_id    uuid not null references roster.businesses(id) on delete cascade,

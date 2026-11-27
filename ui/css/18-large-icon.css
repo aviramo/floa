@@ -1,0 +1,4 @@
+/* Large icon and floating button: ui/docs/large-icon.md, ui/docs/fab.md */
+.ricon-lg, .rfab { position: relative; display: grid; place-items: center; flex: none; box-sizing: border-box; width: var(--fab); height: var(--fab); padding: 0; border: 1px solid var(--primary); border-radius: var(--r-round); background: var(--primary); color: var(--on-primary);
+  box-shadow: var(--shadow-lg); transition: transform var(--t-base) var(--ease), opacity var(--t-base) var(--ease); }
+.rfab { position: fixed; inset-inline-end: max(var(--gap), var(--inset-e)); bottom: calc(var(--gap) + max(var(--inset-b), var(--bar-b))); z-index: var(--z-sticky); }

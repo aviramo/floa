@@ -1,0 +1,40 @@
+/* Section: ui/docs/section.md. The arrangement is Layout's (ui/css/01-layout.css): .racc a column --gap, .racc__bar a row --pad-x, .racc__h a row --unit __grow, .racc__head a row --unit, .racc__end a row */
+.racc { transition: row-gap var(--t-base) var(--ease), padding-block-end var(--t-base) var(--ease); }
+.racc:has(> .racc__body[data-closed]) { row-gap: 0; }
+:has(> .racc + .racc):not(:has(> :not(.racc))) { row-gap: 0; }
+:has(> .racc + .racc):not(:has(> :not(.racc))) > .racc:has(> .racc__body:not([data-closed])):not(:last-child) { padding-block-end: var(--gap); }
+.racc__bar { position: sticky; top: 0; z-index: var(--z-sticky); min-height: var(--ctl); background: var(--page); }
+.racc__bar[data-stuck]::before { content: ""; position: absolute; inset-inline: 0; bottom: 100%; height: var(--gap); background: var(--page); pointer-events: none; }
+@keyframes rk-strip { from { clip-path: inset(0); } to { clip-path: inset(var(--gap) 0 0 0); } }
+:is(.rlist, .rlayout__body:not(:has(.rlist))):has(.racc__bar) { clip-path: inset(0); animation: rk-strip linear both; animation-timeline: scroll(self); animation-range: 0 1px; }
+@supports not (animation-timeline: scroll()) { :is(.rlist, .rlayout__body:not(:has(.rlist))):has(.racc__bar) { clip-path: none; animation: none; } }
+:is(.rlist, .rlayout--surface > .rlayout__body:not(.rmenu__list)):has(> :first-child:is(.rrow, .racc), > :first-child > :first-child:is(.rrow, .racc)) { clip-path: none; animation: none; }
+:is(.rlist, .rlayout--surface > .rlayout__body:not(.rmenu__list)):has(> :first-child:is(.rrow, .racc), > :first-child > :first-child:is(.rrow, .racc)) .racc__bar[data-stuck]::before { display: none; }
+.racc .racc > .racc__bar { position: relative; z-index: auto; }
+.racc__h { min-height: var(--ctl); margin: 0; font: inherit; }
+.racc__head { flex: 1 1 auto; min-height: var(--ctl); padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: start; }
+:has(> .racc):not(:has(> :not(.racc))) { padding-inline: 0; }
+:has(> .racc):not(:has(> :not(.racc))) > .racc > .racc__body > div > :not(.racc, :has(> .racc)) { padding-inline: var(--gap); }
+.racc .racc__body .racc > .racc__bar { padding-inline: var(--gap-section); }
+.racc .racc__body .racc > .racc__body > div > :not(.racc, :has(> .racc)) { padding-inline: var(--gap-section); }
+.racc__h > .racc__title, .racc__head > .racc__title { flex: 0 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--text); font: var(--fw-bold) var(--fs-m)/var(--lh-tight) var(--font); }
+.racc__sub { order: 2; flex: 1 1 0; max-width: max-content; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--text-muted); font: var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font); }
+.racc__head[aria-expanded="true"] > .racc__sub { display: none; }   /* the summary says what is inside only while folded; open, the body says it (ui/docs/section.md) */
+.racc__count, .rdiv__n { order: 1; display: inline-flex; flex: none; align-items: center; justify-content: center; box-sizing: border-box; height: var(--chip); min-width: var(--chip); padding-inline: var(--gap-tight); border-radius: var(--r-round); background: var(--surface); color: var(--text-muted); font: var(--fw-regular) var(--fs-s)/1 var(--font); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.racc__chev { order: 3; display: grid; flex: none; width: var(--icon); height: var(--icon); transition: transform var(--t-base) var(--ease); }
+.racc__chev > svg { width: 100%; height: 100%; stroke-width: var(--icon-w); }
+[aria-expanded="true"] > .racc__chev { transform: rotate(180deg); }
+.racc__end { flex: none; }
+.racc__time { flex: none; direction: ltr; white-space: nowrap; color: var(--text-muted); font: var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font); font-variant-numeric: tabular-nums; }
+.racc__body { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: 1fr; min-width: 0; opacity: 1; transition: grid-template-rows var(--t-base) var(--ease), opacity var(--t-base) var(--ease), display var(--t-base) allow-discrete; }
+.racc__body > div { display: flex; flex-direction: column; min-height: 0; min-width: 0; transform: none; transition: transform var(--t-base) var(--ease); }
+.racc__body > div > * { flex: none; }
+.racc__body[data-closed] { display: none; grid-template-rows: 0fr; opacity: 0; }
+.racc__body[data-closed] > div { overflow: clip; transform: translateY(calc(var(--gap) * -1)); }
+.racc[data-racc-moved] > .racc__body:not([data-closed]) > div { animation: racc-clip var(--t-base) linear; }
+@keyframes racc-clip { from, to { overflow: clip; } }
+@starting-style {
+  .racc[data-racc-moved] > .racc__body:not([data-closed]) { grid-template-rows: 0fr; opacity: 0; }
+  .racc[data-racc-moved] > .racc__body:not([data-closed]) > div { transform: translateY(calc(var(--gap) * -1)); }
+}
+@media (prefers-reduced-motion: reduce) { .racc, .racc__chev, .racc__body, .racc__body > div { transition: none; animation: none; } }

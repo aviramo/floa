@@ -18,26 +18,26 @@ body { margin: 0; display: flex; flex-direction: column; height: 100dvh; backgro
 #app > .rlist { flex: 1 1 auto; }
 #out, #out * { user-select: text; -webkit-user-select: text; }
 .pad { padding: var(--gap); display: flex; flex-direction: column; gap: var(--gap); }
+.pad > .rfield { max-width: var(--w); }   /* the filter is as wide as a short window at most (--w), never a raw width */
 #out { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 24rem), 1fr)); gap: var(--gap); padding: 0 var(--gap) var(--gap); align-content: start; align-items: stretch; }
-#out > .rempty, #out > .rhint, #out > .rskel { grid-column: 1 / -1; }
-#out > .rcard { background: var(--on-primary); margin: 0; min-width: 0; display: flex; flex-direction: column; gap: var(--gap); }
+#out > .rcard { background: var(--on-primary); margin: 0; min-width: 0; display: flex; flex-direction: column; align-items: stretch; gap: var(--gap); }   /* NOT yet the kit's card: a comparison sheet of several blocks does not fit the card's two rows; waits for the owner's decision on how it looks as a card */
 #out > * { flex-shrink: 0; }
 .c__t, .c__s, .c__h { overflow-wrap: anywhere; }
 .c__t { direction: ltr; text-align: start; font: var(--fw-bold) var(--fs-m)/var(--lh-tight) var(--font); }
 .c__h { font: var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font); color: var(--text-muted); }
 .c__s { color: var(--text-muted); font: var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font); }
 .c__blk { display: flex; flex-direction: column; gap: 2px; }
-.c__match { border-top: 1px solid var(--border); padding-top: var(--gap); display: flex; flex-direction: column; gap: 2px; }
+.c__match { display: flex; flex-direction: column; gap: 2px; }
 .c__lbl { color: var(--text-muted); font: var(--fw-regular) var(--fs-s)/1 var(--font); margin-bottom: 2px; }
 .c__why { color: var(--text); font: var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font); margin-top: var(--gap); }
-.c__accs { border-top: 1px solid var(--border); padding-top: var(--gap); display: flex; flex-direction: column; }
+.c__accs { display: flex; flex-direction: column; }
 .c__accb { all: unset; box-sizing: border-box; width: 100%; display: flex; align-items: center; justify-content: space-between; gap: var(--gap); padding-block: var(--gap); cursor: pointer; font: var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font); color: var(--text); }
 .c__accb:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .c__plays { display: flex; flex-wrap: wrap; gap: var(--gap); padding-bottom: var(--gap); }
 .c__names { display: flex; flex-direction: column; gap: 2px; padding-bottom: var(--gap); direction: ltr; text-align: start; }
-.c__more { border-top: 1px solid var(--border); padding-top: var(--gap); display: flex; flex-direction: column; gap: 2px; }
+.c__more { display: flex; flex-direction: column; gap: 2px; }
 .rhead.rhead { border-bottom: 0; position: relative; z-index: 2 }
-.rhead.rhead::after { content: ""; position: absolute; inset-inline: 0; top: 100%; height: var(--gap-tight); background: linear-gradient(color-mix(in srgb, var(--scrim) 25%, transparent), transparent); opacity: 0; transition: opacity .18s ease; pointer-events: none }
+.rhead.rhead::after { content: ""; position: absolute; inset-inline: 0; top: 100%; height: var(--gap); background: var(--edge-shadow); opacity: 0; transition: opacity .18s ease; pointer-events: none }
 .rhead.rhead[data-scrolled]::after { opacity: 1 }
 @media (prefers-reduced-motion: reduce) { .rhead.rhead::after { transition: none } }
 </style>
@@ -54,71 +54,42 @@ document.addEventListener("scroll", function (e) {
 <div id="app"></div>
 <script src="/supabase.js"></script>
 <script src="/auth.js"></script>
+<script src="/search.js"></script>
+<script src="/layout.js"></script>
+<script src="/menu.js"></script>
+<script src="/field.js"></script>
+<script src="/audio.js"></script>
 <script>document.write('<script src="' + (/^(localhost|127[.]|192[.]168[.]|10[.])/.test(location.hostname) ? '/biodanza/' : '/') + 'assets/audio.js"><\/script>')</script>
 <script>
 (function () {
   "use strict";
   var app = document.getElementById("app");
   var HOME = /^(localhost|127[.]|192[.]168[.]|10[.])/.test(location.hostname) ? "/biodanza/" : "/";
-  var rows = [], timer = 0;
+  var rows = [];
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
-  function fold(t) { return String(t == null ? "" : t).normalize("NFD").replace(new RegExp("[" + String.fromCharCode(0x300) + "-" + String.fromCharCode(0x36f) + String.fromCharCode(0x591) + "-" + String.fromCharCode(0x5c7) + "]", "g"), "").toLowerCase(); }
-  /* a smart search: finds what is NEAR the words, not only what contains them. Every typed word must match some word of the text, by the
-     best of: the same word, a word that starts with it, a word that holds it, or a word one or two letters off (a slip, a missing or an
-     extra letter, two letters swapped; also for the start of a longer word). fzs() gives a score (0 = no match, more = nearer) so a list can
-     put the nearest first; fz() is the yes or no. */
-  var fzCache = {};
-  function fzTok(h) { return fzCache[h] || (fzCache[h] = h.split(/[^0-9a-z֐-׿]+/).filter(Boolean)); }
-  function fzDist(a, b, max) {
-    var n = a.length, m = b.length; if (Math.abs(n - m) > max) return max + 1;
-    var p2 = null, p1 = [], i, j;
-    for (j = 0; j <= m; j++) p1[j] = j;
-    for (i = 1; i <= n; i++) {
-      var c = [i], lo = i;
-      for (j = 1; j <= m; j++) {
-        var v = Math.min(p1[j] + 1, c[j - 1] + 1, p1[j - 1] + (a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1));
-        if (p2 && i > 1 && j > 1 && a.charAt(i - 1) === b.charAt(j - 2) && a.charAt(i - 2) === b.charAt(j - 1)) v = Math.min(v, p2[j - 2] + 1);
-        c[j] = v; if (v < lo) lo = v;
-      }
-      if (lo > max) return max + 1;
-      p2 = p1; p1 = c;
-    }
-    return p1[m];
-  }
-  function fzWord(h, toks, w) {
-    var best = 0, i, t, d, mx = w.length <= 2 ? 0 : w.length <= 4 ? 1 : 2;
-    for (i = 0; i < toks.length; i++) {
-      t = toks[i];
-      if (t === w) return 10;
-      if (t.indexOf(w) === 0) best = Math.max(best, 8);
-      else if (mx && t.length >= w.length) { d = fzDist(w, t.slice(0, w.length), mx); if (d <= mx) best = Math.max(best, 6 - d * 1.5); }
-      if (mx && best < 6) { d = fzDist(w, t, mx); if (d <= mx) best = Math.max(best, 7 - d * 1.5); }
-    }
-    if (!best && h.indexOf(w) >= 0) best = 5;
-    return best;
-  }
-  function fzs(text, q) {
-    var h = fold(text), words = fold(q).split(/\s+/).filter(Boolean), toks = fzTok(h), sum = 0, k, s;
-    if (!words.length) return 1;
-    for (k = 0; k < words.length; k++) { s = fzWord(h, toks, words[k]); if (!s) return 0; sum += s; }
-    return sum / words.length;
-  }
-  function fz(text, q) { return fzs(text, q) > 0; }
+  /* the search is the kit's (/search.js): its matching (no capitals, no marks, every word near a word) and its place in the header */
+  var fold = RosterSearch.fold, fzs = RosterSearch.score, curQ = "";
   function nearest(list, text, q) {   /* the matches of a search, nearest first (a plain order when nothing is typed) */
     if (!fold(q).trim()) return list;
     return list.map(function (x, i) { return { x: x, s: fzs(text(x), q), i: i }; }).filter(function (o) { return o.s > 0; })
       .sort(function (a, b) { return b.s - a.s || a.i - b.i; }).map(function (o) { return o.x; });
   }
   var STR = { exact: "זהה", strong: "חזקה", possible: "אפשרית" };
-  function msg(title, text, btn) {
-    app.innerHTML = '<div class="rempty" style="margin-block:auto"><b>' + esc(title) + '</b><span>' + esc(text) + '</span>' + (btn || "") + '</div>';
-  }
+  /* the icons are the kit's sprite (/icons.svg, ui/docs/icon.md), never a drawing of the page's own */
+  function sym(n, dir) { return '<svg class="rsym' + (dir ? " rsym--dir" : "") + '" aria-hidden="true" focusable="false"><use href="/icons.svg#' + n + '"/></svg>'; }
+  /* the kit's empty state with the icon of its subject: this page is exercises (the standing person); the kit centres it in its area */
+  var EXERCISE = sym("exercise");
+  function empty(title, text, btn, icon) { return '<div class="rlayout rempty">' + (icon || EXERCISE) + '<b>' + esc(title) + '</b>' + (text ? '<span>' + esc(text) + '</span>' : '') + (btn || "") + '</div>'; }
+  function msg(title, text, btn) { app.innerHTML = empty(title, text, btn); }
+  /* a load that failed: ONE action, "ניסיון נוסף", that asks again without reloading the page */
+  document.addEventListener("click", function (e) { if (e.target.closest && e.target.closest("[data-retry]")) { app.innerHTML = ""; start(); } });
   function shell() {
-    app.innerHTML = '<header class="rhead"><a class="rbtn rbtn--icon rbtn--edge-start" href="' + HOME + '" aria-label="חזרה לאפליקציה" title="חזרה לאפליקציה" style="text-decoration:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></a><div class="rhead__text"><h1 class="rhead__title">קטלוג 2014 מול הקטלוג</h1></div></header>' +
-      '<div class="pad" style="flex-direction:row;align-items:flex-end;padding-bottom:0"><label class="rfield" style="flex:1 1 auto"><span id="cnt">חיפוש תרגיל</span><input id="q" type="search" placeholder=" " autocomplete="off"></label>' +
-      '<label class="rfield" style="flex:0 0 14rem"><span>הצגה</span><select id="f"><option value="all">הכול</option><option value="match">יש התאמה</option><option value="good">התאמה זהה או חזקה</option><option value="possible">התאמה אפשרית</option><option value="none">אין התאמה</option><option value="music">יש מוסיקה</option><option value="split">תרגיל קיים עם כמה מ־2014</option></select></label></div>' +
-      '<div class="rlist" id="out"></div>';
-    app.querySelector("#q").addEventListener("input", function () { clearTimeout(timer); timer = setTimeout(draw, 200); });
+    app.innerHTML = '<header class="rhead"><a class="rbtn rbtn--icon rbtn--edge-start" href="' + HOME + '" aria-label="חזרה לאפליקציה" title="חזרה לאפליקציה" style="text-decoration:none">' + sym("back", 1) + '</a><div class="rhead__text"><span class="rhead__tw"><h1 class="rhead__title" title="קטלוג 2014 מול הקטלוג">קטלוג 2014 מול הקטלוג</h1></span></div><span class="rhead__acts"><button type="button" class="rbtn rbtn--icon" id="qs" aria-label="חיפוש" title="חיפוש">' + sym("search") + '</button></span></header>' +   /* the search is in the header, from the magnifier (the kit's) */
+      '<div class="pad">' +
+      '<label class="rlayout rlayout--unit rfield"><span>הצגה</span><select id="f"><option value="all">הכול</option><option value="match">יש התאמה</option><option value="good">התאמה זהה או חזקה</option><option value="possible">התאמה אפשרית</option><option value="none">אין התאמה</option><option value="music">יש מוסיקה</option><option value="split">תרגיל קיים עם כמה מ־2014</option></select></label></div>' +
+      '<div class="rlist" id="out" data-load="exercise"></div>';
+    RosterSearch.attach(app.querySelector("#qs"), app.querySelector("#out"), { label: "חיפוש תרגיל", key: "biodanza.c14", heavy: true, icon: EXERCISE,   /* a long list of big cards: it waits --search-wait for a pause in the typing */
+      onQuery: function (q) { curQ = q; if (rows.length) draw(); } });
     app.querySelector("#f").addEventListener("change", draw);
     app.querySelector("#out").addEventListener("click", function (e) { var x = e.target.closest("[data-acc]"); if (x) { opened[x.dataset.acc] = !opened[x.dataset.acc]; draw(); } });
   }
@@ -136,7 +107,7 @@ document.addEventListener("scroll", function (e) {
     return h;
   }
   var opened = {};
-  var CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:20px;height:20px"><path d="M6 9l6 6 6-6"/></svg>';
+  var CHEV = sym("expand");
   function acc(key, label, objs, names) {
     var on = !!opened[key], total = objs.length + names.length;
     var h = '<div class="c__acc"><button type="button" class="c__accb" data-acc="' + key + '" aria-expanded="' + on + '"><span>' + label + ' · ' + total + ' מוזיקות</span><span style="flex:none;display:flex;transition:transform .2s;' + (on ? 'transform:rotate(180deg)' : '') + '">' + CHEV + '</span></button>';
@@ -147,20 +118,21 @@ document.addEventListener("scroll", function (e) {
     }
     return h + '</div>';
   }
+  var SEP = '<div class="rlayout rlayout--unit rdiv rdiv--line" aria-hidden="true"></div>';   /* the kit's divider, line only: between the blocks of a card (the card's gap above and below it) */
   function card(r) {
     var b = best(r), m0 = r.matches[0];
-    var h = '<div class="rcard"><div class="c__blk"><span class="c__lbl">מקטלוג 2014</span>' + nm(r) + '<span class="c__s" style="margin-top:4px">קטגוריה לפי Brush: ' + (r.category_brush ? esc(r.category_brush) : 'אין') + '</span>' + (r.handled ? '<span class="c__s" style="margin-top:4px">' + (r.handled === 'done' ? 'טופל' : 'טופל חלקית') + '</span>' : '') + '</div>';
+    var h = '<div class="rcard" data-rsearch-item><div class="c__blk"><span class="c__lbl">מקטלוג 2014</span>' + nm(r) + '<span class="c__s" style="margin-top:4px">קטגוריה לפי Brush: ' + (r.category_brush ? esc(r.category_brush) : 'אין') + '</span>' + (r.handled ? '<span class="c__s" style="margin-top:4px">' + (r.handled === 'done' ? 'טופל' : 'טופל חלקית') + '</span>' : '') + '</div>';
     if (b) {
-      h += '<div class="c__match"><span class="c__lbl">התאמה בקטלוג הקיים: ' + STR[b.strength] + '</span>' + nm(b) + why(r, b) + '</div>';
+      h += SEP + '<div class="c__match"><span class="c__lbl">התאמה בקטלוג הקיים: ' + STR[b.strength] + '</span>' + nm(b) + why(r, b) + '</div>';
     } else {
-      h += '<div class="c__match"><span class="c__lbl">אין התאמה בקטלוג הקיים</span>' + (m0 ? '<span class="c__s">הדומה ביותר: ' + esc(m0.title_en) + ' (' + pct(m0.title) + ')</span>' : '') + '</div>';
+      h += SEP + '<div class="c__match"><span class="c__lbl">אין התאמה בקטלוג הקיים</span>' + (m0 ? '<span class="c__s">הדומה ביותר: ' + esc(m0.title_en) + ' (' + pct(m0.title) + ')</span>' : '') + '</div>';
     }
     var more = r.matches.slice(b ? 1 : 1).filter(function (m) { return m.strength === "candidate"; });
-    if (more.length) h += '<div class="c__more"><span class="c__lbl">מועמדים נוספים</span>' + more.map(function (m) { return '<span class="c__s">' + esc(m.title_en) + ' (' + pct(m.title) + (m.shared ? ', מוסיקה ' + pct(m.jaccard) : '') + ')</span>'; }).join("") + '</div>';
+    if (more.length) h += SEP + '<div class="c__more"><span class="c__lbl">מועמדים נוספים</span>' + more.map(function (m) { return '<span class="c__s">' + esc(m.title_en) + ' (' + pct(m.title) + (m.shared ? ', מוסיקה ' + pct(m.jaccard) : '') + ')</span>'; }).join("") + '</div>';
     var byId = {}; r.music.forEach(function (m) { byId[m.id] = m; });
     var o14 = [], n14 = [];
     (r.pdf || []).forEach(function (x) { var m = x.m && byId[x.m]; if (m && m.object) o14.push(m.object); else n14.push(x.n); });
-    h += '<div class="c__accs">' + acc("14-" + r.id, "2014", o14, n14) + (b ? acc("12-" + r.id, "2012", b.objs || [], b.nofile || []) : '') + '</div>';
+    h += SEP + '<div class="c__accs">' + acc("14-" + r.id, "2014", o14, n14) + (b ? acc("12-" + r.id, "2012", b.objs || [], b.nofile || []) : '') + '</div>';
     return h + '</div>';
   }
   function groups() {
@@ -170,31 +142,31 @@ document.addEventListener("scroll", function (e) {
     return out.sort(function (x, y) { return y.items.length - x.items.length; });
   }
   function gcard(g) {
-    var h = '<div class="rcard"><div class="c__blk"><span class="c__lbl">תרגיל בקטלוג הקיים · ' + g.items.length + ' תרגילים מ־2014</span>' + nm(g.ex) + '</div><div class="c__match"><span class="c__lbl">מקטלוג 2014</span>';
+    var h = '<div class="rcard" data-rsearch-item><div class="c__blk"><span class="c__lbl">תרגיל בקטלוג הקיים · ' + g.items.length + ' תרגילים מ־2014</span>' + nm(g.ex) + '</div>' + SEP + '<div class="c__match"><span class="c__lbl">מקטלוג 2014</span>';
     g.items.sort(function (x, y) { return y.b.title - x.b.title; }).forEach(function (i) {
       h += '<div class="c__blk" style="margin-bottom:var(--gap)"><div class="c__t">' + esc(i.r.title_en) + '</div><div class="c__h">' + esc(i.r.title_he) + '</div><div class="c__s">שם ' + pct(i.b.title) + ' · מוסיקה: ' + i.r.music.length + ' מוסיקות, ' + i.b.shared + ' משותפים' + (i.b.shared ? ' (' + pct(i.b.jaccard) + ')' : '') + '</div></div>';
     });
     return h + '</div></div>';
   }
   function draw() {
-    var out = document.getElementById("out"), q = document.getElementById("q").value.trim(), f = document.getElementById("f").value;
+    var out = document.getElementById("out"), q = curQ, f = document.getElementById("f").value;
     var split = f === "split", all = split ? groups() : rows;
     var list = nearest(split ? all : rows.filter(function (r) { return pass(r, f); }), function (r) { return r.f; }, q);
-    document.getElementById("cnt").textContent = "חיפוש תרגיל · " + list.length + " מתוך " + all.length;
-    out.innerHTML = list.length ? list.map(split ? gcard : card).join("") : '<div class="rempty"><b>לא נמצא</b></div>';
+    out.innerHTML = list.length ? list.map(split ? gcard : card).join("") : q ? "" : empty("אין תרגילים", "", "", EXERCISE);   /* nothing found by a search: the kit's "לא נמצא"; with no search the list itself is empty */
   }
   function start() {
     if (!window.FLOA_AUTH || !FLOA_AUTH.signedIn()) return msg("קטלוג 2014", "צריך להיכנס קודם דרך האפליקציה.", '<a class="rbtn" href="' + HOME + '">לאפליקציה</a>');
     FLOA_AUTH.api("/rest/v1/rpc/me", { method: "POST", json: {} }).then(function (me) {
       if (!me || !me.admin) return msg("קטלוג 2014", "הדף הזה למנהלים בלבד.");
       shell();
-      document.getElementById("out").innerHTML = '<div class="rskel rskel--title"></div>';
+      var o0 = document.getElementById("out"); o0.innerHTML = ""; o0.classList.add("rload"); o0.setAttribute("aria-busy", "true");   /* the kit's loading state: the list's area, empty, until the exercises are here */
       return FLOA_AUTH.api("/rest/v1/rpc/c14_list", { method: "POST", json: {} }).then(function (r) {
+        o0.classList.remove("rload"); o0.removeAttribute("aria-busy");
         rows = (r || []).map(function (x) { x.f = fold([x.title_en, x.title_he, x.category, x.music.map(function (m) { return m.name; }).join(" ")].join(" ")); return x; });
         Array.prototype.forEach.call(document.querySelectorAll("#f option"), function (o) { o.textContent += " (" + (o.value === "split" ? groups().length : rows.filter(function (r) { return pass(r, o.value); }).length) + ")"; });
         draw();
       });
-    }).catch(function () { msg("קטלוג 2014", "לא הצלחנו לטעון. נסו שוב."); });
+    }).catch(function () { msg("לא הצלחנו לטעון", "בדקו את החיבור ונסו שוב.", '<button type="button" class="rbtn" data-retry>ניסיון נוסף</button>'); });
   }
   start();
 })();

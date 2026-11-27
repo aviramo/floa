@@ -50,10 +50,37 @@
   }
   session = read();
 
+  /* ONE word to the page when the session ends or changes hands, so no app has to
+     listen to `storage` or test `.signedOut` itself (ui/docs/app-session.md):
+       window "floa:auth", detail.reason: "expired" (the server said no: a refresh
+       that was refused, or a 401), "signout" (here or in another tab, detail.tab
+       says which), "switch" (another tab signed in as somebody else). */
+  function tell(reason, tab) {
+    setTimeout(function () {
+      try { window.dispatchEvent(new CustomEvent("floa:auth", { detail: { reason: reason, tab: tab || "this" } })); }
+      catch (e) { /* a very old browser: nobody is told */ }
+    }, 0);
+  }
+  function subOf(s) {
+    try { return JSON.parse(atob(s.access_token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).sub || ""; }
+    catch (e) { return ""; }
+  }
+  /* the session ended because the server refused it: wiped here, and said once */
+  function lost() {
+    var had = !!(session && session.refresh_token);
+    keep(null);
+    if (had) tell("expired");
+  }
+
   /* Another tab refreshed the token, or signed out: follow it, rather than
      spending a refresh token that has already been replaced. */
   window.addEventListener("storage", function (e) {
-    if (e.key === KEY) session = read();
+    if (e.key !== KEY) return;
+    var was = session, now = read();
+    session = now;
+    var a = was && was.refresh_token ? subOf(was) : "", b = now && now.refresh_token ? subOf(now) : "";
+    if (a && !b) tell("signout", "other");
+    else if (a && b && a !== b) tell("switch", "other");
   });
 
   /* A session in the address is accepted ONLY when this tab asked for one.
@@ -108,7 +135,10 @@
       headers: { apikey: S.anonKey, "content-type": "application/json" },
       body: JSON.stringify({ refresh_token: spent }),
     }).then(function (r) {
-      if (!r.ok) { keep(null); throw signedOut(); }
+      /* only a refusal ends the session (400, 401: the refresh token is spent or revoked). A 5xx is the
+         sign-in server having a bad moment: the session stays, and the next request tries the refresh again */
+      if (r.status === 400 || r.status === 401) { lost(); throw signedOut(); }
+      if (!r.ok) { var bad = new Error("refresh failed " + r.status); bad.status = r.status; throw bad; }
       return r.json();
     }).then(function (d) {
       keep({
@@ -137,19 +167,33 @@
       var headers = { apikey: S.anonKey, authorization: "Bearer " + t };
       if (opts.json !== undefined) headers["content-type"] = "application/json";
       if (opts.prefer) headers.prefer = opts.prefer;
+      if (opts.headers) for (var k in opts.headers) if (Object.prototype.hasOwnProperty.call(opts.headers, k)) headers[k] = opts.headers[k];   /* e.g. x-floa-live from /live.js */
+      /* opts.profile: the schema of this one request (Accept-Profile and Content-Profile), for a page that /supabase.js gives no
+         schema, e.g. /roster-site.js on a business's own site. A profile header the caller already wrote in opts.headers wins. */
+      if (opts.profile) {
+        var named = {};
+        for (var n in headers) if (Object.prototype.hasOwnProperty.call(headers, n)) named[n.toLowerCase()] = true;
+        if (!named["accept-profile"]) headers["Accept-Profile"] = opts.profile;
+        if (!named["content-profile"]) headers["Content-Profile"] = opts.profile;
+      }
       return fetch(S.url + path, {
         method: opts.method || "GET",
         headers: headers,
         body: opts.json !== undefined ? JSON.stringify(opts.json) : opts.body,
       });
     }).then(function (r) {
-      if (r.status === 401) { keep(null); throw signedOut(); }
+      if (r.status === 401) { lost(); throw signedOut(); }
       if (!r.ok) {
         var e = new Error("request failed " + r.status);
         e.status = r.status;
         throw e;
       }
       return r.status === 204 ? null : r.json().catch(function () { return null; });
+    }).catch(function (e) {
+      /* a rejection with `.signedOut` carries the request it refused (`.req`), so a write that was
+         typed is not lost: the kit (/app.js) keeps it and sends it after the sign-in */
+      if (e && e.signedOut) { var x = signedOut(); x.req = { path: path, opts: opts }; throw x; }
+      throw e;
     });
   }
 
@@ -165,6 +209,7 @@
   function signOut() {
     var t = session && session.access_token;
     keep(null);
+    if (t) tell("signout", "this");
     if (!t) return Promise.resolve();
     return fetch(S.url + "/auth/v1/logout", {
       method: "POST",

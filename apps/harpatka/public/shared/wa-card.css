@@ -1,0 +1,12 @@
+/* כרטיס שיחה בוואטסאפ: רכיב אחד לפופאפים בדף הבית, בביודנסה ובאזור האישי. הסימון: CONFIG.waCard. בירוק, כמו כפתורי הוואטסאפ של המנחים */
+.wacard{ display:flex; align-items:center; gap:12px; margin-top:10px; padding:8px 14px 8px 16px; border-radius:var(--r, 4px); background:var(--olive); color:var(--paper, #fff); text-decoration:none; box-sizing:border-box; width:100%; }
+.wacard .waimgs{ display:flex; flex:0 0 auto; }
+.wacard img{ width:52px; height:52px; border-radius:50%; object-fit:cover; border:2px solid rgba(255,253,249,.85); flex:0 0 auto; }
+.wacard img + img{ margin-inline-start:-14px; }
+.wacard .wat{ flex:1; display:flex; flex-direction:column; line-height:1.25; text-align:start; }
+.wacard .wat b{ font-size:1.12rem; font-weight:800; }
+.wacard .wat small{ font-size:.9rem; font-weight:600; opacity:.92; }
+.wacard svg{ width:30px; height:30px; flex:0 0 auto; }
+
+/* גודל מינימום (5.11.26) */
+.wacard .wat small { font-size: 1rem; }

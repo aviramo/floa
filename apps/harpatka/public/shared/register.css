@@ -1,0 +1,227 @@
+/* פופאפ הרשמה משותף (עמוד הבית, v6, ביודנסה): עיצוב הפופאפ והטופס. נטען מ-shared/register.css */
+@import url('meeting-box.css?v=2');
+@import url('person-form.css?v=1');
+@import url('wa-card.css?v=1');
+.modal{ position:fixed; inset:0; z-index:60; display:flex; align-items:flex-start; justify-content:center; padding:0; background:rgba(30,25,20,.78); opacity:0; transition:opacity .3s ease; overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
+.modal[hidden]{ display:none; }
+.modal.open{ opacity:1; }
+#contactModal [data-su="done"] h2{ padding-inline:2rem; font-size:1.5rem; }
+.modal-box{ position:relative; width:100%; max-width:30rem; margin:0 auto auto; background:var(--paper); border-radius:0; padding:calc(1.6rem + env(safe-area-inset-top)) 1.25rem 2.6rem; text-align:center; transform:translateY(-110%); transition:transform .34s cubic-bezier(.22,.8,.2,1); will-change:transform; }
+.modal.open .modal-box{ transform:none; }
+/* מגירה מלמעלה: נפתחת מלמעלה, נסגרת למעלה (החלקה למעלה, לחיצה בחוץ או Esc); הפס בתחתית במקום כפתור סגירה */
+.modal-close{ display:none !important; }
+.modal-grab{ position:absolute; left:0; right:0; bottom:0; height:2.2rem; display:grid; place-items:center; cursor:grab; touch-action:none; }
+.modal-grab i{ width:2.7rem; height:.3rem; border-radius:var(--r, 4px); background:rgba(63,56,47,.28); }
+.modal-close{ position:absolute; top:-3.6rem; left:50%; margin-left:-1.3rem; width:2.6rem; height:2.6rem; border-radius:50%; background:var(--paper); color:var(--ink); font-size:1.6rem; line-height:1; box-shadow:0 4px 14px rgba(0,0,0,.25); }   /* מעל הפופאפ, במרכז, עם רווח ממנו */
+.su-seg{ display:flex; gap:.4rem; flex-shrink:0; }
+.su-seg label{ position:relative; display:block; }
+.su-seg input{ position:absolute; inset:0; opacity:0; margin:0; cursor:pointer; }
+.su-seg span{ display:block; text-align:center; padding:.7rem .8rem; border:2px solid var(--sand); border-radius:var(--r, 4px); background:var(--paper); font-size:1.05rem; font-weight:600; color:var(--ink); white-space:nowrap; }
+.su-seg input:checked + span{ border-color:var(--terra); background:var(--terra); color:#fff; }
+.su-seg input:focus-visible + span{ outline:3px solid var(--plum); outline-offset:2px; }
+.su-grid{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:.6rem .5rem; align-items:start; }
+.su-cell{ min-width:0; }
+.su-wide{ grid-column:1 / -1; }
+.su-names{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:.5rem; }
+.su-cell .su-err{ text-align:start; }   /* הודעת השגיאה מתחת לשדה, בקו של הטקסט */
+.su-grid > *{ min-width:0; }
+.su-seg.eq{ flex:1 1 0; min-width:0; flex-shrink:1; }
+.su-seg.eq label{ flex:1 1 0; min-width:0; }
+.su-seg.eq span{ padding-inline:.3rem; }
+.su-seg.bad span{ border-color:#B85C40; }
+.su-err{ color:#A9533A; font-size:.82rem; font-weight:600; margin-top:.25rem; line-height:1.25; }
+.su-err:empty{ display:none; }
+.su-hp{ position:absolute; width:1px; height:1px; margin:-1px; padding:0; border:0; opacity:0; overflow:hidden; clip-path:inset(50%); pointer-events:none; }   /* שדה נגד בוטים: מוסתר במקומו (לא 9999px שמאלה, שיצר גלילה אופקית בפופאפ) */
+.btn-green{ display:inline-block; background:#686A48; color:#FFFDF9; font-weight:700; font-size:1.05rem; padding:.8rem 1.6rem; border-radius:var(--r, 4px); }
+.modal-box:focus{ outline:none; }
+.modal-close{ border-radius:9999px; padding:0; border:0; cursor:pointer; display:grid; place-items:center; }
+.modal-close:focus:not(:focus-visible){ outline:none; }
+.modal-close:focus-visible{ outline:2px solid #C96F52; outline-offset:2px; }
+
+/* כשפופאפ פתוח: דף הבית מאחור לא נגלל (רק הפופאפ עצמו, למשל כשהמקלדת פתוחה) */
+html.modal-lock{ overflow-x:hidden; overflow-y:scroll; overscroll-behavior:none; }   /* פס הגלילה של הדף נשאר במקומו כשפופאפ פתוח (הגוף מקובע ב-position:fixed ולכן אין מה לגלול), כדי שהתצוגה לא תזוז הצידה */
+html.modal-lock body{ position:fixed; left:0; right:0; width:100%; overflow:hidden; overscroll-behavior:none; touch-action:none; }
+html.modal-lock .modal{ touch-action:pan-y; }
+
+
+/* טופס מינימליסטי (v7: window.REGISTER_MIN, מוגדר לפני הסקריפט): בלי משפט ההסבר, פרטי המפגש בשורה קטנה אחת */
+html.reg-min [data-su="formWrap"] > p.muted{ display:none; }
+html.reg-min .modal-box{ padding:calc(1.4rem + env(safe-area-inset-top)) 1.1rem 2.4rem; }
+
+.su-title{ font-family:Rubik,sans-serif; font-weight:700; font-size:1.45rem; line-height:1.2; color:var(--ink); margin:0 0 .7rem; }
+
+/* אחרי ההרשמה: התוכן נסגר מלמעלה (קיפול), הכפתור הופך ל"נשמר זמנית", ואז נחשפים טקסט וכפתור תשלום */
+.su-fold{ display:grid; grid-template-rows:1fr; opacity:1; transition:grid-template-rows .55s cubic-bezier(.22,.8,.2,1), opacity .4s ease; }
+.su-fold > div{ min-height:0; overflow:hidden; }
+.su-fold.shut{ grid-template-rows:0fr; opacity:0; }
+.su-after.shut{ pointer-events:none; }
+.su-after > div{ padding-top:1rem; }
+.su-melink{ display:block; width:100%; box-sizing:border-box; text-align:center; margin-top:.6rem; padding:.3rem 0; font-weight:700; font-size:1rem; color:var(--terra); text-decoration:underline; background:transparent; }
+.su-paynote{ font-size:1.1rem; font-weight:700; line-height:1.45; color:var(--ink); margin:0 0 1rem; text-align:center; }
+.su-paynote .su-regd{ display:block; color:var(--terra); font-family:Rubik,sans-serif; font-weight:700; font-size:1.25rem; margin-bottom:.15rem; }   /* "נרשמתם למפגש": שורה משלו בכתום, מעל הסבר המצב */
+[data-su="btn"]{ transition:opacity .25s ease, background-color .4s ease; }
+[data-su="btn"].swap{ opacity:0; }
+[data-su="btn"].saved, [data-su="btn"]:disabled.saved{ opacity:1 !important; background:#E4DBCC; color:#8C8374; box-shadow:none; cursor:not-allowed; pointer-events:none; }
+@media (prefers-reduced-motion:reduce){ .su-fold, [data-su="btn"]{ transition:none; } }
+
+/* משתתף מחובר: בלי שדות, רק "הפרטים שלכם כבר שמורים" ושם המחובר; ואורחים רואים קישור התחברות עם גוגל */
+.su-member{ display:none; text-align:center; padding:.4rem 0 .2rem; }
+html.reg-member .su-grid{ display:none; }
+html.reg-member .su-member{ display:block; }
+html.reg-member .su-glink{ display:none; }
+.su-memberp{ margin:0; color:var(--ink); font-size:1.05rem; }
+.su-membernm{ margin:.7rem 0 0; color:var(--ink); font-size:1rem; line-height:1.45; }
+.su-membernm[hidden]{ display:none; }
+.su-who{ margin:.35rem 0 0; color:var(--terra); font-weight:800; font-size:1.3rem; }
+.su-glink{ display:block; text-align:center; margin-top:.9rem; font-weight:700; font-size:1rem; color:#0F3A4D; text-decoration:underline; text-underline-offset:3px; }   /* הכחול של כרטיס האזור האישי בדף הבית */
+
+/* יציאה מהחשבון: שאלה קצרה בלחיצה על השם בבאנר */
+.su-lgwho{ margin:0; font-weight:800; font-size:1.15rem; }
+.su-lgq{ margin:6px 0 16px; color:var(--ink); }
+.su-gbtn{ display:flex; justify-content:center; min-height:44px; margin-bottom:.4rem; }
+/* "הרשמה בלי חשבון גוגל" בפופאפ הכניסה (רק בהרשמה), וקישור "נרשמתם בעבר" מוסתר אחרי שהכניסה עם גוגל נכשלה */
+.su-galt{ display:block; width:fit-content; margin:.5rem auto 0; padding:.45rem .6rem; color:inherit; font-weight:700; font-size:.98rem; text-decoration:underline; text-underline-offset:4px; }
+.su-galt[hidden]{ display:none; }
+html.gl-fail .su-glink{ display:none !important; }
+.su-lgyes, .su-lgno{ display:block; width:100%; border-radius:var(--r, 4px); padding:.8rem 1rem; font:inherit; font-weight:800; font-size:1.05rem; cursor:pointer; }
+.su-lgyes{ background:var(--terra); color:#fff; border:0; margin-bottom:8px; }
+.su-lgno{ background:transparent; color:var(--ink); border:1px solid var(--sand); }
+
+/* אחרי ההרשמה: כפתור התשלום בירוק (כמו באזור האישי), ומתחתיו "רוצים לשלם בדרך אחרת?". הכפתור נשאר עד שהתשלום התקבל */
+.su-after a[data-paybox]{ background:#2F7D4F !important; box-shadow:none; }
+.su-payfold{ display:grid; grid-template-rows:1fr; transition:grid-template-rows .4s ease, opacity .4s ease; }
+.su-payfold > div{ overflow:hidden; min-height:0; }
+.su-payfold.closing{ grid-template-rows:0fr; opacity:0; }
+.su-paylinks{ display:flex; flex-direction:column; align-items:center; gap:.2rem; margin-top:.6rem; }
+.su-lnk{ border:0; background:none; padding:.45rem .5rem; font:inherit; font-size:1.05rem; font-weight:700; color:#2F7D4F; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }   /* בירוק כמו כפתור התשלום */
+a.su-lgyes{ text-align:center; text-decoration:none; box-sizing:border-box; }
+@media (prefers-reduced-motion:reduce){ .su-payfold{ transition:none; } }
+
+/* פופאפ ההרשמה קומפקטי (29.10.26): פחות גובה בכותרת, בשדות ובכפתור */
+.modal-box{ padding:calc(.9rem + env(safe-area-inset-top)) 1.1rem 1.5rem; }
+html.reg-min .modal-box{ padding:calc(.9rem + env(safe-area-inset-top)) 1.1rem 1.5rem; }
+.su-title{ font-size:1.02rem; font-weight:800; color:var(--terra); margin:0 0 .15rem; }   /* שם המפגש: קטן יותר, מודגש ובכתום המותג */
+.su-seg span{ padding:.5rem .8rem; font-size:1rem; border-radius:var(--r, 4px); }
+.su-grid{ gap:8px 12px; }
+.su-names{ gap:.45rem; }
+.su-glink{ margin-top:.55rem; font-size:.92rem; }
+[data-su="btn"]{ padding-top:.6rem !important; padding-bottom:.6rem !important; font-size:1.1rem !important; margin-top:.7rem !important; }
+.su-after > div{ padding-top:.6rem; }
+
+/* טופס ההרשמה (31.10.26): שורה 1: שם פרטי ושם משפחה ברוחב שווה (50 / 50); שורה 2: טלפון (40) וגיל + מגדר יחד (60). רשת של 10 עמודות */
+.su-grid{ grid-template-columns:repeat(10, minmax(0,1fr)); }
+.su-grid > .su-cell{ grid-column:span 5; }
+.su-grid > .su-wide{ grid-column:1 / -1; }
+.su-grid > .su-cell:has(input[type="tel"]){ grid-column:span 4; }
+.su-grid > .su-ag{ grid-column:span 6; }
+.su-ag{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px; }
+
+/* פופאפ האזור האישי בדף הבית: עולה מלמטה ומציג את דף האזור האישי (iframe) בלי לעבור לדף אחר */
+.mesheet{ position:fixed; inset:0; z-index:70; display:flex; align-items:flex-end; justify-content:center; pointer-events:none; }
+.mesheet[hidden]{ display:none; }
+.mesb{ position:absolute; inset:0; background:transparent; pointer-events:auto; }   /* בלי שכבה כהה: רק חוסם לחיצות על מה שמתחת */
+.mesheet.open .mesb{ opacity:1; }
+.mesp{ position:relative; width:100%; max-width:34rem; height:calc(100dvh - var(--tbtop, 0px)); background:linear-gradient(120deg,#064452 0%,#0A6170 55%,#0F8A93 100%); border-radius:0; box-shadow:none; transform:translateY(105%); transition:transform .34s cubic-bezier(.2,.8,.2,1); display:flex; flex-direction:column; overflow:hidden; pointer-events:auto; }
+.mesheet.open .mesp{ transform:none; }
+.mesgrab{ flex:0 0 auto; height:26px; display:flex; align-items:center; justify-content:center; cursor:grab; touch-action:none; border:0; background:transparent; width:100%; }
+.mesgrab i{ display:block; width:44px; height:5px; border-radius:var(--r, 4px); background:rgba(255,253,249,.55); }
+.mesf{ flex:1 1 auto; width:100%; border:0; background:transparent; }
+@media (prefers-reduced-motion:reduce){ .mesp, .mesb{ transition:none; } }
+
+
+.su-ame{ display:block; text-align:center; margin-top:.65rem; font-weight:700; font-size:1rem; color:#0F3A4D; text-decoration:underline; text-underline-offset:3px; }   /* כניסה לאזור האישי: קישור בכחול כרטיס האזור האישי */
+
+/* פופאפ "לשלם בדרך אחרת": כרטיסי וואטסאפ עם התמונות של המנהלים (בכתום כמו כפתורי הוואטסאפ בכרטיסי המנחים) */
+
+/* מחוברים עם גוגל בלי משתתף מקושר: הפופאפ מבקש רק את הטלפון (ומחבר אליו את החשבון) */
+.su-notme{ background:none; border:0; padding:0; font:inherit; color:var(--ink); text-decoration:underline; cursor:pointer; }
+.su-phonehint{ display:none; margin:.2rem 0 .7rem; text-align:center; font-size:1rem; line-height:1.45; color:var(--ink); }
+html.reg-phone .su-phonehint{ display:block; }
+html.reg-join .su-glink{ display:none; }
+html.reg-phone .su-grid > .su-cell:not(:has(input[type="tel"])){ display:none; }
+html.reg-phone .su-grid{ grid-template-columns:1fr; }
+html.reg-phone .su-grid > .su-cell:has(input[type="tel"]){ grid-column:1 / -1; }
+html.reg-phone .su-glink{ display:none; }
+/* אורח: שלב טלפון בלבד (בלי חובת גוגל), עם קישור כניסה עם גוגל; "המשך" פותח את שאר השדות */
+.su-gphint{ display:none; margin:.2rem 0 .7rem; text-align:center; font-size:1rem; line-height:1.45; color:var(--ink); }
+html.reg-gphone .su-gphint{ display:block; }
+html.reg-gphone .su-grid > .su-cell:not(:has(input[type="tel"])){ display:none; }
+html.reg-gphone .su-grid{ grid-template-columns:1fr; }
+html.reg-gphone .su-head{ display:none; }   /* שלב הטלפון: בלי פרטי המפגש, הם מופיעים בשלב הבא רגע לפני השמירה */
+html.reg-gphone .su-glink{ display:flex; align-items:center; justify-content:center; gap:.6rem; width:100%; box-sizing:border-box; margin:.9rem 0 0; padding:.7rem 1rem; border:0; border-radius:var(--r,4px); background:#4285F4; color:#fff; font-weight:700; font-size:1.05rem; text-decoration:none; }
+html.reg-gphone .su-glink::before{ content:""; width:28px; height:28px; box-sizing:border-box; padding:4px; border-radius:2px; flex:0 0 auto; background-color:#fff; background-origin:content-box; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath fill='%23EA4335' d='M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z'/%3E%3Cpath fill='%234285F4' d='M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.7 6c4.5-4.2 6.9-10.3 6.9-17.7z'/%3E%3Cpath fill='%23FBBC05' d='M10.5 28.7c-.5-1.5-.8-3-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C.9 16.4 0 20.100 0 24s.9 7.600 2.600 10.800l7.900-6.100z'/%3E%3Cpath fill='%2334A853' d='M24 48c6.500 0 12-2.100 16-5.800l-7.700-6c-2.100 1.400-4.900 2.300-8.300 2.300-6.300 0-11.600-4.100-13.500-9.800l-7.900 6.100C6.500 42.600 14.600 48 24 48z'/%3E%3C/svg%3E"); background-position:center; background-size:contain; background-repeat:no-repeat; }
+html.reg-gphone .su-grid > .su-cell:has(input[type="tel"]){ grid-column:1 / -1; }
+/* השלמת פרטים אחרי חיבור הטלפון (31.10.26): הטלפון כבר ידוע ולכן מוסתר, הגיל והמגדר בשורה מלאה */
+.su-dethint{ display:none; margin:.2rem 0 .7rem; text-align:center; font-size:1rem; line-height:1.45; color:var(--ink); }
+html.reg-details .su-dethint{ display:block; }
+html.reg-details .su-grid > .su-cell:has(input[type="tel"]){ display:none; }
+html.reg-details .su-grid > .su-ag{ grid-column:1 / -1; }
+html.reg-details .su-glink{ display:none; }
+
+/* כניסה עם גוגל כבויה (CONFIG.googleLogin = false): בלי קישור "נרשמתם בעבר", בלי כרטיס האזור האישי */
+html.no-gl .su-glink, html.no-gl .su-ame{ display:none !important; }   /* כרטיס "האזור האישי שלכם" מוצג תמיד; כשהכניסה עם גוגל כבויה הלחיצה עליו לא עושה כלום (register.js) */
+
+/* דסקטופ (31.10.26): פופאפים במרכז המסך בגודל התוכן (לא מלמעלה), והאזור האישי כחלון צד שנכנס מימין; לחיצה מחוץ סוגרת */
+@media (min-width:760px){
+  .modal{ align-items:center; padding:2rem 1rem; }
+  .modal-box, html.reg-min .modal-box{ border-radius:var(--r, 4px); margin:auto; max-width:30rem; padding:1.6rem 1.5rem 1.8rem; box-shadow:0 24px 60px rgba(0,0,0,.25); transform:translateY(10px) scale(.98); opacity:0; transition:transform .22s ease, opacity .22s ease; }
+  .modal.open .modal-box{ transform:none; opacity:1; }
+  .modal-grab{ display:none; }
+  .mesp{ position:absolute; top:var(--tbtop, 0px); right:0; bottom:0; height:auto; width:30rem; max-width:92vw; box-shadow:-12px 0 40px rgba(0,0,0,.25); transform:translateX(105%); }
+  .mesheet.open .mesp{ transform:none; }
+  .mesgrab{ display:none; }
+}
+.su-crnote{ margin:0 0 .6rem; font-size:.98rem; line-height:1.45; font-weight:700; color:var(--ink); text-align:center; }   /* הערה על הקרדיט מעל כפתור התשלום (1.11.26) */
+.su-crnote[hidden]{ display:none; }
+.su-payfold[hidden], .su-payfold [hidden]{ display:none !important; }   /* אחד משני כפתורי התשלום בכל שלב: מחלקת התצוגה של הכפתור (block) דרסה את hidden */
+.su-after button[data-su="paycredit"]{ background:#2F7D4F !important; box-shadow:none; }   /* כמו כפתור הפייבוקס (v9: הזית של הפלטה) */
+.su-title{ margin:0 0 .7rem; }   /* שם ברירת המחדל כשאין מפגש; עם מפגש השם בתוך המסגרת */
+
+/* גדלי טקסט בפופאפ (5.11.26): כל הטקסטים הקטנים עולים לגודל מינימום, והכול ב-rem כדי שיגדל עם שאר האתר */
+.su-err { font-size: .95rem; }
+.su-galt, .su-crnote { font-size: 1.05rem; }
+.su-title { font-size: 1.15rem; }
+.su-glink, .su-ame, .su-phonehint, .su-dethint { font-size: 1.05rem; }
+
+/* פופאפ דף הביודנסה (8.11.26): מסך מלא בכל הרוחבים, עולה מלמטה; בדסקטופ בלי פס אחיזה (הדף שבפנים מציג את הכפתור "חזרה לדף הבית") */
+.mesheet.full .mesp{ max-width:none; }
+@media (min-width:760px){
+  .mesheet.full .mesp{ position:relative; top:auto; right:auto; bottom:auto; height:calc(100dvh - var(--tbtop, 0px)); width:100%; max-width:none; box-shadow:none; transform:translateY(105%); }
+  .mesheet.full.open .mesp{ transform:none; }
+}
+/* אורח אחרי "המשך": כפתור חזרה לשלב הטלפון */
+.su-gback{ display:none; margin:.5rem auto 0; padding:.45rem .8rem; border:0; background:none; font:inherit; font-weight:700; font-size:.98rem; color:var(--ink); text-decoration:underline; text-underline-offset:4px; cursor:pointer; }
+html.reg-gdet .su-gback{ display:block; }
+html.reg-phone .su-head{ display:none; }   /* שלב הטלפון (מחוברים עם גוגל): בלי פרטי המפגש, הם מופיעים בשלב הבא */
+/* אורח: "המשך" ראשון, ואחריו "או" וכפתור גוגל */
+.su-or{ display:none; align-items:center; gap:.8rem; margin:.8rem 0 0; color:var(--muted,#6b6254); font-size:.95rem; }
+.su-or::before, .su-or::after{ content:""; flex:1 1 0; height:1px; background:currentColor; opacity:.35; }
+html.reg-gphone .su-or{ display:flex; }
+html.reg-gphone .su-glink{ margin-top:.8rem; }
+
+/* פופאפ ההרשמה נמוך יותר (11.11.26): בלי שורה ריקה של הודעת שגיאה בין שורות השדות, תיבת המפגש קומפקטית, ופחות רווח מעל הכפתור */
+.su-grid > .su-wide:not(:has(.su-err:not(:empty))){ display:none; }
+#contactModal .mbox{ margin-bottom:.45rem; }
+#contactModal .mbox-in{ padding:.4rem .7rem .5rem; gap:.05rem; }
+#contactModal [data-su="btn"]{ margin-top:.55rem; }
+
+/* נפתח מהאזור האישי (טלפון בלבד): הכפתור "כניסה לאזור האישי" באותו כחול של כרטיס האזור האישי */
+html.reg-area #contactModal [data-su="btn"]{ background:linear-gradient(120deg,#064452 0%,#0A6170 55%,#0F8A93 100%) !important; color:#FFFDF9 !important; box-shadow:0 12px 26px -12px rgba(6,68,82,.55) !important; }
+
+/* המקום נשמר: כפתור השליחה מוסתר (אין צורך ב"נשמר זמנית") */
+[data-su="btn"].gone{ display:none !important; }
+html.no-gl .su-or, html.gl-fail .su-or { display: none !important; }   /* אין כניסה עם גוגל (דפדפן של אפליקציה או תקלה): בלי מפריד "או" בשלב הטלפון */
+
+/* שלב הפרטים של אורח: שדה הטלפון מוסתר, ובמקומו שורה "מספר הטלפון להרשמה: ..." עם חזרה לתיקון */
+.su-gbrow{ display:none; align-items:center; justify-content:center; flex-wrap:nowrap; gap:.4rem 1.1rem; margin:.7rem 0 0; white-space:nowrap; }
+html.reg-gdet .su-gbrow{ display:flex; }
+.su-gph{ font-size:.95rem; color:var(--ink); }
+.su-gbrow .su-gback{ display:inline-block !important; margin:0; padding:.3rem .2rem; }
+html.reg-gdet .su-grid > .su-cell:has(input[type="tel"]){ display:none; }
+html.reg-gdet .su-grid > .su-ag{ grid-column:1 / -1; }   /* בלי טלפון: גיל ומגדר ברוחב מלא */
+.su-gbrow .su-gph, .su-gbrow .su-gback{ font-size:.95rem; line-height:1.5; padding-block:0; margin:0; display:inline-flex; align-items:center; }
+.su-gbrow .su-gback{ padding-block:.35rem !important; }
+.su-gbrow .su-gph{ padding-block:.35rem; }
+
+/* רווח בין כפתור התשלום לפס הסגירה, כמו הרווח בין הפס לקצה הפופאפ */
+.su-after .paychoose{ margin-bottom:1.1rem; }

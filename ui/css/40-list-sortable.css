@@ -1,0 +1,14 @@
+/* Sortable list: ui/docs/list.md "רשימה שאפשר לסדר" */
+[data-rsort-grip], [data-rsort-grip] * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+[data-rsort-grip="item"] { touch-action: pan-y; }
+[data-rsort-grip="handle"] { touch-action: none; cursor: grab; }
+html:has([data-rsort="live"]) body, html:has([data-rsort="live"]) body * { cursor: grabbing; }
+[data-rsort="live"] [data-rsort-place] { transform: translate(var(--rsort-dx, 0px), var(--rsort-dy, 0px)); transition: transform var(--t-base) var(--ease); }
+[data-rsort="live"] [data-rsort-slot] { visibility: hidden; transform: none; transition: none; }
+:where(.rsort-ghost) { border: 0; padding: 0; background: var(--page); color: var(--text); }
+.rsort-ghost { position: fixed; inset: auto; inset-inline-start: var(--rsort-s); inset-block-start: var(--rsort-y); box-sizing: border-box; width: var(--rsort-w); height: var(--rsort-h); max-width: none; max-height: none; margin: 0; overflow: visible; z-index: var(--z-drag); pointer-events: none; box-shadow: var(--shadow-lg); transition: none; transform: translate(var(--rsort-dx, 0px), var(--rsort-dy, 0px)); visibility: visible; }
+.rsort-ghost[data-rsort="held"] { box-shadow: var(--shadow-lg); }
+.rsort-ghost[data-rsort="held"][aria-current="true"]:dir(rtl) { box-shadow: inset calc(var(--mark-w) * -1) 0 0 var(--rcard-mark, var(--primary)), var(--shadow-lg); }
+.rsort-ghost[data-rsort="held"][aria-current="true"]:dir(ltr) { box-shadow: inset var(--mark-w) 0 0 var(--rcard-mark, var(--primary)), var(--shadow-lg); }
+.rlist-live { position: fixed; width: 1px; height: 1px; margin: 0; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.rlist-probe { position: fixed; inset-block-start: 0; inset-inline-start: 0; box-sizing: content-box; width: var(--gap-tight); height: var(--fab); padding: var(--gap) 0 var(--bar-b, 0px) 0; border: 0; margin: 0; visibility: hidden; pointer-events: none; animation-duration: var(--hold); transition-duration: var(--t-base); }

@@ -1,0 +1,25 @@
+/* Search field and search in the header: ui/docs/search.md */
+.rfield--search, .rfield--search:has(> .rf-end:not(:empty)) { display: grid; grid-template-columns: var(--icon) minmax(0, 1fr) var(--icon); column-gap: var(--gap); align-items: center; min-height: var(--ctl); }
+.rfield--search::before { content: ""; grid-column: 1; grid-row: 1; }
+.rfield--search > input, .rfield.rfield--search:has(> .rf-end:not(:empty)) > input { grid-column: 2; grid-row: 1; min-width: 0; height: var(--ctl); padding: 0; border-bottom-color: transparent; text-align: center; }
+.rfield--search > input:focus { border-bottom-color: transparent; box-shadow: none; }
+.rfield--search > input::placeholder { color: var(--rf-ink-2); }
+.rfield--search:has(> .rf-end:not(:empty)) > .rf-end { grid-column: 3; align-self: center; padding: 0; }
+.rfield--search:has(> input:placeholder-shown) > .rf-end > .rf-clear { display: none; }
+.rhead__q { display: none; }
+.rhead__q::-webkit-search-cancel-button, .rhead__q::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
+.rhead__q { font-weight: var(--fw-regular); }
+.rhead__q::placeholder { color: var(--text-muted); font: inherit; opacity: 1; }
+.rhead:has([data-rsearch][aria-expanded="true"]) .rhead__text > :not(.rhead__q) { display: none; }
+.rhead:has([data-rsearch][aria-expanded="true"]) .rhead__q { display: block; flex: 1 1 auto; min-width: 0; width: auto; order: -1; text-align: start; }
+[data-rsearch] > svg:last-of-type, [data-rsearch][aria-expanded="true"] > svg:first-of-type { display: none; }
+[data-rsearch][aria-expanded="true"] > svg:last-of-type { display: block; }
+.rbtn--icon[data-rsearch][aria-expanded="true"]:not(:active)::before { background: transparent; }
+@media (hover: hover) { .rbtn--icon[data-rsearch][aria-expanded="true"]:hover::before { background: color-mix(in srgb, var(--text) var(--press-shade), transparent); } }
+.rhead[data-rsearch-tight]:has([data-rsearch][aria-expanded="true"]) .rhead__acts > :not([data-rsearch]), .rhead[data-rsearch-tight]:has([data-rsearch][aria-expanded="true"]) > .rhead__live, .rhead[data-rsearch-tight]:has([data-rsearch][aria-expanded="true"]) > .rbtn:not(:first-child, [data-rsearch], [data-rappmenu]) { display: none; }
+[data-rsearch-item][hidden] { display: none; }
+[data-rsearch-empty] { display: none; }
+[data-rsearch-q]:not(:has([data-rsearch-item]:not([hidden]), .racc[data-rsearch-hit])) > [data-rsearch-empty] { display: flex; }
+[data-rsearch-q] .rempty:not([data-rsearch-empty]) { display: none; }
+[data-rsearch-q] .racc:not([data-rsearch-hit]):not(:has([data-rsearch-item]:not([hidden]))) { display: none; }
+[data-rsearch-q] .rgrid:not(:has(> :not([hidden]))) { display: none; }

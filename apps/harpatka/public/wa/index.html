@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="robots" content="noindex, nofollow" />
+<title>שליחת הודעות</title>
+<style>
+:root{--bg:#FFF5E8;--ink:#2C231D;--muted:#7a6a5c;--line:#e6d6c2;--green:#4E7D2C;--terra:#C8411B;--paper:#FFFDF9}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Assistant,system-ui,sans-serif}
+header{position:sticky;top:0;background:var(--bg);padding:12px 16px;border-bottom:1px solid var(--line);z-index:2}
+h1{margin:0 0 4px;font-size:1.15rem}
+.sub{font-size:.85rem;color:var(--muted)}
+.bar{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
+select,button{font:inherit}
+.app{border:1px solid var(--line);background:var(--paper);padding:6px 8px;border-radius:6px;color:var(--ink)}
+ul{list-style:none;margin:0;padding:0 0 28px}
+li a{display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 16px;border-bottom:1px solid var(--line);text-decoration:none;color:var(--ink)}
+li a:active{background:#f6e7d2}
+.nm{flex:1;min-width:0;font-weight:600;font-size:1.05rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ph{color:var(--muted);font-size:.9rem;direction:ltr}
+.ck{width:28px;height:28px;border:1px solid var(--line);border-radius:6px;display:grid;place-items:center;color:#fff;font-weight:700}
+li.done .ck{background:var(--green);border-color:var(--green)}
+li.done .nm{color:var(--muted)}
+#gate input{width:100%;padding:12px;font-size:1rem;border:1px solid var(--line);background:var(--paper);border-radius:6px;direction:ltr;text-align:left}
+#gate button{margin-top:12px;width:100%;padding:12px;border:0;background:var(--terra);color:#fff;border-radius:6px;font-weight:700}
+#err{color:var(--terra);margin-top:8px;min-height:1.2em}
+.reset{background:none;border:0;color:var(--muted);text-decoration:underline;padding:0}
+#gate{padding:32px 16px;max-width:24rem;margin:auto}
+#gate input{width:100%;padding:12px;font-size:1rem;border:1px solid var(--line);background:var(--paper);border-radius:6px;direction:ltr;text-align:left}
+#gate button{margin-top:12px;width:100%;padding:12px;border:0;background:var(--terra);color:#fff;border-radius:6px;font-weight:700}
+#err{color:var(--terra);margin-top:8px;min-height:1.2em}
+.fl{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.fl button{border:1px solid var(--line);background:var(--paper);border-radius:6px;padding:6px 10px;color:var(--ink);min-height:36px}
+.fl button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+li{display:flex;align-items:stretch;border-bottom:1px solid var(--line)}
+li a{flex:1;min-width:0;border-bottom:0}
+li .ck,li .sk{width:44px;min-height:56px;border:0;border-inline-start:1px solid var(--line);background:none;display:grid;place-items:center;font-size:1.1rem;color:var(--muted);padding:0}
+li.sent .ck{background:#e6f1dc;color:var(--green)}
+li.skip .sk{background:#f6d9d0;color:var(--terra)}
+li.sent .nm,li.sent .ph{color:var(--muted)}
+li.skip .nm{color:var(--muted);text-decoration:line-through}
+.ed{margin-top:8px}
+.ed textarea{width:100%;min-height:130px;padding:10px;font:inherit;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink)}
+.ed .row{display:flex;gap:8px;margin-top:6px}
+.ed button{padding:8px 14px;border-radius:6px;border:1px solid var(--line);background:var(--paper);font:inherit}
+.ed .save{background:var(--green);color:#fff;border-color:var(--green)}
+#q{width:100%;margin-top:0;padding:10px 12px;font:inherit;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink)}
+.cnt2{font-size:.8rem;color:var(--muted);white-space:nowrap}
+#gbtn{margin-top:16px;display:flex;justify-content:center}
+</style>
+</head>
+<body>
+<div id="gate">
+  <h1>שליחת הודעות</h1>
+  <p class="sub">כניסה עם חשבון הגוגל של הבעלים</p>
+  <div id="gbtn"></div>
+  <div id="err"></div>
+</div>
+<div id="app" hidden>
+  <header>
+    <input id="q" type="search" aria-label="חיפוש לפי שם או טלפון" autocomplete="off" />
+    <div class="sub" id="cnt" style="margin-top:6px"></div>
+    <div class="bar">
+      <select id="appSel" class="app" aria-label="אפליקציית וואטסאפ"><option value="biz">וואטסאפ עסקי</option><option value="reg">וואטסאפ רגיל</option></select>
+      <button class="reset" id="editBtn">עריכת ההודעה</button>
+    </div>
+    <div class="fl" id="flt" role="group" aria-label="סינון">
+      <button data-f="all">הכל</button><button data-f="unsent">לא נשלח</button><button data-f="sent">נשלח</button><button data-f="skip">לא לשלוח שוב</button>
+    </div>
+    <div class="ed" id="ed" hidden>
+      <textarea id="msgTa" aria-label="נוסח ההודעה"></textarea>
+      <div class="row"><button class="save" id="msgSave">שמירה</button><button id="msgCancel">סגירה</button></div>
+    </div>
+  </header>
+  <ul id="list"></ul>
+</div>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="../shared/config.js"></script>
+<script>
+/* המספרים, הסימונים ונוסח ההודעה נשמרים בסכמה harpatka בפרויקט ה-Supabase של floa (פונקציות harpatka_wa_*, רק לבעלים לפי האימייל בכניסה עם גוגל).
+   שמות ומספר המפגשים של מי שמשתתף ברוסטר נשלפים מה-API של העסק (/roster-wa/list) ומתמזגים לפי הטלפון. */
+var R = CONFIG.rosterApi || {};
+var SB = R.authUrl || 'https://aexmnaxvahblveejsbup.supabase.co', SBKEY = R.authKey || '';
+var AUTH_URL = R.googleAuth || 'https://api.floa.co.il/roster-auth/google';
+var WA_API = (R.url || 'https://api.floa.co.il/roster/v1').replace(/\/roster\/v1$/, '/roster-wa');
+var UA = navigator.userAgent, ANDROID = /Android/i.test(UA), IOS = /iPhone|iPad|iPod/i.test(UA);
+var PKG = { biz: 'com.whatsapp.w4b', reg: 'com.whatsapp' };
+function ls(k, v){ try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} return null; }
+var TOKEN = '', MSG = '', DATA = [], QS = '', FILTER = ls('wa_filter') || 'all', appSel = document.getElementById('appSel');
+appSel.value = ls('wa_app') || 'biz';
+appSel.onchange = function(){ ls('wa_app', appSel.value); render(); };
+function jwtExp(t){ try { return JSON.parse(atob(t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).exp * 1000; } catch (e) { return 0; } }
+function fail(r){ var e = new Error(r.status); e.status = r.status; return e; }
+function rpc(fn, args){
+  return fetch(SB + '/rest/v1/rpc/' + fn, { method: 'POST', headers: { apikey: SBKEY, Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(args || {}) })
+    .then(function(r){ if (!r.ok) throw fail(r); return r.text(); }).then(function(t){ return t ? JSON.parse(t) : null; });
+}
+function roster(){
+  return fetch(WA_API + '/list', { headers: { Authorization: 'Bearer ' + TOKEN } }).then(function(r){ return r.ok ? r.json() : { items: [] }; }).catch(function(){ return { items: [] }; });
+}
+/* טלפון בפורמט אחד: +972XXXXXXXXX */
+function norm(p){ var d = String(p || '').replace(/\D/g, ''); if (!d) return ''; if (d.indexOf('972') === 0) return '+' + d; if (d.charAt(0) === '0') return '+972' + d.slice(1); return '+' + d; }
+function link(p, app){
+  var n = norm(p).slice(1), t = encodeURIComponent(MSG), web = 'https://wa.me/' + n + '?text=' + t, q = 'send?phone=' + n + '&text=' + t;
+  if (ANDROID) return 'intent://' + q + '#Intent;scheme=whatsapp;package=' + PKG[app] + ';S.browser_fallback_url=' + encodeURIComponent(web) + ';end';
+  if (IOS && app === 'biz') return 'whatsapp-smb://' + q;
+  return web;
+}
+function local(p){ var d = String(p).replace(/\D/g, ''); if (d.indexOf('972') === 0) d = '0' + d.slice(3); return d.replace(/^(\d{3})(\d{3})(\d{4})$/, '$1-$2-$3'); }
+function state(r){ return r.no_more ? 'skip' : (r.sent_at ? 'sent' : ''); }
+function note(t){ document.getElementById('cnt').textContent = t; }
+function match(r){
+  var q = QS.trim().toLowerCase(); if (!q) return true;
+  if (String(r.name || '').toLowerCase().indexOf(q) >= 0) return true;
+  var d = q.replace(/\D/g, ''); if (!d) return false;
+  var ph = r.phone.replace(/\D/g, ''), loc = ph.indexOf('972') === 0 ? '0' + ph.slice(3) : ph;
+  return loc.indexOf(d) >= 0 || ph.indexOf(d) >= 0;
+}
+function mark(r, patch){
+  var old = { sent_at: r.sent_at, no_more: r.no_more };
+  if ('sent' in patch) r.sent_at = patch.sent ? (r.sent_at || new Date().toISOString()) : null;
+  if ('no_more' in patch) r.no_more = patch.no_more;
+  return rpc('harpatka_wa_mark', { p_rows: [Object.assign({ phone: r.phone, name: r.name || '' }, patch)] }).then(function(j){
+    var x = (j || [])[0]; if (x) { r.sent_at = x.sent_at; r.no_more = !!x.no_more; }
+  }).catch(function(e){
+    r.sent_at = old.sent_at; r.no_more = old.no_more; if (e.status === 401 || e.status === 403) showGate(e.status === 403 ? 'החשבון הזה לא מורשה' : ''); else note('השמירה נכשלה, נסו שוב'); throw e;
+  });
+}
+function render(){
+  var app = appSel.value, list = document.getElementById('list');
+  list.innerHTML = '';
+  DATA.forEach(function(r){
+    var m = state(r);
+    if (QS && !match(r)) return;
+    if (FILTER === 'all' && m === 'skip') return;
+    if (FILTER === 'unsent' && m) return;
+    if (FILTER === 'sent' && m !== 'sent') return;
+    if (FILTER === 'skip' && m !== 'skip') return;
+    var li = document.createElement('li'), a = document.createElement('a'), ck = document.createElement('button'), sk = document.createElement('button');
+    function paint(){ var k = state(r); li.className = k; ck.textContent = k === 'sent' ? '✓' : '○'; sk.textContent = '⊘'; ck.setAttribute('aria-pressed', k === 'sent'); sk.setAttribute('aria-pressed', k === 'skip'); count(); }
+    a.href = link(r.phone, app);
+    if (!ANDROID && !IOS) { a.target = '_blank'; a.rel = 'noopener'; }
+    a.innerHTML = '<span class="nm"></span><span class="ph"></span><span class="cnt2"></span>';
+    a.children[0].textContent = r.name || local(r.phone);
+    a.children[1].textContent = r.name ? local(r.phone) : '';
+    a.children[2].textContent = r.attended ? ('הגיע ל-' + r.attended) : '';
+    a.onclick = function(e){
+      if (!MSG) { e.preventDefault(); ed.hidden = false; ta.focus(); note('קודם כותבים את נוסח ההודעה'); return; }
+      if (state(r) !== 'skip') { var pr = mark(r, { sent: true }); paint(); pr.then(paint, paint); }
+    };
+    ck.className = 'ck'; ck.title = 'סימון נשלח'; ck.setAttribute('aria-label', 'סימון נשלח');
+    ck.onclick = function(){ var pr = mark(r, { sent: state(r) !== 'sent' }); paint(); pr.then(paint, paint); };
+    sk.className = 'sk'; sk.title = 'לא לשלוח שוב'; sk.setAttribute('aria-label', 'לא לשלוח שוב');
+    sk.onclick = function(){ var pr = mark(r, { no_more: !r.no_more }); paint(); pr.then(paint, paint); };
+    paint(); li.appendChild(a); li.appendChild(ck); li.appendChild(sk); list.appendChild(li);
+  });
+  document.getElementById('q').placeholder = 'חיפוש לפי שם או טלפון · ' + list.children.length + ' ברשימה';
+  count();
+}
+function count(){
+  var s = 0, k = 0; DATA.forEach(function(r){ if (r.no_more) k++; else if (r.sent_at) s++; });
+  note('נשלחו ' + s + ' מתוך ' + (DATA.length - k) + (k ? ' · ' + k + ' לא לשלוח שוב' : ''));
+}
+function paintFilter(){ Array.prototype.forEach.call(document.querySelectorAll('#flt button'), function(b){ b.classList.toggle('on', b.dataset.f === FILTER); }); }
+document.getElementById('flt').onclick = function(e){ var b = e.target.closest('button'); if (!b) return; FILTER = b.dataset.f; ls('wa_filter', FILTER); paintFilter(); render(); };
+document.getElementById('q').oninput = function(){ QS = this.value; render(); };
+var ed = document.getElementById('ed'), ta = document.getElementById('msgTa');
+document.getElementById('editBtn').onclick = function(){ ed.hidden = !ed.hidden; if (!ed.hidden) ta.value = MSG; };
+document.getElementById('msgCancel').onclick = function(){ ed.hidden = true; };
+document.getElementById('msgSave').onclick = function(){
+  var v = ta.value.trim(); if (!v) return;
+  rpc('harpatka_wa_message', { p_body: v }).then(function(m){ MSG = m || v; ed.hidden = true; render(); }).catch(function(){ note('שמירת ההודעה נכשלה'); });
+};
+function showGate(msg){ document.getElementById('app').hidden = true; document.getElementById('gate').hidden = false; document.getElementById('err').textContent = msg || ''; ls('wa_sess', null); TOKEN = ''; initGoogle(); }
+/* סימונים שנשמרו בעבר בדפדפן הזה (גרסאות קודמות של הדף) עוברים פעם אחת ל-DB */
+function migrateOld(){
+  var rows = [], seen = {};
+  try { var o = JSON.parse(ls('wa_marks') || '{}'); Object.keys(o).forEach(function(k){ var ph = norm(k); if (!ph) return; seen[ph] = 1; rows.push(o[k] === 'skip' ? { phone: ph, no_more: true } : { phone: ph, sent: true }); }); } catch (e) {}
+  try { var d = JSON.parse(ls('wa_done') || '{}'); Object.keys(d).forEach(function(k){ var ph = norm(k); if (ph && !seen[ph]) rows.push({ phone: ph, sent: true }); }); } catch (e) {}
+  if (!rows.length) return Promise.resolve(false);
+  return rpc('harpatka_wa_mark', { p_rows: rows }).then(function(){ ls('wa_marks', null); ls('wa_done', null); return true; }).catch(function(){ return false; });
+}
+function load(){
+  return migrateOld().then(function(){ return Promise.all([rpc('harpatka_wa_list'), roster()]); }).then(function(res){
+    var db = res[0] || {}, ro = (res[1] && res[1].items) || [], byPhone = {};
+    ro.forEach(function(x){ byPhone[norm(x.phone)] = x; });
+    var seen = {}; DATA = [];
+    (db.items || []).forEach(function(x){
+      var rr = byPhone[x.phone]; seen[x.phone] = 1;
+      DATA.push({ phone: x.phone, name: (rr && rr.name) || x.name || '', attended: rr ? rr.attended : 0, sent_at: x.sent_at, no_more: x.no_more });
+    });
+    ro.forEach(function(x){ var ph = norm(x.phone); if (ph && !seen[ph]) { seen[ph] = 1; DATA.push({ phone: ph, name: x.name || '', attended: x.attended || 0, sent_at: null, no_more: false }); } });
+    MSG = db.message || '';
+    document.getElementById('gate').hidden = true; document.getElementById('app').hidden = false; paintFilter(); render();
+    if (!MSG) { ed.hidden = false; ta.value = ''; }
+  }).catch(function(e){ showGate(e.status === 403 ? 'החשבון הזה לא מורשה' : e.status === 401 ? '' : 'אין חיבור (' + (e.status || e.message || 'רשת') + ')'); });
+}
+function onCred(resp){
+  fetch(AUTH_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id_token: resp.credential }) })
+    .then(function(r){ if (!r.ok) throw fail(r); return r.json(); })
+    .then(function(s){ TOKEN = s.access_token; ls('wa_sess', JSON.stringify({ t: TOKEN })); load(); })
+    .catch(function(e){ showGate('הכניסה נכשלה (' + (e.status || 'רשת') + ')'); });
+}
+var gInit = false;
+function initGoogle(){
+  if (!window.google || !google.accounts) { setTimeout(initGoogle, 300); return; }
+  if (!gInit) { google.accounts.id.initialize({ client_id: CONFIG.googleClientId, callback: onCred, auto_select: true }); gInit = true; }
+  var b = document.getElementById('gbtn'); b.innerHTML = '';
+  google.accounts.id.renderButton(b, { theme: 'outline', size: 'large', text: 'signin_with', locale: 'he' });
+  google.accounts.id.prompt();
+}
+(function(){
+  var s = null; try { s = JSON.parse(ls('wa_sess') || 'null'); } catch (e) {}
+  if (s && s.t && jwtExp(s.t) > Date.now() + 60000) { TOKEN = s.t; load(); } else { initGoogle(); }
+})();
+</script>
+</body>
+</html>

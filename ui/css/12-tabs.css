@@ -1,0 +1,13 @@
+/* Tabs (and the button padding reset): ui/docs/tabs.md */
+.rtabs { align-items: stretch; border-bottom: var(--bw) solid var(--border); overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none; }
+.rtabs::-webkit-scrollbar { display: none; }
+@layer rlayout { :where(button) { padding: 0; } }   /* the browser's button padding reset, in Layout's early layer, so a button that IS a Layout box (a menu item, a tab: --pad-x) keeps Layout's padding */
+.rtab { flex: 1 0 auto; justify-content: center; min-height: var(--ctl); border: 0; background: transparent; color: var(--text-muted); font: var(--fw-bold) var(--fs-m)/var(--lh-tight) var(--font); white-space: nowrap; box-shadow: inset 0 calc(var(--mark-w) * -1) 0 transparent; }   /* Layout: .rtabs is rlayout rlayout--row rlayout--bars, .rtab rlayout rlayout--row rlayout--unit rlayout--pad-x (ui/docs/tabs.md) */
+.rtab[aria-selected="true"] { color: var(--text); box-shadow: inset 0 calc(var(--mark-w) * -1) 0 var(--primary); }
+.rtab > .ricon { flex: none; }
+.rtab__tail { color: var(--text-muted); font-weight: var(--fw-regular); font-variant-numeric: tabular-nums; }   .rtab__tail:empty { display: none; }
+@keyframes rk-tab-in { from { transform: translateX(calc(var(--gap-section) * var(--rt-from))); opacity: 0; } }
+[data-rtabs-enter] { --rt-from: 1; }
+[data-rtabs-enter="start"], [data-rtabs-enter="end"]:dir(rtl) { --rt-from: -1; }
+[data-rtabs-enter="start"]:dir(rtl) { --rt-from: 1; }
+@media (prefers-reduced-motion: no-preference) { [data-rtabs-enter] { animation: rk-tab-in var(--t-base) var(--ease); } }

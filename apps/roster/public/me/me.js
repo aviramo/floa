@@ -342,6 +342,7 @@
     if (st === 'blocked') { data = null; viewBlocked(); return; }
     if (st !== 'ok') { data = null; viewPhone(''); return; }   // none (ואם יגיע pending): עוד אין משתתף מקושר
     data = r; viewMain();
+    startLive();
   }
 
   /* ---------- רענון: חזרה ללשונית וגיבוי כל 45 שניות; לא בזמן הקלדה ---------- */
@@ -355,7 +356,15 @@
   document.addEventListener('visibilitychange', () => { if (!document.hidden) scheduleRefresh(); });
   window.addEventListener('focus', scheduleRefresh); window.addEventListener('online', scheduleRefresh);
   document.addEventListener('focusout', () => { if (rtDirty) setTimeout(refreshNow, 300); });
-  setInterval(scheduleRefresh, 45000);
+  /* זמן אמת דרך הממסר (ui/docs/realtime.md, "רוסטר ואתרים חיצוניים"): חדר החברים של העסק, /live/<סכמה>/m-<slug>, אחרי me ראשון עם ok.
+     הגיבוי של 45 שניות רץ רק כשאין signal (הסכמה לא ב-SUPABASE.relayData, אין ממסר, או slug שלא מתאים לחדר); עם signal, ה-poll שלו, רק כשהממסר לא זמין */
+  let liveOn = false;
+  function startLive() {
+    if (liveOn) return; liveOn = true;
+    const room = String((biz && biz.slug) || slug).toLowerCase();
+    const sig = (window.RosterLive && RosterLive.signal && /^[a-z][a-z0-9-]{1,39}$/.test(room)) ? RosterLive.signal(S.schema, 'm-' + room, scheduleRefresh, { poll: 45000, spread: true }) : null;
+    if (!sig) setInterval(scheduleRefresh, 45000);
+  }
 
   $('#outBtn').onclick = () => { AUTH.signOut().then(() => location.reload()); };
 

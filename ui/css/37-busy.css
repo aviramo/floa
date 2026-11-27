@@ -1,0 +1,11 @@
+/* Waiting for the server: ui/docs/loading.md "תגובה מיידית והמתנה" */
+:is(.rrow, .rcard, .rmenu__item, .rbtn:not(.rbtn--icon, .rbtn--text), .ricon-lg, .rfab)[aria-busy="true"] { position: relative; overflow: clip; pointer-events: none; }
+:is(.rrow, .rcard, .rmenu__item, .rbtn:not(.rbtn--icon, .rbtn--text), .ricon-lg, .rfab)[aria-busy="true"]::before { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--primary) var(--busy-tint), transparent), transparent); }
+@media (prefers-reduced-motion: no-preference) {
+  :is(.rrow, .rcard, .rmenu__item, .rbtn:not(.rbtn--icon, .rbtn--text), .ricon-lg, .rfab)[aria-busy="true"]::before { transform: translateX(-100%); animation: rk-shimmer var(--busy-shimmer-t) var(--ease) infinite; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(.rrow, .rcard, .rmenu__item, .rbtn:not(.rbtn--icon, .rbtn--text), .ricon-lg, .rfab)[aria-busy="true"]::before { background: color-mix(in srgb, var(--primary) var(--busy-tint-still), transparent); }
+}
+.rfab[aria-busy="true"] { position: fixed; }   .rfab--in[aria-busy="true"] { position: sticky; }
+@keyframes rk-shimmer { to { transform: translateX(100%); } }

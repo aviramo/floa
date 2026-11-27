@@ -1,0 +1,19 @@
+/* Header: ui/docs/header.md */
+.rhead { display: flex; align-items: center; gap: var(--gap); min-height: calc(var(--fab) + var(--safe-t)); padding: var(--safe-t) var(--gap) 0; box-sizing: border-box; background: var(--page); }
+.rhead { position: relative; z-index: var(--z-raised); flex-shrink: 0; }
+.rhead ~ :has(.racc__bar), dialog.rsheet .sheet-head ~ :has(.racc__bar) { isolation: isolate; }
+:root { --edge-shadow: linear-gradient(color-mix(in srgb, var(--scrim) 18%, transparent), transparent); }
+.rhead::after, dialog.rsheet .sheet-head::after, .racc__bar::after { content: ""; position: absolute; inset-inline: 0; top: 100%; height: var(--gap); background: var(--edge-shadow); opacity: 0; transition: opacity var(--t-base) var(--ease); pointer-events: none; }
+.rlayout--surface[data-scrolled] > :is(.rhead, .sheet-head)::after, .racc__bar[data-stuck]::after { opacity: 1; }
+.rhead:has(~ * .racc__bar[data-stuck])::after, dialog.rsheet .sheet-head:has(~ * .racc__bar[data-stuck])::after { opacity: 0; }
+:is(dialog, .rpanel) .rhead { min-height: var(--fab); padding-top: 0; }
+.rhead__text { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: var(--gap); }
+.rhead__title { flex: 0 1 auto; min-width: 0; margin: 0; padding: 0; color: var(--text); font: var(--fw-bold) var(--fs-l)/var(--lh-text) var(--font); text-align: start; white-space: normal; overflow-wrap: anywhere; }
+input.rhead__title { flex: 1 1 auto; width: 100%; border: 0; outline: 0; border-radius: 0; background: transparent; box-shadow: none; appearance: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rgroup, .rhead__acts { display: flex; align-items: center; gap: var(--gap); flex: none; }
+.rhead__mark { flex: none; display: flex; align-items: center; }
+.rhead [data-folded] { display: none; }
+.rhead:not(:has([data-folded])) [data-rmore="fold"] { display: none; }
+.rhead[data-wrap] .rhead__tw:has(> .rhead__sub) { margin-block-end: 0; }
+.rhead[data-wrap] { padding-block-end: var(--gap-tight); }
+.rhead__live { flex: none; color: var(--text); font: var(--fw-bold) var(--fs-l)/var(--lh-tight) var(--font); font-variant-numeric: tabular-nums; direction: ltr; }

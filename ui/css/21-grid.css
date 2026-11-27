@@ -1,0 +1,6 @@
+/* Card grid: ui/docs/grid.md */
+.rgrid { display: grid; align-items: stretch; }   /* Layout: rlayout rlayout--grid gives the columns and the gap. display stays only for a grid that is also the list (.rlist.rgrid), whose own display would win until the list is on Layout (stage 4) */
+/* the two media variants (ui/docs/grid.md): the narrowest column is --media-min (two columns on a phone), through Layout's --rl-col; a tile is as tall as its ratio, at the
+   top of its row, never stretched. The collage (owner, 2026-11-26, option b): CSS makes the columns, and in each run of tiles the kit keeps one Layout column per
+   track (.rgrid__col, a plain .rlayout column: --gap between its tiles); ui/list.js puts each tile in the lowest column. An empty column is out of the layout (principle 5) */
+.rgrid:is(.rgrid--media, .rgrid--collage) { --rl-col: var(--media-min); align-items: start; }

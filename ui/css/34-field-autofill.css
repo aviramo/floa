@@ -1,0 +1,7 @@
+/* Field, autofill and reduced motion: ui/docs/field.md */
+.rfield > input:-webkit-autofill { animation: rf-autofill 1ms; }
+@keyframes rf-autofill { from { opacity: 1; } to { opacity: 1; } }
+.rfield:has(> input:-webkit-autofill) > span:first-child { transform: scale(var(--rf-scale)); inset-inline-end: calc(100% - 100% / var(--rf-scale)); }
+@media (prefers-reduced-motion: reduce) {
+  .rfield:has(> :is(input:where(:not([type="checkbox"], [type="radio"])), select, textarea, .rf-rich)) > span:first-child, .rfield > :is(input:where(:not([type="checkbox"], [type="radio"])), select, textarea) { transition: none !important; }
+}

@@ -15,6 +15,7 @@ Iron law: no existing business (AUM) changes. Run only these repo files, never c
 | 8 | `email-unique-prod.sql` | guard trigger on participants, NO unique index | trigger returns at once (no normalising, no check) |
 | 9 | `realtime-prod.sql` | rt_ping trigger on 5 tables | trigger returns before doing anything |
 | 10 | `email-unique-index-precheck.sql` then `email-unique-index-prod.sql` | read-only check that no business has duplicate emails, then the unique index (business_id, email); owner approved it for every business including AUM (2026-11-17) | AUM has no emails today, so the index holds nothing; only a future duplicate email in one business is refused. LAST step, only if every duplicate_emails is 0 |
+| 11 | `site-meetings.sql` | one file, adds one function only (site_meetings, EXECUTE for anon and authenticated), no existing function is replaced (apps/roster/SITE.md) | for AUM no answer of the API changes. PENDING the owner's explicit approval; roster-test first, with site-meetings.check.sql passing, and AUM's GET /meetings compared before and after |
 
 Then, per business that should use them: `update roster.business_settings set email_link = true, realtime = true where business_id = (select id from roster.businesses where slug = '<slug>')`.
 

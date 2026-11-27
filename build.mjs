@@ -25,9 +25,9 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createServer } from "node:http";
-import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
-import { existsSync, readFileSync, watch } from "node:fs";
-import { dirname, extname, join, resolve } from "node:path";
+import { cp, mkdir, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
+import { existsSync, readFileSync, readdirSync, watch } from "node:fs";
+import { dirname, extname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
@@ -39,7 +39,81 @@ const BUSINESSES = join(ROOT, "apps");
    .github/workflows/deploy-cloudflare.yml) — which is what lets the repo hold source only
    while floa.co.il keeps every URL it has ever had. The published package, not
    the repo's layout, is what a visitor's URL resolves against. */
-const DIST = join(ROOT, "dist");
+const LIVE = join(ROOT, "dist");
+/* Where the build is writing right now. Never LIVE while a build runs: it writes
+   into a sibling (dist.tmp-<pid>) and swaps that in only once everything is
+   written, so a page asked for in the middle of a build is never blank. */
+let DIST = LIVE;
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+/* what Windows answers while something (the dev server, an indexer, a browser)
+   holds a handle inside a folder, or while another build is mid-swap */
+const BUSY = new Set(["EPERM", "EBUSY", "EACCES", "ENOTEMPTY", "EEXIST", "ENOENT"]);
+async function retrying(fn, tries = 50) {
+  for (let i = 0; ; i++) {
+    try { return await fn(); }
+    catch (e) { if (i >= tries || !BUSY.has(e.code)) throw e; await sleep(Math.min(10 * (i + 1), 100)); }
+  }
+}
+const alive = (pid) => { try { process.kill(pid, 0); return true; } catch (e) { return e.code === "EPERM"; } };
+
+/* what a build killed half way left behind (its tmp, a parked old dist, its swap
+   marker): removed by the next build, never one that is still running */
+async function sweepLeftovers() {
+  for (const name of await readdir(ROOT)) {
+    const m = /^dist\.(tmp|old|swap)-(\d+)/.exec(name);
+    if (!m || (Number(m[2]) !== process.pid && alive(Number(m[2])))) continue;
+    if (Number(m[2]) === process.pid && m[1] !== "old") continue;
+    await rm(join(ROOT, name), { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }).catch(() => {});
+  }
+}
+
+/* Puts a finished build in place of dist/ at once: dist -> dist.old-<pid>,
+   tmp -> dist. While it runs a marker (dist.swap-<pid>) tells the dev server to
+   wait a moment instead of answering 404. dist/ is never left missing: if the
+   second rename fails, the first is undone. When a folder rename keeps failing
+   (a handle held inside dist/ on Windows), it falls back to swapping each
+   top-level entry, which is what a held handle usually still allows. */
+async function swapIn(tmp) {
+  const mark = join(ROOT, `dist.swap-${process.pid}`);
+  await writeFile(mark, "");
+  try {
+    for (let i = 0; i < 30; i++) {
+      let moved = null;
+      try {
+        if (existsSync(LIVE)) { moved = join(ROOT, `dist.old-${process.pid}-${i}`); await rename(LIVE, moved); }
+        await retrying(() => rename(tmp, LIVE), 30);
+        return;
+      } catch (e) {
+        if (moved && !existsSync(LIVE)) await retrying(() => rename(moved, LIVE), 200);   // put the old one back
+        if (!BUSY.has(e.code)) throw e;
+        await sleep(Math.min(10 * (i + 1), 100));
+      }
+    }
+    console.warn("  dist/ is held open: swapping it entry by entry");
+    const parked = join(ROOT, `dist.old-${process.pid}-entries`);
+    await mkdir(parked, { recursive: true });
+    await mkdir(LIVE, { recursive: true });
+    const fresh = await readdir(tmp);
+    for (const name of await readdir(LIVE)) {
+      if (!fresh.includes(name)) await retrying(() => rename(join(LIVE, name), join(parked, name))).catch(() => rm(join(LIVE, name), { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }));
+    }
+    for (const name of fresh) {
+      try {
+        if (existsSync(join(LIVE, name))) await retrying(() => rename(join(LIVE, name), join(parked, name)));
+        await retrying(() => rename(join(tmp, name), join(LIVE, name)));
+      } catch {
+        await cp(join(tmp, name), join(LIVE, name), { recursive: true, force: true });   // last resort: written over in place
+      }
+    }
+    await rm(tmp, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }).catch(() => {});
+  } finally {
+    await rm(mark, { force: true }).catch(() => {});
+    for (const name of await readdir(ROOT)) {
+      if (name.startsWith(`dist.old-${process.pid}-`)) await rm(join(ROOT, name), { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }).catch(() => {});
+    }
+  }
+}
 
 const readSrc = (p) => readFile(join(SRC, p), "utf8");
 const fingerprint = (s) => createHash("sha256").update(s).digest("hex").slice(0, 8);
@@ -172,16 +246,101 @@ async function stampAssets(dir) {
   }
 }
 
+/* THE SPRITE IS STAMPED TOO. Every `<use href="/icons.svg#name">` a script, a style or a page writes becomes `/icons.svg?v=<its contents>#name`.
+   Unstamped, the sprite is served "ask again every time" (must-revalidate, and no-store on localhost), so the browser may not keep it in
+   memory: each icon drawn anew (a sheet opened, a list rendered) asked for the sprite again and stayed blank until it came back, a blink
+   of every icon. Stamped, it is one address per version, kept for good (_middleware.js, the dev server, sw.js cache-first). */
+let ICONS_V = "";
+async function iconsStamp() {
+  if (!ICONS_V) { try { ICONS_V = fingerprint(await readFile(join(ROOT, "ui", "icons.svg"))); } catch { ICONS_V = "-"; } }
+  return ICONS_V === "-" ? "" : ICONS_V;
+}
+async function stampIcons(file) {
+  const v = await iconsStamp();
+  if (!v || !/\.(?:js|css|html)$/.test(file)) return;
+  const txt = await readFile(file, "utf8");
+  if (!txt.includes("/icons.svg#")) return;
+  await writeFile(file, txt.split("/icons.svg#").join(`/icons.svg?v=${v}#`), "utf8");
+}
+/* THE TEST HOSTS (apps/roster/SITE.md): /supabase.js decides roster's environment by the host, and a host marked "test": true in
+   domains.json is a test host. The list is written into the copy, never kept by hand in the source (`var TEST_HOSTS = [];`), so
+   domains.json stays the one list. A supabase.js without that line fails the build rather than ship a test host as real. */
+async function fillTestHosts(file) {
+  const hosts = JSON.parse(await readFile(join(ROOT, "domains.json"), "utf8")).hosts.filter((h) => h.test && h.host).map((h) => h.host);
+  const txt = await readFile(file, "utf8");
+  const line = "var TEST_HOSTS = [];";
+  if (!txt.includes(line)) throw new Error(`build: ${relative(ROOT, file)} has no "${line}" for the test hosts of domains.json`);
+  await writeFile(file, txt.replace(line, `var TEST_HOSTS = ${JSON.stringify(hosts)};`), "utf8");
+}
+async function stampIconsIn(dir) {
+  let ents;
+  try { ents = await readdir(dir, { withFileTypes: true }); } catch { return; }
+  for (const e of ents) {
+    if (e.isDirectory()) await stampIconsIn(join(dir, e.name));
+    else await stampIcons(join(dir, e.name));
+  }
+}
+
+/* THE BUILD'S SIGNATURE (ui/docs/app-version.md): an open app learns that a newer one was published. Every page of a business gets
+   <meta name="floa-build" content="<signature>" data-src="<the way to version.txt from that page>">, and the business's folder gets version.txt
+   with the same signature. The signature is of everything its pages load: the pages (they carry the stamps of their own files) and the
+   domain's kit files at the root. The kit (/app.js) reads version.txt (no-store) and offers "רענון" when it differs. */
+async function stampVersion(business, outs) {
+  const out = business.out;
+  if (!out) return;
+  const dir = join(DIST, out);
+  const pages = [];
+  await (async function walk(d) {
+    let ents;
+    try { ents = await readdir(d, { withFileTypes: true }); } catch { return; }
+    for (const e of ents) {
+      if (e.isDirectory()) { const sub = join(d, e.name); if (!outs.has(relative(DIST, sub).replaceAll("\\", "/"))) await walk(sub); }   /* a business inside this one's folder (tal/aum) has its own */
+      else if (e.name.endsWith(".html")) pages.push(join(d, e.name));
+    }
+  })(dir);
+  if (!pages.length) return;
+  const hash = createHash("sha256");
+  for (const p of pages.sort()) hash.update((await readFile(p, "utf8")).replace(/<meta name="floa-build"[^>]*>\n?/g, ""));
+  let rootFiles = [];
+  try { rootFiles = (await readdir(DIST)).filter((f) => /\.(js|css|svg)$/.test(f)).sort(); } catch { /* none */ }
+  for (const f of rootFiles) hash.update(await readFile(join(DIST, f)));
+  const sig = hash.digest("hex").slice(0, 12);
+  for (const p of pages) {
+    const html = (await readFile(p, "utf8")).replace(/<meta name="floa-build"[^>]*>\n?/g, "");
+    if (!html.includes("</head>")) continue;
+    const src = relative(dirname(p), join(dir, "version.txt")).replaceAll("\\", "/");
+    await writeFile(p, html.replace("</head>", `<meta name="floa-build" content="${sig}" data-src="${src}">\n</head>`), "utf8");
+  }
+  await writeFile(join(dir, "version.txt"), sig + "\n", "utf8");
+}
+
 async function statics(key, out, root) {
   const copied = [];
   for (const [folder, into] of [["public", out], ...(root ? [["domain", ""]] : [])]) {
     try {
       await cp(join(BUSINESSES, key, folder), join(DIST, into), { recursive: true });
+      if (folder === "public") await stampIconsIn(join(DIST, into));   /* before the assets' own stamps, so a new sprite also gives them a new address */
+      else for (const f of await readdir(join(BUSINESSES, key, folder))) await stampIcons(join(DIST, f));
+      if (folder === "domain") await fillTestHosts(join(DIST, "supabase.js"));
       if (folder === "public") await stampAssets(join(DIST, into));
       copied.push(`${into || "."}/  (${folder})`);
     } catch (err) {
       if (err.code !== "ENOENT") throw err;      // a business with no files of that kind
     }
+  }
+  if (root) {   /* THE UI LIBRARY (ui/, beside apps/): its files are the domain's, served from the root (/kit.css, /sheet.js, /sound.js, /icons.svg); the skill stays in the source */
+    for (const f of await readdir(join(ROOT, "ui"))) if (/\.(css|js|svg)$/.test(f)) { await cp(join(ROOT, "ui", f), join(DIST, f)); await stampIcons(join(DIST, f)); }
+    /* THE KIT CSS is one file per component (ui/css/, the number prefix fixes the cascade order), joined here into the one /kit.css every page loads */
+    const parts = (await readdir(join(ROOT, "ui", "css"))).filter((f) => f.endsWith(".css")).sort();
+    let kit = "";
+    for (const f of parts) kit += `/* ui/css/${f} */\n` + (await readFile(join(ROOT, "ui", "css", f), "utf8")).replace(/\s*$/, "\n");
+    await writeFile(join(DIST, "kit.css"), kit, "utf8");
+    await stampIcons(join(DIST, "kit.css"));
+    copied.push("./  (ui)");
+    /* THE KIT'S SHOWCASE (ui/demo/ -> /kit/): every component in every state, for review and the audits. Local only by default: a CI build (the
+       deploy) leaves it out. KIT_DEMO=1 builds it anywhere (also in CI, to publish it), KIT_DEMO=0 leaves it out here too. noindex, linked from nowhere. */
+    const demo = process.env.KIT_DEMO ? process.env.KIT_DEMO === "1" : !process.env.CI;
+    if (demo) { await cp(join(ROOT, "ui", "demo"), join(DIST, "kit"), { recursive: true, filter: (src) => !src.endsWith(".mjs") }); copied.push("kit/  (ui/demo)"); }
   }
   return copied;
 }
@@ -352,12 +511,19 @@ async function build(only) {
 
   /* A full build starts from nothing, so a page that was deleted or renamed
      cannot survive in dist/ and go on being published. A --only build must not:
-     it would take every other business's site down with it.
+     it would take every other business's site down with it, so it starts from a
+     copy of the dist/ there is.
 
-     Windows hands out EPERM on a folder something else is holding open for a
-     moment (an indexer, an editor, a browser reading the page it is serving),
-     so the delete waits it out instead of failing the whole build. */
-  if (!only) await rm(DIST, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+     Either way it writes into dist.tmp-<pid>, never into dist/ itself, and
+     swapIn() puts the finished tree in place at once. A build that fails leaves
+     dist/ exactly as it was. */
+  await sweepLeftovers();
+  const tmp = join(ROOT, `dist.tmp-${process.pid}`);
+  await rm(tmp, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+  if (only && existsSync(LIVE)) await retrying(() => cp(LIVE, tmp, { recursive: true, force: true }));
+  await mkdir(tmp, { recursive: true });
+  DIST = tmp;
+  try {
 
   /* written from ALL of them, never just the one being rendered: the Worker
      serves every business at once, so a --only build must not shrink its table */
@@ -374,6 +540,14 @@ async function build(only) {
     console.log(`✓ ${business.key} — ${written.length} files`);
     for (const f of written) console.log(`  ${f.replaceAll("\\", "/")}`);
   }
+  for (const business of chosen) await stampVersion(business, new Set(all.map((b) => b.out)));
+  } catch (e) {
+    DIST = LIVE;
+    await rm(tmp, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }).catch(() => {});
+    throw e;
+  }
+  DIST = LIVE;
+  await swapIn(tmp);
 
   console.log(`  ${Date.now() - started}ms`);
 }
@@ -400,18 +574,27 @@ const TEST_ENV_JS = readFileSync(join(ROOT, "scripts", "test-env.client.js"), "u
 
 function serve(port = 5173, test = false) {
   const DEV_SPA = (() => { try { return JSON.parse(readFileSync(join(ROOT, "domains.json"), "utf8")).hosts.filter((h) => h.devSpa && h.folder).map((h) => h.folder.replace(/\/$/, "")); } catch { return []; } })();
-  const DEV_NAMES = (() => { try { return JSON.parse(readFileSync(join(ROOT, "domains.json"), "utf8")).hosts.filter((h) => h.folder && h.enabled !== false && !h.test).map((h) => [h.host.split(".")[0], h.folder.replace(/\/?$/, "/")]).filter(([l, f]) => f !== l + "/" && !existsSync(join(DIST, l))); } catch { return []; } })();
+  const DEV_NAMES = (() => { try { return JSON.parse(readFileSync(join(ROOT, "domains.json"), "utf8")).hosts.filter((h) => h.folder && h.enabled !== false && !h.test).map((h) => [h.host.split(".")[0], h.folder.replace(/\/?$/, "/")]).filter(([l, f]) => f !== l + "/" && !existsSync(join(LIVE, l))); } catch { return []; } })();
   /* a link to any app's own address (https://aum.floa.co.il/...) is a link to /aum/... here, so the apps open each other and the FLOA home page opens them on localhost, not on the live site; the list comes from domains.json */
   const DEV_LINKS = (() => { try { const ls = JSON.parse(readFileSync(join(ROOT, "domains.json"), "utf8")).hosts.filter((h) => h.folder && h.enabled !== false && !h.test).map((h) => h.host.split(".")[0]); return ls.length ? new RegExp("https://(" + ls.join("|") + ")\.floa\.co\.il/?", "g") : null; } catch { return null; } })();
-  createServer(async (req, res) => {
+  /* A build swaps a new dist/ in while this serves (swapIn): for that moment
+     dist/ may be missing or half moved, so a request waits for the swap to end
+     (at most 3s) and a miss is tried once more after it, instead of a blank page.
+     Every request resolves dist/ by its path again, so nothing holds the old tree. */
+  const swapping = () => !existsSync(LIVE) || readdirSync(ROOT).some((n) => n.startsWith("dist.swap-"));
+  const settled = async () => { let waited = false; for (let t = 0; t < 300 && swapping(); t++) { waited = true; await sleep(10); } return waited; };
+  createServer(async (req, res) => { await settled(); return handle(req, res, false); }).listen(port, () => console.log(`  http://localhost:${port}\n`));
+  async function handle(req, res, again) {
+    const DIST = LIVE;
     if (test && req.url.split("?")[0] === "/__test-env.js") return res.writeHead(200, { "content-type": "text/javascript", "cache-control": "no-store" }).end(TEST_ENV_JS);
-    let path = decodeURIComponent(new URL(req.url, "http://x").pathname);
+    let path = decodeURIComponent(new URL(req.url.replace(/^\/{2,}/, "/"), "http://x").pathname);   /* "//" is a valid request line but not a valid URL: it must not take the server down */
     /* every app is reachable here as /<its sub-domain name>/ (localhost:5173/aum/), so one can move between apps without
        typing the folder it really lives in (domains.json: aum -> tal/aum/); a name that is already a real folder is left alone */
     for (const [label, folder] of DEV_NAMES) {
       if (path === "/" + label) return res.writeHead(301, { location: "/" + label + "/" + new URL(req.url, "http://x").search }).end();
       if (path.startsWith("/" + label + "/")) { path = "/" + folder + path.slice(label.length + 2); break; }   /* served from the real folder; the address in the browser stays /<name>/ */
     }
+    const asked = path;   /* what the browser asked for, before a trailing slash became index.html */
     if (path.endsWith("/")) path += "index.html";
     const file = resolve(DIST, "." + path);
     if (!file.startsWith(DIST)) return res.writeHead(403).end();
@@ -421,11 +604,14 @@ function serve(port = 5173, test = false) {
       let body = await readFile(file);
       if (DEV_LINKS && extname(file) === ".html") body = Buffer.from(body.toString("utf8").replace(DEV_LINKS, (m, label) => "/" + label + "/"));
       if (test && extname(file) === ".html") body = Buffer.from(body.toString("utf8").replace(/<head[^>]*>/i, (m) => m + '<script src="/__test-env.js"></script>'));
-      res.writeHead(200, { "content-type": TYPES[extname(file)] ?? "application/octet-stream", "cache-control": "no-store" }).end(body);
+      /* a stamped file (?v=) never changes under its address: kept, like in production; everything else is asked again (the page, unstamped files) */
+      const stamped = extname(file) !== ".html" && /[?&]v=\w/.test(req.url);
+      res.writeHead(200, { "content-type": TYPES[extname(file)] ?? "application/octet-stream", "cache-control": stamped ? "public, max-age=31536000, immutable" : "no-store" }).end(body);
     } catch {
+      if (!again && ((await settled()) || existsSync(file))) return handle(req, res, true);   /* a swap ran under this request: ask once more */
       /* an app that routes by its own address (domains.json devSpa) gets its front page for any address under its folder, as its host does in production */
-      const spa = DEV_SPA.find((f) => path === "/" + f || path.startsWith("/" + f + "/"));
-      if (spa && !extname(path)) {
+      const spa = DEV_SPA.find((f) => asked === "/" + f || asked.startsWith("/" + f + "/"));
+      if (spa && !extname(asked)) {   /* /chatbot/harpatka/ (with the slash) is an address of the app too, not a file */
         try {
           const body = await readFile(join(DIST, spa, "index.html"));
           return res.writeHead(200, { "content-type": "text/html", "cache-control": "no-store" }).end(body);
@@ -438,7 +624,7 @@ function serve(port = 5173, test = false) {
         res.writeHead(404).end("not found");
       }
     }
-  }).listen(port, () => console.log(`  http://localhost:${port}\n`));
+  }
 }
 
 async function main() {

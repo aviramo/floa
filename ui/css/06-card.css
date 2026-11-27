@@ -1,0 +1,44 @@
+/* Card: ui/docs/card.md. The arrangement is Layout's (ui/css/01-layout.css): the card is .rlayout--row.rlayout--pad (lead, main), .rcard__main a column --unit
+   (row 1, row 2, the lines, the foot), each .rcard__row a row (its text __grow, its end group), .rcard__lines a column --unit. Here only the surface, sizes,
+   alignment of a parent and the states: no display, direction, gap or padding on a Layout box */
+.rcard { min-width: 0; margin: 0; position: relative; border: 0; border-radius: var(--r); --rcard-bg: var(--raised); background: var(--rcard-bg); box-shadow: var(--shadow); }
+.rcard[aria-current="true"] { --rcard-bg: var(--rcard-on, var(--surface)); }
+.rcard[aria-current="true"]:dir(rtl) { box-shadow: inset calc(var(--mark-w) * -1) 0 0 var(--rcard-mark, var(--primary)), var(--shadow); }
+.rcard[aria-current="true"]:dir(ltr) { box-shadow: inset var(--mark-w) 0 0 var(--rcard-mark, var(--primary)), var(--shadow); }
+.rcard__lead { flex: none; display: flex; align-items: center; justify-content: center; overflow: visible; color: var(--text); font: var(--fw-bold) var(--fs-xl)/1 var(--font); font-variant-numeric: tabular-nums; }
+.rcard__lead > img { display: block; width: var(--ctl); height: var(--ctl); border-radius: var(--r); object-fit: cover; }
+.rcard[data-layout="lines"] > .rcard__lead { align-self: flex-start; }   /* beside a list of lines the lead stands at the top, on the title */
+.rcard__row { min-height: var(--icon); justify-content: flex-end; }   /* a row with no text: its end group still stands at the end */
+.rcard__a { flex: none; }
+.rcard__t1 { align-self: flex-end; }   /* a row taller than its text (a chip): the two texts sit together in the middle of the card, the extra height above and below them */
+.rcard__t2 { align-self: flex-start; }
+.rcard__a1 > :is(.rchip, .rbtn--text) { flex: none; }
+.rcard .rbtn--icon::after { height: var(--row-card); }
+.rcard .rbtn--text::before { height: var(--row-card); }
+.rcard__tx { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: start; }
+button.rcard__tx { flex: 0 1 auto; margin: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.rcard__t1 .rcard__tx { color: var(--text); font: var(--fw-bold) var(--fs-m)/var(--lh-tight) var(--font); }
+.rcard__t2 { color: var(--text-muted); font: var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font); }
+.rcard__num { flex: none; direction: ltr; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rcard__a2 > .rcard__num { color: var(--text-muted); font: var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font); }
+.rcard__a1 > .rcard__num { color: var(--text); font: var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font); }
+.rcard__lines { align-items: flex-start; }   /* each line is a text button as wide as its words (cut at the card's width), on the start side */
+.rcard__line { min-height: var(--icon); }
+.rcard__lines > [hidden] { display: none; }   /* principle 5 for a kit button (its own display is unlayered and would beat Layout's [hidden] rule) */
+.rcard__foot { min-height: var(--icon); }
+.rcard[aria-busy="true"] > .req { visibility: hidden; }
+/* THE MEDIA TILE (layout "media", ui/docs/card.md "אריח מדיה"): a leaf, not Layout. The file fills it edge to edge at its ratio (its width and height attributes, which the
+   browser holds before the file comes; none: a square until it comes), no crop and no height of its own; the corners cut it; --surface shows until it is painted, and
+   stays when it does not load. The states are drawn OVER the file, in ::after (the loading sweep is ::before, 37-busy.css): pressed and hover a --press-shade of
+   --text, selected the --mark-w mark on the start side; the focus ring is the clickable card's (03b-interaction.css). A video's play symbol (owner, 2026-11-26): the
+   kit's play icon in the end-bottom corner, on a --scrim disc so it reads on any picture; decoration, never a target */
+.rcard[data-layout="media"] { display: block; overflow: hidden; background: var(--surface); }
+.rcard[data-layout="media"] > :is(img, video) { display: block; width: 100%; height: auto; pointer-events: none; }
+.rcard[data-layout="media"] > :is(img, video):not([width][height]) { aspect-ratio: auto 1 / 1; }
+.rcard[data-layout="media"] > img::after { content: ""; position: absolute; inset: 0; background: var(--surface); }   /* a file that did not load: only a broken image draws ::after, so this covers the browser's broken mark, and the tile stays --surface at its ratio */
+.rcard[data-layout="media"]::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; }
+.rcard[data-layout="media"][role="button"]:active::after { background: color-mix(in srgb, var(--text) var(--press-shade), transparent); }
+@media (hover: hover) { .rcard[data-layout="media"][role="button"]:hover::after { background: color-mix(in srgb, var(--text) var(--press-shade), transparent); } }
+.rcard[data-layout="media"][aria-current="true"]:dir(rtl)::after { box-shadow: inset calc(var(--mark-w) * -1) 0 0 var(--rcard-mark, var(--primary)); }
+.rcard[data-layout="media"][aria-current="true"]:dir(ltr)::after { box-shadow: inset var(--mark-w) 0 0 var(--rcard-mark, var(--primary)); }
+.rcard__play { position: absolute; inset-block-end: var(--gap); inset-inline-end: var(--gap); box-sizing: content-box; padding: var(--gap-tight); border-radius: var(--r-round); background: var(--scrim); color: var(--on-primary); pointer-events: none; }

@@ -1,0 +1,8 @@
+/* Divider (and the separator of a menu): ui/docs/divider.md */
+.rdiv { grid-column: 1 / -1; box-sizing: border-box; min-height: var(--ctl); justify-content: center; color: var(--text-muted); font: var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font); }
+/* Layout: .rdiv is rlayout rlayout--unit (a column), its label .rdiv__l rlayout rlayout--row (the lines are its ::before and ::after, --gap from the text) */
+.rdiv__l::before, .rdiv__l::after { content: ""; flex: 1 1 auto; height: var(--bw); background: var(--border); }
+.rdiv__t { display: inline-flex; align-items: center; gap: var(--gap-tight); }
+.rdiv--line { flex: none; min-height: 0; padding: 0; }
+.rdiv--line::before { content: ""; height: var(--bw); background: var(--border); }
+.rmenu__list > .rdiv--line { padding-block: var(--gap-tight); }

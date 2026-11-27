@@ -54,6 +54,15 @@
     }
     return Promise.all([next(), next(), next()]).then(function () { if (failed) throw failed; });
   }
+  /* why a download to the device stopped, as the "stopped" event says it: "quota" (no room), "store" (this browser keeps no files), "server" (an answer that is not the file), "net" (no answer at all) */
+  function why(e) {
+    if (!e) return "";
+    if (e.name === "QuotaExceededError") return "quota";
+    if (e.name === "NoStoreError") return "store";
+    if (e.status) return "server";
+    if (e.name === "TypeError" || e.name === "AbortError" || navigator.onLine === false) return "net";
+    return "";
+  }
 
   window.BioOffline = {
     ready: ready,
@@ -95,21 +104,27 @@
        list: the vivencias the cloud says this person has; load(v) -> the record to keep for one (null when it cannot be read now).
        A copy that differs is replaced, a missing one is made, a copy the cloud no longer has is deleted, and a song no kept
        vivencia uses (also one only played once) is deleted, so nothing stays here that is not in the cloud. */
+    /* Resolves with { stopped: "" or the reason, saved: { id: true } (the vivencias whose copy is current after this pass), skipped: { id: true }
+       (load gave null: unchanged, or could not be read now) }; a call while a pass runs gets null (it joined that pass). */
     sync: function (list, load) {
-      if (syncing) { syncAgain = true; return syncing; }
+      if (syncing) { syncAgain = true; return syncing.then(function () { return null; }); }
       prog = { done: 0, total: 0 }; emit("start");
+      var stop = null;   /* the first song that could not come down: the sync stops downloading there and says why (never "done") */
+      var saved = {}, skipped = {}, want = {};   /* want: the songs of every vivencia read in this pass, kept on the device even if its copy could not be finished (deleting them made the next pass download them again, every time) */
+      var fatal = function (e) { var w = why(e); return w === "net" || w === "quota" || w === "store"; };   /* the device or the connection: nothing more can come down now. A server error stops only its own vivencia */
       syncing = ready.then(function () { return all(); }).then(function (stored) {
         var have = {}; stored.forEach(function (r) { have[r.id] = r; });
         return list.reduce(function (p, v) {
-          return p.then(function () { return load(v); }).then(function (rec) {
-            if (!rec) return;
+          return p.then(function () { return stop && fatal(stop) ? null : load(v); }).then(function (rec) {
+            if (!rec) { skipped[v.id] = true; return; }
             var old = have[v.id], names = songsOf(rec.items, rec.reception);
+            names.forEach(function (n) { want[n] = true; });
             var same = old && sig(old) === sig(rec);
             return (same ? Promise.all(names.map(function (n) { return window.BioAudio.kept(n); })).then(function (k) { return k.every(Boolean) ? "same" : "songs"; }) : Promise.resolve("new")).then(function (what) {
-              if (what === "same") return;
-              prog.total += names.length; emit(); return putSongs(names, function () { prog.done++; emit(); }).then(function () { rec.songs = names; rec.savedAt = Date.now(); return run("readwrite", function (s) { return s.put(rec); }); }).then(function () { ids[rec.id] = true; });
-            }).catch(function () { /* the copy that was here stays until the next time */ });
-          }, function () { /* this one could not be read now: its old copy stays */ });
+              if (what === "same") { saved[v.id] = true; return; }
+              prog.total += names.length; emit(); return putSongs(names, function () { prog.done++; emit(); }).then(function () { rec.songs = names; rec.savedAt = Date.now(); return run("readwrite", function (s) { return s.put(rec); }); }).then(function () { ids[rec.id] = true; saved[v.id] = true; });
+            }).catch(function (e) { stop = stop || e || new Error("stopped"); /* the copy that was here stays until the next time */ });
+          }, function () { skipped[v.id] = true; /* this one could not be read now: its old copy stays */ });
         }, Promise.resolve());
       }).then(function () {
         var keep = {}; list.forEach(function (v) { keep[v.id] = true; });
@@ -117,13 +132,14 @@
           var gone = rows.filter(function (r) { return !keep[r.id]; });
           return Promise.all(gone.map(function (r) { return run("readwrite", function (s) { return s.delete(r.id); }).then(function () { delete ids[r.id]; }); })).then(function () { return all(); });
         });
-      }).then(function (rows) {   /* songs: only those a kept vivencia holds stay on the device */
+      }).then(function (rows) {   /* songs: only those a kept vivencia holds (or one read in this pass needs) stay on the device */
         var used = {}; rows.forEach(function (r) { (r.songs || []).forEach(function (n) { used[n] = true; }); });
         if (!window.BioAudio || !BioAudio.names) return;
-        return BioAudio.names().then(function (names) { names.forEach(function (n) { if (!used[n]) BioAudio.drop(n); }); });
-      }).then(function () { emit("done"); }, function (e) { emit("stopped", e && e.name); }).then(function () {
+        return BioAudio.names().then(function (names) { names.forEach(function (n) { if (!used[n] && !want[n]) BioAudio.drop(n); }); });
+      }).then(function () { if (stop) emit("stopped", why(stop)); else emit("done"); }, function (e) { stop = stop || e || new Error("stopped"); emit("stopped", why(stop)); }).then(function () {
         syncing = null;
         if (syncAgain) { syncAgain = false; }
+        return { stopped: stop ? (why(stop) || "other") : "", saved: saved, skipped: skipped };
       });
       return syncing;
     },
@@ -146,8 +162,7 @@
     }
   };
 
-  /* what cannot be done with no internet is not shown: the hearts, the buttons that change things (new, add, swap, remove) */
-  var st = document.createElement("style");
-  st.textContent = "html.bio-offline [data-like], html.bio-offline [data-likex], html.bio-offline [data-likev], html.bio-offline .rfab { display: none !important }";
-  document.head.appendChild(st);
+  /* what cannot be done with no internet is OFF IN ITS PLACE, never hidden (ui/docs/app-offline.md): the hearts need the server, so the kit
+     (/app.js, RosterApp.net) draws them disabled while there is no connection, and nothing in the row moves */
+  if (window.RosterApp && RosterApp.net) RosterApp.net.need("[data-like], [data-likex], [data-likev]");
 })();

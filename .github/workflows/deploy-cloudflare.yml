@@ -91,7 +91,7 @@ jobs:
           if [ "$GITHUB_EVENT_NAME" = "push" ]; then
             base=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/deploy-cloudflare.yml/runs?branch=main&status=success&per_page=1" --jq '.workflow_runs[0].head_sha // empty')
             if [ -n "$base" ] && git cat-file -e "$base^{commit}" 2>/dev/null; then
-              if git diff --quiet "$base" HEAD -- apps/chords src build.mjs package.json apps/floa/domain .github/workflows/deploy-cloudflare.yml; then
+              if git diff --quiet "$base" HEAD -- apps/chords src build.mjs package.json apps/floa/domain ui .github/workflows/deploy-cloudflare.yml; then
                 run=false
               fi
             fi
@@ -125,7 +125,7 @@ jobs:
           if [ "$GITHUB_EVENT_NAME" = "push" ]; then
             base=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/deploy-cloudflare.yml/runs?branch=main&status=success&per_page=1" --jq '.workflow_runs[0].head_sha // empty')
             if [ -n "$base" ] && git cat-file -e "$base^{commit}" 2>/dev/null; then
-              if git diff --quiet "$base" HEAD -- apps/roster src build.mjs package.json apps/floa/domain scripts/roster-ui.test.mjs scripts/roster-policy.mjs scripts/policy-allow.json .github/workflows/deploy-cloudflare.yml; then
+              if git diff --quiet "$base" HEAD -- apps/roster src build.mjs package.json apps/floa/domain ui scripts/roster-ui.test.mjs scripts/roster-policy.mjs scripts/policy-allow.json .github/workflows/deploy-cloudflare.yml; then
                 run=false
               fi
             fi

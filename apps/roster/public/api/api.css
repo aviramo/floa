@@ -43,9 +43,9 @@ bdi { unicode-bidi: isolate; }
 .toc summary::-webkit-details-marker { display: none; }
 .toc summary::after { content: ""; width: 8px; height: 8px; border: solid var(--text-2); border-width: 0 2px 2px 0; transform: rotate(45deg); transition: transform .15s; }
 .toc[open] summary::after { transform: rotate(-135deg); }
-.toc ol { margin: 0; padding: 4px 8px 10px; list-style: none; }
+.toc ol { margin: 0; padding: 0 8px 10px; list-style: none; }
 .toc li ol { padding: 0 14px 0 0; }
-.toc a { display: block; padding: 5px 10px; border-radius: 8px; color: var(--text-2); font-size: 15px; line-height: 1.5; text-decoration: none; }
+.toc a { display: flex; align-items: center; min-height: 33px; padding: 0 10px; border-radius: 8px; color: var(--text-2); font-size: 15px; line-height: 1.5; text-decoration: none; }
 .toc a:hover { background: var(--surface); color: var(--text); }
 .toc a[aria-current="true"] { background: var(--surface-2); color: var(--text); font-weight: 700; }
 .toc li ol a { font-size: 14px; }
@@ -69,8 +69,8 @@ p { margin: 0 0 14px; }
 .lead { color: var(--text-2); font-size: 19px; line-height: 1.65; }
 ul, ol.steps { margin: 0 0 16px; padding-inline-start: 24px; }
 li { margin: 4px 0; }
-code { padding: 1px 6px; border-radius: 6px; background: var(--surface-2); font: 500 .88em var(--mono); direction: ltr; unicode-bidi: isolate; overflow-wrap: anywhere; }
-.verb { display: inline-block; min-width: 56px; padding: 1px 8px; border-radius: 6px; background: var(--text); color: #fff; font: 700 12.5px/1.8 var(--mono); text-align: center; direction: ltr; vertical-align: 2px; }
+code { padding: 0 6px; border-radius: 6px; background: var(--surface-2); font: 500 .88em var(--mono); direction: ltr; unicode-bidi: isolate; overflow-wrap: anywhere; }
+.verb { display: inline-block; min-width: 56px; padding: 0 8px; border-radius: 6px; background: var(--text); color: #fff; font: 700 12.5px/1.8 var(--mono); text-align: center; direction: ltr; vertical-align: 2px; }
 .verb.get { background: var(--blue); } .verb.post { background: var(--green); } .verb.delete { background: var(--red); }
 .path { font: 600 .9em var(--mono); direction: ltr; unicode-bidi: isolate; overflow-wrap: anywhere; }
 .endpoint-title { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
