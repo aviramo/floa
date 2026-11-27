@@ -82,3 +82,6 @@ html[dir="ltr"] .rfield:has(> .rf-end:not(:empty)) > :is(input[type="date"], inp
 .rfield > input:is([dir="ltr"], [inputmode="decimal"], [inputmode="numeric"], [type="number"]) { direction: ltr; }
 .rfield:where(:dir(rtl)) > input:is([dir="ltr"], [inputmode="decimal"], [inputmode="numeric"], [type="number"]) { text-align: right; }
 html[dir="ltr"] .rfield > input:is([dir="ltr"], [inputmode="decimal"], [inputmode="numeric"], [type="number"]) { text-align: left; }
+/* a choice (select) in a filter strip that stays at the top (a surface's bar, the list's top tile, the header's choice slot): no line under it, only its label, value and
+   chevron (owner 2026-11-27, "שדות שנמצאים בפילטרים של כותרות... בלי קו תחתון אם זה DROPDOWN"); the focus ring of the shared click rule still marks the keyboard */
+:is(.rlayout__bar, [data-rquick], .rhead__pick) .rfield > select, :is(.rlayout__bar, [data-rquick], .rhead__pick) .rfield > select:focus { border-bottom-color: transparent; box-shadow: none; }

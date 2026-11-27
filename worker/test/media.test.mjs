@@ -328,6 +328,22 @@ test("lists: private and trash need staff; staff get presigned URLs, a public pr
   assert.equal(env.MEDIA.log.find((l) => l[0] === "list")[2].limit, 200, "a private page is clamped to 200");
 });
 
+test("lists: a store turned on elsewhere answers at once; an empty public folder is 200 with no items, for staff too", async () => {
+  const env = makeEnv();
+  /* this isolate sees the business off first */
+  assert.equal((await call(env, "GET", "?prefix=ads/&limit=1000")).json.error.code, "not_found");
+  assert.equal((await call(env, "GET", "?prefix=ads/&limit=1000", { token: "" })).status, 403);
+  /* then another isolate (or wrangler) writes .settings.json; no cache is cleared here */
+  await seed(env);
+  for (const token of ["owner", ""]) {
+    const r = await call(env, "GET", "?prefix=ads/&limit=1000", { token });
+    assert.equal(r.status, 200, `token ${token || "none"}`);
+    assert.deepEqual(r.json.items, []);
+    assert.equal(r.json.cursor, null);
+  }
+  assert.equal((await call(env, "GET", "_admin", { token: "owner" })).status, 200);
+});
+
 /* --- 6. index ---------------------------------------------------------------------------------------------------------------- */
 
 test("index: written over the etag it read; a concurrent change makes it retry and keep both items", async () => {

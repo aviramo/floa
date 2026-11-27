@@ -2850,8 +2850,8 @@
       });
       inp.click();
     });
-    var amS = amHead && amHead.querySelector("#amsearch");   /* a picker: opened with the search open (the keyboard only on a computer); heavy, so it waits --search-wait for a pause in the typing */
-    if (amS) RosterSearch.attach(amS, listEl, { label: it.__listen ? "חיפוש מוסיקה" : "חיפוש מוזיקה", open: true, heavy: true, icon: I.music, onQuery: function (q) {
+    var amS = amHead && amHead.querySelector("#amsearch");   /* a picker: opened WITHOUT the search open (owner 2026-11-27); heavy, so it waits --search-wait for a pause in the typing */
+    if (amS) RosterSearch.attach(amS, listEl, { label: it.__listen ? "חיפוש מוסיקה" : "חיפוש מוזיקה", heavy: true, icon: I.music, onQuery: function (q) {
       amQ = q; draw(true);
       if (!fold(q).trim()) return;
       warmEx().then(function () { var v = fold(amQ); if (!listEl.isConnected || !v) return; xs = exSongs(v); xsFor = v; draw(); });   /* the exercises' side of the search, once their texts are here */

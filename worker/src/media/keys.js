@@ -214,7 +214,7 @@ export const DEFAULTS = {
 };
 const SETTINGS_TTL = 60 * 1000;
 const MAX_ORIGINS = 20, MAX_FOLDERS = 20;
-const settingsCache = new Map();   /* b -> { value: {settings, etag} | null, until } */
+const settingsCache = new Map();   /* b -> { value: {settings, etag}, until }; "off" is never kept */
 
 export function settingsKey(b) { return b + "/.settings.json"; }
 export function _clearSettingsCache() { settingsCache.clear(); }
@@ -244,11 +244,13 @@ export function normalizeSettings(raw) {
   return s;
 }
 
-/* { settings, etag } or null when the business is off. Kept 60 s per business unless `fresh`. */
+/* { settings, etag } or null when the business is off. Settings that exist are kept 60 s per business unless `fresh`.
+   "Off" is never kept: the store is turned on by a write in another isolate (or with wrangler), and an isolate that had
+   remembered "off" answered 404 to staff, and refused everyone else, for up to a minute after it was on. */
 export async function readSettings(env, b, { fresh = false } = {}) {
   const now = Date.now();
   const hit = settingsCache.get(b);
-  if (!fresh && hit && hit.until > now) return hit.value;
+  if (!fresh && hit && hit.value && hit.until > now) return hit.value;
   const obj = await env.MEDIA.get(settingsKey(b));
   let value = null;
   if (obj) {
@@ -260,7 +262,7 @@ export async function readSettings(env, b, { fresh = false } = {}) {
     }
     value = { settings: normalizeSettings(raw), etag: obj.etag };
   }
-  rememberSettings(b, value);
+  if (value) rememberSettings(b, value); else settingsCache.delete(b);
   return value;
 }
 
