@@ -204,7 +204,9 @@
   }
   /* a song with a file in the bucket gets the sound button (assets/audio.js); one without keeps the YouTube button */
   var songInfo = {};   /* every song's name and performer by its file, as the lists have shown them: the footer player reads its title here */
-  var heartOf = {};   /* the player's heart of each song, by its file: its music row, from the card it was drawn on, or asked once (""= no row). Decided ONCE per song, so the heart never comes and goes (owner 2026-11-26) */
+  var heartOf = (function () { try { return JSON.parse(localStorage.getItem("bio.hearts") || "{}") || {}; } catch (e) { return {}; } })();   /* kept on the device, so after a reload the remembered song has its heart at once (owner 2026-11-27, "בטעינה לא רואים את הלב") */
+  function keepHearts() { try { var k = Object.keys(heartOf), o = {}; k.slice(-200).forEach(function (n) { o[n] = heartOf[n]; }); localStorage.setItem("bio.hearts", JSON.stringify(o)); } catch (e) { /* not kept: asked again */ } }
+  /* heartOf: the player's heart of each song, by its file: its music row, from the card it was drawn on, or asked once (""= no row). Decided ONCE per song, so the heart never comes and goes (owner 2026-11-26) */
   function songBtn(m, trail) {   /* trail: in a row the button(s) sit in the row's ONE end wrapper (.rrow__trail) */
     var b = songBtnOnly(m);
     return trail ? '<span class="rlayout rlayout--row rrow__trail">' + b + '</span>' : b;
@@ -392,15 +394,15 @@
     document.addEventListener("click", function (ev) {   /* a tap on what plays: the kit's ONE small menu on every width (ui/docs/player.md, owner 2026-11-26): the song as a plain music card (title, artist, time, heart), and what can be done with it */
       var nmEl = ev.target.closest && ev.target.closest(".rplayer__info"); if (!nmEl) return;
       var who = nmEl.dataset.who, eid = nmEl.getAttribute("data-edit"); if (!who) return;
-      var hb = dock.querySelector(".rplayer__heart"), hid = hb && !hb.hidden ? hb.dataset.like : "", canAdd = addCurShow();
+      var hid = heartOf[who] || "", canAdd = addCurShow();
       var dur = Math.round(curName === who && curD > 0 ? curD : (last && last.n === who ? last.d : 0)) || 0;
-      var card = songCardUi({ id: hid || "h0", audio_object: who, title: shownT, name: shownT, artist: shownA, duration_sec: dur }, { title: shownT || "מוסיקה", by: shownA, noHeart: !hid });
+      var head = '<div class="rmenu__head"><b dir="auto">' + esc(shownT || "מוסיקה") + '</b><span class="rmenu__sub" dir="auto">' + esc([shownA, dur ? clk(dur) : ""].filter(Boolean).join(" ")) + '</span></div>';   /* the menu's head is the song: its name, and its performer and time as on its card; no card (owner 2026-11-27) */
       var openMenu = function () {
-        var mi = (canAdd ? [{ label: "הוספה", icon: I.plus, fn: addCur }] : []).concat([{ label: "חיפוש מוסיקה", icon: I.search, fn: function () { similarToPlaying(who); } }]).concat(eid ? [{ label: "עריכת שם ומבצע", icon: I.pen, fn: function () { editFromDock(); } }] : []);   /* the actions on the song are the menu's own items (ui/docs/menu.md), not buttons: one that cannot be used now is a disabled item */
+        var mi = [hid ? { label: "אהבתי", icon: I.heart, check: !!likes[hid], fn: function () { if (likes[hid]) { if (window.RosterMenu) RosterMenu.close(); setTimeout(function () { confirmUnlike(hid, null, nmEl); }, 60); }   /* the menu and its history entry are gone before the confirm opens, so the confirm never opens under it */ else toggleLike(hid); } } : { label: "אהבתי", icon: I.heart, check: false, disabled: true }].concat(canAdd ? [{ label: "הוספה", icon: I.plus, fn: addCur }] : []).concat([{ label: "חיפוש מוסיקה", icon: I.search, fn: function () { similarToPlaying(who); } }]).concat(eid ? [{ label: "עריכת שם ומבצע", icon: I.pen, fn: function () { editFromDock(); } }] : []);   /* the actions on the song are the menu's own items (ui/docs/menu.md), not buttons: one that cannot be used now is a disabled item */
         if (mi.length === 1) { mi[0].fn(); return; }   /* one action is not a menu (ui/docs/menu.md): the tap does it */
-        menu(nmEl, mi, { head: '<div class="rmenu__head">' + card + '</div>', up: true, ref: dock });
+        menu(nmEl, mi, { head: head, up: true, ref: dock });   /* "אהבתי" first (owner 2026-11-27) */
       };
-      openMenu();   /* at once: "חיפוש מוסיקה" has no count to wait for (owner 2026-11-26) */
+      openMenu();   /* a tap on the song in the player opens its menu: "אהבתי", "חיפוש מוסיקה", and the rest (owner 2026-11-27) */
       function editFromDock() {
       api("/rest/v1/music?id=eq." + eid + "&select=id,name,title,artist,duration_sec,audio_object,in_catalog&limit=1").then(function (rows) {
         var m = rows && rows[0]; if (!m) return;
@@ -475,8 +477,7 @@
       '<button type="button" class="ricon-lg" aria-label="השמעה" title="השמעה">' + PLAY + '</button>' +
       '<input class="rrange rrange--seek" type="range" min="0" max="0" value="0" step="1" aria-label="מקום במוסיקה" disabled>' +
       '<button type="button" class="rplayer__info" aria-haspopup="menu"><span class="rplayer__title" dir="auto" aria-live="polite"></span><span class="rplayer__sub" dir="auto"></span></button>' +
-      '<span class="rplayer__none">לא נבחרה מוסיקה</span>' +
-      '<button type="button" class="rbtn rbtn--icon rbtn--accent rbtn--fill rplayer__heart" data-like="" data-like-confirm hidden aria-pressed="false" aria-label="מוסיקה שאהבתי" title="מוסיקה שאהבתי">' + I.heart + '</button>';   /* the heart of the song that plays (owner 2026-11-26: no ⋮ in the player); the sync mark sits just before it (syncPlace) */
+      '<span class="rplayer__none">לא נבחרה מוסיקה</span>';   /* no heart in the player: "אהבתי" is the first item of the song's menu (owner 2026-11-27) */
     document.body.appendChild(dock);
     if (RosterSheet.raisePlayer) RosterSheet.raisePlayer();   /* the kit puts it in the top layer, over any window that opens (sheet.js) */
     document.addEventListener("biobusy", function (ev) { var pb = dock.querySelector(".ricon-lg"); waiting = !!ev.detail.on; waitName = waiting ? (ev.detail.name || "") : ""; if (waiting) errName = ""; if (waiting) pb.setAttribute("aria-busy", "true"); else pb.removeAttribute("aria-busy"); sync(); });   /* law 7 on the large icon: the song waits for its file */
@@ -573,11 +574,12 @@
           var hb = d.querySelector(".rplayer__heart"), lid = heartOf[who] != null ? heartOf[who] : musicIdOf(who);
           if (editOf[who]) nm.setAttribute("data-edit", editOf[who]); else nm.removeAttribute("data-edit");
           dockHeart(hb, lid);   /* known: at once, and it stays; unknown: hidden until asked below, once */
-          if (lid) heartOf[who] = lid;
+          if (lid && heartOf[who] !== lid) { heartOf[who] = lid; keepHearts(); }
           if (who && heartOf[who] == null && window.FLOA_AUTH && FLOA_AUTH.signedIn()) api("/rest/v1/music?audio_object=eq." + encodeURIComponent(who) + "&select=id,in_catalog,audio_object&limit=20").then(function (rows) {
             rows = (rows || []).filter(function (x) { return x.audio_object === who; });
             var lk = rows.filter(function (x) { return likes[x.id]; })[0];
             heartOf[who] = rows[0] ? (lk || rows[0]).id : "";   /* the same file in more than one row: the one I loved, as its card shows it; no row: no heart, decided */
+            keepHearts();
             if (rows[0] && !rows[0].in_catalog) editOf[who] = rows[0].id;
             if (nm.dataset.who !== who) return;
             if (editOf[who]) nm.setAttribute("data-edit", editOf[who]);
@@ -2818,6 +2820,7 @@
         return;
       }
       /* a search or a box set: the whole catalog, with the catalog's matching; each song once, in the first group that holds it */
+      if (catAll == null) { amL.update(null); return; }   /* the catalog is not here yet: the list is loading, never "אין מוסיקה שמתאימה לסינון" (owner 2026-11-27) */
       if (!words.length && !exCnt && !amCnt) { amCnt = true; ensureExCnt().then(function () { if (listEl.isConnected && exCnt) draw(); }); }   /* a filter alone: the most exercises first, as in the catalog */
       var en = function (m) { return catById[m.id] || m; }, xq = words.length && xsFor === s0 ? xs : null, seen = {};
       var put = function (fr) { Object.keys(fr.xOf).forEach(function (k) { xsOf[k] = fr.xOf[k]; }); return fr.list.filter(function (m) { if (seen[m.id]) return false; seen[m.id] = 1; return true; }); };
@@ -2981,7 +2984,7 @@
   /* THE MUSIC CATALOG'S FILTER, one copy for every place that filters the catalog's music (the music catalog, and the music picker of an exercise, openAddMusic):
      the four boxes (a field each, "הכל" first), their options from the songs, the values ({ mln, mch, msp, mef }) and the matching with the catalog's search */
   var MU_BOXES = [["mln", "קו"], ["mch", "אופי"], ["msp", "מהירות"], ["mef", "אפקט"]];
-  function muFilterHtml() { return '<div class="pgs mfs">' + MU_BOXES.map(function (b) { return '<label class="rfield"><span>' + b[1] + '</span><select data-mf="' + b[0] + '"><option value="">הכל</option></select></label>'; }).join("") + '</div>'; }
+  function muFilterHtml() { return '<div class="pgs mfs">' + MU_BOXES.map(function (b) { return '<label class="rfield rfield--plain"><span>' + b[1] + '</span><select data-mf="' + b[0] + '"><option value="">הכל</option></select></label>'; }).join("") + '</div>'; }
   function muFilterOf(v) { return { ln: v.mln || "", ch: v.mch || "", sp: v.msp || "", ef: v.mef || "" }; }
   function muFilterSet(f) { return !!(f.ln || f.ch || f.sp || f.ef); }
   function muFilterFill(root, all, v) {   /* the options of each box: only the values some song holds (the effects by how many hold them); each box shows v's value */

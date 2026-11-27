@@ -224,7 +224,7 @@
      (move an element, or reorder the top layer). Called from the windows' own open and close (attach), and from any dialog's toggle or close event. */
   function raisePlayer() {
     var p = document.querySelector(".rplayer[popover]"); if (!p || !document.body) return;
-    var dl = [].filter.call(document.querySelectorAll("dialog[open]"), function (d) { try { return d.matches(":modal"); } catch (e) { return true; } }), host = dl.length ? dl[dl.length - 1] : document.body;
+    var dl = [].filter.call(document.querySelectorAll("dialog[open]"), function (d) { if (d.hasAttribute("data-anchored")) return false; try { return d.matches(":modal"); } catch (e) { return true; } }), host = dl.length ? dl[dl.length - 1] : document.body;   /* a short window anchored beside a control (a confirm, a notice) is too small to hold the bar: the player stays where it is, under it (owner 2026-11-27: the player vanished while "הסרת סימון אהבתי" was open) */
     if (p.parentNode === host && p.__rsOver === host && p.matches(":popover-open")) return;   /* already over the top window */
     try { p.hidePopover(); } catch (e) { /* not shown yet */ }
     if (p.parentNode !== host) host.appendChild(p);
@@ -256,9 +256,11 @@
     if (o.from) dlg.setAttribute("data-from", o.from);
     if (o.size) dlg.setAttribute("data-size", o.size); else dlg.removeAttribute("data-size");   /* s, m (default) or l: the width tokens of popup.css */
     if (o.desktop) dlg.setAttribute("data-desktop", o.desktop); else dlg.removeAttribute("data-desktop");   /* "side": a left drawer on a computer */
+    var pl = dlg.querySelector(":scope > .rplayer[popover]"); if (pl) { try { pl.hidePopover(); } catch (e) { /* not shown */ } document.body.appendChild(pl); pl.__rsOver = null; }   /* the player that sits over this window is taken out before its content is drawn again, never erased with it (owner 2026-11-27: the player vanished) */
     dlg.innerHTML = markup(o);
     ensureGrab(dlg);
     if (!dlg.open) dlg.showModal();
+    if (pl) raisePlayer();
     if (o.anchor && wide() && o.anchor.isConnected) anchorTo(dlg, o.anchor);
   }
 
@@ -883,7 +885,7 @@
       return [].slice.call(h.querySelectorAll("[data-pri][data-folded]")).sort(byPri).map(function (x) {
         var label = x.getAttribute("data-menu-label") || x.getAttribute("aria-label") || "", fn = (act && act(x)) || function () { x.click(); };
         if (!x.hasAttribute("data-menu-label") && /\s/.test(label.trim())) console.warn("RosterHeader: a folded header action needs a short data-menu-label (" + label + ")");
-        if (x.hasAttribute("data-menu-check")) return { label: label, check: (x.getAttribute("aria-pressed") === "true") !== (x.getAttribute("data-menu-check") === "false"), fn: fn };
+        if (x.hasAttribute("data-menu-check")) return { label: label, check: (x.getAttribute("aria-pressed") === "true") !== (x.getAttribute("data-menu-check") === "false"), icon: x.innerHTML, fn: fn };   /* a toggle keeps its icon in the menu (a heart), filled while on */
         return { label: label, icon: x.innerHTML, fn: fn };
       });
     }
@@ -892,5 +894,42 @@
   window.RosterHeader = RosterHeader;
 
   window.RosterBusy = RosterBusy;
-  window.RosterSheet = { WIDE: WIDE, barB: barB, raisePlayer: raisePlayer, attach: attach, open: open, render: render, shell: shell, setDirty: setDirty, busy: busy, confirm: confirm, panel: panel, popup: popup, history: H };
+  /* THE MEDIA VIEWER (ui/docs/media.md; owner 2026-11-27): one image or video, or one of a set, inside the kit's popup (a side panel on a computer, a sheet on a phone).
+     o: { items: [{ src, type: "image"|"video", poster, title, w, h }], index, cors, side, id, onClose } (or one item's fields on o itself).
+     A set has "הקודם" and "הבא" among the header's actions, and the arrow keys in the reading direction; the file fills the body, its ratio kept */
+  function media(o) {
+    o = o || {};
+    var items = o.items && o.items.length ? o.items : [o], i = Math.max(0, Math.min(items.length - 1, o.index | 0));
+    var ico = function (n) { return '<svg class="rsym" aria-hidden="true" focusable="false"><use href="/icons.svg#' + n + '"/></svg>'; };
+    var file = function () {   /* o.after(item, i): the app's content under the file (its rights, links), drawn again at every step */
+      var m = items[i], co = (m.cors || o.cors) ? ' crossorigin="anonymous"' : "", wh = m.w && m.h ? ' width="' + (m.w | 0) + '" height="' + (m.h | 0) + '"' : "";
+      var aft = o.after ? (o.after(m, i) || "") : "";
+      return '<figure class="rmedia' + (aft ? ' rmedia--after' : '') + '">' + (m.type === "video"
+        ? '<video src="' + popEsc(m.src) + '"' + wh + co + (m.poster ? ' poster="' + popEsc(m.poster) + '"' : "") + ' controls playsinline></video>'
+        : '<img src="' + popEsc(m.src) + '" alt="' + popEsc(m.title || "") + '"' + wh + co + ' decoding="async">') + '</figure>' + (aft ? '<div class="rmedia__after">' + aft + '</div>' : '');
+    };
+    var nav = items.length > 1 ? '<button type="button" class="rbtn rbtn--icon" data-rmedia="-1" aria-label="הקודם" title="הקודם">' + ico("back") + '</button><button type="button" class="rbtn rbtn--icon" data-rmedia="1" aria-label="הבא" title="הבא">' + ico("next") + '</button>' : "";
+    var acts = function () { return (o.actions ? (o.actions(items[i], i) || "") : "") + nav; };   /* o.actions(item, i): the item's own actions, before "הקודם" and "הבא" */
+    var el = popup({ id: o.id || "rsMedia", side: o.side || "end", title: items[i].title || o.title || "", body: file(), actions: acts() || " ", onClose: o.onClose });
+    var paintActs = function () {
+      var hd = el.querySelector(".rhead, .sheet-head"), a = hd && hd.querySelector(":scope > .rhead__acts"); if (!a) return;
+      a.innerHTML = acts(); if (window.RosterHeader && RosterHeader.fit) RosterHeader.fit(hd);
+    };
+    var show = function (k) {
+      i = (k + items.length) % items.length;
+      var b = popup.body(el); if (b) { b.innerHTML = file(); b.scrollTop = 0; }
+      var t = el.querySelector(".rhead__title"); if (t) t.textContent = items[i].title || o.title || "";
+      paintActs();
+      if (o.onShow) o.onShow(items[i], i, el);   /* the app wires what it added, at the opening and at every step */
+    };
+    el.addEventListener("click", function (ev) { var b = ev.target.closest && ev.target.closest("[data-rmedia]"); if (b) show(i + (+b.getAttribute("data-rmedia"))); });
+    el.addEventListener("keydown", function (ev) {
+      if (items.length < 2 || !/^Arrow(Left|Right)$/.test(ev.key) || /^(INPUT|TEXTAREA|SELECT|VIDEO)$/.test(ev.target.tagName)) return;
+      var rtl = getComputedStyle(el).direction === "rtl", fwd = (ev.key === "ArrowLeft") === rtl;   /* the reading direction: in Hebrew the left arrow is "next" */
+      ev.preventDefault(); show(i + (fwd ? 1 : -1));
+    });
+    if (o.onShow) o.onShow(items[i], i, el);
+    return { el: el, show: show, index: function () { return i; }, item: function () { return items[i]; } };
+  }
+  window.RosterSheet = { WIDE: WIDE, barB: barB, raisePlayer: raisePlayer, attach: attach, open: open, render: render, shell: shell, setDirty: setDirty, busy: busy, confirm: confirm, panel: panel, popup: popup, media: media, history: H };
 })();

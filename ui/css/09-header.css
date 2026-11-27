@@ -8,6 +8,7 @@
 /* a bar that stays under the header (filters, a field: .rlayout__bar of the surface): the one soft edge is under the LAST block that stays, never under the header
    (owner 2026-11-27, "אם יש מתחתיו כותרת דביקה... צל באריח התחתון ולא בכותרת הראשית") */
 .rlayout--surface > .rlayout__bar:not([data-rquick]) { position: relative; }
+.rlayout--surface > :is(.rhead, .sheet-head) + .rlayout__bar { padding-block-start: 0; }   /* a bar right under the header: no padding above it (owner 2026-11-27) */
 .rlayout--surface > .rlayout__bar:not([data-rquick])::after { content: ""; position: absolute; inset-inline: 0; top: 100%; height: var(--gap); background: var(--edge-shadow); opacity: 0; transition: opacity var(--t-base) var(--ease); pointer-events: none; z-index: var(--z-raised); }
 .rlayout--surface:has(> .rlayout__bar:not([hidden], [data-rquick])) > :is(.rhead, .sheet-head)::after { opacity: 0; }
 .rlayout--surface[data-scrolled] > .rlayout__bar:not([hidden], [data-rquick]):not(:has(~ .rlayout__bar:not([hidden])))::after { opacity: 1; }
@@ -37,3 +38,18 @@ input.rhead__title { flex: 1 1 auto; width: 100%; border: 0; outline: 0; border-
 .rhead > .rhead__pick ~ .rhead__acts, .rhead:has(> .rhead__pick) > .rhead__acts { order: 2; }
 .rhead > .rhead__pick > .rfield { min-inline-size: calc(var(--ctl) * 4); }
 @container (width < 560px) { .rhead > .rhead__pick { order: 3; flex: 1 0 100%; padding-block-end: var(--gap-tight); } }
+/* UNDER A HEADER, NO TOP PADDING (owner 2026-11-27, "כל האלמנטים שיושבים מתחת להאדרים לא צריכים PADDING עליון"): the first thing under a surface's header starts right under it.
+   Only a first card keeps --shadow-room, the room its shadow needs above it (a shadow is never cut, owner 2026-11-26); the strip of a big shadowed button keeps its --gap (05-list-row.css) */
+.rlayout--surface > :is(.rhead, .sheet-head) + :is(.rlayout__body, .rlist), .rlayout--surface > :is(.rhead, .sheet-head) + .rlayout__body > .rlist:first-child { padding-block-start: 0; }
+.rlayout--surface > :is(.rhead, .sheet-head) + :is(.rlayout__body, .rlist):has(> .rcard:first-child, > :first-child > .rcard:first-child),
+.rlayout--surface > :is(.rhead, .sheet-head) + .rlayout__body > .rlist:first-child:has(> .rcard:first-child, > :first-child > .rcard:first-child) { padding-block-start: var(--shadow-room); }
+.rlayout--surface > :is(.rhead, .sheet-head) + :is(.rlayout__body, .rlist):has(> :first-child > .rmid:first-child) { padding-block-start: var(--gap); }
+/* A TITLE ON MORE THAN ONE LINE (data-wrap; owner 2026-11-27): its first line sits on the middle of the header's row, level with the icons, and the other lines go on
+   under it; the lines are close (--lh-tight). The buttons stay on the first row, they do not move to the block's middle */
+.rhead[data-wrap] { align-items: flex-start; }
+.rhead[data-wrap] .rhead__text { align-self: flex-start; padding-block-start: calc((var(--head-row) - var(--fs-l) * var(--lh-tight)) / 2); }
+.rhead[data-wrap] :is(.rhead__title, .rhead__tl) { line-height: var(--lh-tight); }
+.rhead[data-wrap] > .rbtn--icon:not(.rappmenu) { margin-block-start: calc((var(--head-row) - var(--icon)) / 2); }
+.rhead[data-wrap] > .rappmenu { margin-block-start: calc((var(--head-row) - var(--icon-lg)) / 2); }   /* the round app button: its own size, centered on the first row like the other icons */
+.rhead[data-wrap] > :is(.rhead__acts, .rgroup, .rhead__pick) { min-block-size: var(--head-row); }
+.rhead[data-wrap] .rhead__tw > .rhead__sub { margin-block-start: calc(var(--gap-sub) - var(--fs-l) * (var(--lh-tight) / 2 - .3) - var(--fs-m) * (var(--lh-tight) / 2 - .25)); }

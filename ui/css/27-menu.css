@@ -13,3 +13,6 @@
 .rmenu__sub, .rmenu__mail { color: var(--text-muted); font: var(--fw-regular) var(--fs-s)/var(--lh-tight) var(--font); overflow-wrap: anywhere; }
 button.rmenu__head { box-sizing: border-box; width: 100%; margin: 0; padding-bottom: var(--gap-tight); border: 0; border-radius: 0; background: transparent; color: var(--text); text-align: start; }
 .rmenu--fixed { position: fixed; inset-inline-end: auto; inset-block-end: auto; margin: 0; }
+
+/* a toggle item with an icon of its own (a heart folded from a header): its icon is the state, filled while on (owner 2026-11-27) */
+.rmenu__item[aria-checked="true"] > svg.rsym { fill: currentColor; color: var(--primary); }

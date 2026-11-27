@@ -39,7 +39,7 @@
      fourth group: squeezing that section alone recovered six of the eight
      millimetres needed to keep page one ending at Brillix, and this is the
      other two. */
-  --cv-gap: 2.4mm;
+  --cv-gap: 3mm;
   --cv-pad: 14mm;
 
   /* ONE SPACING SCALE for the whole document. Every gap in it is one of these
@@ -52,7 +52,7 @@
      The screen and the phone change the four values, never the rules. */
   --cv-s: .8mm;
   --cv-m: 1.6mm;
-  --cv-l: 3mm;
+  --cv-l: 3.6mm;
 
   width: 210mm;
   max-width: 100%;
@@ -139,6 +139,9 @@
 }
 
 .cv-list > li + li { margin-top: var(--cv-s); }
+
+/* a single point: plain text under the org, at the list's distance */
+.cv-text { margin-top: var(--cv-s); }
 .cv-list > li::marker { color: var(--cv-slate); }
 
 /* --- one entry: the title on the line, its dates hard against the far edge -- */
@@ -166,8 +169,8 @@
 }
 
 .cv-job__org {
-  color: var(--cv-slate);
-  font-weight: 600;
+  color: var(--cv-ink);
+  font-weight: 700;
   margin-top: var(--cv-s);
 }
 
@@ -267,10 +270,10 @@
 @media screen {
   .cv-sheet {
     --cv-fs: 16px;
-    --cv-gap: 6mm;
+    --cv-gap: 7mm;
     --cv-s: 1.6mm;
     --cv-m: 3mm;
-    --cv-l: 6mm;
+    --cv-l: 7.5mm;
     line-height: 1.5;
   }
 

@@ -3,83 +3,111 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>צ'אט לפרסום ברשתות | FLOA</title>
-<meta name="description" content="כותבים תסריט שיחה לכל מודעה ברשתות חברתיות. מי שלוחץ על המודעה נוחת בצ'אט שמוביל אותו, הודעה אחרי הודעה, לפעולה שביקשתם. את התסריט עורכים בעצמכם.">
+<title>צ'אט מבוסס תסריטים למודעות ממומנות | FLOA</title>
+<meta name="description" content="צ'אט קצר שממשיך כל מודעה ממומנת: חמש הודעות, שלוש אפשרויות בכל הודעה, ובסוף פעולה אחת ברורה. תסריט נפרד לכל מודעה, גרסה לכל מגדר, ועורך שבו כותבים הכול בעצמכם. בלי בינה מלאכותית שמאלתרת.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;800&display=swap">
 <style>
-:root { --cream: #fff5e8; --paper: #fffdf9; --ink: #2c231d; --muted: #5d4f44; --teal: #064452; --plum: #9a2d5e; --sun: #f2a65a; --line: rgba(44, 35, 29, .14); --r: 18px; }
+:root {
+  --cream: #fff6ea; --paper: #fffdf9; --ink: #261e19; --muted: #5b4d42; --teal: #054451; --teal-2: #0a5f6f;
+  --plum: #8f2857; --sun: #f2a65a; --mint: #d6efef; --line: rgba(38, 30, 25, .13); --r: 20px;
+  --shadow: 0 24px 60px rgba(38, 30, 25, .16);
+}
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { margin: 0; background: var(--cream); color: var(--ink); font-family: "Assistant", system-ui, sans-serif; font-size: 18px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+body { margin: 0; background: var(--cream); color: var(--ink); font-family: "Assistant", system-ui, sans-serif; font-size: 18px; line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 a { color: inherit; }
-.wrap { width: min(72rem, 100% - 2.4rem); margin-inline: auto; }
-:focus-visible { outline: 3px solid var(--plum); outline-offset: 3px; }
+.wrap { width: min(74rem, 100% - 2.4rem); margin-inline: auto; }
+:focus-visible { outline: 3px solid var(--plum); outline-offset: 3px; border-radius: 6px; }
 
 /* top bar */
 .bar { display: flex; align-items: center; justify-content: space-between; padding: 1.1rem 0; }
-.logo { font-weight: 800; font-size: 1.25rem; text-decoration: none; letter-spacing: .01em; }
-.logo span { color: var(--plum); }
+.logo { display: inline-flex; align-items: center; gap: .55rem; font-weight: 800; font-size: 1.2rem; text-decoration: none; }
+.logo i { width: 30px; height: 30px; border-radius: 10px; background: linear-gradient(135deg, var(--sun), var(--plum)); display: grid; place-items: center; }
+.logo i::before { content: ""; width: 14px; height: 10px; border-radius: 6px 6px 6px 2px; background: #fff; }
 .nav { display: flex; gap: 1.4rem; align-items: center; font-size: .95rem; font-weight: 600; }
-.nav a { text-decoration: none; opacity: .8; }
-.nav a:hover { opacity: 1; }
+.nav a { text-decoration: none; }
+.nav a:not(.btn) { opacity: .78; }
+.nav a:not(.btn):hover { opacity: 1; }
 
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 52px; padding: 0 1.7rem; border-radius: 99px; font: inherit; font-weight: 700; font-size: 1.05rem; text-decoration: none; border: 2px solid var(--ink); background: var(--ink); color: #fff; transition: transform .15s, box-shadow .15s; }
-.btn:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(44, 35, 29, .22); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: .55rem; min-height: 52px; padding: 0 1.7rem; border-radius: 99px; font: inherit; font-weight: 700; font-size: 1.05rem; text-decoration: none; border: 2px solid var(--ink); background: var(--ink); color: #fff; transition: transform .15s, box-shadow .15s; }
+.btn:hover { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(38, 30, 25, .22); }
 .btn.ghost { background: transparent; color: var(--ink); }
+.btn.sun { background: var(--sun); border-color: var(--sun); color: var(--ink); }
 .btn.small { min-height: 40px; padding: 0 1.2rem; font-size: .95rem; }
+.btn svg { width: 18px; height: 18px; }
 
 /* hero */
-.hero { position: relative; overflow: hidden; background: radial-gradient(60rem 30rem at 85% -10%, #ffe2bd 0%, transparent 60%), radial-gradient(50rem 28rem at 0% 110%, #d9eef0 0%, transparent 60%), var(--cream); }
-.hero .grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 3rem; align-items: center; padding: 3rem 0 5rem; }
-.kicker { display: inline-block; font-weight: 700; font-size: .85rem; letter-spacing: .08em; color: var(--plum); background: rgba(154, 45, 94, .1); padding: .25rem .8rem; border-radius: 99px; margin-bottom: 1.2rem; }
-h1 { font-size: clamp(2.3rem, 5vw, 4rem); line-height: 1.08; margin: 0 0 1.2rem; font-weight: 800; letter-spacing: -.015em; }
+.hero { position: relative; overflow: hidden; background:
+  radial-gradient(52rem 30rem at 90% -12%, #ffdcb2 0%, transparent 62%),
+  radial-gradient(46rem 28rem at -6% 108%, var(--mint) 0%, transparent 62%), var(--cream); }
+.hero .grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 3rem; align-items: center; padding: 2.6rem 0 5.2rem; }
+.kicker { display: inline-flex; align-items: center; gap: .5rem; font-weight: 700; font-size: .85rem; letter-spacing: .06em; color: var(--plum); background: rgba(143, 40, 87, .1); padding: .3rem .85rem; border-radius: 99px; margin-bottom: 1.2rem; }
+.kicker::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--plum); }
+h1 { font-size: clamp(2.4rem, 5.4vw, 4.2rem); line-height: 1.06; margin: 0 0 1.2rem; font-weight: 800; letter-spacing: -.015em; }
 h1 em { font-style: normal; color: var(--teal); background: linear-gradient(transparent 62%, rgba(242, 166, 90, .55) 62%); }
-.sub { font-size: 1.3rem; color: var(--muted); max-width: 34rem; margin: 0 0 2rem; }
+.sub { font-size: 1.28rem; color: var(--muted); max-width: 35rem; margin: 0 0 2rem; }
 .cta { display: flex; flex-wrap: wrap; gap: .8rem; }
+.facts { display: flex; flex-wrap: wrap; gap: .6rem 1.4rem; margin: 2rem 0 0; padding: 0; list-style: none; color: var(--muted); font-size: .98rem; font-weight: 600; }
+.facts li { display: inline-flex; align-items: center; gap: .45rem; }
+.facts b { color: var(--ink); font-size: 1.15rem; }
 
-/* the phone with a chat that plays by itself */
-.phone { justify-self: center; width: min(21rem, 100%); background: var(--ink); border-radius: 2.4rem; padding: .7rem; box-shadow: 0 30px 60px rgba(44, 35, 29, .28), 0 0 0 2px rgba(255, 255, 255, .06) inset; transform: rotate(-2deg); }
-.screen { background: var(--cream); border-radius: 1.8rem; padding: 1.1rem .9rem 1rem; min-height: 25rem; display: flex; flex-direction: column; gap: .55rem; overflow: hidden; }
+/* the phone: a full conversation that plays by itself */
+.phone { justify-self: center; width: min(22rem, 100%); background: var(--ink); border-radius: 2.6rem; padding: .7rem; box-shadow: var(--shadow), 0 0 0 2px rgba(255, 255, 255, .06) inset; transform: rotate(-2deg); position: relative; }
+.phone::after { content: ""; position: absolute; top: .95rem; inset-inline: 0; margin-inline: auto; width: 5.5rem; height: 1.1rem; border-radius: 99px; background: var(--ink); }
+.screen { background: var(--cream); border-radius: 2rem; padding: 2.1rem .9rem 1rem; min-height: 33rem; display: flex; flex-direction: column; gap: .5rem; overflow: hidden; }
 .screen .top { display: flex; align-items: center; gap: .6rem; padding-bottom: .6rem; border-bottom: 1px solid var(--line); margin-bottom: .3rem; }
-.avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--sun), var(--plum)); }
+.avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--sun), var(--plum)); flex: none; }
 .screen .top b { font-size: .95rem; }
 .screen .top small { display: block; color: var(--muted); font-size: .75rem; line-height: 1.1; }
-.m { max-width: 88%; padding: .6rem .85rem; border-radius: 16px; font-size: .95rem; line-height: 1.45; opacity: 0; transform: translateY(8px); animation: pop .45s ease forwards; }
+.m, .opts, .acts { opacity: 0; transform: translateY(8px); animation: pop .45s ease forwards; }
+.m { max-width: 88%; padding: .55rem .85rem; border-radius: 16px; font-size: .92rem; line-height: 1.45; }
 .m.bot { align-self: flex-start; background: var(--paper); border: 1px solid var(--line); border-top-right-radius: 4px; }
 .m.me { align-self: flex-end; background: var(--ink); color: #fff; border-top-left-radius: 4px; }
-.opts { display: flex; flex-direction: column; align-items: flex-start; gap: .35rem; opacity: 0; animation: pop .45s ease forwards; }
-.opts span { background: var(--ink); color: #fff; font-weight: 600; font-size: .88rem; padding: .45rem .85rem; border-radius: 12px; }
-.m:nth-of-type(2) { animation-delay: .4s; }
-.opts { animation-delay: 1.4s; }
-.m:nth-of-type(4) { animation-delay: 2.6s; } .m:nth-of-type(5) { animation-delay: 3.6s; }
+.opts { display: flex; flex-direction: column; align-items: flex-start; gap: .32rem; }
+.opts span { background: var(--paper); border: 1.5px solid var(--ink); font-weight: 600; font-size: .85rem; padding: .38rem .8rem; border-radius: 12px; }
+.acts { display: grid; gap: .35rem; width: 88%; }
+.acts span { display: block; text-align: center; font-weight: 700; font-size: .86rem; padding: .5rem .8rem; border-radius: 12px; background: var(--teal); color: #fff; }
+.acts span.wa { background: #1f7a4d; }
+.d1 { animation-delay: .3s; } .d2 { animation-delay: 1s; } .d3 { animation-delay: 1.9s; } .d4 { animation-delay: 2.7s; }
+.d5 { animation-delay: 3.6s; } .d6 { animation-delay: 4.4s; } .d7 { animation-delay: 5.2s; }
 @keyframes pop { to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { .m, .opts { animation: none; opacity: 1; transform: none; } .btn { transition: none; } html { scroll-behavior: auto; } }
 
 /* sections */
-section { padding: 5rem 0; }
+section { padding: 5.2rem 0; }
 .eyebrow { font-weight: 700; color: var(--plum); font-size: .9rem; letter-spacing: .06em; margin: 0 0 .5rem; }
-h2 { font-size: clamp(1.8rem, 3.5vw, 2.7rem); line-height: 1.15; margin: 0 0 1rem; font-weight: 800; letter-spacing: -.01em; }
-.lead { font-size: 1.2rem; color: var(--muted); max-width: 40rem; margin: 0 0 2.6rem; }
+h2 { font-size: clamp(1.85rem, 3.6vw, 2.8rem); line-height: 1.14; margin: 0 0 1rem; font-weight: 800; letter-spacing: -.01em; }
+.lead { font-size: 1.2rem; color: var(--muted); max-width: 42rem; margin: 0 0 2.6rem; }
 
-.flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; counter-reset: s; }
-.step { position: relative; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); padding: 1.6rem 1.3rem 1.4rem; }
+/* what it really is */
+.truth { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+.t { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); padding: 1.5rem 1.3rem; }
+.t .n { font-size: 2.4rem; font-weight: 800; line-height: 1; color: var(--teal); }
+.t h3 { margin: .55rem 0 .35rem; font-size: 1.12rem; }
+.t p { margin: 0; color: var(--muted); font-size: 1rem; }
+
+/* the flow */
+.flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; counter-reset: s; margin-top: 1rem; }
+.step { position: relative; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); padding: 1.7rem 1.3rem 1.4rem; }
 .step::before { counter-increment: s; content: counter(s); position: absolute; top: -1rem; inset-inline-start: 1.2rem; width: 2rem; height: 2rem; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: .95rem; }
-.step h3 { margin: .2rem 0 .4rem; font-size: 1.15rem; }
+.step h3 { margin: .2rem 0 .4rem; font-size: 1.12rem; }
 .step p { margin: 0; color: var(--muted); font-size: 1rem; }
 
-.band { background: var(--teal); color: #fff; }
+/* control */
+.band { background: linear-gradient(160deg, var(--teal) 0%, var(--teal-2) 100%); color: #fff; }
 .band .eyebrow { color: var(--sun); }
-.band .lead { color: rgba(255, 255, 255, .8); }
+.band .lead { color: rgba(255, 255, 255, .86); }
 .feat { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-.f { background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .16); border-radius: var(--r); padding: 1.5rem 1.4rem; }
-.f h3 { margin: 0 0 .4rem; font-size: 1.15rem; }
-.f p { margin: 0; color: rgba(255, 255, 255, .78); font-size: 1rem; }
-.f .ic { width: 42px; height: 42px; border-radius: 12px; background: var(--sun); color: var(--ink); display: grid; place-items: center; font-weight: 800; margin-bottom: .9rem; }
+.f { background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .18); border-radius: var(--r); padding: 1.5rem 1.4rem; }
+.f h3 { margin: 0 0 .4rem; font-size: 1.12rem; }
+.f p { margin: 0; color: rgba(255, 255, 255, .86); font-size: 1rem; }
+.f .ic { width: 44px; height: 44px; border-radius: 13px; background: var(--sun); color: var(--ink); display: grid; place-items: center; margin-bottom: .9rem; }
+.f .ic svg { width: 22px; height: 22px; }
 
-.link { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); padding: 1.1rem 1.3rem; direction: ltr; font-size: 1.15rem; font-weight: 600; width: fit-content; max-width: 100%; overflow-wrap: anywhere; }
+/* the link */
+.link { display: flex; align-items: center; gap: .1rem; flex-wrap: wrap; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); padding: 1.05rem 1.3rem; direction: ltr; font-size: 1.1rem; font-weight: 600; width: fit-content; max-width: 100%; overflow-wrap: anywhere; box-shadow: 0 8px 24px rgba(38, 30, 25, .06); }
 .link b { color: var(--plum); }
 .link .p { color: var(--muted); font-weight: 400; }
 .ex { display: grid; gap: 1rem; }
@@ -88,26 +116,38 @@ h2 { font-size: clamp(1.8rem, 3.5vw, 2.7rem); line-height: 1.15; margin: 0 0 1re
 .points li { display: flex; gap: .8rem; align-items: flex-start; }
 .points li::before { content: ""; flex: none; width: 1.5rem; height: 1.5rem; margin-top: .15rem; border-radius: 50%; background: var(--teal) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / 70% no-repeat; }
 
-.final { text-align: center; padding: 5rem 0 6rem; }
+/* live */
+.live { background: var(--paper); border: 1px solid var(--line); border-radius: calc(var(--r) + 6px); padding: 2.4rem; display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: center; box-shadow: var(--shadow); }
+.live h2 { margin-bottom: .5rem; }
+.live p { margin: 0; color: var(--muted); font-size: 1.12rem; }
+.dot { display: inline-block; width: .7rem; height: .7rem; border-radius: 50%; background: #1f7a4d; margin-inline-end: .4rem; box-shadow: 0 0 0 0 rgba(31, 122, 77, .5); animation: ping 2s infinite; }
+@keyframes ping { 70% { box-shadow: 0 0 0 .7rem rgba(31, 122, 77, 0); } 100% { box-shadow: 0 0 0 0 rgba(31, 122, 77, 0); } }
+
+.final { text-align: center; padding: 4.6rem 0 6rem; }
 .final h2 { max-width: 38rem; margin-inline: auto; }
 .final .lead { margin-inline: auto; }
 .final .cta { justify-content: center; }
 footer { border-top: 1px solid var(--line); padding: 1.6rem 0 2.4rem; color: var(--muted); font-size: .9rem; text-align: center; }
 
-@media (max-width: 52rem) {
-  .hero .grid, .two { grid-template-columns: 1fr; }
-  .flow, .feat { grid-template-columns: 1fr 1fr; }
+@media (prefers-reduced-motion: reduce) {
+  .m, .opts, .acts { animation: none; opacity: 1; transform: none; }
+  .dot { animation: none; } .btn { transition: none; } html { scroll-behavior: auto; }
+}
+@media (max-width: 56rem) {
+  .hero .grid, .two, .live { grid-template-columns: 1fr; }
+  .truth, .flow, .feat { grid-template-columns: 1fr 1fr; }
   .phone { transform: none; }
   .nav a:not(.btn) { display: none; }
 }
-@media (max-width: 34rem) { .flow, .feat { grid-template-columns: 1fr; } section { padding: 3.5rem 0; } }
+@media (max-width: 34rem) { .truth, .flow, .feat { grid-template-columns: 1fr; } section { padding: 3.6rem 0; } .live { padding: 1.6rem; } }
 </style>
 </head>
 <body>
 
 <header class="wrap bar">
-  <a class="logo" href="./">צ'אט<span>.</span>FLOA</a>
+  <a class="logo" href="./"><i aria-hidden="true"></i>צ'אט FLOA</a>
   <nav class="nav" aria-label="ראשי">
+    <a href="#what">מה זה</a>
     <a href="#how">איך זה עובד</a>
     <a href="#control">מה אתם שולטים בו</a>
     <a class="btn small" href="admin/">כניסה לניהול</a>
@@ -117,35 +157,60 @@ footer { border-top: 1px solid var(--line); padding: 1.6rem 0 2.4rem; color: var
 <div class="hero">
   <div class="wrap grid">
     <div>
-      <span class="kicker">תסריט שיחה לכל מודעה</span>
+      <span class="kicker">צ'אט מבוסס תסריטים למודעות ממומנות</span>
       <h1>המודעה מושכת. <em>הצ'אט מוביל.</em></h1>
-      <p class="sub">כותבים תסריט שיחה קצר לכל מודעה ברשתות החברתיות. מי שלוחץ על המודעה נוחת בצ'אט שמלווה אותו הודעה אחרי הודעה, עד הפעולה שביקשתם. את התסריט עורכים בעצמכם, בלי מתכנת.</p>
+      <p class="sub">מי שלוחץ על מודעה בפייסבוק או באינסטגרם נוחת בצ'אט קצר שממשיך בדיוק את מה שהמודעה הבטיחה. חמש הודעות, שלוש אפשרויות בכל אחת, ובסוף פעולה אחת ברורה. כל מילה כתובה על ידכם.</p>
       <div class="cta">
-        <a class="btn" href="admin/">כניסה לניהול</a>
+        <a class="btn sun" href="harpatka">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>
+          לראות צ'אט חי
+        </a>
         <a class="btn ghost" href="#how">איך זה עובד</a>
       </div>
+      <ul class="facts">
+        <li><b>5</b> הודעות</li>
+        <li><b>3</b> אפשרויות בכל הודעה</li>
+        <li><b>1</b> פעולה בסוף</li>
+        <li><b>0</b> אלתורים</li>
+      </ul>
     </div>
-    <div class="phone" aria-label="דוגמה לשיחה">
+    <div class="phone" aria-label="דוגמה לשיחה בצ'אט">
       <div class="screen">
         <div class="top"><div class="avatar"></div><div><b>העסק שלכם</b><small>עונה מיד</small></div></div>
-        <div class="m bot">היי, שמחים שהגעת. מה הכי קרוב למה שעובר עליך עכשיו?</div>
-        <div class="opts"><span>עמוס ואין לי רגע לעצמי</span><span>חסר לי חיבור לאנשים</span><span>משהו בי תקוע</span></div>
-        <div class="m me">חסר לי חיבור לאנשים</div>
-        <div class="m bot">מובן, ויש הרבה מי שמרגיש כך. ספר לי עוד קצת?</div>
+        <div class="m bot d1">היי, שמחים שהגעת</div>
+        <div class="m bot d2">מה הכי קרוב למה שעובר עליך עכשיו?</div>
+        <div class="opts d3"><span>עמוס ואין לי רגע לעצמי</span><span>חסר לי חיבור לאנשים</span><span>משהו בי תקוע</span></div>
+        <div class="m me d4">חסר לי חיבור לאנשים</div>
+        <div class="m bot d5">מובן, ויש הרבה מי שמרגיש כך. בדיוק בשביל זה נפגשים</div>
+        <div class="m bot d6">רוצה לשמוע על המפגש הקרוב?</div>
+        <div class="acts d7"><span>לפרטים באתר</span><span class="wa">לשיחה בוואטסאפ</span></div>
       </div>
     </div>
   </div>
 </div>
 
-<section id="how">
+<section id="what">
+  <div class="wrap">
+    <p class="eyebrow">מה זה באמת</p>
+    <h2>שיחה קצרה וכתובה מראש, לא בוט שמאלתר</h2>
+    <p class="lead">אין כאן בינה מלאכותית שממציאה תשובות. יש תסריט שכתבתם, ומבקר שבוחר בכל שלב את מה שמתאים לו. כך כל שיחה נשארת בטון שלכם ומובילה לאן שקבעתם.</p>
+    <div class="truth">
+      <div class="t"><div class="n">5</div><h3>הודעות בשיחה</h3><p>ברכה קצרה, ואחריה חמש הודעות שמחממות, מבינות ומובילות.</p></div>
+      <div class="t"><div class="n">3</div><h3>אפשרויות בכל הודעה</h3><p>המבקר לוחץ, ולכל אפשרות יש תגובה משלה שכתבתם מראש.</p></div>
+      <div class="t"><div class="n">1</div><h3>פעולה בסוף</h3><p>ההודעה האחרונה מציעה את הצעד הבא: האתר, קבוצת עדכונים או וואטסאפ.</p></div>
+      <div class="t"><div class="n">∞</div><h3>מודעות</h3><p>לכל מודעה תסריט משלה, כך שהשיחה ממשיכה בדיוק מאיפה שהמודעה עצרה.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="how" style="padding-top:0">
   <div class="wrap">
     <p class="eyebrow">איך זה עובד</p>
     <h2>ארבעה צעדים מהמודעה ועד הפנייה</h2>
-    <p class="lead">כל מודעה מקבלת צ'אט משלה, עם הטון והמסר שהבטחתם בה, כך שהשיחה ממשיכה בדיוק מאיפה שהמודעה עצרה.</p>
     <div class="flow">
       <div class="step"><h3>מפרסמים מודעה</h3><p>בפייסבוק, באינסטגרם או בכל רשת אחרת. הכפתור במודעה מוביל לקישור של הצ'אט.</p></div>
-      <div class="step"><h3>הצ'אט נפתח</h3><p>ברכה, ואז הודעה עם שלוש אפשרויות. המבקר לוחץ על מה שמתאים לו, ולכל בחירה יש תגובה משלה.</p></div>
-      <div class="step"><h3>חמש הודעות בלבד</h3><p>שיחה קצרה ומדויקת שמחממת, מבינה מה הוא צריך, ובסוף מציעה את הצעד הבא.</p></div>
+      <div class="step"><h3>הצ'אט נפתח מיד</h3><p>הוא נטען מהר גם בדפדפן שבתוך פייסבוק ואינסטגרם, ומציג את התסריט של המודעה הזו.</p></div>
+      <div class="step"><h3>בחירה אחרי בחירה</h3><p>בכל הודעה שלוש אפשרויות, ולכל בחירה תגובה משלה. שיחה קצרה ומדויקת.</p></div>
       <div class="step"><h3>פעולה</h3><p>האתר שלכם, קבוצת עדכונים או הודעה ישירה בוואטסאפ. אתם מחליטים מה מוצע.</p></div>
     </div>
   </div>
@@ -155,14 +220,14 @@ footer { border-top: 1px solid var(--line); padding: 1.6rem 0 2.4rem; color: var
   <div class="wrap">
     <p class="eyebrow">בשליטה שלכם</p>
     <h2>כל מילה בצ'אט נכתבת על ידכם</h2>
-    <p class="lead">אין בינה מלאכותית שמאלתרת ואין הפתעות. מה שכתבתם הוא מה שהמבקר רואה, וכל שינוי עולה לאוויר תוך חצי דקה.</p>
+    <p class="lead">מה שכתבתם הוא מה שהמבקר רואה. כל שינוי שנשמר עולה לאוויר מיד, ואפשר תמיד לחזור לגרסה קודמת.</p>
     <div class="feat">
-      <div class="f"><div class="ic">1</div><h3>צ'אט נפרד לכל מודעה</h3><p>כל מודעה מזוהה בקוד קצר בקישור, ולכל קוד תסריט משלו. כמה מודעות שתרצו, כולן בעורך אחד עם חיפוש.</p></div>
-      <div class="f"><div class="ic">2</div><h3>גרסה לנשים, לגברים או לכולם</h3><p>אפשר לנסח בלשון המתאימה לכל מגדר, או לכתוב גרסה אחת שמתאימה לשניהם.</p></div>
-      <div class="f"><div class="ic">3</div><h3>עורכים בלי מתכנת</h3><p>כל הודעה, אפשרות ותגובה בשדה כתיבה פשוט, עם תקציר מקופל שמאפשר לראות את כל השיחה במבט אחד.</p></div>
-      <div class="f"><div class="ic">4</div><h3>גרסאות, טיוטות וביטול</h3><p>כל שמירה נשמרת כגרסה ואפשר לחזור לכל גרסה קודמת. אפשר לשמור טיוטה בלי לפרסם, ולבטל צעד אחורה בכל רגע.</p></div>
-      <div class="f"><div class="ic">5</div><h3>כניסה מאובטחת</h3><p>עורכים רק מי שהוספתם, דרך חשבון Google. אף אחד אחר לא יכול לשנות את השיחה.</p></div>
-      <div class="f"><div class="ic">6</div><h3>מדידה</h3><p>רואים כמה נכנסו לצ'אט, איפה כל אחד עצר ומי הגיע לפעולה, ישירות בפיקסל של המודעות.</p></div>
+      <div class="f"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="3"/><path d="M7 9h10M7 13h6"/></svg></div><h3>תסריט נפרד לכל מודעה</h3><p>כל מודעה מזוהה בקוד קצר בקישור, ולכל קוד תסריט משלו. כל המודעות בעורך אחד, עם חיפוש לפי קוד או כותרת.</p></div>
+      <div class="f"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><circle cx="16.5" cy="9.5" r="2.6"/><path d="M3.5 19c.8-3 3-4.6 5.5-4.6S13.7 16 14.5 19M14 15.2c2.6-.6 5.3.7 6.3 3.8"/></svg></div><h3>גרסה לנשים, לגברים או לכולם</h3><p>אפשר לנסח בלשון המתאימה לכל מגדר, או לכתוב גרסה אחת שמתאימה לשניהם.</p></div>
+      <div class="f"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg></div><h3>עורכים בלי מתכנת</h3><p>כל הודעה, אפשרות ותגובה בשדה כתיבה פשוט, עם תקציר מקופל שמראה את כל השיחה במבט אחד.</p></div>
+      <div class="f"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4M12 8v4l3 2"/></svg></div><h3>גרסאות, טיוטות וביטול</h3><p>כל שמירה נשמרת כגרסה, ואפשר לחזור לכל גרסה קודמת. טיוטה נשמרת בלי לפרסם, ואפשר לבטל צעד בכל רגע.</p></div>
+      <div class="f"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div><h3>כניסה מאובטחת</h3><p>עורכים רק מי שהוספתם לרשימה, דרך חשבון Google. אף אחד אחר לא יכול לשנות את השיחה.</p></div>
+      <div class="f"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div><h3>מדידה של כל לחיצה</h3><p>כל בחירה בשיחה נרשמת לפי מודעה ומגדר, ונשלחת גם כאירוע לפיקסל של מטא. רואים איפה כל אחד עצר ומי הגיע לפעולה.</p></div>
     </div>
   </div>
 </section>
@@ -186,12 +251,25 @@ footer { border-top: 1px solid var(--line); padding: 1.6rem 0 2.4rem; color: var
   </div>
 </section>
 
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="live">
+      <div>
+        <p class="eyebrow"><span class="dot" aria-hidden="true"></span>פועל היום</p>
+        <h2>רוצים לראות איך זה מרגיש?</h2>
+        <p>זה הצ'אט שעסק אמיתי מפעיל היום בקמפיינים שלו. נכנסים, בוחרים, ורואים את השיחה כמו מי שהגיע מהמודעה.</p>
+      </div>
+      <a class="btn" href="harpatka">לפתוח את הצ'אט</a>
+    </div>
+  </div>
+</section>
+
 <div class="wrap final">
   <h2>מוכנים לכתוב את השיחה הראשונה?</h2>
   <p class="lead">היכנסו לניהול, בחרו עסק ותתחילו לערוך.</p>
   <div class="cta"><a class="btn" href="admin/">כניסה לניהול</a></div>
 </div>
 
-<footer><div class="wrap">FLOA · צ'אט לפרסום ברשתות</div></footer>
+<footer><div class="wrap">FLOA · צ'אט מבוסס תסריטים למודעות ממומנות</div></footer>
 </body>
 </html>

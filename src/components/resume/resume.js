@@ -19,7 +19,10 @@ import { escape, html, raw } from "../../lib/html.js";
        sections: [
          { type: "text",     title, body: [string] }
          { type: "keywords", title, groups: [{ title, terms: [string] }] }
-         { type: "roles",    title, jobs: [{ role, dates, org, bullets, link, breakBefore }] }
+         { type: "roles",    title, jobs: [{ role, dates, org, lead, bullets, link, breakBefore }] }
+
+   `lead` is one plain sentence above the bullets: what the work is for,
+   before how it was built.
          { type: "entries",  title, entries: [{ title, lines: [string] }] }
          { type: "lines",    title, lines: [string] }
        ]
@@ -79,9 +82,28 @@ const isolate = (text) => {
 
 const asis = (text) => text;
 
-const bullets = (t, items) => html`
+/* **a figure** in the text is set in bold, so the numbers that prove the work
+   stand out (296 tests, 2,700 tracks). Plain text passes through untouched. */
+const rich = (t, text) => {
+  const parts = String(text).split(/\*\*(.+?)\*\*/);
+  return parts.length === 1 ? t(text) : parts.map((p, i) => (i % 2 ? html`<strong>${t(p)}</strong>` : t(p)));
+};
+
+/* A job's link line: one link, or several under the first one's label
+   ("Examples: a.co.il, b.co.il"). The text shown can be shorter than the
+   address it opens. */
+const links = (t, link) => {
+  const list = Array.isArray(link) ? link : [link];
+  return html`
+          <p class="cv-job__link">${t(list[0].label)} ${list.map((l, i) => html`${i ? ", " : ""}<a href="${l.href}">${bdi(l.text || l.href)}</a>`)}</p>`;
+};
+
+/* One point is a sentence, not a list: it sits under the org as plain text,
+   without a bullet (the owner, 2026-11-27). Two or more are a list. */
+const bullets = (t, items) => items.length === 1 ? html`
+        <p class="cv-text">${rich(t, items[0])}</p>` : html`
         <ul class="cv-list">${items.map((item) => html`
-          <li>${t(item)}</li>`)}
+          <li>${rich(t, item)}</li>`)}
         </ul>`;
 
 const BLOCK = {
@@ -104,11 +126,11 @@ const BLOCK = {
   roles: (s, t) => s.jobs.map((job) => html`
         <div class="${job.breakBefore ? "cv-job cv-job--page" : "cv-job"}">
           <div class="cv-row">
-            <h3 class="cv-job__role">${t(job.role)}</h3>
-            <span class="cv-row__dates">${bdi(job.dates)}</span>
-          </div>
-          <p class="cv-job__org">${t(job.org)}</p>${bullets(t, job.bullets)}${job.link ? html`
-          <p class="cv-job__link">${t(job.link.label)} <a href="${job.link.href}">${bdi(job.link.href)}</a></p>` : ""}
+            <h3 class="cv-job__role">${t(job.role)}</h3>${job.dates ? html`
+            <span class="cv-row__dates">${bdi(job.dates)}</span>` : ""}
+          </div>${job.org ? html`
+          <p class="cv-job__org">${t(job.org)}</p>` : ""}${job.lead ? html`
+          <p class="cv-text">${rich(t, job.lead)}</p>` : ""}${bullets(t, job.bullets)}${job.link ? links(t, job.link) : ""}
         </div>`),
 
   entries: (s, t) => s.entries.map((entry) => html`

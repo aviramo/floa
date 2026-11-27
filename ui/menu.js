@@ -58,8 +58,7 @@
       var body = list.map(function (it, k) {
         if (it.sep) return lb ? '<div class="rlayout rlayout--unit rdiv rdiv--line" aria-hidden="true"></div>' : '<div class="rlayout rlayout--unit rdiv rdiv--line" role="separator"></div>';   /* ui/docs/divider.md: a line between groups, edge to edge, skipped by the keyboard; a listbox holds only options, so there it is decoration */
         var tick = it.check !== undefined;
-        if (tick && it.icon) console.warn("RosterMenu: an item with check carries no icon (" + it.label + "); the check is drawn");
-        var lead = tick ? CHECK : (it.icon || "");
+        var lead = tick ? (it.icon || CHECK) : (it.icon || "");   /* a toggle with an icon of its own (a heart) shows its icon, filled while on (27-menu.css; owner 2026-11-27, "איפה הלב?"); without one, the check */
         var role = lb ? 'option" aria-selected="' + !!it.check : tick ? (it.radio ? "menuitemradio" : "menuitemcheckbox") + '" aria-checked="' + !!it.check : "menuitem";   /* radio: one of many (a role, a sort), the same look; a listbox: option + aria-selected, the same look */
         var why = it.net ? needs() : "";   /* net: true, an item that needs the server (ui/docs/app-offline.md): off, in its place, while there is no connection or no sign-in */
         if (it.disabled || why) return '<div class="rlayout rlayout--row rlayout--pad-x rmenu__item" role="' + role + '" aria-disabled="true"' + (why ? ' title="' + why + '"' : '') + '>' + lead + '<span dir="auto">' + esc(it.label) + '</span>' + (it.meta ? '<span class="rmenu__meta">' + it.meta + '</span>' : '') + '</div>';
@@ -81,6 +80,9 @@
     var sh = document.createElement("div"); sh.className = "rmenu-shield";   /* an open menu blocks everything outside it: a touch there only closes the menu */
     var host = [].slice.call(document.querySelectorAll("dialog[open]")).pop() || (btn.closest && btn.closest(".rpanel-box")) || document.body;   /* a modal popup makes everything outside it inert: the menu goes INSIDE the upper popup; a side panel stands above the page's layer (--z-menu + n): the menu goes inside the panel's box */
     host.appendChild(sh); host.appendChild(m);
+    if (host.tagName === "DIALOG" && m.showPopover) {   /* inside a window the menu would be clipped by the window's own box (a short sheet): it goes to the top layer, over the window and the player (owner 2026-11-27, "פופאפ חותך תפריט") */
+      try { sh.setAttribute("popover", "manual"); m.setAttribute("popover", "manual"); sh.showPopover(); m.showPopover(); } catch (e) { /* an old browser: inside the window as before */ }
+    }
     btn.setAttribute("aria-expanded", "true");   /* the button that opened the menu stays shown while it is open */
     if (lb) btn.setAttribute("aria-controls", m.id);
 

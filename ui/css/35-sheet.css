@@ -105,3 +105,10 @@ dialog.rsheet .sheet-head > .rs-act[aria-busy="true"] { pointer-events: none; }
   dialog.rsheet, dialog.rsheet[data-size] { width: 100%; max-width: none; margin-inline: 0; }
   dialog.rsheet:not([data-size="s"], [data-size="sm"], [data-anchored]) { border-radius: 0 !important; }
 }
+/* THE MEDIA VIEWER (RosterSheet.media, ui/docs/media.md): the file fills the window's body, its whole width, its ratio kept, never higher than the body; centered when it is narrower */
+.rmedia { margin: 0; display: flex; justify-content: center; align-items: center; min-block-size: 100%; }
+.rmedia > :is(img, video) { display: block; max-inline-size: 100%; max-block-size: 100%; inline-size: auto; block-size: auto; object-fit: contain; border-radius: var(--r); background: var(--surface); }
+/* the app's content under the file (RosterSheet.media o.after): the file keeps its ratio, no higher than the window's view, and the window scrolls to what follows */
+.rmedia.rmedia--after { min-block-size: 0; }
+.rmedia.rmedia--after > :is(img, video) { max-block-size: 80dvh; }
+.rmedia__after { display: flex; flex-direction: column; gap: var(--gap); padding-block-start: var(--gap); }

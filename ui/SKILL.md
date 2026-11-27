@@ -44,7 +44,8 @@ description: חוקי UI כלליים של FLOA לכל האפליקציות שנ
 |---|---|---|
 | "רשימה של X" | רשימה | `RosterList.render(el, items, { kind, key, content })` |
 | "כרטיסים" | רשימה, `kind: "card"` (ברשת `.rgrid`, לבד) | `content` מחזיר את החריצים של `RosterCard.html` |
-| "תמונות", "סרטונים", "גלריה", "מודעות" | רשימה של אריחי מדיה, `kind: "card"` ברשת מדיה (שתי עמודות בטלפון); ביחסים שונים קולאז', שבו הקיט שם כל אריח בעמודה הנמוכה ביותר לפי היחס שלו (הבעלים, 2026-11-26) | `grid: "media"` (או `"collage"`), ו-`content` מחזיר `{ title, layout: "media", media }` (`ui/docs/card.md`, `ui/docs/grid.md`) |
+| "תמונות", "סרטונים", "גלריה", "מודעות" | רשימה של אריחי מדיה, `kind: "card"` ברשת מדיה (שלוש עמודות בטלפון); ביחסים שונים קולאז', שבו הקיט שם כל אריח בעמודה הנמוכה ביותר לפי היחס שלו (הבעלים, 2026-11-26) | `grid: "media"` (או `"collage"`), ו-`content` מחזיר `{ title, layout: "media", media }` (`ui/docs/card.md`, `ui/docs/grid.md`) |
+| "לפתוח תמונה", "לראות סרטון", "תצוגה מקדימה של קובץ" | צופה מדיה (`ui/docs/media.md`) | `RosterSheet.media({ items, index, cors })` |
 | "שורות", "רשימה פשוטה" | רשימה, `kind: "row"` | `content`: `{ lead, title, sub, trail }` |
 | "קטגוריות שנפתחות" | רשימה, `kind: "section"` | `RosterSection` דרך הרשימה |
 | "קבוצות", "לפי סטטוס" | מפריד וקבוצות | `groups` ו-`group(it)` |

@@ -25,3 +25,6 @@
   .rlayout--stack > .rlayout__body, .rlayout--stack > .rlayout__foot { padding: 0 var(--gap); }
   .rlayout--stack > .rlayout__body:empty { display: none; }
 }
+
+/* NO BROWSER BACK-SWIPE OVER THE APP (owner 2026-11-27, Android): a sideways swipe from a screen edge is the app's own (a panel, the exercise pager, RosterSwipe.fromEdge), never the browser's history preview with its arrow. overscroll-behavior-x: none on the page stops that preview; the system's own back gesture (the phone's navigation bar) cannot be stopped by a page */
+html, body { overscroll-behavior-x: none; }

@@ -2,7 +2,7 @@
    the sibling right before the list's scroll area. A free block (filters, an add form, a search), always on top, --gap to the items. Its one option: on a phone it
    slides out on a scroll down and back on any scroll up, in one move of --t-base; on a computer it stays. JS (ui/layout.js) writes only data-rq-hide, data-rq-float
    and --rq-h; everything else is here. After 40-list-sortable.css and before the late rules: it wins over the list and the fields above it */
-.rlayout--surface > .rlayout__bar[data-rquick] { padding: var(--gap) var(--gap) 0; }
+.rlayout--surface > .rlayout__bar[data-rquick] { padding: 0 var(--gap) var(--gap); }   /* no padding above: right under the header (owner 2026-11-27, "מתחת להאדרים לא צריך PADDING") */
 [data-rquick] { position: relative; z-index: var(--z-raised); background: var(--page); }
 [data-rquick]::after { content: ""; position: absolute; inset-inline: 0; top: 100%; height: var(--gap); background: var(--edge-shadow); opacity: 0; transition: opacity var(--t-base) var(--ease); pointer-events: none; }
 [data-rquick][data-rq-float]::after { opacity: 1; }   /* the list is scrolled under it: the one soft edge is the tile's, the last fixed block before the list */
@@ -21,6 +21,7 @@
   [data-rquick] { align-self: start; z-index: var(--z-sticky); transition: transform var(--t-base) var(--ease); }
   [data-rquick] + * { padding-block-start: calc(var(--rq-h, 0px) + var(--gap)); }
   [data-rquick][data-rq-hide]:not(:focus-within):not(:has([aria-expanded="true"])) { transform: translateY(-100%); }   /* out behind what is above it; a tile with the focus, or with something open from it, stays */
-  [data-rquick]::after { inset: 0; top: 0; height: auto; background: none; box-shadow: var(--shadow-lg); z-index: -1; }   /* floating: the strong shadow of all that floats (owner 2026-11-26), not the soft edge */
+  [data-rquick] { padding-block-end: var(--gap); }   /* the tile keeps --gap under its content, above its edge (owner 2026-11-27: "רווח 12 מעל הצל") */
+  /* its edge is the soft one, as the header's and a fixed tile's: not the strong shadow of what floats (owner 2026-11-27, "הצל שלו גדול משמעותית") */
 }
 @media (prefers-reduced-motion: reduce) { [data-rquick], [data-rquick]::after { transition: none; } }

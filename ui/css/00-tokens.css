@@ -13,6 +13,7 @@
   --gap-sub: var(--gap);   /* a title's letters to the letters of the description under it (owner 2026-11-27: 4 read as glued, then 8 too; 12) */
   --gap: 12px;
   --gap-section: 24px;
+  --shadow-room: calc(var(--gap-tight) * 2);   /* the room a card's shadow needs above it (--shadow reaches about 8px up), where nothing else is (owner 2026-11-27: no padding under a header, but a shadow is never cut) */
   --inset-t: env(safe-area-inset-top, 0px);   --inset-b: env(safe-area-inset-bottom, 0px);   --inset-l: env(safe-area-inset-left, 0px);
   --inset-s: env(safe-area-inset-right, 0px);   --inset-e: env(safe-area-inset-left, 0px);   /* the device's safe area on the inline start and end sides (RTL: right, left); flipped below for a left-to-right page */
   --safe-t: var(--inset-t);

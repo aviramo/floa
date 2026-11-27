@@ -30,7 +30,7 @@ export const CONTACT = {
   linkedin: "linkedin.com/in/aviramo",
 };
 
-export const DEMO = "https://once-lake.vercel.app/";
+export const DEMO = "https://once.floa.co.il/";
 
 /* The name a link to any of these documents shows in a message or a feed. Both
    scripts, because the same link is shared into Hebrew threads and English ones
