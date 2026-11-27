@@ -621,7 +621,7 @@
     if (b && acts && !f) b.addEventListener("click", go);
     if (b && o.run) b.addEventListener("click", function (ev) { o.run(dlg, b, ev); });
     /* the focus: in the press that opened it (never a timer, or a phone keeps its keyboard down): the first field, its text all selected; else the action; a message keeps the window's own */
-    if (inputs[0]) { inputs[0].focus(); inputs[0].select(); } else if (b) b.focus();
+    if (inputs[0]) { inputs[0].focus(); inputs[0].select(); } else if (b) b.focus({ focusVisible: false });
     return dlg;
   }
 
@@ -719,6 +719,7 @@
       var el = panelOpen({ side: o.side, from: o.from, html: html, onClose: o.onClose, history: o.history });
       el.querySelector("[data-popup-x]").addEventListener("click", function () { panelClose(el); });
       if (o.body == null) popLoading(el);
+      popActs(el, o.actions);
       if (o.wire) o.wire(el);
       return el;
     }
@@ -728,8 +729,16 @@
     if (o.from && o.from.tagName === "DIALOG") { o.from.addEventListener("close", function () { if (dlg.open) dlg.close(); }, { once: true }); dlg.__rsWith = o.from; }   /* it closes with the popup it came out of (and its entry goes back in the same step, H) */
     if (o.onClose) dlg.addEventListener("close", function () { o.onClose(dlg); }, { once: true });
     if (o.body == null) popLoading(dlg);
+    popActs(dlg, o.actions);
     if (o.wire) o.wire(dlg);
     return dlg;
+  }
+  /* o.actions: the window header's actions (icon buttons, ui/docs/header.md slot 4), written into its header and fitted like a screen header's (folding into "עוד") */
+  function popActs(el, html) {
+    if (!html) return;
+    var hd = el.querySelector(".rhead, .sheet-head"); if (!hd) return;
+    hd.insertAdjacentHTML("beforeend", '<span class="rhead__acts">' + html + '</span>');
+    if (window.RosterHeader && RosterHeader.fit) RosterHeader.fit(hd);
   }
   /* the loading state: a popup opened without a body is loading. Its header is final, its body is the empty area that waits (.rload, aria-busy: kit.css draws the curve); popup.fill ends it */
   function popLoading(el) { var b = popup.body(el); if (b) { b.classList.add("rload"); b.setAttribute("aria-busy", "true"); } }
@@ -834,7 +843,9 @@
       pri.sort(byPri);
       var pw = pri.map(function (b) { return wOf(b, h) || tok("--icon"); }), mw = more ? (wOf(more, h) || tok("--icon")) : 0;
       var title = text && text.querySelector(".rhead__title:not(input)"), sub = text && text.querySelector(".rhead__sub");
-      var tW = title ? Math.max(textW(title), sub && sub.textContent.trim() ? textW(sub) : 0) : 0, tN = title ? 1 : 0,   /* the box of the title and its description: the wider of the two, both whole */ tG = text ? num(getComputedStyle(text).columnGap) : 0;
+      var mark = title && title.parentElement && title.parentElement.classList.contains("rhead__tl") ? title.parentElement.querySelector(":scope > .rhead__mark") : null,
+        mW = mark ? wOf(mark, h) : 0; if (mW) mW += num(getComputedStyle(mark).marginInlineStart);   /* the mark at the title's end (and its --gap-tight) is part of the title's line */
+      var tW = title ? Math.max(textW(title) + mW, sub && sub.textContent.trim() ? textW(sub) : 0) : 0, tN = title ? 1 : 0,   /* the box of the title and its description: the wider of the two, both whole */ tG = text ? num(getComputedStyle(text).columnGap) : 0;
       if (text) [].forEach.call(text.children, function (c) { if ((title && c.contains(title)) || c.classList.contains("rhead__q") || c.matches("input.rhead__title")) return; var w = wOf(c, h); if (w > 0) { tW += w; tN++; } });
       var textNeed = tW + Math.max(0, tN - 1) * tG;
       var rest = function (k) {   /* everything but the title's slot, with the first k foldable actions shown */
@@ -852,7 +863,7 @@
       pri.forEach(function (b, i) { var f = i >= k; if (f !== b.hasAttribute("data-folded")) { if (f && b.contains(document.activeElement)) lost = true; b.toggleAttribute("data-folded", f); } });
       if (wrap !== h.hasAttribute("data-wrap")) h.toggleAttribute("data-wrap", wrap);
       if (tight !== h.hasAttribute("data-rsearch-tight")) h.toggleAttribute("data-rsearch-tight", tight);
-      if (lost) { var m = more || keep; if (m) try { m.focus({ preventScroll: true }); } catch (x) { /* the focus goes to "עוד" */ } }   /* the focused action folded: the focus moves to "עוד" */
+      if (lost) { var m = more || keep; if (m) try { m.focus({ preventScroll: true, focusVisible: false }); } catch (x) { /* the focus goes to "עוד" */ } }   /* the focused action folded: the focus moves to "עוד" */
     }
     function observe(h) { if (!ro) return; ro.observe(h); [].forEach.call(h.querySelectorAll(":scope > *, :scope > .rhead__acts > *, :scope > .rhead__text > *"), function (c) { if (!c.__rhHead) { c.__rhHead = h; ro.observe(c); } }); }
     function fit(h) {

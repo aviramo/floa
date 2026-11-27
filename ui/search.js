@@ -180,7 +180,7 @@
       btn.setAttribute("aria-expanded", "false"); keep(opts.key, null); says();
       if (st.q) run();
       var l = listOf(); if (l) l.scrollTop = sc;   /* the place in the list from before the search */
-      if (had) btn.focus({ preventScroll: true });
+      if (had) btn.focus({ preventScroll: true, focusVisible: false });
     }
     btn.addEventListener("click", function () {   /* the magnifier opens; the X clears what is typed, a second press closes */
       if (!st.open) open("", true);

@@ -6,7 +6,9 @@
 [data-rquick] { position: relative; z-index: var(--z-raised); background: var(--page); }
 [data-rquick]::after { content: ""; position: absolute; inset-inline: 0; top: 100%; height: var(--gap); background: var(--edge-shadow); opacity: 0; transition: opacity var(--t-base) var(--ease); pointer-events: none; }
 [data-rquick][data-rq-float]::after { opacity: 1; }   /* the list is scrolled under it: the one soft edge is the tile's, the last fixed block before the list */
-:has(> [data-rquick]:not([data-rq-hide])) > :is(.rhead, .sheet-head)::after { opacity: 0; }   /* never two edges: while the tile is there, the header has none */
+/* never two edges: while the surface shows a tile, at any depth of its body (a bar beside the header, or a page of a pager inside the body), the header has none;
+   a tile out of view is not counted: in a [hidden] pane, or data-rq-off (ui/layout.js: no box, or outside its surface's width, a pager's page scrolled away) */
+.rlayout--surface:has(> [data-rquick]:not([data-rq-hide], [data-rq-off], [hidden] *), > .rlayout__body [data-rquick]:not([data-rq-hide], [data-rq-off], [hidden] *)) > :is(.rhead, .sheet-head)::after { opacity: 0; }
 @media (width < 760px) {
   /* the tile and the list share one cell: the tile at its top, over the list; the list starts its content under the tile (its height and --gap), so at rest all
      is as in a plain column. Up to two slots before the tile (a header, tabs), one after the list (a foot) */

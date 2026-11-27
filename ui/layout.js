@@ -126,23 +126,30 @@
        data-rq-hide on the tile: hidden (a phone; a run down of --fab, once the list is scrolled past the tile, and only when there is room to hide it);
          a run up of --gap brings it back; the top of the list always shows it. A tile with the focus or with something open from it stays (CSS).
        data-rq-float on the tile: shown while the list is scrolled (its edge, or on a phone its floating shadow).
+       data-rq-off on the tile: out of its surface's view, with no box or outside the surface's width (a page of a pager scrolled away). CSS cannot know
+         where a box is scrolled to, and the header's edge needs it: a tile out of view does not take the header's edge (40b-list-top.css, "never two edges").
        --rq-h on the tile's parent: the tile's height (a ResizeObserver; CSS cannot know it), the room the list leaves for it on a phone.
      One scroll listener (capture, passive) and one MutationObserver for every tile; an app writes nothing but the attribute. */
   (function () {
     var PHONE = window.matchMedia ? window.matchMedia("(width < 760px)") : null;   /* the kit's breakpoint (the same as in kit.css) */
-    var seen = typeof WeakSet === "function" ? new WeakSet() : null, ro = window.ResizeObserver ? new ResizeObserver(function (es) { es.forEach(function (e) { size(e.target); }); }) : null;
+    var seen = typeof WeakSet === "function" ? new WeakSet() : null, ro = window.ResizeObserver ? new ResizeObserver(function (es) { es.forEach(function (e) { size(e.target); off(e.target); }); }) : null;
     function size(t) { var p = t.parentElement; if (!p) return; var h = Math.round(t.getBoundingClientRect().height); if (p.style.getPropertyValue("--rq-h") !== h + "px") p.style.setProperty("--rq-h", h + "px"); }
     function setA(el, n, on) { if (on !== el.hasAttribute(n)) { if (on) el.setAttribute(n, ""); else el.removeAttribute(n); } }
+    function off(t) {   /* out of its surface's view: no box (a hidden pane; the ResizeObserver sees it come and go), or beside the surface (a pager's page scrolled away) */
+      var s = t.closest(".rlayout--surface"), r = t.getBoundingClientRect(), v = s ? s.getBoundingClientRect() : r;
+      setA(t, "data-rq-off", !r.width || r.right <= v.left + 1 || r.left >= v.right - 1);
+    }
     function watch(t) { if (seen) { if (seen.has(t)) return; seen.add(t); } size(t); if (ro) ro.observe(t); }
     function scan() {
       [].forEach.call(document.querySelectorAll("[data-rquick]"), function (t) {
-        watch(t);
+        watch(t); off(t);
         var sc = t.nextElementSibling;   /* a list drawn again starts at its top: the tile is shown */
         if (t.hasAttribute("data-rq-hide") && (!sc || sc.scrollTop <= 2)) { setA(t, "data-rq-hide", false); setA(t, "data-rq-float", false); if (sc && sc.__rq) sc.__rq.last = sc.scrollTop; }
       });
     }
     function onScroll(e) {
       var sc = e.target; if (!sc || sc.nodeType !== 1) return;
+      if (sc.scrollLeft !== (sc.__rqx || 0)) { sc.__rqx = sc.scrollLeft; [].forEach.call(sc.querySelectorAll("[data-rquick]"), off); }   /* a sideways scroll (a pager): the tiles in it came into view or left it */
       var t = sc.previousElementSibling; if (!t || !t.hasAttribute("data-rquick")) return;
       var max = Math.max(0, sc.scrollHeight - sc.clientHeight), st = Math.min(Math.max(0, sc.scrollTop), max);   /* an elastic bounce past an end is no move */
       var s = sc.__rq || (sc.__rq = { last: st, down: 0, up: 0 }), d = st - s.last; s.last = st;

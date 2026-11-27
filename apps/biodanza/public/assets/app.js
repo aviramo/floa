@@ -53,7 +53,6 @@
   }
   function goSub(fn) { go(fn); subEnter(); }
   function inSub() { return !!(history.state && history.state.sub); }
-  function leaveAll() { unwind((history.state && history.state.sub) || 0); }   /* out of every level at once, to the screen of the address */
   function syncLayers() {   /* a popup or menu opened or closed, by the user or by code: its marker entry follows */
     var live = [].slice.call(document.querySelectorAll("dialog[open]")).concat(RosterMenu.current() ? [RosterMenu.current()] : [], window.__leftLive ? window.__leftLive() : []);   /* the side layers (history, lists, pickers) are layers too */
     var gone = layers.filter(function (l) { return live.indexOf(l.el) < 0; });
@@ -256,10 +255,6 @@
     inp.click();
   }, true);
   /* ONE way to write a song in a row: its name is the row's title, the performer its sub (the kit's row texts: one line, dir="auto" so a name in English reads right, the full text in title) */
-  function songLines(m) {
-    var t = songName(m), by = songBy(m);
-    return '<span class="rrow__title" dir="auto" title="' + esc(t) + '">' + esc(t) + '</span>' + (by ? '<span class="rrow__sub" dir="auto" title="' + esc(by) + '">' + esc(by) + '</span>' : '');
-  }
   /* while a song plays, the time under its button counts down to 0 (audio.js tells the page); the others show their whole length */
   document.addEventListener("bioaudio", function (ev) {
     var d = ev.detail || {};
@@ -402,6 +397,7 @@
       var card = songCardUi({ id: hid || "h0", audio_object: who, title: shownT, name: shownT, artist: shownA, duration_sec: dur }, { title: shownT || "מוסיקה", by: shownA, noHeart: !hid });
       var openMenu = function () {
         var mi = (canAdd ? [{ label: "הוספה", icon: I.plus, fn: addCur }] : []).concat([{ label: "חיפוש מוסיקה", icon: I.search, fn: function () { similarToPlaying(who); } }]).concat(eid ? [{ label: "עריכת שם ומבצע", icon: I.pen, fn: function () { editFromDock(); } }] : []);   /* the actions on the song are the menu's own items (ui/docs/menu.md), not buttons: one that cannot be used now is a disabled item */
+        if (mi.length === 1) { mi[0].fn(); return; }   /* one action is not a menu (ui/docs/menu.md): the tap does it */
         menu(nmEl, mi, { head: '<div class="rmenu__head">' + card + '</div>', up: true, ref: dock });
       };
       openMenu();   /* at once: "חיפוש מוסיקה" has no count to wait for (owner 2026-11-26) */
@@ -541,18 +537,11 @@
       [dock].forEach(function (d) {
         if (d.hidden === on) d.hidden = !on;   /* signed in: the player is there (and --bar-b with it, kit CSS) */
         var vtE = document.getElementById("vtimer");   /* wide screen: the time left of whichever song of this vivencia plays, in the header of the list; and, on every screen, the number of the exercise that plays beside the name */
-        if (vtE || document.getElementById("vgo")) {
+        if (vtE) {
           var vOn = !!(playing && loaded && curD > 0 && state.viv && state.items && (function (n) { var has = function (m) { return m && m.audio_object === n; };
             return state.items.some(function (x) { return has(x.music) || (x.item_music_options || []).some(function (o) { return has(o.music); }); }) || ["start", "end"].some(function (k) { return (recvCache[state.viv.id + "|" + k] || []).some(function (o) { return has(o.music); }); }); })(curName));
           if (vOn && vtE) { var vTxt = clk(Math.max(0, Math.ceil(curD - curT))); if (vtE.textContent !== vTxt) vtE.textContent = vTxt; }
           if (vtE) timerToggle(vtE, vOn);
-          var vgE = document.getElementById("vgo");   /* the button is for going to the exercise that plays, and its number with the sound ring: it is there the whole time a song of this vivencia plays, also while that exercise is the one that is open */
-          if (vgE) { var vShow = vOn && state.items.some(function (x) { return optList(x).some(function (m) { return m.audio_object === curName; }); });   /* only for a song of an exercise: not for the start or the end music */ if (vgE.hidden === vShow) vgE.hidden = !vShow; var dsp = vShow ? "" : "none"; if (vgE.style.display !== dsp) vgE.style.display = dsp;
-            if (vShow) {   /* the number of the exercise that plays, as on its card: its place in the vivencia, a dot for an additional one, nothing for the start and the end music */
-              var itP = state.items.filter(function (x) { var hs = function (m) { return m && m.audio_object === curName; }; return hs(x.music) || (x.item_music_options || []).some(function (o) { return hs(o.music); }); })[0], num = "";
-              if (itP) num = itP.backlog ? "•" : String(state.items.filter(function (x) { return !x.backlog; }).indexOf(itP) + 1);
-              var gn = document.getElementById("vgon"); if (gn && gn.textContent !== num) gn.textContent = num;
-            } }
         }
         var tmE = document.getElementById("itimer");
         if (tmE) {
@@ -650,11 +639,6 @@
     });
   })();
   /* the player's bar is the only song bar of the app (a list or an exercise has none of its own): its fill and its value are the kit's (/range.js, set() in sync above) */
-  function playCol(m) {
-    var tile = songBtn(m, false);
-    return '<div class="bio-pcol">' + tile +
-      (durOf(m) || m.audio_object ? '<span class="bio-time" data-dur="' + (m.duration_sec || "") + '"' + (m.audio_object ? ' data-for="' + esc(m.audio_object) + '"' : '') + ' style="display:block;min-height:1em;color:var(--text-muted);font:var(--fw-regular) var(--fs-s)/1 var(--font);font-variant-numeric:tabular-nums">' + (durOf(m) ? clock(durOf(m)) : '') + '</span>' : '') + '</div>';
-  }
   /* the heart: the songs I loved. At the right edge of a song's row, in line with the play tile and with the back button above. */
   function heartBtn(m) {
     var on = !!likes[m.id];
@@ -737,7 +721,7 @@
   }, true);
   /* the red button beside the countdown: to the exercise of this vivencia that holds the song now playing (or to the start or the end music) */
   document.addEventListener("click", function (e) {
-    var b = e.target.closest && e.target.closest("#vgo, #vtimer"); if (!b || !state.viv || !state.items) return;   /* the timer is the same button: a tap on either goes to the exercise that plays */
+    var b = e.target.closest && e.target.closest("#vtimer"); if (!b || !state.viv || !state.items) return;   /* a tap on the timer goes to the exercise that plays */
     var n = window.__bioNow && window.__bioNow.name, has = function (m) { return m && m.audio_object === n; };
     var it = state.items.filter(function (x) { return has(x.music) || (x.item_music_options || []).some(function (o) { return has(o.music); }); })[0], el = null;
     if (it) {
@@ -834,14 +818,29 @@
   var volBack = 0.5;   /* the level a press on the speaker brings back after it was muted */
   /* the volume of the player: a speaker (press it to mute and to unmute) and a slider, on a wide screen only */
   function volDock() { var v = typeof volState === "object" ? volState.v : 1; return '<div class="rplayer__vol"><button type="button" class="rbtn rbtn--icon" data-vmute aria-label="השתקה" title="השתקה">' + (v ? SPK : SPK0) + '</button><input class="rrange" type="range" min="0" max="100" step="1" value="' + Math.round(v * 100) + '" aria-label="עוצמת שמע"></div>'; }
-  /* a screen's header, the kit's .rhead (ui/docs/header.md): [lead] [back] the title and its description in one box, [after: a mark beside the title] [trail: live value and actions] */
+  /* a screen's header, the kit's .rhead (ui/docs/header.md): [lead] [back] the title and its description in one box, [after: a mark at the end of the title's text] [trail: live value and actions] */
   function head(title, sub, back, trail, lead, after, sel) {   /* sel: the screen is an opened item's detail (a vivencia): its name and description can be selected (ui/docs/window.md "בחירת טקסט", data-rselect) */
     var rs = sel ? ' data-rselect' : '';
+    var h1 = '<h1 class="rhead__title" dir="auto"' + rs + ' title="' + esc(title) + '">' + esc(title) + '</h1>';
     return '<header class="rhead">' + (lead || '') + (back ? '<button class="rbtn rbtn--icon" data-act="back" aria-label="חזרה" title="חזרה">' + I.back + '</button>' : '') +   /* lead: one back or X only, never an action */
-      '<div class="rhead__text"><span class="rhead__tw"><h1 class="rhead__title" dir="auto"' + rs + ' title="' + esc(title) + '">' + esc(title) + '</h1>' + (sub ? '<span class="rhead__sub" dir="auto"' + rs + '>' + esc(sub) + '</span>' : '') + '</span>' + (after || '') + '</div>' +
+      '<div class="rhead__text"><span class="rhead__tw">' + (after ? '<span class="rhead__tl">' + h1 + after.replace('class="rbtn ', 'class="rhead__mark rbtn ') + '</span>' : h1) + (sub ? '<span class="rhead__sub" dir="auto"' + rs + '>' + esc(sub) + '</span>' : '') + '</span></div>' +   /* the mark (the title's pencil) follows the last word of the title, whatever the description's width: the kit's title line (ui/docs/header.md, owner 2026-11-27) */
       (trail || '') + '</header>';
   }
   /* the header of one exercise: buttons only, each with its word. Previous and the list on the right, next on the left. The name is the field below. */
+  /* a phone: the current exercise's name in the strip is a button that renames it in the kit's short window (owner 2026-11-27: no pencil in the strip). The field is
+     bound to the open vivencia's exercises source (check on save, the same source the computer's pencil writes); the strip shows the new name at once */
+  function itemNamePop(it) {
+    if (!canEdit()) return;
+    var cur = state.items.filter(function (x) { return x.id === it.id; })[0] || it, src = live.items && state.viv && live.vid === state.viv.id ? live.items : null;
+    var paintName = function (t) { var el = document.getElementById("ina"); if (el && el.hasAttribute("data-namepop")) { el.textContent = t; el.setAttribute("data-t", t || "ללא שם"); el.setAttribute("aria-label", "עריכת שם התרגיל: " + t); } };
+    RosterSheet.confirm({ id: "inameDlg", title: "פרטי התרגיל", action: "שמירה",
+      fields: [src ? { name: "title", label: "שם התרגיל", value: itemName(cur), required: true, source: src, key: cur.id, col: "title" } : { name: "title", label: "שם התרגיל", value: itemName(cur), required: true }],
+      submit: function (val) {
+        var t = val.title;
+        var done = function () { cur.title = t; it.title = t; paintName(t); };
+        return src ? done() : api("/rest/v1/vivencia_items?id=eq." + cur.id, { method: "PATCH", prefer: "return=minimal", json: { title: t } }).then(done, shortFail);
+      } });
+  }
   function namePen() { return canEdit() ? '<button type="button" class="rbtn rbtn--icon rbtn--muted" data-namepen aria-label="עריכת שם התרגיל" title="עריכת שם התרגיל">' + I.pen + '</button>' : ""; }   /* the pencil after the exercise's name: only it starts the editing */
   function itemHead(hasPrev, hasNext, where, exId, nameText, ro, roLabel, inBack, numText, roPlus, tabs, playM) {
     var nav = !wide() && !ro;   /* beside the list there are no previous and next buttons: the list is the way around */
@@ -852,7 +851,7 @@
       return (m && m.audio_object ? '<span class="bio-tab__x bio-tab__x--play">' + bigPlay(m) + '</span>' : '') + '<span class="bio-tab__x bio-tab__x--heart">' + heartBtnEx(ex, "") + '</span>';
     };   /* a phone: the play and the heart ride on the number of this exercise (owner 2026-11-25) */
     if (nav && tabs) {   /* a phone: no arrows and no name here, only the number and the countdown, and under them the tabs of the exercises around it (the name is the first field of the page) */
-      return '<header class="bio-ihead bio-ihead--m"><nav class="bio-tabs" aria-label="התרגילים"><div class="bio-tabs__track">' + tabs.map(function (t, i) { return '<span class="bio-tab' + (i === 2 ? ' is-cur' : '') + (playsIn(t && t.a) ? ' is-play' : '') + '"' + (i === 0 || i === 4 ? ' data-far' : '') + (t && t.a ? ' data-aud="' + esc(t.a) + '"' : '') + '>' + (tabX(t, i) ? '<span class="bio-tab__nw"><b class="bio-tab__n">' + esc((t && t.n) || "") + '</b>' + tabX(t, i) + '</span>' : '<b class="bio-tab__n">' + esc((t && t.n) || "") + '</b>') + '<span class="bio-tab__g">' + (i === 2 ? '<span class="bio-tab__tl"><span class="bio-tab__t" id="ina" dir="auto" data-t="' + esc((t && t.t) || "ללא שם") + '">' + esc((t && t.t) || "") + '</span>' + namePen() + '</span>' :'<span class="bio-tab__t" data-t="' + esc((t && t.t) || "") + '">' + esc((t && t.t) || "") + '</span>') + (i === 2 && t && t.id && t.f ? (function () { var cur = state.items.filter(function (x) { return x.id === t.id; })[0]; return cur ? facChip(cur, " bio-tab__f") : ""; })() : t && t.f ? '<button type="button" class="rbtn rbtn--text bio-tab__f" disabled tabindex="-1" data-fac-label="x">' + esc(t.f) + '</button>' : '') + '</span></span>'; }).join("") + '</div></nav></header>';
+      return '<header class="bio-ihead bio-ihead--m"><nav class="bio-tabs" aria-label="התרגילים"><div class="bio-tabs__track">' + tabs.map(function (t, i) { return '<span class="bio-tab' + (i === 2 ? ' is-cur' : '') + (playsIn(t && t.a) ? ' is-play' : '') + '"' + (i === 0 || i === 4 ? ' data-far' : '') + (t && t.a ? ' data-aud="' + esc(t.a) + '"' : '') + '>' + (tabX(t, i) ? '<span class="bio-tab__nw"><b class="bio-tab__n">' + esc((t && t.n) || "") + '</b>' + tabX(t, i) + '</span>' : '<b class="bio-tab__n">' + esc((t && t.n) || "") + '</b>') + '<span class="bio-tab__g">' + (i === 2 ? '<span class="bio-tab__t" id="ina" dir="auto" data-t="' + esc((t && t.t) || "ללא שם") + '"' + (canEdit() ? ' role="button" tabindex="0" data-namepop aria-label="' + esc("עריכת שם התרגיל: " + ((t && t.t) || "")) + '"' : '') + '>' + esc((t && t.t) || "") + '</span>' :'<span class="bio-tab__t" data-t="' + esc((t && t.t) || "") + '">' + esc((t && t.t) || "") + '</span>') + (i === 2 && t && t.id && t.f ? (function () { var cur = state.items.filter(function (x) { return x.id === t.id; })[0]; return cur ? facChip(cur, " bio-tab__f") : ""; })() : t && t.f ? '<button type="button" class="rbtn rbtn--text bio-tab__f" disabled tabindex="-1" data-fac-label="x">' + esc(t.f) + '</button>' : '') + '</span></span>'; }).join("") + '</div></nav></header>';
     }
     var arrow = function (act, ico, label, off) { return '<button class="rbtn rbtn--icon" data-act="' + act + '" aria-label="' + label + '" title="' + label + '"' + (off ? " disabled" : "") + '>' + ico + '</button>'; };
     return '<header class="rhead' + (ro ? '' : ' bio-ihead') + '">' + (wide() && !ro ? '<button type="button" class="rbtn rbtn--icon" data-act="closeIt" aria-label="סגירת התרגיל" title="סגירת התרגיל">' + I.x + '</button>' : "") + (nav ? arrow("prevW", I.back, "הקודם", !hasPrev) : "") +   /* the X is the lead slot (the right); the add button is after the exercise's name, toward the left */
@@ -864,7 +863,7 @@
   }
   (function () {
     var st = document.createElement("style");
-    st.textContent = ".rhead #vtimer { cursor: pointer } .bio-inum { flex: none; font: var(--fw-bold) var(--fs-l)/var(--lh-tight) var(--font); font-variant-numeric: tabular-nums }    [data-catopen] { background: transparent !important; border-color: transparent !important; box-shadow: none !important; color: var(--primary) !important } .rfield:has(> .rf-rich[contenteditable=true]), .rfield:has(> .rf-rich[contenteditable=true]) > *, .rf-rich[contenteditable=true], .rf-rich[contenteditable=true] * { cursor: text !important } .rf-rich [data-mention] { cursor: default !important } @keyframes bioTin { from { opacity: 0; transform: translateY(-8px) } to { opacity: 1; transform: none } } @keyframes bioTout { from { opacity: 1; transform: none } to { opacity: 0; transform: translateY(-8px) } } #vtimer.is-in, #itimer.is-in { animation: bioTin var(--t-base) var(--ease) both } #vtimer.is-out, #itimer.is-out { animation: bioTout var(--t-base) ease-in both } @media (prefers-reduced-motion: reduce) { #vtimer.is-in, #itimer.is-in, #vtimer.is-out, #itimer.is-out { animation: none } }   @keyframes bioWave { 0% { stroke-dashoffset: 1.05 } 45% { stroke-dashoffset: 0 } 70% { stroke-dashoffset: 0 } 100% { stroke-dashoffset: -1.05 } } .bio-vsym { display: flex; flex: none; align-items: center; padding-inline: var(--ring-over); color: var(--primary); pointer-events: none } .bio-vsym__n { font: var(--fw-bold) var(--fs-l)/1 var(--font); font-variant-numeric: tabular-nums } .bio-vsym__n:empty { display: none }  .rf-rich b, .rf-rich strong { color: var(--text) !important } [data-opening] .rfield > span:first-child { transform: translateY(calc(var(--rf-label-top) * -1)) !important; inset-inline-end: 0 !important; pointer-events: none; transition: opacity var(--t-base) var(--ease) } [data-opening] .rfield:is([data-rf=\"v\"], :not([data-rf=\"e\"]):has(> .rf-rich:not(:empty))) > span:first-child { opacity: 0 } [data-opening] .rfield > .rf-rich { padding-top: 0 } .bio-open { display: flex; flex-direction: column; gap: var(--gap) } [data-recv] [data-audio] { display: none !important }         [data-audio]:not(.ricon-lg) { --play-in: var(--on-primary) }   .rcard, .rcard * { user-select: none; -webkit-user-select: none }   /* a card is pressed and dragged, never selected as text */       .bio-bar, .bio-bar * { touch-action: none }    .bio-catlayer .catmain, .bio-catlayer .catbody { background: var(--page) } .bio-catlayer { background: transparent } .bio-catlayer .catprev { background: var(--page) }";
+    st.textContent = ".rhead #vtimer { cursor: pointer } .bio-inum { flex: none; font: var(--fw-bold) var(--fs-l)/var(--lh-tight) var(--font); font-variant-numeric: tabular-nums }    [data-catopen] { background: transparent !important; border-color: transparent !important; box-shadow: none !important; color: var(--primary) !important } .rfield:has(> .rf-rich[contenteditable=true]), .rfield:has(> .rf-rich[contenteditable=true]) > *, .rf-rich[contenteditable=true], .rf-rich[contenteditable=true] * { cursor: text !important } .rf-rich [data-mention] { cursor: default !important } @keyframes bioTin { from { opacity: 0; transform: translateY(-8px) } to { opacity: 1; transform: none } } @keyframes bioTout { from { opacity: 1; transform: none } to { opacity: 0; transform: translateY(-8px) } } #vtimer.is-in, #itimer.is-in { animation: bioTin var(--t-base) var(--ease) both } #vtimer.is-out, #itimer.is-out { animation: bioTout var(--t-base) ease-in both } @media (prefers-reduced-motion: reduce) { #vtimer.is-in, #itimer.is-in, #vtimer.is-out, #itimer.is-out { animation: none } } .rf-rich b, .rf-rich strong { color: var(--text) !important } [data-opening] .rfield > span:first-child { transform: translateY(calc(var(--rf-label-top) * -1)) !important; inset-inline-end: 0 !important; pointer-events: none; transition: opacity var(--t-base) var(--ease) } [data-opening] .rfield:is([data-rf=\"v\"], :not([data-rf=\"e\"]):has(> .rf-rich:not(:empty))) > span:first-child { opacity: 0 } [data-opening] .rfield > .rf-rich { padding-top: 0 } .bio-open { display: flex; flex-direction: column; gap: var(--gap) } [data-recv] [data-audio] { display: none !important }         [data-audio]:not(.ricon-lg) { --play-in: var(--on-primary) }   .rcard, .rcard * { user-select: none; -webkit-user-select: none }   /* a card is pressed and dragged, never selected as text */";
     document.head.appendChild(st);
     /* the header's data-scrolled (its soft edge while the list under it is scrolled) is written by the kit's one helper in /sheet.js */
   })();
@@ -874,7 +873,6 @@
     var fw = getComputedStyle(pg).direction === "rtl" ? 1 : -1;   /* the finger's way to the next page: right to left (RTL: the next one waits on the inline-end side) */
     var x0 = 0, y0 = 0, t0 = 0, dx = 0, mode = 0;
     el.addEventListener("pointerdown", function (e) {
-      if (e.target.closest && e.target.closest(".bio-bar")) return;   /* a drag on the song's bar moves the song, never the page */
       if (el.querySelector(".rfield--inline") || pg.querySelector(".rfield--inline")) return;   /* a name edited in place: no swipe until it ends (ui/docs/realtime.md "עריכה במקום מעיפרון") */
       if (e.pointerType !== "mouse" && window.RosterSwipe && RosterSwipe.fromEdge(e.clientX)) { mode = 0; return; }   /* a finger from the screen's edge (either side) is the system's Back: the page stays still and the popup closes the usual way (/swipe.js) */
       if (e.pointerType !== "touch" && (e.button > 0 || (e.target.closest && e.target.closest("input, textarea, select, a, button, .rf-rich")))) return;   /* a finger anywhere; a mouse (a narrow window) only off the fields and buttons */
@@ -941,7 +939,7 @@
   /* the on-screen keyboard: while it is up, the player (hidden behind it anyway) keeps no room at the bottom of a popup, so the list reaches the keyboard */
   (function () {
     var st = document.createElement("style");
-    st.textContent = "@media (width < 760px) { * { scrollbar-width: none } *::-webkit-scrollbar { display: none } .bio-ihead--m { display: block; padding-inline: 0; touch-action: pan-y } .bio-ihead--m > .bio-tabs { overflow-x: clip; overflow-y: visible; direction: ltr; padding-block: 0 }   /* the strip clips only sideways (the track runs past it); up and down the play button's shadow falls free, and a hidden overflow also cut that shadow to the tab's own box */ .bio-tab.is-cur { position: relative; z-index: var(--z-raised) }   /* the current tab paints over its faded neighbours (their opacity makes each its own layer), so nothing covers its shadow */   /* the room under the tabs is the sheet's own gap (--gap, law 2, the header gap law of ui/SKILL.md), as in every sheet: the strip ends where the tabs end */.bio-tab__g { display: flex; flex-direction: column; align-items: center; gap: var(--gap-tight) } .bio-tab__tl { display: inline-flex; align-items: center; gap: var(--gap-tight); max-inline-size: 100%; min-inline-size: 0 }   /* the name and its pencil share one line: the pencil at the end of the title, the facilitator below */.bio-tabs__track { display: flex; width: max-content; visibility: hidden; transform: translateX(var(--tx, 0px)); transition: transform var(--t-base) var(--ease) } .bio-tabs__track.is-ready { visibility: visible } .bio-tabs__track.is-drag, .bio-tabs__track.is-drag .bio-tab { transition: none !important } .bio-tab { cursor: pointer; flex: none; display: flex; flex-direction: column; align-items: center; gap: var(--gap-tight); width: calc(var(--cw, 360px) * .38); white-space: nowrap; color: var(--text); direction: rtl; opacity: calc(.4 + .6 * max(0, 1 - abs(var(--cx, 0px) + var(--tx, 0px) - var(--cw, 360px) / 2) / (var(--cw, 360px) * .6))); transition: opacity var(--t-base) var(--ease) } .bio-tab__f { transform: translateX(calc(var(--nb, 0) * (clamp(var(--cw, 360px) * .13, var(--cx, 0px) + var(--tx, 0px), var(--cw, 360px) * .87) - (var(--cx, 0px) + var(--tx, 0px))))) } .bio-tab__n { --nx: calc(clamp(var(--cw, 360px) * .13, var(--cx, 0px) + var(--tx, 0px), var(--cw, 360px) * .87) - (var(--cx, 0px) + var(--tx, 0px))); transform: translateX(calc(var(--nb, 0) * var(--nx))); opacity: calc(1 - var(--nb, 0) * min(1, abs(var(--nx)) / (var(--cw, 360px) * .45))); font: var(--fw-bold) var(--fs-xl)/var(--lh-tight) var(--font); font-variant-numeric: tabular-nums } .bio-tab__t { --dc: calc(var(--cx, 0px) + var(--tx, 0px) - var(--cw, 360px) / 2); --dd: calc(var(--cw, 360px) * .38); --sd: min(1, max(.2, (var(--dd) - (var(--hl, 0px) * (1 + clamp(-1, var(--dc) / (var(--cw, 360px) * .02), 1)) + var(--hr, 0px) * (1 - clamp(-1, var(--dc) / (var(--cw, 360px) * .02), 1))) / 2 - var(--gap-tight)) / var(--h, 1px))); transform: scaleX(calc(1 - min(1, abs(var(--dc)) / var(--dd)) * (1 - var(--sd)))); font: var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font); color: var(--text-muted) } .bio-tab.is-cur .bio-tab__t { color: var(--text); font-weight: var(--fw-bold) } } html.bio-kb:not(.bio-sel) { --bar-b: 0px } html.bio-kb:not(.bio-sel) .rplayer { display: none }";   /* the add-music card after a card: the standard space (sp-2) in every grid it sits in, grid gap plus this; alone it gets none */   /* the exercise popup keeps room for the player at its bottom (rule above, with its id); with the keyboard up the player is gone, so no room is left empty above the keyboard: the class from the visual viewport, and also whenever a field of the popup has focus (whatever the browser reports), and the scroller's own hairline margin no longer hangs below the sheet where it clipped the last line; a popup's header has no line under it, the edge shadow shows on scroll; phones keep a small gap (the gutter) under the last field, inside the scroll */
+    st.textContent = "@media (width < 760px) { * { scrollbar-width: none } *::-webkit-scrollbar { display: none } .bio-ihead--m { display: block; padding-inline: 0; touch-action: pan-y } .bio-ihead--m > .bio-tabs { overflow-x: clip; overflow-y: visible; direction: ltr; padding-block: 0 }   /* the strip clips only sideways (the track runs past it); up and down the play button's shadow falls free, and a hidden overflow also cut that shadow to the tab's own box */ .bio-tab.is-cur { position: relative; z-index: var(--z-raised) }   /* the current tab paints over its faded neighbours (their opacity makes each its own layer), so nothing covers its shadow */   /* the room under the tabs is the sheet's own gap (--gap, law 2, the header gap law of ui/SKILL.md), as in every sheet: the strip ends where the tabs end */.bio-tab__g { display: flex; flex-direction: column; align-items: center; gap: var(--gap-tight) } .bio-tab__t[data-namepop] { cursor: pointer }   /* a phone: a tap on the current exercise's name renames it in a short window (owner 2026-11-27), no pencil in the strip */.bio-tabs__track { display: flex; width: max-content; visibility: hidden; transform: translateX(var(--tx, 0px)); transition: transform var(--t-base) var(--ease) } .bio-tabs__track.is-ready { visibility: visible } .bio-tabs__track.is-drag, .bio-tabs__track.is-drag .bio-tab { transition: none !important } .bio-tab { cursor: pointer; flex: none; display: flex; flex-direction: column; align-items: center; gap: var(--gap-tight); width: calc(var(--cw, 360px) * .38); white-space: nowrap; color: var(--text); direction: rtl; opacity: calc(.4 + .6 * max(0, 1 - abs(var(--cx, 0px) + var(--tx, 0px) - var(--cw, 360px) / 2) / (var(--cw, 360px) * .6))); transition: opacity var(--t-base) var(--ease) } .bio-tab__f { transform: translateX(calc(var(--nb, 0) * (clamp(var(--cw, 360px) * .13, var(--cx, 0px) + var(--tx, 0px), var(--cw, 360px) * .87) - (var(--cx, 0px) + var(--tx, 0px))))) } .bio-tab__n { --nx: calc(clamp(var(--cw, 360px) * .13, var(--cx, 0px) + var(--tx, 0px), var(--cw, 360px) * .87) - (var(--cx, 0px) + var(--tx, 0px))); transform: translateX(calc(var(--nb, 0) * var(--nx))); opacity: calc(1 - var(--nb, 0) * min(1, abs(var(--nx)) / (var(--cw, 360px) * .45))); font: var(--fw-bold) var(--fs-xl)/var(--lh-tight) var(--font); font-variant-numeric: tabular-nums } .bio-tab__t { --dc: calc(var(--cx, 0px) + var(--tx, 0px) - var(--cw, 360px) / 2); --dd: calc(var(--cw, 360px) * .38); --sd: min(1, max(.2, (var(--dd) - (var(--hl, 0px) * (1 + clamp(-1, var(--dc) / (var(--cw, 360px) * .02), 1)) + var(--hr, 0px) * (1 - clamp(-1, var(--dc) / (var(--cw, 360px) * .02), 1))) / 2 - var(--gap-tight)) / var(--h, 1px))); transform: scaleX(calc(1 - min(1, abs(var(--dc)) / var(--dd)) * (1 - var(--sd)))); font: var(--fw-regular) var(--fs-m)/var(--lh-tight) var(--font); color: var(--text-muted) } .bio-tab.is-cur .bio-tab__t { color: var(--text); font-weight: var(--fw-bold) } } html.bio-kb:not(.bio-sel) { --bar-b: 0px } html.bio-kb:not(.bio-sel) .rplayer { display: none }";   /* the add-music card after a card: the standard space (sp-2) in every grid it sits in, grid gap plus this; alone it gets none */   /* the exercise popup keeps room for the player at its bottom (rule above, with its id); with the keyboard up the player is gone, so no room is left empty above the keyboard: the class from the visual viewport, and also whenever a field of the popup has focus (whatever the browser reports), and the scroller's own hairline margin no longer hangs below the sheet where it clipped the last line; a popup's header has no line under it, the edge shadow shows on scroll; phones keep a small gap (the gutter) under the last field, inside the scroll */
     document.head.appendChild(st);
     var vv = window.visualViewport; if (!vv) return;
     function upd() { document.documentElement.classList.toggle("bio-kb", Math.max(0, window.innerHeight - vv.height - vv.offsetTop) > 120); }
@@ -1023,10 +1021,6 @@
   function catAddName() {   /* one name for the add button, the same at every width: "הוספה לוויוונסיה" and the open vivencia's title when it has one */
     var t = state.viv && state.viv.title ? String(state.viv.title).trim() : "";
     return "הוספה לוויוונסיה" + (t && !/^ה?ויוונסיה$/.test(t) ? " " + t : "");
-  }
-  function catAddHtml() {
-    var n = catAddName();
-    return '<button type="button" id="catAdd" class="rbtn" aria-label="' + esc(n) + '" title="' + esc(n) + '" disabled><span aria-hidden="true" class="ricon">' + I.plus + '</span><span class="rbtn__label">הוספה</span></button>';
   }
   function refreshPrevLabel() {   /* it always says the vivencia that is open now, and is on only while an exercise is looked at */
     if (!catLayer) return;
@@ -1437,7 +1431,6 @@
     if (e && e === myEmail()) return myName();
     return knownNames[e] || e.split("@")[0];
   }
-  function firstName(e) { return personName(e).split(" ")[0]; }
   /* the app menu's options (kit, RosterAppMenu.attach): name is myName; onAccount (the account window) only once me() says the server keeps a name (me().name),
      so against an older server the head stays plain text and nothing offers a save that cannot happen */
   var appMenuOpts;   /* set by the attach call above (it runs first): no initial value here, or it would be wiped */
@@ -1899,7 +1892,8 @@
       '<button type="button" class="rbtn rbtn--icon" data-act="vprint"' + P() + ' aria-label="הדפסה" title="הדפסה">' + printIco() + '</button>' +
       '<button type="button" class="rbtn rbtn--icon" data-act="vmore" data-rmore="' + (fixedItems.length ? "keep" : "fold") + '" aria-haspopup="menu" aria-label="עוד" title="עוד">' + I.dots + '</button></span>';
     liveHome(); liveViv(v.id);   /* the vivencias' source (the title below is edited in place on it) and this vivencia's own sources and presence */
-    var vpen = (v.role === "owner" || v.role === "edit") && !state.offline && live.vivs ? '<button type="button" class="rbtn rbtn--icon rbtn--muted" data-vpen aria-label="עריכת הנושא" title="עריכת הנושא">' + I.pen + '</button>' : "";   /* the pencil after the name (ui/docs/realtime.md "עריכה במקום מעיפרון"): part of the title's slot, never folded */
+    var vEdit = (v.role === "owner" || v.role === "edit") && !state.offline && live.vivs;
+    var vpen = vEdit && wide() ? '<button type="button" class="rbtn rbtn--icon rbtn--muted" data-vpen aria-label="עריכת הנושא" title="עריכת הנושא">' + I.pen + '</button>' : "";   /* the pencil after the name (ui/docs/realtime.md "עריכה במקום מעיפרון"): part of the title's slot, never folded */
     show(head(v.title || "ויוונסיה חדשה", (v.partners || []).join(", "), true, wide() ? '<span id="vtimer" class="rhead__live" hidden aria-live="off"></span>' + vbtns : vbtns, null, vpen, true) +   /* the mark of the exercise that plays sits beside the name; the way to the catalog is a word in the header, not a floating button */
       '<div class="rlist rload" aria-busy="true" data-load="exercise" data-fab-room id="list"></div>' +
       '', function (r) {   /* on a wide screen the way to the catalog is a green banner down the side, added by show() */
@@ -1912,6 +1906,16 @@
       var vp = r.querySelector("[data-vpen]"), vh = r.querySelector(".rhead__title");
       if (vp && vh) liveKeep(vp, RosterField.inline(vp, vh, live.vivs, v.id, "title", { required: true, label: "נושא", presence: live.pres, item: "viv", field: "title",
         onEnd: function () { var hd = r.querySelector(".rhead"); if (hd && window.RosterHeader) RosterHeader.fit(hd); } }));   /* the vivencia's title, co-edited in place: saved as it is typed, never left empty */
+      if (vEdit && !wide() && vh) {   /* a phone: no pencil; a tap on the name renames it in a short window (owner 2026-11-27, "במובייל לחיצה על השם תקפיץ פופאפ, בלי סמלי עריכה") */
+        vh.setAttribute("role", "button"); vh.setAttribute("tabindex", "0"); vh.setAttribute("aria-label", "עריכת הנושא: " + (v.title || ""));
+        var vPop = function () {
+          RosterSheet.confirm({ id: "vnameDlg", title: "פרטי הוויוונסיה", action: "שמירה",
+            fields: [{ name: "title", label: "נושא", value: v.title || "", required: true, source: live.vivs, key: v.id, col: "title" }],
+            submit: function (val) { v.title = val.title; vh.textContent = val.title; vh.setAttribute("aria-label", "עריכת הנושא: " + val.title); } });
+        };
+        vh.addEventListener("click", vPop);
+        vh.addEventListener("keydown", function (ev) { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); vPop(); } });
+      }
       on(r, "more", function (b) { vivMenu(v, b); });
       var sb = r.querySelector('[data-act="vshare"]'); if (sb) sb.addEventListener("click", function (ev) { ev.stopPropagation(); giveLink(location.origin + BASE + v.id, v.title || "ויוונסיה", "הקישור הועתק"); });   /* a public vivencia of somebody else: anyone who sees it can pass on its address (owner 2026-11-25) */
       var vb = r.querySelector('[data-act="vis"]'); if (vb) vb.addEventListener("click", function (ev) { ev.stopPropagation(); sharePopup(v); });   /* the click must not reach the dark side's "tap closes the layer", or the panel it opens is closed at once */
@@ -2326,13 +2330,14 @@
       if (trk) trk.addEventListener("click", function (ev) {   /* a tap on a tab (its number or its name) goes to that exercise */
         var tab = ev.target.closest(".bio-tab"); if (!tab) return;
         var idx = [].indexOf.call(trk.querySelectorAll(".bio-tab"), tab), to2 = state.items[k + (2 - idx)];
-        if (idx === 2 && ev.target.closest("[data-namepen], .rfield--inline")) return;   /* the pencil edits the name in place (RosterField.inline); the name itself does nothing */
+        if (idx === 2 && ev.target.closest("[data-namepop]")) { itemNamePop(it); return; }   /* a phone: a tap on the current name renames it in a short window (owner 2026-11-27) */
         if (idx === 2 || !to2) return;
         repNext = true; var dir2 = idx < 2 ? -1 : 1; state.slideFrom = dir2; var ghost2 = ghostOfPage(); stack().pop(); go(function () { itemScreen(to2); }); ghostRun(ghost2, dir2);
       });
+      if (trk) trk.addEventListener("keydown", function (ev) { if ((ev.key === "Enter" || ev.key === " ") && ev.target.matches && ev.target.matches("[data-namepop]")) { ev.preventDefault(); itemNamePop(it); } });   /* the name is a button: Enter and Space open the window too */
       if (hdrEl && !hdrEl.__tapFix) {   /* the header holds the finger for the swipe: a tap can then land on the header itself; it is given to what is under the finger */
         hdrEl.__tapFix = 1;
-        var tap0 = null, hitSel = "[data-namepen], [data-fac]";
+        var tap0 = null, hitSel = "[data-namepop], [data-fac]";
         hdrEl.addEventListener("pointerdown", function (ev) { tap0 = { x: ev.clientX, y: ev.clientY, t: Date.now() }; }, true);
         hdrEl.addEventListener("pointerup", function (ev) {   /* a tap is decided by the finger itself: a small movement of a real finger must not turn it into a swipe that eats the click */
           var t0 = tap0; tap0 = null; if (!t0) return;
@@ -2345,8 +2350,8 @@
         hdrEl.addEventListener("click", function (ev) {
           if (hdrEl.__syn) return;   /* our own click for a tap */
           if (Date.now() - (hdrEl.__tapAt || 0) < 700 && ev.target.closest && ev.target.closest(hitSel)) { ev.stopPropagation(); ev.preventDefault(); return; }   /* the browser's click for the same tap: already done */
-          if (ev.target.closest && ev.target.closest("[data-namepen], [data-fac], .rfield--inline")) return;
-          var hit = document.elementsFromPoint(ev.clientX, ev.clientY).filter(function (e) { return e.matches && e.matches("[data-namepen], [data-fac]"); })[0];
+          if (ev.target.closest && ev.target.closest("[data-namepop], [data-fac]")) return;
+          var hit = document.elementsFromPoint(ev.clientX, ev.clientY).filter(function (e) { return e.matches && e.matches("[data-namepop], [data-fac]"); })[0];
           if (hit) { ev.stopPropagation(); hit.click(); }
         }, true);
       }
@@ -2415,13 +2420,7 @@
       liveItem = { id: it.id, root: r.querySelector("#ina") || pg, prev: prevIt && prevIt.id, next: nextIt && nextIt.id, apply: function (fresh) {   /* a change of the exercise from its source: the texts are the fields' own; here only the song strip and the neighbours */
         var inField = r.contains(document.activeElement) && (/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName) || document.activeElement.classList.contains("rf-rich")), k2 = fresh.id === it.id ? state.items.indexOf(fresh) : -1;
         var pid = state.items[k2 - 1] && state.items[k2 - 1].id, nid = state.items[k2 + 1] && state.items[k2 + 1].id;
-        var strip = r.querySelector('[data-act="pickMusic"]');
-        if (fresh.music_id !== it.music_id && strip && fresh.exercise_id === it.exercise_id) {   /* the song changed: the strip and its bar are written anew in place, so it shows even while I am typing */
-          strip.innerHTML = '<div class="bio-lines">' + (fresh.music ? songLines(fresh.music) : '<span class="rrow__title">לחצו לבחירת מוזיקה</span>') + '</div>' + (fresh.music ? playCol(fresh.music) : '');
-          var nb = strip.nextElementSibling, bar = "";   /* the exercise has no bar of its own: the player at the bottom is the one bar */
-          if (nb && nb.classList.contains("bio-bar")) { if (bar) nb.outerHTML = bar; else nb.remove(); } else if (bar) strip.insertAdjacentHTML("afterend", bar);
-          it.music_id = fresh.music_id; it.music = fresh.music;
-        }
+        if (fresh.music_id !== it.music_id && fresh.exercise_id === it.exercise_id) { it.music_id = fresh.music_id; it.music = fresh.music; }
         if (fresh.exercise_id !== it.exercise_id || pid !== liveItem.prev || nid !== liveItem.next) {   /* another exercise or other neighbours: the screen is drawn again, as soon as nobody is typing in it */
           if (!inField) { itemScreen(fresh); return; }
           liveItem.pending = fresh;
@@ -2556,7 +2555,6 @@
      data-card (song, item, viv: the app's hooks), data-song (a song card with a file: a tap plays it, audio.js shows its wait), data-songlist (the loop it plays in),
      data-ythref and data-ytid (a song card with no file: a tap opens it on YouTube). The playing state is .is-play, set from the player (the bioaudio event). */
   /* THE TITLE ROW (law 4): a text and its chip under ONE parent; --gap between them, the text shrinks with an ellipsis, the chip never does. Used by the opening sections. Looks: .rtitle in kit.css. */
-  function titleRow(cls, textHtml, chipHtml) { return '<span class="rtitle' + (cls ? ' ' + cls : '') + '">' + textHtml + (chipHtml || '') + '</span>'; }
   /* a card's play tile, as an action: no YouTube sign (a tap on a song card with no file opens YouTube); the upload button keeps the text colour it had */
   function cardActs(pill) { return (pill || "").replace(/<a [^>]*data-yt="[^"]*"[^>]*>[\s\S]*?<\/a>/g, "").replace(/(data-upl="[^"]*"[^>]*) style="color:var\(--text-muted\)"/g, "$1"); }
   function songAttrs(m, pill) {   /* what a tap on a song card plays: its file (and its loop), or its YouTube search */
@@ -2656,32 +2654,6 @@
       chooseDest(songName(m), { vivId: state.viv && state.viv.id, itemId: liveItem && liveItem.id }, function (d) { return addMusicTo(m, d); });
     }, fail);
   }, true);
-  /* every popup on a wide screen can be moved: hold its top (the title, or the empty strip above its content) and drag it anywhere; it comes back to its place the next time it opens */
-  (function () {
-    var st = document.createElement("style");
-    st.textContent = "dialog[open] .sheet-head { cursor: grab } dialog.bio-moving, dialog.bio-moving * { cursor: grabbing !important; user-select: none }";
-    document.head.appendChild(st);
-    var d = null;
-    document.addEventListener("pointerdown", function (ev) {
-      if (ev.button > 0 || !wide()) return;
-      var dlg = ev.target.closest && ev.target.closest("dialog[open]"); if (!dlg) return;
-      if (ev.target.closest("button, a, input, select, textarea, label, [data-audio], [role=button], [role=menuitem]")) return;
-      var rc = dlg.getBoundingClientRect(); if (ev.clientY - rc.top > 64) return;
-      var cur = (dlg.style.translate || "0px 0px").split(" ");
-      d = { dlg: dlg, x: ev.clientX, y: ev.clientY, ox: parseFloat(cur[0]) || 0, oy: parseFloat(cur[1]) || 0, rc: rc };
-      dlg.classList.add("bio-moving");
-      try { dlg.setPointerCapture(ev.pointerId); } catch (e) { /* no capture: the document still hears the move */ }
-    });
-    document.addEventListener("pointermove", function (ev) {
-      if (!d) return;
-      var dx = ev.clientX - d.x, dy = ev.clientY - d.y, vw = window.innerWidth, vh = window.innerHeight;
-      dx = Math.max(-d.rc.left + 8 - d.ox + d.ox, Math.min(vw - d.rc.right - 8, dx + 0)) ; dy = Math.max(-d.rc.top + 8, Math.min(vh - d.rc.bottom - 8, dy));
-      d.dlg.style.translate = (d.ox + dx) + "px " + (d.oy + dy) + "px";
-    });
-    var end = function () { if (!d) return; d.dlg.classList.remove("bio-moving"); d = null; };
-    document.addEventListener("pointerup", end); document.addEventListener("pointercancel", end);
-    document.addEventListener("close", function (ev) { if (ev.target && ev.target.tagName === "DIALOG") ev.target.style.translate = ""; }, true);
-  })();
   /* the slots of a music option's card (songCardOpts): the song, its performer, the play tile, the chip that chooses it, the time; the X is the kit list's (remove).
      plain: the catalog's exercise, only its songs: no chip to choose, no green frame */
   function optCardOpts(m, sel, plain, listKey, askWhere) {
@@ -2930,12 +2902,6 @@
     d.classList.add("rs-settle", "rs-closing"); d.style.setProperty("--rs-dy", (h + 24) + "px");
     d.addEventListener("transitionend", end); setTimeout(end, 320);
   }
-  function sheetOf(id, title, body, action) {
-    var dlg = document.getElementById(id);
-    if (!dlg) { dlg = document.createElement("dialog"); dlg.id = id; document.body.appendChild(dlg); }
-    RosterSheet.render(dlg, { title: title, from: "bottom", action: action, body: body });
-    return dlg.querySelector(".sheet-body");
-  }
   /* other music: the files the catalogs do not list, and the songs this person uploaded by hand (those can be renamed). One upload button on top. */
   function putAudio(f, progress) {   /* the file goes to the bucket through the Worker; resolves with { object, format, size } */
     var fmt = (f.name.split(".").pop() || "").toLowerCase();
@@ -2970,10 +2936,6 @@
         if (document.getElementById("list") && document.getElementById("list").hasAttribute("data-fab-room") && state.items) paint();
         var im = document.getElementById("imus"); if (im && liveItem && liveItem.id) { var li = state.items.filter(function (x) { return x.id === liveItem.id; })[0]; if (li) musPaint(im, li); }
     }
-  }
-  function songMenu(btn, m, done) {   /* the menu of a song this person uploaded: its name and performer, and deleting it (last, no colour of its own) */
-    RosterMenu.open(btn, [{ label: "עריכת שם ומבצע", icon: I.pen, fn: function () { songEdit(m, done); } },
-      { label: "מחיקת המוסיקה", icon: I.trash, fn: function () { songDelete(m, done); } }]);
   }
   function songDelete(m, done) {   /* a song that is not from the catalog can be deleted: from every exercise, option and start or end music it is in */
       RosterSheet.confirm({ title: "מחיקת מוסיקה", text: 'למחוק את "' + esc(songName(m)) + '" לגמרי? הוא יוסר מכל התרגילים והוויוונסיות שבהם הוא נמצא.', action: "מחיקה",run: function (c, delb) {
@@ -3532,11 +3494,6 @@
   }
   /* WHERE A SONG (OR AN EXERCISE) GOES: a popup with the vivencias as the kit's cards; adding a song, the chosen one shows its places under it. It opens on the vivencia (and the exercise) the person is in, the choice is the current card, the header's description says what goes where, and the button at the bottom adds. "A new exercise" (the default) takes the song as an exercise with no name. */
   /* the small picker of the start or end music has a dialog of its own (chooseDest is the kit's popup) */
-  function destDialog() {
-    var dlg = document.getElementById("destDlg");
-    if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "destDlg"; document.body.appendChild(dlg); }
-    return dlg;
-  }
   function chooseDest(songLabel, cur, fn, opts) {
     var vivOnly = !!(opts && opts.vivOnly);
     var side = wide(), pop = null;   /* the kit's one popup: a panel on the left on a computer, a short sheet from the bottom on a phone */
@@ -3713,9 +3670,6 @@
           if (u.email === myEmail()) { if (state.me && "name" in state.me) state.me.name = nm || state.me.name; namesChanged(); }   /* my own name, renamed from the users list */
         }, shortFail);
       } });
-  }
-  function confirmRemoveUser(email, run) {
-    RosterSheet.confirm({ title: "הסרת משתמש", text: "להסיר את " + esc(email) + " מהרשימה?", action: "הסרה",run: function (dlg) { dlg.close(); run(); } });
   }
   function allowPopup() {   /* the kit's one popup: the left pane on a computer, a sheet on a phone */
     var rows = [], ready = false;   /* ready: the list has arrived (until then the area is loading) */
@@ -4010,6 +3964,7 @@
     }
     layers.forEach(function (l) { l.own = false; if (l.el.__screen) l.el.__quiet = true; if (l.el.id !== "rsMenu" && l.el.open) l.el.close(); else if (l.el.id === "rsMenu") RosterMenu.close(); });
     var u = parseUrl(); popping = true;
+    if (wide() && !u.item && liveItem) { liveItem = null; state.lastItem = null; if (typeof markItem === "function") markItem(); }   /* Back closed the exercise beside the list: it is no longer the open one, so the next tap on its card opens it (not a second-press close) */
     try {
       stack().length = 0;
       if (!u.viv) { if (wide()) homeWide(); else home(); }

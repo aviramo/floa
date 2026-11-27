@@ -19,11 +19,9 @@
     /* the lock screen's picture: the app's own favicon.png, beside assets/ (resolved from this script, so the main page and /music/ both reach it) */
     artwork: new URL("../favicon.png", (document.currentScript && document.currentScript.src) || location.href).href,
     waitCards: ".rcard[data-song]",   /* a song card with no play button of its own (a tap on it plays): it shows the wait too */
-    /* the ring of the equalizer: the number of the exercise that plays (the tab on a phone, the button to it in the header of a vivencia on a computer) */
+    /* the ring of the equalizer: the number of the exercise that plays (its tab on a phone) */
     rings: function () {
-      var t = [].slice.call(document.querySelectorAll(".bio-tab.is-play > .bio-tab__n"));
-      var g = document.querySelector("#vgo:not([hidden]) #vgon"); if (g) t.push(g);
-      return t;
+      return [].slice.call(document.querySelectorAll(".bio-tab.is-play > .bio-tab__n"));
     }
   });
 })();

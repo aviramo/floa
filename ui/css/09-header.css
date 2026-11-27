@@ -5,15 +5,35 @@
 :root { --edge-shadow: linear-gradient(color-mix(in srgb, var(--scrim) 18%, transparent), transparent); }
 .rhead::after, dialog.rsheet .sheet-head::after, .racc__bar::after { content: ""; position: absolute; inset-inline: 0; top: 100%; height: var(--gap); background: var(--edge-shadow); opacity: 0; transition: opacity var(--t-base) var(--ease); pointer-events: none; }
 .rlayout--surface[data-scrolled] > :is(.rhead, .sheet-head)::after, .racc__bar[data-stuck]::after { opacity: 1; }
+/* a bar that stays under the header (filters, a field: .rlayout__bar of the surface): the one soft edge is under the LAST block that stays, never under the header
+   (owner 2026-11-27, "אם יש מתחתיו כותרת דביקה... צל באריח התחתון ולא בכותרת הראשית") */
+.rlayout--surface > .rlayout__bar:not([data-rquick]) { position: relative; }
+.rlayout--surface > .rlayout__bar:not([data-rquick])::after { content: ""; position: absolute; inset-inline: 0; top: 100%; height: var(--gap); background: var(--edge-shadow); opacity: 0; transition: opacity var(--t-base) var(--ease); pointer-events: none; z-index: var(--z-raised); }
+.rlayout--surface:has(> .rlayout__bar:not([hidden], [data-rquick])) > :is(.rhead, .sheet-head)::after { opacity: 0; }
+.rlayout--surface[data-scrolled] > .rlayout__bar:not([hidden], [data-rquick]):not(:has(~ .rlayout__bar:not([hidden])))::after { opacity: 1; }
 .rhead:has(~ * .racc__bar[data-stuck])::after, dialog.rsheet .sheet-head:has(~ * .racc__bar[data-stuck])::after { opacity: 0; }
 :is(dialog, .rpanel) .rhead { min-height: var(--fab); padding-top: 0; }
 .rhead__text { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: var(--gap); }
 .rhead__title { flex: 0 1 auto; min-width: 0; margin: 0; padding: 0; color: var(--text); font: var(--fw-bold) var(--fs-l)/var(--lh-text) var(--font); text-align: start; white-space: normal; overflow-wrap: anywhere; }
 input.rhead__title { flex: 1 1 auto; width: 100%; border: 0; outline: 0; border-radius: 0; background: transparent; box-shadow: none; appearance: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rgroup, .rhead__acts { display: flex; align-items: center; gap: var(--gap); flex: none; }
-.rhead__mark { flex: none; display: flex; align-items: center; }
+/* THE MARK AT THE TITLE'S END (ui/docs/header.md, slot 3; owner 2026-11-27): the title line (.rhead__tl, in .rhead__tw before the description) holds the title and
+   its mark in a text's flow: the mark right after the title's last word, on its last line when it wraps, whatever the description's width. Inline flow has no
+   gap, so --gap-tight is the mark's start margin (the one declared exception in the header). RosterHeader.fit counts the mark with the title */
+.rhead__tl { display: block; min-width: 0; color: var(--text); font: var(--fw-bold) var(--fs-l)/var(--lh-text) var(--font); text-align: start; overflow-wrap: anywhere; }
+.rhead__tl > .rhead__title { display: inline; }
+.rhead__tl > .rhead__mark { display: inline-flex; vertical-align: middle; margin-inline-start: var(--gap-tight); }
+.rhead__tl > .rhead__mark[hidden] { display: none; }   /* a kit button's own display would beat [hidden] */
 .rhead [data-folded] { display: none; }
 .rhead:not(:has([data-folded])) [data-rmore="fold"] { display: none; }
 .rhead[data-wrap] .rhead__tw:has(> .rhead__sub) { margin-block-end: 0; }
 .rhead[data-wrap] { padding-block-end: var(--gap-tight); }
 .rhead__live { flex: none; color: var(--text); font: var(--fw-bold) var(--fs-l)/var(--lh-tight) var(--font); font-variant-numeric: tabular-nums; direction: ltr; }
+/* ONE CHOICE IN THE HEADER ROW (ui/docs/header.md, slot "בחירה"; owner 2026-11-27): a screen title and one kit choice field (.rfield with a select) in one row: the title first,
+   the choice between the title and the actions. Where the row is too narrow for both, the choice goes to a second line inside the header, full width under the title
+   (owner's choice A: never folded into "עוד"). The header is a container so the rule reads its own width, not the screen's */
+.rhead:has(> .rhead__pick) { flex-wrap: wrap; container-type: inline-size; }
+.rhead > .rhead__pick { flex: 0 1 auto; min-width: 0; order: 1; }
+.rhead > .rhead__pick ~ .rhead__acts, .rhead:has(> .rhead__pick) > .rhead__acts { order: 2; }
+.rhead > .rhead__pick > .rfield { min-inline-size: calc(var(--ctl) * 4); }
+@container (width < 560px) { .rhead > .rhead__pick { order: 3; flex: 1 0 100%; padding-block-end: var(--gap-tight); } }

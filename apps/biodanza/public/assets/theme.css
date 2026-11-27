@@ -24,9 +24,8 @@
 /* a menu is a sheet of paper over the page */
 .rmenu, .rmenu--fixed { background: var(--on-primary) !important; --page: var(--on-primary); --surface: oklch(96% .01 255) }
 
-/* the exercise page and the catalog layer tint their muted text (the catalog one toward violet) */
+/* the exercise page tints its muted text */
 #pd:has(#ipg) { --text-muted: oklch(40% .07 255); background: var(--page); color: var(--text) }
-.bio-catlayer { --text-muted: oklch(40% .07 305); color: var(--text) }
 
 
 /* the page itself never pans or flings: a sideways drag that the app takes for its own would otherwise end as a browser fling, and the next tap would only stop that fling instead of clicking. Lists and fields scroll on their own touch-action */
@@ -44,27 +43,9 @@ html, body { touch-action: none; }
 .bio-ihead--m > .bio-tabs.bio-tabs { padding-block-start: var(--ring-over); }
 .bio-tabs .bio-tab { gap: calc(var(--ring-over) + var(--gap-tight)); }
 }
-/* the title of a catalog is its search field: empty, it shows the title as the title looks */
-input[data-cattitle]::placeholder { color: var(--text); opacity: 1; }
-input[data-cattitle]:focus::placeholder { color: var(--text-muted); }
-/* a layer over another slides as ONE piece, like a physical object from the right: its two halves (the list and the exercise opened from it) move together with the layer, in and out; transform only, --t-base, --ease, never a fade (only the scrim under it fades) */
-.bio-catlayer.bio-catlayer.bio-catlayer--over { transform: translateX(100%); transition: transform var(--t-base) var(--ease), visibility 0s linear var(--t-base); }
-.bio-catlayer.bio-catlayer.bio-catlayer--over.is-open { transform: none; transition: visibility 0s; animation: bio-layer-in var(--t-base) var(--ease); }
-@keyframes bio-layer-in { from { transform: translateX(100%); } }
-.bio-catlayer.bio-catlayer--over .catmain { transform: none; transition: none; }
-@media (prefers-reduced-motion: reduce) { .bio-catlayer.bio-catlayer.bio-catlayer--over, .bio-catlayer.bio-catlayer.bio-catlayer--over.is-open { transition: none; animation: none } }
-/* a row's name and the mark beside it (the number with the sound ring): --gap-section between them, on the group that holds both (in a header the mark is --gap from the title, the kit's) */
-.rtitle:has(> .bio-vsym) { gap: var(--gap-section); }
-/* the dim of the layer below a catalog layer: a scrim that stays where it is (between the two layers, over the left side) and only fades; the layer above it is what slides */
-.bio-catscrim { position: fixed; z-index: var(--z-menu); background: var(--scrim); opacity: 0; pointer-events: none; transition: opacity var(--t-base) var(--ease); }
-.bio-catscrim.is-on { opacity: 1; pointer-events: auto; }
-@media (prefers-reduced-motion: reduce) { .bio-catscrim { transition: none } }
-/* stacks inside Biodanza's own parts, on the parent (ui/docs/layout.md "עקרונות הפריסה", principle 1), never in style="": an exercise card's second row (its source, then the songs' count),
-   the play column of a song strip (the tile over its time), and the strip's lines */
+/* stacks inside Biodanza's own parts, on the parent (ui/docs/layout.md "עקרונות הפריסה", principle 1), never in style="": an exercise card's second row (its source, then the songs' count) */
 .bio-sub { display: inline-flex; align-items: center; gap: var(--gap); font-variant-numeric: tabular-nums; }
 .bio-sub__n { display: inline-flex; align-items: center; gap: var(--gap-tight); }
-.bio-pcol { flex: none; display: flex; flex-direction: column; align-items: center; gap: var(--gap); }
-.bio-lines { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: var(--gap-tight); }
 /* the music catalog's filter row (muFilterHtml in app.js), the same in the music catalog and in an exercise's music picker: two boxes a row on a phone, four on a computer */
 .mfs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap); }
 @media (min-width: 760px) { .mfs { grid-template-columns: repeat(4, minmax(0, 1fr)); } }

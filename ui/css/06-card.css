@@ -13,6 +13,7 @@
 .rcard__t1 { align-self: flex-end; }   /* a row taller than its text (a chip): the two texts sit together in the middle of the card, the extra height above and below them */
 .rcard__t2 { align-self: flex-start; }
 .rcard__a1 > :is(.rchip, .rbtn--text) { flex: none; }
+.rcard__t1 > .rchip { flex: none; }   /* chipAt "title": the chip right after the text (the row's --gap-tight), never shrinking; the text before it is what shrinks */
 .rcard .rbtn--icon::after { height: var(--row-card); }
 .rcard .rbtn--text::before { height: var(--row-card); }
 .rcard__tx { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: start; }
@@ -38,7 +39,7 @@ button.rcard__tx { flex: 0 1 auto; margin: 0; padding: 0; border: 0; background:
 .rcard[data-layout="media"] > img::after { content: ""; position: absolute; inset: 0; background: var(--surface); }   /* a file that did not load: only a broken image draws ::after, so this covers the browser's broken mark, and the tile stays --surface at its ratio */
 .rcard[data-layout="media"]::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; }
 .rcard[data-layout="media"][role="button"]:active::after { background: color-mix(in srgb, var(--text) var(--press-shade), transparent); }
-@media (hover: hover) { .rcard[data-layout="media"][role="button"]:hover::after { background: color-mix(in srgb, var(--text) var(--press-shade), transparent); } }
+@media (hover: hover) and (pointer: fine) { .rcard[data-layout="media"][role="button"]:hover::after { background: color-mix(in srgb, var(--text) var(--press-shade), transparent); } }
 .rcard[data-layout="media"][aria-current="true"]:dir(rtl)::after { box-shadow: inset calc(var(--mark-w) * -1) 0 0 var(--rcard-mark, var(--primary)); }
 .rcard[data-layout="media"][aria-current="true"]:dir(ltr)::after { box-shadow: inset var(--mark-w) 0 0 var(--rcard-mark, var(--primary)); }
 .rcard__play { position: absolute; inset-block-end: var(--gap); inset-inline-end: var(--gap); box-sizing: content-box; padding: var(--gap-tight); border-radius: var(--r-round); background: var(--scrim); color: var(--on-primary); pointer-events: none; }

@@ -48,6 +48,9 @@ dialog.rsheet[data-from="bottom"] > .rs-grab, dialog.rsheet:not([data-from]) > .
 dialog.rsheet { --rs-end: max(var(--sheet-b), calc(var(--bar-b) + var(--gap))); }
 dialog.rsheet[data-from="top"] { --rs-end: var(--gap); }
 .rpanel { --rs-end: var(--end-pad); }
+/* a short window at its anchor (a notice, RosterApp's window) stands at no edge: no player bar and no safe area under it, it ends one --gap under its last content,
+   at every width (owner 2026-11-27: "למה יש רווח למטה?"). The keyboard strip stays only where a field inside has the focus (html.rs-kbd, below) */
+dialog.rsheet[data-anchored], dialog.rsheet[data-anchored][data-from] { --rs-end: var(--gap); }
 dialog.rsheet .sheet { padding-top: var(--gap); }
 dialog.rsheet .sheet-head { position: relative; z-index: 1; }
 dialog.rsheet[data-size="s"] .sheet-head, dialog.rsheet[data-size="sm"] .sheet-head { min-height: var(--ctl); }

@@ -98,7 +98,7 @@
       if (lb) { btn.setAttribute("aria-expanded", "false"); btn.removeAttribute("aria-controls"); } else btn.removeAttribute("aria-expanded");   /* a combobox always says whether it is open */
       document.removeEventListener("click", away, true); document.removeEventListener("keydown", onKey, true); document.removeEventListener("pointerdown", onPtr, true);
       window.removeEventListener("resize", onResize); document.removeEventListener("scroll", onScroll, true);
-      if (btn.isConnected && !(lb && touch)) try { btn.focus({ preventScroll: true }); } catch (x) { /* focus returns to the button */ }   /* a select closed by a touch keeps no focus: focusing it could open the OS picker */
+      if (btn.isConnected && !(lb && touch)) try { btn.focus({ preventScroll: true, focusVisible: false }); } catch (x) { /* focus returns to the button */ }   /* a select closed by a touch keeps no focus: focusing it could open the OS picker */
       document.dispatchEvent(new CustomEvent("rmenu-change"));
     }
     function away(e) { if (!m.contains(e.target)) { e.preventDefault(); e.stopPropagation(); close(); } }
@@ -114,7 +114,7 @@
       if (to >= 0) { e.preventDefault(); go(all[to]); }
     }
     function go(el) {   /* the focus on an item, and the list scrolled (inside itself only) so it shows */
-      el.focus({ preventScroll: true });
+      el.focus({ preventScroll: true, focusVisible: false });
       var L = el.parentNode, a = el.getBoundingClientRect(), b = L.getBoundingClientRect();
       if (a.top < b.top) L.scrollTop -= b.top - a.top; else if (a.bottom > b.bottom) L.scrollTop += a.bottom - b.bottom;
     }

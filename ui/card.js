@@ -50,6 +50,7 @@
   function px(v) { v = Math.round(+v); return v > 0 ? v : 0; }
   function tile(o) {
     var md = o.media || {}, t = esc(o.title), w = px(md.w), h = px(md.h), wh = w && h ? ' width="' + w + '" height="' + h + '"' : '';
+    if (md.cors) wh += ' crossorigin="' + (md.cors === "use-credentials" ? "use-credentials" : "anonymous") + '"';   /* media.cors: true (anonymous) or "use-credentials", for a store that needs the CORS mode on every request (worker/MEDIA.md) */
     var at = ' class="rcard" data-layout="media" aria-label="' + t + '" title="' + t + '"';
     if (o.click) at += ' role="button" tabindex="' + (o.disabled ? '-1' : '0') + '"';
     if (o.current) at += ' aria-current="true"';
@@ -76,9 +77,10 @@
     if (o.lead) h += '<span class="rcard__lead" aria-hidden="true">' + o.lead + '</span>';
     var t = esc(o.title);
     h += '<div class="rlayout rlayout--unit rlayout__grow rcard__main">';
-    h += row(1, o.titleBtn && !o.click
+    var atT = o.chipAt === "title" && o.chip;   /* chipAt "title" (owner 2026-11-27): the chip right after row 1's text, --gap-tight (that text row's gap); the text alone shrinks */
+    h += row(1, (o.titleBtn && !o.click
       ? '<button type="button" class="rcard__tx" dir="auto" title="' + t + '"' + (o.disabled ? ' disabled' : '') + ' ' + o.titleBtn + '>' + t + '</button>'
-      : text(o.title), (o.chip || '') + (o.act1 || ''));   /* the chip is in the END group of row 1, on the start side of that row's actions */
+      : text(o.title)) + (atT ? o.chip : ''), (atT ? '' : o.chip || '') + (o.act1 || ''));   /* by default the chip is in the END group of row 1, on the start side of that row's actions */
     var t2 = (o.num ? '<span class="rcard__num">' + esc(o.num) + '</span>' : '') + (o.subHtml ? '<span class="rcard__tx" dir="auto">' + o.subHtml + '</span>' : o.sub ? text(o.sub) : '');
     if (t2 || o.act2) h += row(2, t2, o.act2 || '');
     if (lay === "lines") { h += lines(o); if (o.foot) h += '<div class="' + ROW + ' rcard__foot">' + o.foot + '</div>'; }

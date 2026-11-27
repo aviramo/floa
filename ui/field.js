@@ -653,6 +653,7 @@
       var old = now(); if (old === v) return false;
       var s = getSel(), hs = hunks(old, v);
       ctl.value = v; last = now();   /* as the box reads it back (a rich box may write it a little differently) */
+      if (!sizing) mirror(ctl);
       if (s) setSel({ a: mapPos(hs, s.a), b: mapPos(hs, s.b) }, v);
       undo.forEach(function (st) { carry(st, hs, st.ins); }); redo.forEach(function (st) { carry(st, hs, st.del); });
       if (ctl.tagName === "TEXTAREA" && !sizing) grow(ctl);
@@ -900,8 +901,10 @@
   }
 
   /* EDITING IN PLACE FROM A PENCIL (ui/docs/realtime.md "עריכה במקום מעיפרון"): only the pencil starts it; the name's text becomes a one-line field of the kit
-     (.rfield--inline, the name's own typography) bound with live(); Enter or blur ends it, Escape puts back the value from the start. While not editing the
+     (.rfield--inline, the name's own typography, as wide as its text) bound with live(); Enter or blur ends it, Escape puts back the value from the start. The
+     pencil stays where it is and follows the text's end (owner 2026-11-27); a press on it while editing keeps the caret in the field. While not editing the
      text follows the source (RosterLive.bind: the change flash for others). */
+  function mirror(el) { var w = el.parentNode; if (w && w.classList && w.classList.contains("rfield--inline")) w.setAttribute("data-rf-v", el.value); }   /* only where field-sizing is not known: the text that sizes the cell (22-fields.css) */
   function inline(btn, textEl, source, key, col, o) {
     o = o || {};
     var unbind = null, h = null, wrap = null, input = null, startText = "", closed = false;
@@ -909,6 +912,8 @@
     function bindText() { if (window.RosterLive) unbind = RosterLive.bind(textEl, source, key, function (row) { return row ? fromV(row[col], row) : undefined; }); }
     function stop(e) { e.stopPropagation(); }   /* the press belongs to the pencil: no swipe, no press on the name */
     function onClick(e) { e.preventDefault(); e.stopPropagation(); begin(); }
+    function keep(e) { if (wrap) e.preventDefault(); }   /* a press on the pencil while editing: the focus stays in the field (no blur, no end and start again) */
+    function fit() { if (!sizing && input) mirror(input); }
     function onKey(e) {
       if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); end(false); }
       else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); end(true); }
@@ -924,34 +929,33 @@
       input.value = startText;
       wrap.appendChild(input);
       ["pointerdown", "mousedown", "touchstart", "click"].forEach(function (n) { wrap.addEventListener(n, stop, n === "touchstart" ? { passive: true } : false); });
-      textEl.textContent = ""; textEl.appendChild(wrap);
-      btn.hidden = true;
+      textEl.textContent = ""; textEl.appendChild(wrap); fit();
       input.focus({ preventScroll: true }); input.setSelectionRange(input.value.length, input.value.length);
       h = live(input, source, key, col, o);
-      input.addEventListener("keydown", onKey); input.addEventListener("blur", onBlur);
+      input.addEventListener("keydown", onKey); input.addEventListener("blur", onBlur); input.addEventListener("input", fit);
     }
     function end(esc) {
       if (!wrap) return;
       var hh = h, w = wrap, el = input;
       wrap = null; input = null; h = null;
-      el.removeEventListener("blur", onBlur); el.removeEventListener("keydown", onKey);
+      el.removeEventListener("blur", onBlur); el.removeEventListener("keydown", onKey); el.removeEventListener("input", fit);
       if (esc && el.value !== startText) { el.value = startText; el.dispatchEvent(new Event("input")); }   /* the value from the start, saved once if it is not the saved one (an edit of mine: it goes out live and is saved) */
       if (o.required && !el.value.trim()) el.value = hh.base();   /* a name left empty: the last saved one, no save */
       var done = hh.flush();
       w.remove(); bindText();
       if (!textEl.textContent && el.value) textEl.textContent = el.value;
-      btn.hidden = false; btn.focus({ preventScroll: true });
+      btn.focus({ preventScroll: true, focusVisible: false });   /* focus comes back for the keyboard, with no ring drawn (owner 2026-11-27: no rings after a click or an edit; Tab still shows it) */
       done.then(function () { hh.close(); });
       if (o.onEnd) o.onEnd();
     }
-    btn.addEventListener("pointerdown", stop); btn.addEventListener("touchstart", stop, { passive: true }); btn.addEventListener("click", onClick);
+    btn.addEventListener("pointerdown", stop); btn.addEventListener("touchstart", stop, { passive: true }); btn.addEventListener("mousedown", keep); btn.addEventListener("click", onClick);
     bindText();
     return {
       close: function () {
         if (closed) return;
         end(false); closed = true;
         if (unbind) { unbind(); unbind = null; }
-        btn.removeEventListener("pointerdown", stop); btn.removeEventListener("touchstart", stop); btn.removeEventListener("click", onClick);
+        btn.removeEventListener("pointerdown", stop); btn.removeEventListener("touchstart", stop); btn.removeEventListener("mousedown", keep); btn.removeEventListener("click", onClick);
       }
     };
   }

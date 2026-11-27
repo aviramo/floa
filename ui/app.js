@@ -344,7 +344,7 @@
       else if (k === "switch") RosterBusy(b, Promise.resolve(A() && A().signOut()).then(function () { return signIn({ any: true }); }));   /* the place is kept: an account that is allowed lands on the same link */
       else if (o.home) o.home(); else location.replace(base());
     });
-    try { b.focus({ preventScroll: true }); } catch (e) { /* none */ }
+    try { b.focus({ preventScroll: true, focusVisible: false }); } catch (e) { /* none */ }
   }
   App.denied = function (kind, o) {
     o = o || {};

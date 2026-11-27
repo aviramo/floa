@@ -1,4 +1,4 @@
-// Run: node build.mjs --only=biodanza, npm run dev, then node apps/biodanza/audit/law17.mjs 1300 (and 430). Env: BIO_DEV (the server's port, 5173), BIO_PORT (Chrome's). Data is a stub, nothing is written.
+// Run: node build.mjs --only=biodanza, npm run dev, then node apps/biodanza/audit/law17.mjs 1300 (and 430). Env: BIO_DEV (the server's port; unset means http://localhost with no port), BIO_PORT (Chrome's). Data is a stub, nothing is written.
 // Law 17 audit: every popup, every way it opens; before == after, exactly one overlay while open.
 import fs from "fs"; import { launch } from "./lib.mjs";
 const W = Number(process.argv[2] || 1300), H = 850, phone = W < 760;
@@ -70,7 +70,7 @@ try {
   await b.send("Page.enable");
   await b.send("Page.addScriptToEvaluateOnNewDocument", { source: "try{localStorage.clear()}catch(e){}\n" + fs.readFileSync(new URL("./law17_stub.js", import.meta.url), "utf8") + "\n" + PAGE });
   await b.send("Runtime.enable"); await b.send("Emulation.setDeviceMetricsOverride", { width: W, height: H, deviceScaleFactor: 1, mobile: phone });
-  await b.send("Page.navigate", { url: "http://localhost:" + (process.env.BIO_DEV || 5173) + "/biodanza/" }); await b.sleep(3500);
+  await b.send("Page.navigate", { url: "http://localhost" + (process.env.BIO_DEV ? ":" + process.env.BIO_DEV : "") + "/biodanza/" }); await b.sleep(3500);
   const dockMenu = async (t) => { await ev(`window.__appMenu()`); await b.sleep(400); return ev(`window.__menuPick(${JSON.stringify(t)})`); };
   // home
   await check("home: catalog exercises (menu)", () => dockMenu("קטלוג תרגילים"));

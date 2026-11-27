@@ -10,6 +10,7 @@
   --accent-2-tint: var(--surface);
   --scrim: rgba(31, 27, 22, .55);
   --gap-tight: 4px;
+  --gap-sub: var(--gap);   /* a title's letters to the letters of the description under it (owner 2026-11-27: 4 read as glued, then 8 too; 12) */
   --gap: 12px;
   --gap-section: 24px;
   --inset-t: env(safe-area-inset-top, 0px);   --inset-b: env(safe-area-inset-bottom, 0px);   --inset-l: env(safe-area-inset-left, 0px);
@@ -34,7 +35,7 @@
   --press-shade: 12%;
   --w: 400px;
   --card-min: 21rem;
-  --media-min: 140px;   /* a media grid's and a collage's narrowest column (ui/docs/grid.md): two columns on every phone held upright; px, not rem: a tile has no text */
+  --media-min: clamp(96px, 13vw, 240px);   /* a media grid's and a collage's narrowest column (ui/docs/grid.md): three columns on a phone held upright, 360 to 430 wide; on a wide screen it grows with the screen up to 240px, about 7 columns at 1900 (owner 2026-11-27); px, not rem: a tile has no text */
   --volume-w: calc(var(--ctl) * 2.5);
   --sw-h: calc(var(--icon) + var(--gap-tight) * 2);
   --sw-w: calc(var(--icon) * 2 + var(--gap-tight) * 2);

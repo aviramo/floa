@@ -54,7 +54,7 @@ try {
   await b.send("Page.addScriptToEvaluateOnNewDocument", { source: "try{localStorage.clear()}catch(e){}\n" + fs.readFileSync(new URL("./law17_stub.js", import.meta.url), "utf8") + "\n" + SLOW + "\nwindow.__delay = " + DELAY + ";\n" + PROBE });
   await b.send("Runtime.enable"); await b.send("Emulation.setDeviceMetricsOverride", { width: W, height: H, deviceScaleFactor: 1, mobile: phone });
   /* home, at the start: the header at once, the list loading */
-  await b.send("Page.navigate", { url: "http://localhost:" + (process.env.BIO_DEV || 5173) + "/biodanza/" });
+  await b.send("Page.navigate", { url: "http://localhost" + (process.env.BIO_DEV ? ":" + process.env.BIO_DEV : "") + "/biodanza/" });
   let s0 = []; for (let i = 0; i < 60 && !s0.length; i++) { await b.sleep(50); try { s0 = await ev(`window.__lp ? window.__lp() : []`); } catch (e) { s0 = []; } }   /* the page's first frames */
   await ev(`document.fonts.ready.then(function () { return 1; })`);   /* the title's font may still be on its way: that moves letters, not the header */
   const h0 = await ev(`window.__title(".rhead h1.rhead__title")`);

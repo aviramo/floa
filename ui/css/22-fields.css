@@ -3,6 +3,13 @@
 .rfields__row { align-items: stretch; }   /* two fields side by side are as tall as each other, as when this was a grid */
 /* The field in place (ui/docs/realtime.md "עריכה במקום מעיפרון"): a one-line field that stands in for a name inside the name's own element, with no label slot
    (the label is its aria-label) and the name's typography (font: inherit), so nothing jumps. The line under it is the field's line, as a shadow (no height of its own). */
-.rfield.rfield--inline { display: inline-flex; vertical-align: baseline; inline-size: 100%; max-inline-size: 100%; font: inherit; color: inherit; }
-.rfield.rfield--inline > input { block-size: auto; padding: 0; border: 0; font: inherit; letter-spacing: inherit; color: inherit; text-align: start; box-shadow: 0 var(--bw) 0 var(--rf-line); }
+/* It is as wide as its text, the same box as the name it stands in for (owner 2026-11-27): the press on the pencil moves nothing, and while typing the field grows and
+   shrinks with the text and the pencil after it follows the text's end. field-sizing: content; where it is not known, the text drawn hidden in the same cell
+   (data-rf-v, written by ui/field.js) gives the cell its width and the input fills it */
+.rfield.rfield--inline { display: inline-grid; grid-template-columns: minmax(0, auto); vertical-align: baseline; inline-size: auto; max-inline-size: 100%; font: inherit; color: inherit; }
+.rfield.rfield--inline > input { grid-area: 1 / 1; inline-size: auto; min-inline-size: 1ch; max-inline-size: 100%; field-sizing: content; block-size: auto; margin: 0; padding: 0; border: 0; font: inherit; line-height: var(--lh-tight); letter-spacing: inherit; color: inherit; text-align: start; box-shadow: 0 var(--bw) 0 var(--rf-line); }   /* --lh-tight: the line sits just under the letters (owner 2026-11-27), not at the foot of the text's leading; the row keeps its height from the text around it */
+@supports not (field-sizing: content) {
+  .rfield.rfield--inline::after { content: attr(data-rf-v); grid-area: 1 / 1; min-inline-size: 1ch; overflow: hidden; visibility: hidden; white-space: pre; font: inherit; line-height: var(--lh-tight); letter-spacing: inherit; pointer-events: none; }
+  .rfield.rfield--inline > input { inline-size: 100%; }
+}
 .rfield.rfield--inline > input:focus { box-shadow: 0 var(--focus-w) 0 var(--rf-ink); }

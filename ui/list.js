@@ -78,7 +78,7 @@
       var marks = cur.map(function (el) { var c = document.createComment(""); el.parentNode.insertBefore(c, el); return c; });
       seq.forEach(function (el, i) { marks[i].parentNode.insertBefore(el, marks[i]); });
       marks.forEach(function (c) { c.remove(); });
-      if (keep && keep.isConnected && document.activeElement !== keep) keep.focus({ preventScroll: true });
+      if (keep && keep.isConnected && document.activeElement !== keep) keep.focus({ preventScroll: true, focusVisible: false });
       return true;
     }
     function nameOf(el) {
@@ -284,7 +284,7 @@
       if (j < 0 || j >= cur.length) return;   /* at the end of the list the arrow does nothing */
       var after = cur.slice(); after[k] = cur[j]; after[j] = it;
       var fo = e.target; commit(cur, after, it);
-      if (fo.isConnected && document.activeElement !== fo) fo.focus({ preventScroll: true });
+      if (fo.isConnected && document.activeElement !== fo) fo.focus({ preventScroll: true, focusVisible: false });
     }
     function noPick(e) {   /* a long press is a pick-up, never a text selection or a menu */
       var g = e.target.closest && e.target.closest("[data-rsort-grip]"); if (!g || !list.contains(g)) return;
@@ -551,7 +551,7 @@
               if (r.wEnd) { r.wEnd(); r.wEnd = hold(ne2); } (r.bs || []).forEach(function (t) { t.end(); t.end = hold(ne2); });   /* the waits go with the item to its new element */
               r.el = ne2; r.sig = h; r.stale = false; replaced.push(ne2);
               if (r.wantChange) { r.wantChange = false; flashW.push(ne2); } else if (fx && fx.origin === "remote") flash.push(ne2);   /* flash: only if this is no burst (below); flashW: a change by others that waited for the focus */
-              if (held) { var nf = focusEl(r); if (nf) nf.focus({ preventScroll: true }); }
+              if (held) { var nf = focusEl(r); if (nf) nf.focus({ preventScroll: true, focusVisible: false }); }
             }
           } else if (!r) { r = recs[key] = { key: key, el: node(h.split(NUM).join(String(n))), sig: h }; added.push(r.el); }
           r.it = it; r.group = g.key; r.num = !!g.number;
@@ -613,7 +613,7 @@
       (burst ? flashW : flash.concat(flashW)).forEach(function (x) {   /* the change flash (others only); an item sliding to its place flashes once it is there */
         if (x.getAttribute("data-rfx") === "move" && flipped) flipped.then(function () { M.change(x); }); else M.change(x);
       });
-      if (focusTo && focusTo.isConnected) focusTo.focus({ preventScroll: true });
+      if (focusTo && focusTo.isConnected) focusTo.focus({ preventScroll: true, focusVisible: false });
       if (fx && fx.origin === "remote" && !burst && (added.length || said.length)) hear(added.length, said);
       /* the empty state of the whole list */
       var e = !seq.length ? emptyOf() : null, eh = e ? emptyHtml(e, false) : "";
@@ -621,7 +621,7 @@
         if (emptyEl) emptyEl.remove(); emptyEl = null; emptyKey = eh;
         if (e) { emptyEl = node(emptyHtml(e, status && !firstDraw)); el.appendChild(emptyEl); }
       }
-      if (!focusTo && fo && fo !== document.activeElement && fo.isConnected && el.contains(fo) && !fo.closest("[inert]")) fo.focus({ preventScroll: true });
+      if (!focusTo && fo && fo !== document.activeElement && fo.isConnected && el.contains(fo) && !fo.closest("[inert]")) fo.focus({ preventScroll: true, focusVisible: false });
       if (anc && anc.el.isConnected) { var dy = anc.el.getBoundingClientRect().top - anc.y; if (dy) sc.scrollTop += dy; }
       firstDraw = false;
       if ((o.groups || []).some(function (g) { return g.number; })) renumber();
@@ -788,8 +788,8 @@
       say((name ? name + " " : "") + (word || "הוסר"));
     }
     function refocus(to) {
-      if (to && to.isConnected && !to.closest("[inert]")) to.focus({ preventScroll: true });
-      else { var ea = el.querySelector("[data-rlist-empty]"); if (ea) ea.focus({ preventScroll: true }); else { el.setAttribute("tabindex", "-1"); el.focus({ preventScroll: true }); } }
+      if (to && to.isConnected && !to.closest("[inert]")) to.focus({ preventScroll: true, focusVisible: false });
+      else { var ea = el.querySelector("[data-rlist-empty]"); if (ea) ea.focus({ preventScroll: true, focusVisible: false }); else { el.setAttribute("tabindex", "-1"); el.focus({ preventScroll: true, focusVisible: false }); } }
     }
     function askRemove(r, btn) {
       var rm = o.remove, it = r.it, del = rm.kind === "delete";

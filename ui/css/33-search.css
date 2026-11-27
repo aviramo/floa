@@ -15,7 +15,7 @@
 [data-rsearch] > svg:last-of-type, [data-rsearch][aria-expanded="true"] > svg:first-of-type { display: none; }
 [data-rsearch][aria-expanded="true"] > svg:last-of-type { display: block; }
 .rbtn--icon[data-rsearch][aria-expanded="true"]:not(:active)::before { background: transparent; }
-@media (hover: hover) { .rbtn--icon[data-rsearch][aria-expanded="true"]:hover::before { background: color-mix(in srgb, var(--text) var(--press-shade), transparent); } }
+@media (hover: hover) and (pointer: fine) { .rbtn--icon[data-rsearch][aria-expanded="true"]:hover::before { background: color-mix(in srgb, var(--text) var(--press-shade), transparent); } }
 .rhead[data-rsearch-tight]:has([data-rsearch][aria-expanded="true"]) .rhead__acts > :not([data-rsearch]), .rhead[data-rsearch-tight]:has([data-rsearch][aria-expanded="true"]) > .rhead__live, .rhead[data-rsearch-tight]:has([data-rsearch][aria-expanded="true"]) > .rbtn:not(:first-child, [data-rsearch], [data-rappmenu]) { display: none; }
 [data-rsearch-item][hidden] { display: none; }
 [data-rsearch-empty] { display: none; }

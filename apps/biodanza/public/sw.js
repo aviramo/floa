@@ -10,8 +10,8 @@
    left to the browser: this worker never answers for it.
 
    Served at the host's root on biodanza.floa.co.il (scope "/"), and under /biodanza/ on localhost. */
-var CACHE = "biodanza-shell-v7";   /* v2: /layout.js joined the kit's files (sheet.js needs it); v3: /swipe.js joined them; v4: /audio.js (the sound engine) joined them; v5: /print.js (the print shell) joined them; v6: /live.js (the live data layer) joined them; v7: /app.js (the app's state) joined them. A new name, so no phone mixes an old shell with new kit files */
-var SCOPE = self.registration.scope;   /* "https://biodanza.floa.co.il/" or "http://localhost:5173/biodanza/" */
+var CACHE = "biodanza-shell-v8";   /* v8: the kit of 2026-11-27 (header, fields, focus, media);  v2: /layout.js joined the kit's files (sheet.js needs it); v3: /swipe.js joined them; v4: /audio.js (the sound engine) joined them; v5: /print.js (the print shell) joined them; v6: /live.js (the live data layer) joined them; v7: /app.js (the app's state) joined them. A new name, so no phone mixes an old shell with new kit files */
+var SCOPE = self.registration.scope;   /* "https://biodanza.floa.co.il/" or "http://localhost/biodanza/" */
 var FIXED = ["kit.css", "layout.js", "sheet.js", "auth.js", "supabase.js", "sound.js", "menu.js", "card.js", "section.js", "tabs.js", "swipe.js", "list.js", "field.js", "search.js", "range.js", "audio.js", "print.js", "live.js", "app.js", "icons.svg", "favicon.ico", "favicon.png", "apple-touch-icon.png"];
 /* the domain's files live at the root of the host, the app's own files under the scope */
 function rootUrl(name) { return new URL("/" + name, SCOPE).href; }

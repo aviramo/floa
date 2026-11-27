@@ -79,6 +79,15 @@
       var e = d && d.error || {}; throw err(r.status, e.code || (r.status === 401 ? "unauthorized" : r.status === 403 ? "forbidden" : "error"), e.message);
     });
   }
+  /* THE STORE IS NOT ON: no such route (404, 405, 501), the Worker without its store (503 not_configured: its R2 secrets are not set),
+     or no answer at all (a network error, a name that does not resolve: fetch rejects with a TypeError). A staff list then resolves null,
+     like a store that is not there yet. "signin" (no session) and an abort (the deadline) are not "not on": they pass through. */
+  function offOrFail(r) {
+    return r.json().catch(function () { return {}; }).then(function (d) {
+      var e = d && d.error || {}; if (r.status === 503 && e.code === "not_configured") return null; throw err(r.status, e.code || "error", e.message);
+    });
+  }
+  function noAnswer(e) { if (e && e.name === "TypeError") return null; throw e; }
   function token() { return window.FLOA_AUTH && FLOA_AUTH.signedIn() ? Promise.resolve(FLOA_AUTH.token()).catch(function () { return ""; }) : Promise.resolve(""); }
   function authed(path, init) {
     return token().then(function (t) {
@@ -134,7 +143,7 @@
         var w = { admin: !!(d && d.admin), owner: !!(d && d.owner), public_folders: d && Array.isArray(d.public_folders) ? d.public_folders : null };
         try { sessionStorage.setItem(WHO, JSON.stringify({ uid: uid, who: w })); } catch (e) { /* not kept */ }
         return w;
-      }, function () { return none; });   /* refused (401): treated as signed out */
+      }, function () { return none; });   /* refused (401), the store not on (503 not_configured) or no answer: treated as signed out, and not kept */
     }));
   }
   function isAdmin() { return who().then(function (w) { return w.admin; }); }
@@ -156,7 +165,7 @@
       if (r.status === 404) return null;   /* not a public folder, or the store is not on */
       if (!r.ok) throw err(r.status, "error");
       return r.json().then(function (d) { return (d && Array.isArray(d.items) ? d.items : []).map(norm).filter(function (x) { return x.key.indexOf(prefix) === 0; }); });
-    }, function (e) { if (e && e.code === "timeout") return null; throw e; });   /* the deadline passed: like a 404, the store did not answer */
+    }, function (e) { if (e && e.code === "timeout") return null; return noAnswer(e); });   /* the deadline passed, or no answer (DNS): like a 404, the store did not answer */
   }
   function privateList(prefix) {
     var out = [], pages = 0, expires = "";
@@ -164,8 +173,8 @@
       return authed("?prefix=" + encodeURIComponent(prefix) + "&limit=" + C.limit + (cursor ? "&cursor=" + encodeURIComponent(cursor) : "")).then(function (r) {
         if (r.status === 404 || r.status === 405 || r.status === 501) return null;
         if (r.status === 401 || r.status === 403) throw err(r.status, "forbidden");
-        return r.ok ? r.json() : fail(r);
-      }).then(function (d) {
+        return r.ok ? r.json() : offOrFail(r);
+      }, noAnswer).then(function (d) {
         if (d === null) return null;
         (d && Array.isArray(d.items) ? d.items : []).forEach(function (x) { out.push(norm(x)); });
         if (d && d.expires && (!expires || d.expires < expires)) expires = d.expires;
@@ -246,8 +255,8 @@
     var p = authed("?prefix=" + encodeURIComponent(prefix) + "&limit=" + C.limit, { signal: signal }).then(function (r) {
       if (r.status === 404 || r.status === 405 || r.status === 501) return null;   /* the store is not on */
       if (r.status === 401 || r.status === 403) throw err(r.status, "forbidden");
-      return r.ok ? r.json() : fail(r);
-    }).then(function (d) { if (d && dataLists[prefix]) dataLists[prefix].expires = d.expires || ""; return d && Array.isArray(d.items) ? d.items : null; });
+      return r.ok ? r.json() : offOrFail(r);
+    }, noAnswer).then(function (d) { if (d && dataLists[prefix]) dataLists[prefix].expires = d.expires || ""; return d && Array.isArray(d.items) ? d.items : null; });
     dataLists[prefix] = { p: p, expires: "" };
     p.catch(function () { delete dataLists[prefix]; });
     return p;

@@ -56,6 +56,18 @@ preview_urls = false
 binding = "AUDIO"
 bucket_name = "biodanza-audio"
 
+# The media store (worker/MEDIA.md): /media/<business>/… on this Worker.
+# floa-media is private (raw, music, trash, .settings.json), read only through
+# presigned URLs. floa-media-public is served by anyone on media.floa.co.il only
+# (r2.dev off), cached by the CDN. Its CORS policy is set on both buckets.
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "floa-media"
+
+[[r2_buckets]]
+binding = "MEDIA_PUBLIC"
+bucket_name = "floa-media-public"
+
 # The live relay (worker/LIVE.md): one Durable Object per room. SQLite-backed because the free plan allows only that kind.
 # It writes nothing to storage (no alarm either); the migration only declares the class. It runs with the first deploy.
 [[durable_objects.bindings]]
@@ -91,6 +103,10 @@ SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 ROSTER_GOOGLE_CLIENT_IDS = "459432002435-349ppd8r1qqe9tkcdm2v3f6rpp48i1ni.apps.googleusercontent.com"   # the Google app of harpatka.co.il: sign-in to Roster without the Supabase Google provider (Harpatka move, 2026-11-17)
 ROSTER_MAIL_NO_MY_LINK = "harpatka"   # its mails do not mention the personal area (the page itself still works)
 ROSTER_AUTH_ORIGINS = "https://harpatka.co.il,https://www.harpatka.co.il"   # browser origins allowed to call /roster-auth/google
+# The media store (worker/MEDIA.md). R2_ACCOUNT_ID is public: it is in every presigned URL.
+# Its read-only R2 token is two SECRETS, never here: npx wrangler secret put R2_READ_KEY_ID / R2_READ_SECRET
+MEDIA_PUBLIC_BASE = "https://media.floa.co.il"
+R2_ACCOUNT_ID = "2d8ace5ab020cb807d7921d091359a84"
 
 # The roster API (/roster/v1/*, src/roster/) is the only door to the roster
 # tables for the outside world. It calls the database's SECURITY DEFINER
