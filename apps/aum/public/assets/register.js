@@ -78,6 +78,11 @@
     document.documentElement.classList.remove("modal-lock"); document.documentElement.style.paddingRight = "";
   }
 
+  /* the keyboard: where a browser only shrinks the visual viewport (iOS), the dialog would reach under the keyboard and its send button could not be scrolled to. Its bottom follows the top of the keyboard. Android already shrinks the page, through interactive-widget=resizes-content in the viewport tag. */
+  var vv = window.visualViewport;
+  function fitKeyboard() { var kb = vv ? Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)) : 0; document.documentElement.style.setProperty("--kb", kb + "px"); }
+  if (vv) { vv.addEventListener("resize", fitKeyboard); vv.addEventListener("scroll", fitKeyboard); }
+
   function openModal(noFocus) {
     lastFocus = document.activeElement;
     modal.hidden = false;
