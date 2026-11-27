@@ -10,7 +10,7 @@
    left to the browser: this worker never answers for it.
 
    Served at the host's root on biodanza.floa.co.il (scope "/"), and under /biodanza/ on localhost. */
-var CACHE = "biodanza-shell-v8";   /* v8: the kit of 2026-11-27 (header, fields, focus, media);  v2: /layout.js joined the kit's files (sheet.js needs it); v3: /swipe.js joined them; v4: /audio.js (the sound engine) joined them; v5: /print.js (the print shell) joined them; v6: /live.js (the live data layer) joined them; v7: /app.js (the app's state) joined them. A new name, so no phone mixes an old shell with new kit files */
+var CACHE = "biodanza-shell-v9";   /* v9: every kit file through the worker, never from the browser cache; v8: the kit of 2026-11-27 (header, fields, focus, media);  v2: /layout.js joined the kit's files (sheet.js needs it); v3: /swipe.js joined them; v4: /audio.js (the sound engine) joined them; v5: /print.js (the print shell) joined them; v6: /live.js (the live data layer) joined them; v7: /app.js (the app's state) joined them. A new name, so no phone mixes an old shell with new kit files */
 var SCOPE = self.registration.scope;   /* "https://biodanza.floa.co.il/" or "http://localhost/biodanza/" */
 var FIXED = ["kit.css", "layout.js", "sheet.js", "auth.js", "supabase.js", "sound.js", "menu.js", "card.js", "section.js", "tabs.js", "swipe.js", "list.js", "field.js", "search.js", "range.js", "audio.js", "print.js", "live.js", "app.js", "icons.svg", "favicon.ico", "favicon.png", "apple-touch-icon.png"];
 /* the domain's files live at the root of the host, the app's own files under the scope */
@@ -82,7 +82,8 @@ self.addEventListener("fetch", function (event) {
     }
     return;
   }
-  if (!url.pathname.startsWith(new URL(SCOPE).pathname) && !/^\/(kit\.css|sheet\.js|auth\.js|supabase\.js|icons\.svg|favicon\.(ico|png|svg)|apple-touch-icon\.png)$/.test(url.pathname)) return;
+  var rootFile = FIXED.indexOf(url.pathname.slice(1)) >= 0 || url.pathname === "/favicon.svg";   /* every kit file the shell keeps (FIXED) goes through this worker, so none comes from an older browser cache than the others */
+  if (!url.pathname.startsWith(new URL(SCOPE).pathname) && !rootFile) return;
 
   if (/^(music|catalog14)(\/|$)/.test(url.pathname.slice(new URL(SCOPE).pathname.length))) return;   /* the songs page is its own page: never the app shell, never kept as it */
 
@@ -100,6 +101,6 @@ self.addEventListener("fetch", function (event) {
   }
 
   if (/\.(?:css|js|ico|png|svg)$/.test(url.pathname)) {   /* the domain's files and the icons: the network first, the copy when there is none */
-    event.respondWith(fetch(req).then(function (r) { return store(req, r); }).catch(function () { return caches.match(req).then(function (hit) { return hit || Response.error(); }); }));
+    event.respondWith(fetch(req, { cache: "no-cache" }).then(function (r) { return store(req, r); }).catch(   /* no-cache: always asked again (a 304 when unchanged), never the browser's own old copy: an old kit file beside a new one breaks the page (owner 2026-11-27) */function () { return caches.match(req).then(function (hit) { return hit || Response.error(); }); }));
   }
 });
