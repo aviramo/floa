@@ -11,6 +11,8 @@
    The browser fetches with an Authorization header and plays or stores the
    bytes, so no link to a file ever exists that could be passed around. */
 
+import { originIn } from "./dev-origin.js";
+
 const NAME = /^[a-f0-9]{32}\.(mp3|flac|wav|aiff|aif|m4a)$/;
 const TYPES = { mp3: "audio/mpeg", flac: "audio/flac", wav: "audio/wav", aiff: "audio/aiff", aif: "audio/aiff", m4a: "audio/mp4" };
 
@@ -20,7 +22,7 @@ export function isAudioPath(pathname) { return pathname.startsWith(AUDIO_PREFIX)
 
 function headers(origin, allowed, extra) {
   return {
-    "access-control-allow-origin": allowed.includes(origin) ? origin : allowed[0],
+    "access-control-allow-origin": originIn(allowed, origin) ? origin : allowed[0],
     "access-control-allow-methods": "GET, PUT, OPTIONS",
     "access-control-allow-headers": "authorization, range, content-type, x-format",
     "access-control-expose-headers": "content-length, content-range, accept-ranges",
@@ -114,7 +116,7 @@ export async function handleAudio(request, env, allowedOrigins) {
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: headers(origin, allowedOrigins, {}) });
   if (request.method === "PUT") return upload(request, env, origin, plain, allowedOrigins);
   if (request.method !== "GET" && request.method !== "HEAD") return plain(405, "method");
-  if (!allowedOrigins.includes(origin)) return plain(403, "origin");
+  if (!originIn(allowedOrigins, origin)) return plain(403, "origin");
   if (!env.AUDIO) return plain(502, "config");
 
   const name = new URL(request.url).pathname.slice(AUDIO_PREFIX.length);
@@ -152,7 +154,7 @@ export async function handleAudio(request, env, allowedOrigins) {
    refuses a song that already has a file, so nobody can replace a file that is there. Same two checks as listening. */
 const MAX_BYTES = 200 * 1024 * 1024;
 async function upload(request, env, origin, plain, allowedOrigins) {
-  if (!allowedOrigins.includes(origin)) return plain(403, "origin");
+  if (!originIn(allowedOrigins, origin)) return plain(403, "origin");
   if (!env.AUDIO) return plain(502, "config");
   if (new URL(request.url).pathname !== AUDIO_PREFIX + "upload") return plain(404, "not found");
   const auth = request.headers.get("authorization") || "";

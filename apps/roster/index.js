@@ -18,7 +18,7 @@ export const business = {
 
   lead: {
     to: "LEAD_TO",
-    origins: ["https://floa.co.il", "https://www.floa.co.il", "https://roster.floa.co.il", "https://roster-test.floa.co.il", "http://localhost:5173"],
+    origins: ["https://floa.co.il", "https://www.floa.co.il", "https://roster.floa.co.il", "https://roster-test.floa.co.il", "http://localhost"],
   },
 
   site,

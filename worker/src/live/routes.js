@@ -5,18 +5,18 @@
    POST /live/notify      (from the database, pg_net): a chg sign for one or more rooms, behind a shared secret. */
 import { appOf, hostOk, roomIdOk, roomOf } from "./rooms.js";
 import { chgList, chgOf } from "./room.js";
+import { isDevOrigin } from "../dev-origin.js";
 
 export const LIVE_PREFIX = "/live/";
 export const NOTIFY_PATH = "/live/notify";
 
-/* a WebSocket is not CORS: the Origin header is the only guard a browser gives. Every app sub-domain of floa.co.il, and the local dev server */
+/* a WebSocket is not CORS: the Origin header is the only guard a browser gives. Every app sub-domain of floa.co.il, and the local dev server (isDevOrigin) */
 const ORIGIN = /^https:\/\/([a-z0-9-]+\.)?floa\.co\.il$/;
-const LOCAL = "http://localhost:5173";
 const NOTIFY_MAX = 16384, NOTIFY_ROOMS = 20;
 
 export function isLivePath(pathname) { return pathname === "/live" || pathname.startsWith(LIVE_PREFIX); }
 
-export function liveOriginAllowed(origin) { return !!origin && (ORIGIN.test(origin) || origin === LOCAL); }
+export function liveOriginAllowed(origin) { return !!origin && (ORIGIN.test(origin) || isDevOrigin(origin)); }
 
 function plain(status, body) { return new Response(body, { status, headers: { "content-type": "text/plain" } }); }
 

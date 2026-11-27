@@ -7,9 +7,11 @@
    and the business is fixed (ROSTER_WA_BUSINESS, default harpatka): the caller never names it. No secret ever reaches the browser.
    The test host (api-test.floa.co.il) uses the roster-test schema, like the rest of the roster API. This is not part of /roster/v1. */
 import { DEFAULT_SCHEMA, schemaOfHost } from "./roster/db.js";
+import { isDevOrigin } from "./dev-origin.js";
 
 const list = (v) => String(v || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
-const DEFAULT_ORIGINS = ["https://harpatka.co.il", "https://www.harpatka.co.il", "http://localhost:5173", "http://127.0.0.1:5173"];
+/* without ROSTER_WA_ORIGINS: the business's site and the local dev server (isDevOrigin); with it: exactly that list */
+const DEFAULT_ORIGINS = ["https://harpatka.co.il", "https://www.harpatka.co.il"];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const isRosterWaPath = (p) => p === "/roster-wa/list" || p === "/roster-wa/mark" || p === "/roster-wa/message";
@@ -18,7 +20,7 @@ export async function handleRosterWa(request, env, doFetch = fetch) {
   const url = new URL(request.url);
   const origins = env.ROSTER_WA_ORIGINS ? String(env.ROSTER_WA_ORIGINS).split(",").map((s) => s.trim()) : DEFAULT_ORIGINS;
   const origin = request.headers.get("origin") || "";
-  const okOrigin = origins.includes(origin) ? origin : "";
+  const okOrigin = origins.includes(origin) || (!env.ROSTER_WA_ORIGINS && isDevOrigin(origin)) ? origin : "";
   const reply = (body, status) => new Response(status === 204 ? null : JSON.stringify(body), {
     status,
     headers: { "content-type": "application/json", "cache-control": "no-store", "x-content-type-options": "nosniff",

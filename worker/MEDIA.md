@@ -212,7 +212,7 @@ What follows from this:
 - **Only access tokens of the domain's Supabase project are accepted** (`SUPABASE_URL`, the one project of all of `floa.co.il`). It is the same project on every host, the business's own domain included (`harpatka.co.il`).
   - On a `floa.co.il` app the token is `FLOA_AUTH.token()` from `/auth.js`. On a business's own domain it is that page's session with the same project.
   - The Worker sends a token only to `SUPABASE_URL`, so a token from any other project (e.g. a business's old project of its own) fails PostgREST's signature check and gets 401.
-  - **Each host that signs people in must be in that project's Redirect URLs** (Authentication, URL Configuration), for production and for `localhost:5173`. That is the owner's manual step in the Supabase dashboard (setup step 13).
+  - **Each host that signs people in must be in that project's Redirect URLs** (Authentication, URL Configuration), for production and for `http://localhost`. That is the owner's manual step in the Supabase dashboard (setup step 13).
 - **When an account is taken off a business:**
   - its writes and lists stop within 1 to 5 minutes (the cached answer);
   - a presigned URL it already holds keeps working up to 12 hours;
@@ -272,7 +272,7 @@ There are no cookies anywhere in the store, only bearer tokens and signed URLs, 
 - **The private bucket's presigned URLs:** the bucket's CORS policy (below) allows `GET`/`HEAD` from any origin, with Range. The URL is the credential, so `*` gives nothing away.
 - **The Worker, `_admin` and the 301 helper:** `access-control-allow-origin: *`.
 - **The Worker, every other route:**
-  - The `Origin` must be one of: absent (a script); `^https://([a-z0-9-]+\.)?floa\.co\.il$`; `http://localhost:5173`; or a member of `settings.origins`.
+  - The `Origin` must be one of: absent (a script); `^https://([a-z0-9-]+\.)?floa\.co\.il$`; a dev origin (`isDevOrigin`, `src/dev-origin.js`: `http://` on `localhost` or `127.0.0.1`, or on a private LAN address `192.168.x.x` / `10.x.x.x`, any port); or a member of `settings.origins`.
   - Any other origin gets 403 `origin`.
   - An allowed origin is echoed back, with `vary: origin`.
 - **Preflight** on any `/media/…`:
@@ -673,7 +673,7 @@ The page session's script runs after the route is deployed, right after a 00:00 
     - `curl -s -o /dev/null -w "%{http_code}" -H "Range: bytes=0-1"` on the same URL answers `206`.
     - One presigned URL from a staff list opens in a browser tab.
 
-13. **Supabase Redirect URLs** (dashboard, Authentication, URL Configuration). Every host whose page signs people in to the domain's project must be listed, in production and on `localhost:5173`: for the first business `https://harpatka.co.il` and `https://www.harpatka.co.il`. It is a shared resource, so this is the owner's manual step, never an agent's (CLAUDE.md, "ההתחברות שייכת לדומיין").
+13. **Supabase Redirect URLs** (dashboard, Authentication, URL Configuration). Every host whose page signs people in to the domain's project must be listed, in production and on `http://localhost`: for the first business `https://harpatka.co.il` and `https://www.harpatka.co.il`. It is a shared resource, so this is the owner's manual step, never an agent's (CLAUDE.md, "ההתחברות שייכת לדומיין").
 
 There is no database step in v1.
 
@@ -781,7 +781,7 @@ The routes and answers above stay as they are. Fields and routes are only added 
    - the R2 read token (and, if approved, the purge token);
    - the deploy and the first business's settings;
    - which staff account signs in for the bulk upload, and when (after a 00:00 UTC reset);
-   - the Supabase Redirect URLs for every host that signs in (`harpatka.co.il`, `www.harpatka.co.il`, and `localhost:5173`).
+   - the Supabase Redirect URLs for every host that signs in (`harpatka.co.il`, `www.harpatka.co.il`, and `http://localhost`).
 9. **The test Worker:** store off (default), or test buckets.
 10. **Variant A** (the database index) later, only if editing or per-user limits are wanted.
 11. **For the coordinator, not the owner:** who writes `scripts/media-upload.mjs`.

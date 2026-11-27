@@ -39,7 +39,7 @@ export const business = {
      domain, this is the second line that changes (the first is site.origin). */
   lead: {
     to: "LEAD_TO",
-    origins: ["https://floa.co.il", "https://www.floa.co.il", "http://localhost:5173"],
+    origins: ["https://floa.co.il", "https://www.floa.co.il", "http://localhost"],
   },
 
   site,

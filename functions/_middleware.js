@@ -26,14 +26,15 @@ const HOMES = Object.fromEntries(HOSTS.map((h) => [h.host, "/" + h.folder]));
 const CLEAN = new Set(HOSTS.filter((h) => h.clean).map((h) => h.host));
 const ICONS = Object.fromEntries(HOSTS.filter((h) => h.icons).map((h) => [h.host, h.icons]));
 const SPA = new Set(HOSTS.filter((h) => h.spa).map((h) => h.host));
-const TEST = new Set(HOSTS.filter((h) => h.test).map((h) => h.host));
+/* `test` and `preview` are alike here (closed robots.txt, no old-address redirect to them); only build.mjs tells them apart */
+const TEST = new Set(HOSTS.filter((h) => h.test || h.preview).map((h) => h.host));
 const SLUGS = new Set(HOSTS.filter((h) => h.slugs).map((h) => h.host));
 const RESERVED = ["admin", "connect", "me", "api", "assets", "new", "index"];
 const DOMAIN_FILES = new Set(["/supabase.js", "/auth.js", "/roster-site.js", "/media.js", "/kit.css", "/layout.js", "/sheet.js", "/sound.js", "/menu.js", "/card.js", "/section.js", "/tabs.js", "/swipe.js", "/list.js", "/field.js", "/search.js", "/range.js", "/audio.js", "/print.js", "/live.js", "/app.js", "/icons.svg", "/favicon.ico", "/favicon.svg", "/apple-touch-icon.png", "/sw.js", "/robots.txt", "/404.html", "/__test-env.js"]);
 const SLUG_PAGES = { "": "admin", connect: "connect", me: "me" };
 const NOT_FOUND = '<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>הדף לא נמצא</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;padding:16px;font:16px/1.6 system-ui,sans-serif;color:#1a1a1a;background:#fff;text-align:center}a{color:#0b57d0}@media (prefers-color-scheme:dark){body{background:#111;color:#eee}a{color:#8ab4f8}}</style></head><body><main><h1>הדף הזה לא קיים</h1><p><a href="/">לדף הבית</a></p></main></body></html>';
 /* longest folder first, so /tal/ia is not taken for /tal */
-const OLD = HOSTS.filter((h) => !h.test).flatMap((h) => [h.folder, ...(h.old || [])].map((f) => ["/" + f.replace(/\/$/, ""), h.host]))
+const OLD = HOSTS.filter((h) => !h.test && !h.preview).flatMap((h) => [h.folder, ...(h.old || [])].map((f) => ["/" + f.replace(/\/$/, ""), h.host]))
   .sort((a, b) => b[0].length - a[0].length);
 
 /* A shared vivencia (biodanza.floa.co.il/<id>, WhatsApp, Facebook): a crawler runs no script and is not signed in,

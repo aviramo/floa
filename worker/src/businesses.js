@@ -19,7 +19,7 @@ export const BUSINESSES = {
       "https://floa.co.il",
       "https://www.floa.co.il",
       "https://biodanza.floa.co.il",
-      "http://localhost:5173"
+      "http://localhost"
     ],
     "pages": []
   },
@@ -30,7 +30,7 @@ export const BUSINESSES = {
       "https://floa.co.il",
       "https://www.floa.co.il",
       "https://biofamily.floa.co.il",
-      "http://localhost:5173"
+      "http://localhost"
     ],
     "pages": []
   },
@@ -41,7 +41,7 @@ export const BUSINESSES = {
       "https://floa.co.il",
       "https://www.floa.co.il",
       "https://chatbot.floa.co.il",
-      "http://localhost:5173"
+      "http://localhost"
     ],
     "pages": []
   },
@@ -52,7 +52,7 @@ export const BUSINESSES = {
       "https://floa.co.il",
       "https://www.floa.co.il",
       "https://chords.floa.co.il",
-      "http://localhost:5173"
+      "http://localhost"
     ],
     "pages": []
   },
@@ -68,7 +68,7 @@ export const BUSINESSES = {
     "origins": [
       "https://floa.co.il",
       "https://www.floa.co.il",
-      "http://localhost:5173"
+      "http://localhost"
     ],
     "pages": [
       "דף הבית",
@@ -88,7 +88,7 @@ export const BUSINESSES = {
       "https://floa.co.il",
       "https://www.floa.co.il",
       "https://jobs.floa.co.il",
-      "http://localhost:5173"
+      "http://localhost"
     ],
     "pages": []
   },
@@ -106,7 +106,7 @@ export const BUSINESSES = {
       "https://www.floa.co.il",
       "https://roster.floa.co.il",
       "https://roster-test.floa.co.il",
-      "http://localhost:5173"
+      "http://localhost"
     ],
     "pages": []
   },

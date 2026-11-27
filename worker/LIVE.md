@@ -60,7 +60,7 @@ export const ROOMS = {
 
 1. Path `/live/<app>/<id>` with exactly two parts, `app` in `ROOMS`, `id` matching its pattern; otherwise `404`.
 2. `Upgrade: websocket` header; otherwise `426`.
-3. **Origin check** (a WebSocket is not CORS, the Origin header is the only guard a browser gives): allowed are `https://floa.co.il`, `https://<label>.floa.co.il` (`^https://([a-z0-9-]+\.)?floa\.co\.il$`) and `http://localhost:5173`. Missing or other origin: `403`. Not the `ALLOWED_ORIGINS` of `/lead` (that list is per business and does not cover every app sub-domain).
+3. **Origin check** (a WebSocket is not CORS, the Origin header is the only guard a browser gives): allowed are `https://floa.co.il`, `https://<label>.floa.co.il` (`^https://([a-z0-9-]+\.)?floa\.co\.il$`) and a dev origin (`isDevOrigin`, `src/dev-origin.js`: `http://` on `localhost` or `127.0.0.1`, or on a private LAN address `192.168.x.x` / `10.x.x.x`, any port). Missing or other origin: `403`. Not the `ALLOWED_ORIGINS` of `/lead` (that list is per business and does not cover every app sub-domain).
 4. `env.LIVE` missing: `502` (config), with one log line.
 5. Forward: `env.LIVE.get(env.LIVE.idFromName(app + ":" + id)).fetch(request)`.
 
@@ -173,7 +173,7 @@ npx wrangler dev        # http://localhost:8787, the Durable Object runs locally
 ```
 
 - The relay is `ws://localhost:8787/live/<app>/<id>`. Auth and `can_view` still go to the real Supabase project (read only, with the person's own token).
-- `npm run dev` serves the site on `localhost:5173`. The page reads the relay address from `/supabase.js` (`SUPABASE.relay`); on localhost only, `localStorage["floa.live.relay"] = "ws://localhost:8787/live"` overrides it, so working on the relay itself needs no file change. Without the override a local page talks to the deployed relay (its origin `http://localhost:5173` is allowed).
+- `npm run dev` serves the site on `http://localhost` (apps on ports 8081 to 8091). The page reads the relay address from `/supabase.js` (`SUPABASE.relay`); on localhost only, `localStorage["floa.live.relay"] = "ws://localhost:8787/live"` overrides it, so working on the relay itself needs no file change. Without the override a local page talks to the deployed relay (its origin is a dev origin, allowed).
 - Two tabs (or two browser profiles, two accounts) on the same vivencia are the test.
 
 ## Tests (`worker/test/live-*.test.js`, plain node, part of `npm test`)

@@ -10,7 +10,7 @@ export const business = {
 
   lead: {
     to: "LEAD_TO_BIODANZA",
-    origins: ["https://floa.co.il", "https://www.floa.co.il", "https://biodanza.floa.co.il", "http://localhost:5173"],
+    origins: ["https://floa.co.il", "https://www.floa.co.il", "https://biodanza.floa.co.il", "http://localhost"],
   },
 
   site,

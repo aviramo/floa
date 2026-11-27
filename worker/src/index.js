@@ -44,6 +44,7 @@ import { handleMedia, isMediaPath } from "./media.js";
 import { handleRoster, isRosterPath, runRosterScheduled } from "./roster/routes.js";
 import { handleRosterAuth, isRosterAuthPath } from "./roster-auth.js";
 import { handleRosterWa, isRosterWaPath } from "./roster-wa.js";
+import { originIn } from "./dev-origin.js";
 
 /* A lead sent before the sites were rebuilt carries no `business` field. It can
    only have come from FLOA, because FLOA is the only business that existed then. */
@@ -62,7 +63,7 @@ const UTM_FIELDS = [
 ];
 
 const cors = (origin) => ({
-  "access-control-allow-origin": ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
+  "access-control-allow-origin": originIn(ALLOWED_ORIGINS, origin) ? origin : ALLOWED_ORIGINS[0],
   "access-control-allow-methods": "POST, OPTIONS",
   "access-control-allow-headers": "content-type, authorization",
   "access-control-max-age": "86400",
@@ -102,7 +103,7 @@ function validate(body, origin) {
 
   /* the posting page must be one this business is actually served from, so a
      site cannot send a lead in another business's name */
-  if (!business.origins.includes(origin)) return { error: "origin" };
+  if (!originIn(business.origins, origin)) return { error: "origin" };
 
   const name = String(body.name || "").trim();
   const phone = normalizePhone(body.phone);
@@ -116,7 +117,7 @@ function validate(body, origin) {
   let url = "";
   try {
     const u = new URL(String(body.url || ""));
-    if (business.origins.includes(u.origin)) url = u.href;
+    if (originIn(business.origins, u.origin)) url = u.href;
   } catch { /* an unparseable URL is simply not shown */ }
 
   const extra = {};
@@ -464,7 +465,7 @@ export default {
 
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(origin) });
     if (request.method !== "POST") return json({ ok: false, error: "method" }, 405, origin);
-    if (!ALLOWED_ORIGINS.includes(origin)) return json({ ok: false, error: "origin" }, 403, origin);
+    if (!originIn(ALLOWED_ORIGINS, origin)) return json({ ok: false, error: "origin" }, 403, origin);
 
     switch (new URL(request.url).pathname) {
       case "/lead": return handleLead(request, env, origin);

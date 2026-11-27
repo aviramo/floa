@@ -22,6 +22,7 @@ import {
   BATCH_MAX, checkReport, listPage, moveBatch, originalOf, parseExisting, publishFolders, purgeOne, restoreOne, settle,
   trashOne, upload, usageOf, visibility, writeSettings,
 } from "./media/store.js";
+import { isDevOrigin } from "./dev-origin.js";
 
 export const MEDIA_PREFIX = "/media/";
 export function isMediaPath(pathname) { return pathname === "/media" || pathname.startsWith(MEDIA_PREFIX); }
@@ -34,7 +35,6 @@ const REQUIRED = ["MEDIA", "MEDIA_PUBLIC", "MEDIA_PUBLIC_BASE", "R2_ACCOUNT_ID",
 /* --- CORS (worker/MEDIA.md, "CORS") -------------------------------------------------------------------------------------- */
 
 const DOMAIN_ORIGIN = /^https:\/\/([a-z0-9-]+\.)?floa\.co\.il$/;
-const DEV_ORIGIN = "http://localhost:5173";
 const EXPOSE = "content-length, content-range, accept-ranges, etag, content-type";
 const OPEN = { "access-control-allow-origin": "*", "access-control-expose-headers": EXPOSE };
 const PREFLIGHT = {
@@ -51,7 +51,7 @@ function staffCors(cx) {
   const o = cx.origin;
   cx.cors = { vary: "origin", "access-control-expose-headers": EXPOSE };
   if (o === null) return;
-  if (DOMAIN_ORIGIN.test(o) || o === DEV_ORIGIN) cx.cors["access-control-allow-origin"] = o;
+  if (DOMAIN_ORIGIN.test(o) || isDevOrigin(o)) cx.cors["access-control-allow-origin"] = o;
   else cx.originPending = true;
 }
 async function checkOrigin(cx) {
